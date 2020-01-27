@@ -1,5 +1,6 @@
 diyabc_index <- function() {
-    navlistPanel(
-            tabPanel("Simulations", diyabc_simu()),
-            tabPanel("Analysis", diyabc_analysis()))
+    navbarPage("",
+        tabPanel("Home", "Home"),
+        tabPanel("Simulations", diyabc_simu()),
+        tabPanel("Analysis", diyabc_analysis()))
 }
