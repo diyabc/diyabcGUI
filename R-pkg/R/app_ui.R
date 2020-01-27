@@ -6,4 +6,7 @@
 #' FIXME
 #' @author Ghislain Durif
 #' @return Shiny ui
-diyabc_ui <- fluidPage()
+diyabc_ui <- fluidPage(
+    titlePanel("diyABC"),
+    diyabc_index()
+)
