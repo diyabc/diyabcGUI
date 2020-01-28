@@ -8,4 +8,6 @@
 #' @param input app input.
 #' @param output app output.
 #' @return None
-diyabc_server <- function(input, output) {}
+diyabc_server <- function(input, output) {
+    simu_server(input, output)
+}

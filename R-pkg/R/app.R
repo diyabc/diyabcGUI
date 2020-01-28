@@ -5,8 +5,9 @@
 #' FIXME
 #' @author Ghislain Durif
 #' @return shiny application object
-#' @importFrom shiny shinyApp
-#' @example \dontrun {launchApp()}
+#' @import shiny
+#' @example
+#' \dontrun{diyabc()}
 #' @export
 diyabc <- function() {
     shinyApp(ui = diyabc_ui, server = diyabc_server)
