@@ -8,7 +8,9 @@ simu_ui <- function() {
             text_input("project", label = "Project", default = "my_project"),
             dir_input("directory", label = "Directory"),
             radioButtons("type", label = "Simulation type",
-                         choices = list("MicroSAT/sequence" = 1, "SNP" = 2), 
+                         choices = list("MicroSAT/sequence" = 1, 
+                                        "SNP" = 2, 
+                                        "PoolSeq" = 3), 
                          selected = 1)
         ),
         mainPanel(
