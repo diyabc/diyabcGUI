@@ -22,7 +22,7 @@ simu_ui <- function() {
                 ),
                 tabPanel(
                     "Genetic data",
-                    genetic_data_ui()
+                    genetic_data_ui("genetic_data_simu")
                 )
             )
         )
@@ -36,8 +36,7 @@ simu_ui <- function() {
 simu_server <- function(input, output, session) {
     callModule(text_module, "project")
     callModule(dir_module, "directory")
-    # callModule(text_area_module, "scenario")
     
     callModule(hist_model_module, "hist_model_simu")
-    genetic_data_server(input, output, session)
+    callModule(genetic_data_module, "genetic_data_simu")
 }
