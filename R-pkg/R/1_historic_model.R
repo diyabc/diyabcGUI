@@ -16,7 +16,7 @@ hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
                 ),
                 plotOutput(ns("scenario_graph"), height = "200px")
             ),
-            tabsetPanel(
+            navbarPage("",
                 tabPanel(
                     "Parameters",
                     uiOutput(ns("param_value"))
@@ -81,29 +81,45 @@ hist_model_module <- function(input, output, session) {
         npop <- scenario_param()$npop
         print(paste0(npop))
         
-        # numeric input for each parameters
+        # numeric input for each sample
         numeric_input_list <- list()
         if(!is.null(npop) & npop > 0) {
             numeric_input_list <- lapply(1:npop, function(pop) {
                 pop_name <- paste0("pop", pop)
                 tagList(
-                    h4(paste0("Population ", pop)),
-                    numericInput(
-                        paste0(pop_name, "_f"),
-                        label = "Nb f.",
-                        value = 25
-                    ),
-                    numericInput(
-                        paste0(pop_name, "_m"),
-                        label = "Nb m.",
-                        value = 25
+                    fluidRow(
+                        column(
+                            width = 2, 
+                            h4(paste0("Population ", pop)),
+                        ),
+                        column(
+                            width = 2, 
+                            numericInput(
+                                paste0(pop_name, "_f"),
+                                label = NULL,
+                                value = 25
+                            )
+                        ),
+                        column(width = 2, 
+                            numericInput(
+                                paste0(pop_name, "_m"),
+                                label = NULL,
+                                value = 25
+                            )
+                        )
                     )
                 )
             })
         }
+        # sample table
+        sample_table <- fluidRow(
+            column(width=2, offset = 2, h4("Female")),
+            column(width=2, h4("Male"))
+        )
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
-        do.call(tagList, numeric_input_list)
+        
+        do.call(tagList, c(list(sample_table, numeric_input_list)))
     })
 }
 
