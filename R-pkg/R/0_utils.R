@@ -1,3 +1,53 @@
+#' Numeric module input function
+#' @keywords internal
+#' @author Ghislain Durif
+#' @import shiny
+numeric_input <- function(id, label = "Value", default = 0) {
+    ns <- NS(id)
+    tagList(
+        numericInput(
+            inputId = ns("num"), 
+            label = label, 
+            value = default
+        )
+    )
+}
+
+#' numeric module server function
+#' @keywords internal
+#' @author Ghislain Durif
+#' @import shiny
+numeric_module <- function(input, output, session) {}
+
+#' Text area module input function
+#' @keywords internal
+#' @author Ghislain Durif
+#' @import shiny
+text_area_input <- function(id, label = "Text", default = "Your text", 
+                            height = '200px') {
+    ns <- NS(id)
+    tagList(
+        textAreaInput(
+            inputId = ns("text"), 
+            label = label, 
+            value = default,
+            height = height
+        ),
+        verbatimTextOutput(
+            ns("text_value"), 
+            placeholder = TRUE
+        )
+    )
+}
+
+#' Text area module server function
+#' @keywords internal
+#' @author Ghislain Durif
+#' @import shiny
+text_area_module <- function(input, output, session) {
+    output$text_value <- renderText({ input$text })
+}
+
 #' Text module input function
 #' @keywords internal
 #' @author Ghislain Durif
