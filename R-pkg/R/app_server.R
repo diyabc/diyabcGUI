@@ -7,7 +7,8 @@
 #' @author Ghislain Durif
 #' @param input app input.
 #' @param output app output.
+#' @param session shiny session.
 #' @return None
-diyabc_server <- function(input, output) {
-    simu_server(input, output)
+diyabc_server <- function(input, output, session) {
+    simu_server(input, output, session)
 }
