@@ -3,3 +3,7 @@
 export(diyabc)
 import(shiny)
 importFrom(shinyFiles,shinyDirButton)
+importFrom(stringr,str_count)
+importFrom(stringr,str_extract_all)
+importFrom(stringr,str_split)
+importFrom(tibble,lst)
