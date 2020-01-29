@@ -8,6 +8,5 @@
 #' @return Shiny ui
 #' @import shiny
 diyabc_ui <- fluidPage(
-    titlePanel("diyABC"),
     index_ui()
 )
