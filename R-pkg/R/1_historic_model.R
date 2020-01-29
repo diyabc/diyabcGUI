@@ -2,31 +2,33 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
-hist_model_ui <- function(add=FALSE) {
+hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
+    ns <- NS(id)
     tagList(
         verticalLayout(
             flowLayout(
                 textAreaInput(
-                    "scenario", 
+                    ns("scenario"), 
                     label = "Describe your scenario", 
                     value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2", 
-                    rows = 10
+                    rows = 10,
+                    resize = "none"
                 ),
-                plotOutput("scenario_graph", height = "200px")
+                plotOutput(ns("scenario_graph"), height = "200px")
             ),
             tabsetPanel(
                 tabPanel(
                     "Parameters",
-                    uiOutput("param_value")
+                    uiOutput(ns("param_value"))
                 ),
                 tabPanel(
                     "Sample size",
-                    uiOutput("sample_param")
+                    uiOutput(ns("sample_param"))
                 ),
                 tabPanel(
                     "Simulations",
                     numericInput(
-                        "nsimu",
+                        ns("nsimu"),
                         label = "Number of repetitions",
                         value = 1
                     )
@@ -36,11 +38,11 @@ hist_model_ui <- function(add=FALSE) {
     )
 }
 
-#' Historical model server
+#' Historical model module function
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
-hist_model_server <- function(input, output, session) {
+hist_model_module <- function(input, output, session) {
     
     # tmp graph
     # FIXME
@@ -54,13 +56,13 @@ hist_model_server <- function(input, output, session) {
     scenario_param <- reactive({
         parse_scenario(input$scenario)
     })
-
+    
     # parameters
     output$param_value <- renderUI({
-
+        
         param_list <- scenario_param()$parameters
         print(paste0(param_list))
-
+        
         # numeric input for each parameters
         numeric_input_list <- list()
         if(length(param_list) > 0) {
@@ -72,13 +74,13 @@ hist_model_server <- function(input, output, session) {
         # to display properly.
         do.call(tagList, numeric_input_list)
     })
-
+    
     # sample
     output$sample_param <- renderUI({
-
+        
         npop <- scenario_param()$npop
         print(paste0(npop))
-
+        
         # numeric input for each parameters
         numeric_input_list <- list()
         if(!is.null(npop) & npop > 0) {
@@ -105,7 +107,6 @@ hist_model_server <- function(input, output, session) {
     })
 }
 
-
 #' Parse scenario
 #' @keywords internal
 #' @author Ghislain Durif
@@ -125,7 +126,9 @@ parse_scenario <- function(text) {
     parameters <- parameters[ ! parameters %in% keywords ]
     # number of populations
     tmp <- str_split(text, pattern = "\n", simplify = TRUE)
-    npop <- str_count(tmp[1], pattern = " ") + 1
+    npop <- ifelse(str_detect(tmp[1], pattern = " "), 
+                   str_count(tmp[1], pattern = " ") + 1,
+                   0)
     # out
     return(lst(parameters, npop))
 }

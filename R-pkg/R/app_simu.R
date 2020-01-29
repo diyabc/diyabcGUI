@@ -11,10 +11,20 @@ simu_ui <- function() {
                          choices = list("MicroSAT/sequence" = 1, 
                                         "SNP" = 2, 
                                         "PoolSeq" = 3), 
-                         selected = 1)
+                         selected = 1),
+            actionButton("simulate", label = "simulate")
         ),
         mainPanel(
-            hist_model_ui()
+            tabsetPanel(
+                tabPanel(
+                    "Historical model",
+                    hist_model_ui("hist_model_simu")
+                ),
+                tabPanel(
+                    "Genetic data",
+                    genetic_data_ui()
+                )
+            )
         )
     )
 }
@@ -28,5 +38,6 @@ simu_server <- function(input, output, session) {
     callModule(dir_module, "directory")
     # callModule(text_area_module, "scenario")
     
-    hist_model_server(input, output, session)
+    callModule(hist_model_module, "hist_model_simu")
+    genetic_data_server(input, output, session)
 }
