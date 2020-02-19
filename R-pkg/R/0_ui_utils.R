@@ -1,7 +1,6 @@
 #' Numeric module input function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 numeric_input <- function(id, label = "Value", default = 0) {
     ns <- NS(id)
     tagList(
@@ -16,13 +15,11 @@ numeric_input <- function(id, label = "Value", default = 0) {
 #' numeric module server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 numeric_module <- function(input, output, session) {}
 
 #' Text area module input function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 text_area_input <- function(id, label = "Text", default = "Your text", 
                             height = '200px') {
     ns <- NS(id)
@@ -43,7 +40,6 @@ text_area_input <- function(id, label = "Text", default = "Your text",
 #' Text area module server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 text_area_module <- function(input, output, session) {
     output$text_value <- renderText({ input$text })
 }
@@ -51,7 +47,6 @@ text_area_module <- function(input, output, session) {
 #' Text module input function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 text_input <- function(id, label = "Text", default = "Your text") {
     ns <- NS(id)
     tagList(
@@ -70,7 +65,6 @@ text_input <- function(id, label = "Text", default = "Your text") {
 #' Text module server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 text_module <- function(input, output, session) {
     output$text_value <- renderText({ input$text })
 }
@@ -78,7 +72,6 @@ text_module <- function(input, output, session) {
 #' Directory choice module input function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 #' @importFrom shinyFiles shinyDirButton
 dir_input <- function(id, label = "Directory") {
     ns <- NS(id)
@@ -95,7 +88,6 @@ dir_input <- function(id, label = "Directory") {
 #' Directory choice module server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 dir_module <- function(input, output, session) {
     shinyDirChoose(
         input,
@@ -123,4 +115,44 @@ dir_module <- function(input, output, session) {
                          file.path(home, paste(unlist(dir()$path[-1]), 
                                                collapse = .Platform$file.sep))
                  })
+}
+
+
+#' Project module input function
+#' @keywords internal
+#' @author Ghislain Durif
+project_input <- function(id, label = "Project", default = "Your project") {
+    ns <- NS(id)
+    tagList(
+        textInput(
+            inputId = ns("project"), 
+            label = label, 
+            value = default
+        ),
+        checkboxInput(ns("timestamp"), label = "Timestamp directory", 
+                      value = TRUE),
+        verbatimTextOutput(
+            ns("project_name"), 
+            placeholder = TRUE
+        )
+    )
+}
+
+#' Project module server function
+#' @keywords internal
+#' @importFrom lubridate today
+#' @author Ghislain Durif
+project_module <- function(input, output, session) {
+    
+    project_fullname <- reactive({
+        if(input$timestamp) {
+            paste0(input$project, "_", lubridate::today())
+        } else {
+            input$project
+        }
+    })
+    
+    output$project_name <- renderText({ 
+        project_fullname()
+    })
 }

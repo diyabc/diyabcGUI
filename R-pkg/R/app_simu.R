@@ -5,13 +5,11 @@ simu_ui <- function(id, label = "simu") {
     ns <- NS(id)
     tagList(
         sidebarPanel(
-            text_input(ns("project"), label = "Project", 
-                       default = "project_name") %>% 
+            project_input(ns("project"), label = "Project", 
+                          default = "project_name") %>% 
                 helper(type = "markdown", 
                        content = "simulation_project"),
-            dir_input(ns("directory"), label = "Directory"),
-            checkboxInput(ns("timestamp"), label = "Timestamp directory", 
-                          value = TRUE),
+            dir_input(ns("directory"), label = "Folder"),
             radioButtons(ns("type"), label = "Simulation type",
                          choices = list("MicroSAT/sequence" = 1, 
                                         "SNP" = 2, 
@@ -39,7 +37,7 @@ simu_ui <- function(id, label = "simu") {
 #' @author Ghislain Durif
 #' @import shiny
 simu_module <- function(input, output, session) {
-    callModule(text_module, "project")
+    callModule(project_module, "project")
     callModule(dir_module, "directory")
     
     callModule(hist_model_module, "hist_model_simu")

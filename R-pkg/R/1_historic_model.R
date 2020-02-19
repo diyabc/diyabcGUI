@@ -14,22 +14,24 @@ hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
                     value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2", 
                     rows = 10,
                     resize = "none"
-                ),
-                plotOutput(ns("scenario_graph"), height = "200px"),
-                verticalLayout(
-                    h5("Check"),
-                    verbatimTextOutput(ns("check")),
-                    h5("Comments"),
-                    verbatimTextOutput(ns("comment"))
-                )
+                ) %>% 
+                    helper(type = "markdown", 
+                           content = "hist_model_description"),
+                plotOutput(ns("scenario_graph"), height = "200px")
             ),
-            navbarPage("",
+            navbarPage("Settings",
                 tabPanel(
                     "Parameters",
-                    uiOutput(ns("param_value"))
+                    tagList(
+                        h4("Parameter values"),
+                        tags$hr(),
+                        uiOutput(ns("Ne_param_value")),
+                        uiOutput(ns("time_param_value")),
+                        uiOutput(ns("rate_param_value"))
+                    )
                 ),
                 tabPanel(
-                    "Sample size",
+                    "Samples",
                     uiOutput(ns("sample_param"))
                 ),
                 tabPanel(
@@ -48,7 +50,6 @@ hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
 #' Historical model module function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
 hist_model_module <- function(input, output, session) {
     
     # tmp graph
@@ -59,19 +60,27 @@ hist_model_module <- function(input, output, session) {
                                                 xlab = "",
                                                 ylab = "")})
     
-    # Graph check
-    output$check <- renderText({ "Historical model is being checked." })
-    
-    # Graph comments
-    output$comment <- renderText({
-        paste0(
-            "Warning:\n", 
-            "- 1000 to 20000 simulations per scenario  are needed for scenario ",
-            "choice.\n",
-            "- 10000 to 100000 simulations under the scenario of interest are ",
-            "needed for parameter estimation."
-        )
-    })
+    # # Graph check
+    # output$check <- renderText({ "Historical model is being checked." })
+    # 
+    # # Graph comments
+    # output$warning <- renderUI({
+    #     tagList(
+    #         tags$div(
+    #             tags$ul(
+    #                 tags$li(
+    #                     paste0("1000 to 20000 simulations per scenario ",
+    #                            "are needed for scenario choice.")
+    #                 ),
+    #                 tags$li(
+    #                     paste0("10000 to 100000 simulations under the ",
+    #                            "scenario of interest are needed for ",
+    #                            "parameter estimation.")
+    #                 )
+    #             )
+    #         )
+    #     )
+    # })
     
     # scenario
     scenario_param <- reactive({
@@ -79,70 +88,119 @@ hist_model_module <- function(input, output, session) {
     })
     
     # parameters
-    output$param_value <- renderUI({
-        
-        param_list <- scenario_param()$parameters
-        print(paste0(param_list))
-        
-        # numeric input for each parameters
-        numeric_input_list <- list()
-        if(length(param_list) > 0) {
-            numeric_input_list <- lapply(param_list, function(param) {
-                numericInput(param, label = param, value = 100)
-            })
-        }
-        # Convert the list to a tagList - this is necessary for the list of items
-        # to display properly.
-        do.call(tagList, numeric_input_list)
+    output$Ne_param_value <- renderUI({
+        param_list <- scenario_param()$Ne_param
+        render_model_param(param_list, 
+                           "Ne parameter(s)",
+                           "Effective population size.")
+    })
+    
+    output$time_param_value <- renderUI({
+        param_list <- scenario_param()$time_param
+        render_model_param(param_list, "Time parameter(s)", 
+                           "Time in <b>generations</b> backward.")
+    })
+    
+    output$rate_param_value <- renderUI({
+        param_list <- scenario_param()$rate_param
+        render_model_param(param_list, "Admixture rate parameter(s)",
+                           "Rate between 0 and 1.")
     })
     
     # sample
     output$sample_param <- renderUI({
         
-        npop <- scenario_param()$npop
-        print(paste0(npop))
+        events <- scenario_param()
+        nsample <- sum(events$event_type == "sample")
+        npop <- events$npop
+        
+        sample_pop <- events$event_pop[events$event_type == "sample"]
+        sample_time <- events$event_time[events$event_type == "sample"]
         
         # numeric input for each sample
         numeric_input_list <- list()
-        if(!is.null(npop) & npop > 0) {
-            numeric_input_list <- lapply(1:npop, function(pop) {
-                pop_name <- paste0("pop", pop)
-                tagList(
-                    fluidRow(
-                        column(
-                            width = 2, 
-                            h4(paste0("Population ", pop)),
-                        ),
-                        column(
-                            width = 2, 
-                            numericInput(
-                                paste0(pop_name, "_f"),
-                                label = NULL,
-                                value = 25
-                            )
-                        ),
-                        column(width = 2, 
-                            numericInput(
-                                paste0(pop_name, "_m"),
-                                label = NULL,
-                                value = 25
-                            )
-                        )
-                    )
-                )
+        if(!is.null(npop) & nsample > 0) {
+            numeric_input_list <- lapply(1:nsample, function(sample_id) {
+                render_sampling_param(sample_id, 
+                                      unlist(sample_time[sample_id]), 
+                                      unlist(sample_pop[sample_id]))
             })
         }
-        # sample table
-        sample_table <- fluidRow(
-            column(width=2, offset = 2, h4("Female")),
-            column(width=2, h4("Male"))
-        )
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
-        
-        do.call(tagList, c(list(sample_table, numeric_input_list)))
+        tagList(
+            h4("Sample sizes"),
+            tags$hr(),
+            do.call(flowLayout, numeric_input_list)
+        )
     })
 }
+
+#' Render model parameter ui
+#' @keywords internal
+#' @author Ghislain Durif
+render_model_param <- function(param_list, title, doc) {
+    out <- tagList()
+    
+    if(length(param_list) > 0) {
+        # numeric input for each parameters
+        numeric_input_list <- lapply(param_list, function(param) {
+            fluidRow(
+                column(
+                    width = 10,
+                    numericInput(param, label = param, value = 100)
+                )
+            )
+        })
+        # Convert the list to a tagList - this is necessary for the list of items
+        # to display properly.
+        out <- tagList(
+            h5(title) %>% 
+                helper(
+                    type = "inline",
+                    title = title,
+                    content = doc
+                ),
+            do.call(flowLayout, numeric_input_list))
+    }
+    out
+}
+
+#' Render sampling parameter ui
+#' @keywords internal
+#' @author Ghislain Durif
+render_sampling_param <- function(sample_id, time_tag, pop_id) {
+    tag_name <- paste0("sample", sample_id , 
+                       "_pop", pop_id, 
+                       "_time", time_tag)
+    tagList(
+        h5(tags$b("# ", sample_id), " from pop. ", tags$b(pop_id), 
+           " at time ", tags$b(time_tag)),
+        verticalLayout(
+            fluidRow(
+                column(
+                    width = 10,
+                    numericInput(
+                        paste0(tag_name, "_f"),
+                        label = "Female",
+                        value = 25
+                    ),
+                ),
+            ),
+            fluidRow(
+                column(
+                    width = 10,
+                    numericInput(
+                        paste0(tag_name, "_m"),
+                        label = "Male",
+                        value = 25
+                    )
+                )
+            )
+        )
+    )
+}
+
 
 #' Parse scenario
 #' @keywords internal
@@ -153,14 +211,16 @@ parse_scenario <- function(text) {
     if(is.null(text)) return(NULL)
     keywords <- c("sample", "varNe", "merge", "split")
     scenario <- unlist(str_split(text, pattern = "\n"))
-    parameters <- NULL
+    Ne_param <- NULL
+    rate_param <- NULL
+    time_param <- NULL
     scenario_check <- TRUE
     # number of populations
     npop <- ifelse(str_detect(scenario[1], pattern = " |[a-z]"),
                    str_count(scenario[1], pattern = " ") + 1,
                    0)
     # population effective size at time 0
-    Ne_list <- unlist(
+    Ne_list_t0 <- unlist(
         str_extract_all(
             scenario[1], 
             pattern = paste0(c("[a-zA-Z][a-zA-Z0-9]*(?= |\n)", 
@@ -192,13 +252,23 @@ parse_scenario <- function(text) {
     scenario_check <- scenario_check & all(event_check)
     
     ## parameters
-    parameters <- unique(unlist(c(Ne_list, event_time, event_param)))
-    parameters <- parameters[!str_detect(string = parameters, 
+    Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
+                         Ne_list_t0))
+    Ne_param <- Ne_param[!str_detect(string = Ne_param, 
+                                     pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
+    
+    rate_param <- unique(unlist(event_param[event_type == "split"]))
+    rate_param <- rate_param[!str_detect(string = rate_param, 
+                                         pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
+    
+    time_param <- unique(unlist(event_time))
+    time_param <- time_param[!str_detect(string = time_param, 
                                          pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
     
     # out
-    return(lst(parameters, npop, nevents, event_type, event_time, 
-               event_pop, event_param, event_check, scenario_check))
+    return(lst(npop, nevents, event_type, event_time, 
+               event_pop, event_param, event_check, Ne_param, Ne_list_t0, 
+               rate_param, time_param, scenario_check))
 }
 
 #' Parse a scenario event
