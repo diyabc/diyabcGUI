@@ -2,6 +2,7 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
+#' @importFrom magrittr %>%
 hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
     ns <- NS(id)
     tagList(
@@ -14,7 +15,13 @@ hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
                     rows = 10,
                     resize = "none"
                 ),
-                plotOutput(ns("scenario_graph"), height = "200px")
+                plotOutput(ns("scenario_graph"), height = "200px"),
+                verticalLayout(
+                    h5("Check"),
+                    verbatimTextOutput(ns("check")),
+                    h5("Comments"),
+                    verbatimTextOutput(ns("comment"))
+                )
             ),
             navbarPage("",
                 tabPanel(
@@ -51,6 +58,20 @@ hist_model_module <- function(input, output, session) {
                                                 axes = FALSE,
                                                 xlab = "",
                                                 ylab = "")})
+    
+    # Graph check
+    output$check <- renderText({ "Historical model is being checked." })
+    
+    # Graph comments
+    output$comment <- renderText({
+        paste0(
+            "Warning:\n", 
+            "- 1000 to 20000 simulations per scenario  are needed for scenario ",
+            "choice.\n",
+            "- 10000 to 100000 simulations under the scenario of interest are ",
+            "needed for parameter estimation."
+        )
+    })
     
     # scenario
     scenario_param <- reactive({
