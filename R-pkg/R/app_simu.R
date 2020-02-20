@@ -11,10 +11,10 @@ simu_module_ui <- function(id, label = "simu") {
                        content = "simulation_project"),
             dir_input_module_ui(ns("directory"), label = "Folder"),
             radioButtons(ns("type"), label = "Simulation type",
-                         choices = list("MicroSAT/sequence" = 1, 
-                                        "SNP" = 2, 
-                                        "PoolSeq" = 3), 
-                         selected = 1),
+                         choices = list("MicroSAT/sequence" = "mss", 
+                                        "SNP" = "snp", 
+                                        "PoolSeq" = "poolseq"), 
+                         selected = "mss"),
             actionButton(ns("simulate"), label = "Simulate")
         ),
         mainPanel(
@@ -25,7 +25,7 @@ simu_module_ui <- function(id, label = "simu") {
                 ),
                 tabPanel(
                     "Genetic data",
-                    genetic_data_ui(ns("genetic_data_simu"))
+                    genetic_data_module_ui(ns("genetic_data_simu"))
                 )
             )
         )
@@ -37,9 +37,12 @@ simu_module_ui <- function(id, label = "simu") {
 #' @author Ghislain Durif
 #' @import shiny
 simu_module_server <- function(input, output, session) {
+    
+    data_type <- reactive({ input$type })
+    
     callModule(project_input_module_server, "project")
     callModule(dir_input_module_server, "directory")
     
     callModule(hist_model_module_server, "hist_model_simu")
-    callModule(genetic_data_module, "genetic_data_simu")
+    callModule(genetic_data_module, "genetic_data_simu", data_type = data_type)
 }

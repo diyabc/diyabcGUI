@@ -1,35 +1,83 @@
-#' Genetic data type ui
+#' Genetic data type module ui
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
-genetic_data_type_ui <- function(id) {
+genetic_data_type_module_ui <- function(id, title = NULL, note = NULL) {
     ns <- NS(id)
-    verticalLayout(
-        numericInput(ns("auto_dip"), label = "Autosomal diploid (A)", value = 0),
-        numericInput(ns("auto_hap"), label = "Autosomal diploid (H)", value = 0),
-        numericInput(ns("x_linked"), label = "X-linked (X)", value = 0),
-        numericInput(ns("y_linked"), label = "X-linked (Y)", value = 0),
-        numericInput(ns("mito"), label = "Mitochondrial (M)", value = 0)
+    out <- tagList(
+        verticalLayout(
+            numericInput(ns("auto_dip"), label = "Autosomal diploid (A)", 
+                         value = 0, min = 0),
+            numericInput(ns("auto_hap"), label = "Autosomal diploid (H)", 
+                         value = 0, min = 0),
+            numericInput(ns("x_linked"), label = "X-linked (X)", 
+                         value = 0, min = 0),
+            numericInput(ns("y_linked"), label = "X-linked (Y)", 
+                         value = 0, min = 0),
+            numericInput(ns("mito"), label = "Mitochondrial (M)", 
+                         value = 0, min = 0)
+        )
+    )
+    if(!is.null(note))
+        out <- c(tagList(helpText(note)), out)
+    if(!is.null(title))
+        out <- c(tagList(h4(title)), out)
+    out
+}
+
+#' Genetic data type module server
+#' @keywords internal
+#' @author Ghislain Durif
+genetic_data_type_module_server <- function(input, output, session) {}
+
+#' Genetic data module ui
+#' @keywords internal
+#' @author Ghislain Durif
+genetic_data_module_ui <- function(id) {
+    ns <- NS(id)
+    out <- tagList(
+        uiOutput(ns("data_type")),
+        tags$hr(),
+        numericInput(ns("sex_ratio"), label = "Sex ratio (SR)", 
+                     value = 0.5, min = 0, max = 1, step = 0.01),
+        helpText(paste0("Proportion of male in the population ",
+                        "(between 0 and 1)."))
     )
 }
 
-#' Genetic data type module
+#' Genetic data module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' #' @param type `"snp"`, `"mss"` for MicroSAT/sequence or `"poolseq"`.
 #' @import shiny
-genetic_data_type_ui <- function(input, output, session) {}
-
-#' Genetic data ui
-#' @keywords internal
-#' @author Ghislain Durif
-#' @import shiny
-genetic_data_ui <- function(id) {
-    ns <- NS(id)
-    genetic_data_type_ui(ns("data_type"))
+genetic_data_module <- function(input, output, session, data_type) {
+    
+    ns <- session$ns
+    
+    output$data_type <- renderUI({
+        tmp <- switch(
+            data_type(),
+            "snp" = genetic_data_type_module_ui(
+                ns("snp_loci"), title = "Type of SNP loci", 
+                note = "Note: H loci are not compatible with A, X and Y loci."
+            ),
+            "mss" = tagList(
+                flowLayout(
+                    genetic_data_type_module_ui(
+                        ns("microsat_loci"), title = "Microsatellite loci", 
+                        note = NULL
+                    ),
+                    genetic_data_type_module_ui(
+                        ns("dna_loci"), title = "DNA loci", 
+                        note = NULL
+                    )
+                )
+            ),
+            "poolseq" = genetic_data_type_module_ui(
+                ns("poolseq_loci"), title = "Type of loci for PoolSeq", 
+                note = NULL
+            )
+        )
+    })
+    
+    # callModule(genetic_data_type_module_server, "")
 }
-
-#' Genetic data module
-#' @keywords internal
-#' @author Ghislain Durif
-#' @import shiny
-genetic_data_module <- function(input, output, session) {}
