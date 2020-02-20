@@ -148,7 +148,7 @@ render_model_param <- function(param_list, title, doc) {
             fluidRow(
                 column(
                     width = 10,
-                    numericInput(param, label = param, value = 100)
+                    numericInput(param, label = param, value = 100, min = 0)
                 )
             )
         })
@@ -183,7 +183,8 @@ render_sampling_param <- function(sample_id, time_tag, pop_id) {
                     numericInput(
                         paste0(tag_name, "_f"),
                         label = "Female",
-                        value = 25
+                        value = 25,
+                        min = 0
                     ),
                 ),
             ),
@@ -193,7 +194,8 @@ render_sampling_param <- function(sample_id, time_tag, pop_id) {
                     numericInput(
                         paste0(tag_name, "_m"),
                         label = "Male",
-                        value = 25
+                        value = 25,
+                        min = 0
                     )
                 )
             )
