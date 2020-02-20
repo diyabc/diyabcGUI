@@ -1,15 +1,15 @@
-#' Simulation module input function
+#' Simulation module ui
 #' @keywords internal
 #' @author Ghislain Durif
-simu_ui <- function(id, label = "simu") {
+simu_module_ui <- function(id, label = "simu") {
     ns <- NS(id)
     tagList(
         sidebarPanel(
-            project_input(ns("project"), label = "Project", 
+            project_input_module_ui(ns("project"), label = "Project", 
                           default = "project_name") %>% 
                 helper(type = "markdown", 
                        content = "simulation_project"),
-            dir_input(ns("directory"), label = "Folder"),
+            dir_input_module_ui(ns("directory"), label = "Folder"),
             radioButtons(ns("type"), label = "Simulation type",
                          choices = list("MicroSAT/sequence" = 1, 
                                         "SNP" = 2, 
@@ -21,7 +21,7 @@ simu_ui <- function(id, label = "simu") {
             tabsetPanel(
                 tabPanel(
                     "Historical model",
-                    hist_model_ui(ns("hist_model_simu"))
+                    hist_model_module_ui(ns("hist_model_simu"))
                 ),
                 tabPanel(
                     "Genetic data",
@@ -32,14 +32,14 @@ simu_ui <- function(id, label = "simu") {
     )
 }
 
-#' Simulation module server function
+#' Simulation module server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
-simu_module <- function(input, output, session) {
-    callModule(project_module, "project")
-    callModule(dir_module, "directory")
+simu_module_server <- function(input, output, session) {
+    callModule(project_input_module_server, "project")
+    callModule(dir_input_module_server, "directory")
     
-    callModule(hist_model_module, "hist_model_simu")
+    callModule(hist_model_module_server, "hist_model_simu")
     callModule(genetic_data_module, "genetic_data_simu")
 }

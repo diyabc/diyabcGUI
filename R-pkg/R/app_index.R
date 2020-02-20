@@ -1,7 +1,7 @@
-#' Index module input function
+#' Index module ui
 #' @keywords internal
 #' @author Ghislain Durif
-index_ui <- function(id, label = "index") {
+index_module_ui <- function(id, label = "index") {
     ns <- NS(id)
     navbarPage("diyABC", id = ns("navbar_index"),
         tabPanel(
@@ -17,19 +17,19 @@ index_ui <- function(id, label = "index") {
         ),
         tabPanel(
             "Data simulations", 
-            simu_ui(ns("simu"))
+            simu_module_ui(ns("simu"))
         ),
         tabPanel(
             "Data analysis", 
-            analysis_ui(ns("anaysis"))
+            analysis_module_ui(ns("anaysis"))
         )
     )
 }
 
-#' Index module server function
+#' Index module server
 #' @keywords internal
 #' @author Ghislain Durif
-index_module <- function(input, output, session) {
-    callModule(simu_module, "simu")
-    callModule(analysis_module, "analysis")
+index_module_server <- function(input, output, session) {
+    callModule(simu_module_server, "simu")
+    callModule(analysis_module_server, "analysis")
 }

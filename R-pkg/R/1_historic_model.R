@@ -1,9 +1,9 @@
-#' Historical model ui
+#' Historical model module ui
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
 #' @importFrom magrittr %>%
-hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
+hist_model_module_ui <- function(id, label = "hist_model", add=FALSE) {
     ns <- NS(id)
     tagList(
         verticalLayout(
@@ -47,10 +47,10 @@ hist_model_ui <- function(id, label = "hist_model", add=FALSE) {
     )
 }
 
-#' Historical model module function
+#' Historical model module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_module <- function(input, output, session) {
+hist_model_module_server <- function(input, output, session) {
     
     # tmp graph
     # FIXME

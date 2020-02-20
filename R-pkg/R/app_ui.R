@@ -7,5 +7,5 @@
 #' @author Ghislain Durif
 #' @return Shiny ui
 diyabc_ui <- fluidPage(
-    index_ui("index")
+    index_module_ui("index")
 )
