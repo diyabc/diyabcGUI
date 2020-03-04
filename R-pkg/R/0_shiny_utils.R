@@ -52,6 +52,26 @@ dir_input_module_server <- function(input, output, session) {
     # )
 }
 
+#' Data input file module ui
+#' @keywords internal
+#' @author Ghislain Durif
+data_input_file_module_ui <- function(id, label = "Data input file") {
+    ns <- NS(id)
+    tagList(
+        fileInput(ns("data_file"), label = label),
+        "Data file info",
+        verbatimTextOutput(ns("data_info"))
+    )
+}
+
+#' Data input file module server
+#' @keywords internal
+#' @author Ghislain Durif
+data_input_file_module_server <- function(input, output, session) {
+    data_info <- reactive({ "FIXME" })
+    output$data_info <- renderText({ data_info() })
+}
+
 
 #' Project module ui
 #' @keywords internal
