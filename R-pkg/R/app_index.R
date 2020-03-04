@@ -21,7 +21,7 @@ index_module_ui <- function(id, label = "index") {
         ),
         tabPanel(
             "Data analysis", 
-            analysis_module_ui(ns("anaysis"))
+            analysis_module_ui(ns("analysis"))
         )
     )
 }
