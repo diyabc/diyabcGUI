@@ -47,7 +47,7 @@ genetic_data_module_ui <- function(id) {
 #' Genetic data module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' #' @param type `"snp"`, `"mss"` for MicroSAT/sequence or `"poolseq"`.
+#' @param type `"snp"`, `"mss"` for MicroSAT/sequence or `"poolseq"`.
 #' @import shiny
 genetic_data_module <- function(input, output, session, data_type) {
     
