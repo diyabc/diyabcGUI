@@ -1,64 +1,42 @@
-#' Historical model module ui
+#' Historical model definition module ui
 #' @keywords internal
 #' @author Ghislain Durif
-#' @import shiny
-#' @importFrom magrittr %>%
-hist_model_module_ui <- function(id, label = "hist_model", add=FALSE) {
+hist_model_def_module_ui <- function(id, label = "hist_model_def") {
     ns <- NS(id)
     tagList(
-        verticalLayout(
-            flowLayout(
-                textAreaInput(
-                    ns("scenario"), 
-                    label = "Describe your scenario", 
-                    value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2", 
-                    rows = 10,
-                    resize = "none"
-                ) %>% 
-                    helper(type = "markdown", 
-                           content = "hist_model_description"),
-                plotOutput(ns("scenario_graph"), height = "200px")
-            ),
-            navbarPage("Settings",
-                tabPanel(
-                    "Parameters",
-                    tagList(
-                        h4("Parameter values"),
-                        tags$hr(),
-                        uiOutput(ns("Ne_param_value")),
-                        uiOutput(ns("time_param_value")),
-                        uiOutput(ns("rate_param_value"))
-                    )
-                ),
-                tabPanel(
-                    "Samples",
-                    uiOutput(ns("sample_param"))
-                ),
-                tabPanel(
-                    "Simulations",
-                    numericInput(
-                        ns("nsimu"),
-                        label = "Number of repetitions",
-                        value = 1
-                    )
-                )
+        flowLayout(
+            textAreaInput(
+                ns("scenario"), 
+                label = "Describe your scenario", 
+                value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2", 
+                rows = 10,
+                resize = "none"
+            ) %>% 
+                helper(type = "markdown", 
+                       content = "hist_model_description"),
+            verticalLayout(
+                plotOutput(ns("scenario_graph"), height = "200px"),
+                actionButton(ns("save"), label = "Save")
             )
         )
     )
 }
 
-#' Historical model module server
+#' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_module_server <- function(input, output, session) {
+hist_model_def_module_server <- function(input, output, session, context) {
+    
+    # scenario
+    observeEvent(input$scenario, {
+        context$param <- parse_scenario(input$scenario)
+    })
     
     # tmp graph
     # FIXME
-    output$scenario_graph <- renderPlot({ plot( (1:3), c(0,1,0), 
-                                                type = "l", 
-                                                axes = FALSE,
-                                                xlab = "",
-                                                ylab = "")})
+    output$scenario_graph <- renderPlot({ 
+        plot_hist_model(context$param)
+    })
     
     # # Graph check
     # output$check <- renderText({ "Historical model is being checked." })
@@ -81,28 +59,68 @@ hist_model_module_server <- function(input, output, session) {
     #         )
     #     )
     # })
-    
-    # scenario
-    scenario_param <- reactive({
-        parse_scenario(input$scenario)
-    })
+}
+
+
+#' Historical model module ui
+#' @keywords internal
+#' @author Ghislain Durif
+hist_model_set_module_ui <- function(id, label = "hist_model") {
+    ns <- NS(id)
+    tagList(
+        navbarPage(
+            "Settings",
+            tabPanel(
+                "Parameters",
+                tagList(
+                    h4("Parameter values"),
+                    tags$hr(),
+                    uiOutput(ns("Ne_param_value")),
+                    uiOutput(ns("time_param_value")),
+                    uiOutput(ns("rate_param_value"))
+                )
+            ),
+            tabPanel(
+                "Samples",
+                uiOutput(ns("sample_param"))
+            ),
+            tabPanel(
+                "Simulations",
+                numericInput(
+                    ns("nsimu"),
+                    label = "Number of repetitions",
+                    value = 1
+                )
+            )
+        )
+    )
+}
+
+#' Historical model module server
+#' @keywords internal
+#' @author Ghislain Durif
+hist_model_set_module_server <- function(input, output, session, 
+                                         context) {
     
     # parameters
     output$Ne_param_value <- renderUI({
-        param_list <- scenario_param()$Ne_param
+        param_list <- context$param$Ne_param
+        
+        print(param_list)
+        
         render_model_param(param_list, 
                            "Ne parameter(s)",
                            "Effective population size.")
     })
     
     output$time_param_value <- renderUI({
-        param_list <- scenario_param()$time_param
+        param_list <- context$param$time_param
         render_model_param(param_list, "Time parameter(s)", 
                            "Time in <b>generations</b> backward.")
     })
     
     output$rate_param_value <- renderUI({
-        param_list <- scenario_param()$rate_param
+        param_list <- context$param$rate_param
         render_model_param(param_list, "Admixture rate parameter(s)",
                            "Rate between 0 and 1.")
     })
@@ -110,7 +128,7 @@ hist_model_module_server <- function(input, output, session) {
     # sample
     output$sample_param <- renderUI({
         
-        events <- scenario_param()
+        events <- context$param
         nsample <- sum(events$event_type == "sample")
         npop <- events$npop
         
@@ -134,6 +152,31 @@ hist_model_module_server <- function(input, output, session) {
             do.call(flowLayout, numeric_input_list)
         )
     })
+}
+
+
+#' Historical model module ui
+#' @keywords internal
+#' @author Ghislain Durif
+hist_model_module_ui <- function(id, label = "hist_model", add=FALSE) {
+    ns <- NS(id)
+    tagList(
+        verticalLayout(
+            hist_model_def_module_ui(ns("hist_model_def")),
+            hist_model_set_module_ui(ns("hist_model_set"))
+        )
+    )
+}
+
+#' Historical model module server
+#' @keywords internal
+#' @author Ghislain Durif
+hist_model_module_server <- function(input, output, session) {
+    
+    context <- reactiveValues(param = NULL)
+    
+    callModule(hist_model_def_module_server, "hist_model_def", context = context)
+    callModule(hist_model_set_module_server, "hist_model_set", context = context)
 }
 
 #' Render model parameter ui
@@ -425,4 +468,49 @@ parse_varNe <- function(event) {
         }
     }
     return(lst(event_type, event_param, event_pop, event_check))
+}
+
+#' Plot historical model
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom ggplot2 ggplot geom_point geom_segment theme_void
+plot_hist_model <- function(scenario_param) {
+    
+    add_edge <- function(g, start, end, colour = "black") {
+        g <- g + 
+            geom_segment(x = start[1], y = start[2], 
+                         xend = end[1], 
+                         yend = end[2], 
+                         size = 1.2, 
+                         colour = colour)
+        return(g)
+    }
+    
+    add_timeline <- function(g, events=NULL) {
+        g <- g + 
+            geom_segment(x = 11, y = 0, 
+                         xend = 11, 
+                         yend = 11)
+        g <- g + 
+            geom_segment(x = 11-0.2, y = 10, 
+                         xend = 11+0.2, 
+                         yend = 10)
+        g <- g + 
+            geom_segment(x = 11-0.2, y = 0, 
+                         xend = 11+0.2, 
+                         yend = 0)
+        if(!is.null(events) | missing(events)) {
+            
+        }
+        return(g)
+    }
+    
+    box_frame <- data.frame(x=c(0,12), y=c(0,11))
+    g1 <- ggplot(box_frame, aes(x,y)) + geom_point(alpha=0) + 
+        theme_void()
+    g1 <- add_edge(g1, start = c(5,10), end = c(5,11), colour = "black")
+    g1 <- add_edge(g1, start = c(5,10), end = c(0,0), colour = "black")
+    g1 <- add_edge(g1, start = c(5,10), end = c(10,0), colour = "black")
+    g1 <- add_timeline(g1)
+    return(g1)
 }
