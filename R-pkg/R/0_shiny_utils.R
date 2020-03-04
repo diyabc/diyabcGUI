@@ -33,17 +33,23 @@ dir_input_module_server <- function(input, output, session) {
         global$datapath
     })
     
-    observeEvent(ignoreNULL = TRUE,
-                 eventExpr = {
-                     input$dir
-                 },
-                 handlerExpr = {
-                     req(is.list(input$dir))
-                     home <- normalizePath("~")
-                     global$datapath <-
-                         file.path(home, paste(unlist(dir()$path[-1]), 
+    observeEvent(
+        ignoreNULL = TRUE,
+        eventExpr = { input$dir },
+        handlerExpr = {
+            req(is.list(input$dir))
+            home <- normalizePath("~")
+            global$datapath <- file.path(home, 
+                                         paste(unlist(dir()$path[-1]), 
                                                collapse = .Platform$file.sep))
-                 })
+        }
+    )
+    
+    # return(
+    #     list(
+    #         path = global$datapath
+    #     )
+    # )
 }
 
 
@@ -84,4 +90,10 @@ project_input_module_server <- function(input, output, session) {
     output$project_name <- renderText({ 
         project_fullname()
     })
+    
+    return(
+        list(
+            name = project_fullname
+        )
+    )
 }
