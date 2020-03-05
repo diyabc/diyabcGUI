@@ -38,12 +38,6 @@ hist_model_def_module_server <- function(input, output, session) {
         scenario_def$param <- parse_scenario(input$scenario)
     })
     
-    # observeEvent(input$scenario, {
-    #     scenario_def$raw <- input$scenario
-    #     scenario_def$param <- parse_scenario(input$scenario)
-    #     scenario_def$parsed <- TRUE
-    # })
-    
     # tmp graph
     # FIXME
     output$scenario_graph <- renderPlot({ 
