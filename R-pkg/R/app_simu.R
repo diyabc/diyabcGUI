@@ -36,28 +36,17 @@ simu_module_ui <- function(id, label = "simu") {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @import shiny
-simu_module_server <- function(input, output, session, context) {
+simu_module_server <- function(input, output, session) {
     
+    data_info <- reactiveValues()
+
     observe({
-        context$simu$data_type <- input$type
+        data_info$type <- input$type
     })
     
     callModule(project_input_module_server, "project")
     callModule(dir_input_module_server, "directory")
     
-    callModule(hist_model_module_server, "hist_model_simu", 
-               context = context)
-    callModule(genetic_data_module, "genetic_data_simu", 
-               context = context)
-}
-
-#' Simulation module context init
-#' @keywords internal
-#' @author Ghislain Durif
-init_simu_module_context <- function() {
-    out <- reactiveValues(
-        data_type = NULL,
-        scenario = init_hist_model_module_context()
-    )
-    return(out)
+    callModule(hist_model_module_server, "hist_model_simu")
+    callModule(genetic_data_module, "genetic_data_simu", data_info = data_info)
 }

@@ -27,7 +27,19 @@ genetic_data_type_module_ui <- function(id, title = NULL, note = NULL) {
 #' Genetic data type module server
 #' @keywords internal
 #' @author Ghislain Durif
-genetic_data_type_module_server <- function(input, output, session) {}
+genetic_data_type_module_server <- function(input, output, session) {
+    genetic_spec <- reactiveValues()
+    
+    observe({
+        genetic_spec$auto_dip <- input$auto_dip
+        genetic_spec$auto_hap <- input$auto_hap
+        genetic_spec$x_linked <- input$x_linked
+        genetic_spec$y_linked <- input$y_linked
+        genetic_spec$mito <- input$mito
+    })
+    
+    return(genetic_spec)
+}
 
 #' Genetic data module ui
 #' @keywords internal
@@ -49,15 +61,15 @@ genetic_data_module_ui <- function(id) {
 #' @author Ghislain Durif
 #' @param type `"snp"`, `"mss"` for MicroSAT/sequence or `"poolseq"`.
 #' @import shiny
-genetic_data_module <- function(input, output, session, context) {
+genetic_data_module <- function(input, output, session, data_info) {
+    
+    genetic_data <- reactiveValues()
     
     ns <- session$ns
     
-    data_type <- reactive({ context$simu$data_type })
-    
     output$data_type <- renderUI({
         tmp <- switch(
-            data_type(),
+            data_info$type,
             "snp" = genetic_data_type_module_ui(
                 ns("snp_loci"), title = "Type of SNP loci", 
                 note = "Note: H loci are not compatible with A, X and Y loci."
@@ -81,5 +93,6 @@ genetic_data_module <- function(input, output, session, context) {
         )
     })
     
+    # FIXME
     # callModule(genetic_data_type_module_server, "")
 }
