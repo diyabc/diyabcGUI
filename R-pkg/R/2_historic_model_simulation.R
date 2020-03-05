@@ -35,44 +35,44 @@ hist_model_set_module_ui <- function(id) {
 #' Historical model settings module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_set_module_server <- function(input, output, session, context) {
+hist_model_set_module_server <- function(input, output, session, scenario_def) {
     
     # parameters
     output$Ne_param_value <- renderUI({
-        param_list <- context$simu$scenario$param$Ne_param
-        render_model_param(session, param_list, 
+        param_list <- scenario_def$param$Ne_param
+        render_model_param(session, param_list,
                            "Ne parameter(s)",
                            "Effective population size.")
     })
     
     output$time_param_value <- renderUI({
-        param_list <- context$simu$scenario$param$time_param
-        render_model_param(session, param_list, "Time parameter(s)", 
+        param_list <- scenario_def$param$time_param
+        render_model_param(session, param_list, "Time parameter(s)",
                            "Time in <b>generations</b> backward.")
     })
     
     output$rate_param_value <- renderUI({
-        param_list <- context$simu$scenario$param$rate_param
+        param_list <- scenario_def$param$rate_param
         render_model_param(session, param_list, "Admixture rate parameter(s)",
                            "Rate between 0 and 1.")
     })
     
     # sample
     output$sample_param <- renderUI({
+        param <- scenario_def$param
         
-        events <- context$simu$scenario$param
-        nsample <- sum(events$event_type == "sample")
-        npop <- events$npop
-        
-        sample_pop <- events$event_pop[events$event_type == "sample"]
-        sample_time <- events$event_time[events$event_type == "sample"]
-        
+        nsample <- sum(param$event_type == "sample")
+        npop <- param$npop
+
+        sample_pop <- param$event_pop[param$event_type == "sample"]
+        sample_time <- param$event_time[param$event_type == "sample"]
+
         # numeric input for each sample
         numeric_input_list <- list()
         if(!is.null(npop) & nsample > 0) {
             numeric_input_list <- lapply(1:nsample, function(sample_id) {
-                render_sampling_param(session, sample_id, 
-                                      unlist(sample_time[sample_id]), 
+                render_sampling_param(session, sample_id,
+                                      unlist(sample_time[sample_id]),
                                       unlist(sample_pop[sample_id]))
             })
         }
@@ -103,23 +103,19 @@ hist_model_module_ui <- function(id, label = "hist_model", add=FALSE) {
 #' Historical model module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_module_server <- function(input, output, session, context) {
-    callModule(hist_model_def_module_server, "hist_model_def", 
-               context = context)
+hist_model_module_server <- function(input, output, session) {
+    
+    scenario_def <- callModule(hist_model_def_module_server, "hist_model_def")
+    
+    observe({
+        print("flag1")
+        print(scenario_def)
+        print(scenario_def$raw)
+        # print(scenario_def$param)
+    })
+    
     callModule(hist_model_set_module_server, "hist_model_set", 
-               context = context)
-}
-
-#' Historical model module context init
-#' @keywords internal
-#' @author Ghislain Durif
-init_hist_model_module_context <- function() {
-    out <- reactiveValues(
-        param = NULL,
-        value = NULL,
-        parsed = FALSE
-    )
-    return(out)
+               scenario_def = scenario_def)
 }
 
 #' Render model parameter ui
@@ -127,7 +123,6 @@ init_hist_model_module_context <- function() {
 #' @author Ghislain Durif
 render_model_param <- function(session, param_list, title, doc) {
     ns <- session$ns
-    out <- tagList()
     
     if(length(param_list) > 0) {
         # numeric input for each parameters
@@ -141,7 +136,7 @@ render_model_param <- function(session, param_list, title, doc) {
         })
         # Convert the list to a tagList - this is necessary for the list of items
         # to display properly.
-        out <- tagList(
+        tagList(
             h5(title) %>% 
                 helper(
                     type = "inline",
@@ -150,8 +145,9 @@ render_model_param <- function(session, param_list, title, doc) {
                 ),
             do.call(flowLayout, numeric_input_list)
         )
+    } else {
+        tagList()
     }
-    out
 }
 
 #' Render sampling parameter ui

@@ -28,19 +28,26 @@ hist_model_def_module_ui <- function(
 #' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_def_module_server <- function(input, output, session, context) {
+hist_model_def_module_server <- function(input, output, session) {
+    
+    scenario_def <- reactiveValues()
     
     # scenario
-    observeEvent(input$scenario, {
-        context$simu$scenario$raw <- input$scenario
-        context$simu$scenario$param <- parse_scenario(input$scenario)
-        context$simu$scenario$parsed <- TRUE
+    observe({
+        scenario_def$raw <- input$scenario
+        scenario_def$param <- parse_scenario(input$scenario)
     })
+    
+    # observeEvent(input$scenario, {
+    #     scenario_def$raw <- input$scenario
+    #     scenario_def$param <- parse_scenario(input$scenario)
+    #     scenario_def$parsed <- TRUE
+    # })
     
     # tmp graph
     # FIXME
     output$scenario_graph <- renderPlot({ 
-        plot_hist_model(context$simu$scenario$param)
+        plot_hist_model(scenario_def$param)
     })
     
     # # Graph check
@@ -64,6 +71,8 @@ hist_model_def_module_server <- function(input, output, session, context) {
     #         )
     #     )
     # })
+    
+    return(scenario_def)
 }
 
 #' Parse scenario
