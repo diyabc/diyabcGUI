@@ -49,9 +49,11 @@ genetic_data_module_ui <- function(id) {
 #' @author Ghislain Durif
 #' @param type `"snp"`, `"mss"` for MicroSAT/sequence or `"poolseq"`.
 #' @import shiny
-genetic_data_module <- function(input, output, session, data_type) {
+genetic_data_module <- function(input, output, session, context) {
     
     ns <- session$ns
+    
+    data_type <- reactive({ context$simu$data_type })
     
     output$data_type <- renderUI({
         tmp <- switch(
