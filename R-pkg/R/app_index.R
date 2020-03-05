@@ -18,11 +18,11 @@ index_module_ui <- function(id, label = "index") {
         tabPanel(
             "Data simulations", 
             simu_module_ui(ns("simu"))
-        ),
-        tabPanel(
-            "Data analysis", 
-            analysis_module_ui(ns("analysis"))
-        )
+        ) #,
+        # tabPanel(
+        #     "Data analysis", 
+        #     analysis_module_ui(ns("analysis"))
+        # )
     )
 }
 
@@ -30,6 +30,11 @@ index_module_ui <- function(id, label = "index") {
 #' @keywords internal
 #' @author Ghislain Durif
 index_module_server <- function(input, output, session) {
-    callModule(simu_module_server, "simu")
-    callModule(analysis_module_server, "analysis")
+    context <- reactiveValues(
+        simu = init_simu_module_context(),
+        analysis = reactiveValues()
+    )
+    
+    callModule(simu_module_server, "simu", context = context)
+    # callModule(analysis_module_server, "analysis", context = context)
 }
