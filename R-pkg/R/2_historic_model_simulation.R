@@ -107,13 +107,6 @@ hist_model_module_server <- function(input, output, session) {
     
     scenario_def <- callModule(hist_model_def_module_server, "hist_model_def")
     
-    observe({
-        print("flag1")
-        print(scenario_def)
-        print(scenario_def$raw)
-        # print(scenario_def$param)
-    })
-    
     callModule(hist_model_set_module_server, "hist_model_set", 
                scenario_def = scenario_def)
 }
