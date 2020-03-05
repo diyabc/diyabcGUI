@@ -105,9 +105,6 @@ hist_model_set_module_server <- function(input, output, session,
     # parameters
     output$Ne_param_value <- renderUI({
         param_list <- context$param$Ne_param
-        
-        print(param_list)
-        
         render_model_param(param_list, 
                            "Ne parameter(s)",
                            "Effective population size.")
@@ -175,8 +172,10 @@ hist_model_module_server <- function(input, output, session) {
     
     context <- reactiveValues(param = NULL)
     
-    callModule(hist_model_def_module_server, "hist_model_def", context = context)
-    callModule(hist_model_set_module_server, "hist_model_set", context = context)
+    callModule(hist_model_def_module_server, "hist_model_def", 
+               context = context)
+    callModule(hist_model_set_module_server, "hist_model_set", 
+               context = context)
 }
 
 #' Render model parameter ui
