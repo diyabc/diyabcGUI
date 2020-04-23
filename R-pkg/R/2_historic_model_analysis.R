@@ -30,10 +30,10 @@ hist_model_choice_module_server <- function(input, output, session, context) {
     # choose scenario
     observeEvent(input$select, {
         context$scenarii$current_scenario <- as.numeric(input$select)
-        print("select scenario (current/length/possible)")
-        print(context$scenarii$current_scenario)
-        print(context$scenarii$choice_length)
-        print(context$scenarii$candidate_scenarii)
+        # print("select scenario (current/length/possible)")
+        # print(context$scenarii$current_scenario)
+        # print(context$scenarii$choice_length)
+        # print(context$scenarii$candidate_scenarii)
     })
     
     # add scenario
@@ -60,6 +60,10 @@ hist_model_choice_module_server <- function(input, output, session, context) {
                 ),
                 selected = context$scenarii$current_scenario
             )
+            # create scenario in scenario list
+            key <- str_c("scenario", 
+                         context$scenarii$current_scenario)
+            # context$scenarii$scenarii_list[[ key ]] <- 
         }
     })
 
@@ -91,13 +95,16 @@ hist_model_choice_module_server <- function(input, output, session, context) {
                 ),
                 selected = context$scenarii$current_scenario
             )
+            # remove scenario from scenario list
+            key <- str_c("scenario", ind)
+            context$scenarii$scenarii_list[[ key ]] <- NULL
         }
     })
      
     ## Current scenarii definition
     callModule(hist_model_render_module_server, "model_def", context = context)
-    # ## Priors
-    # callModule(hist_model_prior_module_server, "priors", context = context)
+    ## Priors
+    callModule(hist_model_prior_module_server, "priors", context = context)
 }
 
 #' Historical model choice module context init
@@ -127,6 +134,8 @@ hist_model_render_module_ui <- function(id) {
 #' @author Ghislain Durif
 hist_model_render_module_server <- function(input, output, session, context) {
     
+    current_scenario <- 
+    
     # observe({
     #     # ind <- as.character(context$scenarii$current_scenario)
     #     # if(is.null(context$scenarii$scenario_list[[ ind ]])) {
@@ -134,28 +143,32 @@ hist_model_render_module_server <- function(input, output, session, context) {
     #     #         init_hist_model_module_context()
     #     # }
     # })
+        
+    key <- reactive({
+        str_c("scenario", 
+              context$scenarii$current_scenario)
+    })
     
     # render current scenario
     output$render_model <- renderUI({
         ns <- session$ns
-
+        scenario <- context$scenarii$scenarii_list[[ key() ]]
+        value <- ifelse(!is.null(scenario), scenario$raw, "")
         hist_model_def_module_ui(
-            ns(paste0("scenario", context$analysis$scenarii$current_scenario))
+            ns(key()),
+            value
         )
     })
     
     observe({
-        
         # ind <- as.character(context$scenarii$current_scenario)
         # context$scenarii$scenario_list[[ ind ]] <-
+
         callModule(
             hist_model_def_module_server,
-            paste0("scenario", 
-                   context$analysis$scenarii$current_scenario)
+            key()
         )
     })
-    
-    
 }
 
 
@@ -187,6 +200,4 @@ hist_model_prior_module_ui <- function(id, label = "hist_model") {
 #' Historical model module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_prior_module_server <- function(input, output, session, context) {
-
-}
+hist_model_prior_module_server <- function(input, output, session, context) {}
