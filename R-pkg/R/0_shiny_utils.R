@@ -25,12 +25,12 @@ dir_input_module_server <- function(input, output, session) {
         filetypes = c("")
     )
     
-    global <- reactiveValues(datapath = getwd())
+    local <- reactiveValues(path = getwd())
     
     dir <- reactive(input$dir)
     
     output$dir_value <- renderText({
-        global$datapath
+        local$path
     })
     
     observeEvent(
@@ -39,17 +39,13 @@ dir_input_module_server <- function(input, output, session) {
         handlerExpr = {
             req(is.list(input$dir))
             home <- normalizePath("~")
-            global$datapath <- file.path(home, 
-                                         paste(unlist(dir()$path[-1]), 
-                                               collapse = .Platform$file.sep))
+            local$path <- file.path(home, 
+                                     paste(unlist(dir()$path[-1]), 
+                                           collapse = .Platform$file.sep))
         }
     )
     
-    # return(
-    #     list(
-    #         path = global$datapath
-    #     )
-    # )
+    return(local)
 }
 
 #' Data input file module ui
