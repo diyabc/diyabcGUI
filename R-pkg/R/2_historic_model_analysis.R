@@ -1,6 +1,7 @@
 #' Historical model choice module ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importfrom shinyWidgets actionGroupButtons
 hist_model_choice_module_ui <- function(id) {
     ns <- NS(id)
     tagList(
