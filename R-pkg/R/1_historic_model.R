@@ -1,12 +1,14 @@
 #' Historical model definition module ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyWidgets dropdownButton
 hist_model_def_module_ui <- function(
     id, 
     value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
 ) {
     ns <- NS(id)
     tagList(
+        tags$br(),
         flowLayout(
             textAreaInput(
                 ns("scenario"), 
@@ -19,7 +21,34 @@ hist_model_def_module_ui <- function(
                        content = "hist_model_description"),
             verticalLayout(
                 plotOutput(ns("scenario_graph"), height = "200px"),
-                actionButton(ns("save"), label = "Save")
+                fluidRow(
+                    column(
+                        4, 
+                        actionButton(ns("save"), label = "Save")
+                    ),
+                    column(
+                        2, 
+                        dropdownButton(
+                            h4("Graph parameters"),
+                            numericInput(
+                                ns("graph_width"), 
+                                label = "Graph width", 
+                                value = 100, min = 50
+                            ),
+                            numericInput(
+                                ns("graph_height"), 
+                                label = "Graph height", 
+                                value = 100, min = 50
+                            ),
+                            textInput(
+                                ns("size_unit"),
+                                label = "Unit",
+                                value = "mm"
+                            ),
+                            icon = icon("cog"), size = "sm", up = TRUE
+                        )
+                    )
+                )
             )
         )
     )
