@@ -1,10 +1,13 @@
 #' Home module ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinydashboard box
 home_module_ui <- function(id, label = "home") {
     ns <- NS(id)
     tagList(
-        h3("Data analysis"),
+        h3("Data analysis") %>% 
+            helper(type = "markdown", 
+                   content = "data_analysis"),
         tags$div(
             tags$p("Including the two modules of DIYABC Random Forest:"),
             tags$ul(
@@ -54,7 +57,7 @@ home_module_server <- function(input, output, session) {
     # check analysis project directory
     output$open_analysis_project_status <- renderUI({
         out <- NULL
-        if(! "header.txt" %in% list.files(analysis_dir$datapath))
+        if(! "header.txt" %in% list.files(analysis_dir$path))
             out <- tagList(tags$p(
                     icon("warning"), 
                     "Chosen directory is not a DIYABC RF analysis directory."))
@@ -64,7 +67,7 @@ home_module_server <- function(input, output, session) {
     # check analysis project directory
     output$open_simu_project_status <- renderUI({
         out <- NULL
-        if(! "headersim.txt" %in% list.files(simu_dir$datapath))
+        if(! "headersim.txt" %in% list.files(simu_dir$path))
             out <- tagList(tags$p(
                 icon("warning"), 
                 "Chosen directory is not a DIYABC RF analysis directory."))
