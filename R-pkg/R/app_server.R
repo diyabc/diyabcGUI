@@ -12,5 +12,7 @@
 #' @return None
 diyabc_server <- function(input, output, session) {
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
+    app_sidebar_update(input, output, session)
+    app_body_update(input, output, session)
     callModule(index_module_server, "index")
 }
