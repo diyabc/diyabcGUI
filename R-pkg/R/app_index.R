@@ -19,7 +19,6 @@ app_sidebar <- dashboardSidebar(
 app_sidebar_update <- function(input, output, session) {
     # to select home tab at start
     observeEvent(session, {
-        print("default tab")
         updateTabItems(session, "main_menu", selected = "home")
     })
     # render sidebar
@@ -27,19 +26,38 @@ app_sidebar_update <- function(input, output, session) {
         tagList(
             sidebarMenu(
                 id = "main_menu",
-                menuItem("Home", tabName = "home", icon = icon("home"))
+                menuItem(
+                    "Home", 
+                    tabName = "home", 
+                    icon = icon("home"), 
+                    selected = TRUE
+                )
             ),
             hr(),
-            h3("Data analysis"),
             sidebarMenu(
                 id = "analysis_menu",
-                menuItem("Empty", icon = icon("warning"))
+                menuItem(
+                    "Data analysis", 
+                    tabName = "analysis_tab", 
+                    icon = icon("gear"), 
+                    startExpanded = TRUE,
+                    list(
+                        menuSubItem("Empty", icon = icon("warning"))
+                    )
+                )
             ),
             hr(),
-            h4("Data simulation"),
             sidebarMenu(
                 id = "simu_menu",
-                menuItem("Empty", icon = icon("warning"))
+                menuItem(
+                    "Data simulation", 
+                    tabName = "simu_tab", 
+                    icon = icon("dna"), 
+                    startExpanded = FALSE,
+                    list(
+                        menuSubItem("Empty", icon = icon("warning"))
+                    )
+                )
             )
         )
     })
@@ -62,22 +80,15 @@ app_body_update <- function(input, output, session) {
     
     observe({
         output$tabs <- renderUI({
-            # tab_list <- list()
-            # # home tab
-            # tab_list <- append(
-            #     tab_list, 
-            #     tabItem(
-            #         tabName = "home",
-            #         home_module_ui("home_page")    
-            #     )
-            # )
-            # do.call(tabItems, tab_list)
-            tabItems(
+            # home tab
+            tab_list <- list(
                 tabItem(
                     tabName = "home",
                     home_module_ui("home_page")    
                 )
             )
+            # process
+            do.call(tabItems, tab_list)
         })
         
         callModule(home_module_server, "home_page")
