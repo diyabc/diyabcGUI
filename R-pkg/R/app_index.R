@@ -16,7 +16,7 @@ app_sidebar <- dashboardSidebar(
     h3("Data analysis"),
     sidebarMenuOutput("analysis_menu"),
     hr(),
-    h3("Data simulation"),
+    h4("Data simulation"),
     sidebarMenuOutput("simu_menu")
 )
 
@@ -41,7 +41,9 @@ app_sidebar_update <- function(input, output, session) {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardBody tabItems tabItem
+#' @importFrom shinyjs useShinyjs
 app_body <- dashboardBody(
+    useShinyjs(),
     tabItems(
         tabItem(
             tabName = "home",
