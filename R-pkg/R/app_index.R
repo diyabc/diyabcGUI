@@ -31,11 +31,7 @@ app_sidebar_update <- function(input, output, session) {
                     tabName = "home", 
                     icon = icon("home"), 
                     selected = TRUE
-                )
-            ),
-            hr(),
-            sidebarMenu(
-                id = "analysis_menu",
+                ), 
                 menuItem(
                     "Data analysis", 
                     tabName = "analysis_tab", 
@@ -44,11 +40,7 @@ app_sidebar_update <- function(input, output, session) {
                     list(
                         menuSubItem("Empty", icon = icon("warning"))
                     )
-                )
-            ),
-            hr(),
-            sidebarMenu(
-                id = "simu_menu",
+                ),
                 menuItem(
                     "Data simulation", 
                     tabName = "simu_tab", 
