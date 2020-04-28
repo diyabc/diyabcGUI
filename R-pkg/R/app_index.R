@@ -7,32 +7,40 @@ app_header <- dashboardHeader(title = "DIYABC-RF")
 #' App dashboard sidebar
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu sidebarMenuOutput
+#' @importFrom shinydashboard dashboardSidebar
 app_sidebar <- dashboardSidebar(
-    sidebarMenu(
-        menuItem("Home", tabName = "home", icon = icon("home"))
-    ),
-    hr(),
-    h3("Data analysis"),
-    sidebarMenuOutput("analysis_menu"),
-    hr(),
-    h4("Data simulation"),
-    sidebarMenuOutput("simu_menu")
+    uiOutput("sidebar")
 )
 
 #' App dashboard sidebar update
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard renderMenu sidebarMenu
+#' @importFrom shinydashboard menuItem sidebarMenu
 app_sidebar_update <- function(input, output, session) {
-    output$analysis_menu <- renderMenu({
-        sidebarMenu(
-            menuItem("Empty", icon = icon("warning"))
-        )
+    # to select home tab at start
+    observeEvent(session, {
+        print("default tab")
+        updateTabItems(session, "main_menu", selected = "home")
     })
-    output$simu_menu <- renderMenu({
-        sidebarMenu(
-            menuItem("Empty", icon = icon("warning"))
+    # render sidebar
+    output$sidebar <- renderUI({
+        tagList(
+            sidebarMenu(
+                id = "main_menu",
+                menuItem("Home", tabName = "home", icon = icon("home"))
+            ),
+            hr(),
+            h3("Data analysis"),
+            sidebarMenu(
+                id = "analysis_menu",
+                menuItem("Empty", icon = icon("warning"))
+            ),
+            hr(),
+            h4("Data simulation"),
+            sidebarMenu(
+                id = "simu_menu",
+                menuItem("Empty", icon = icon("warning"))
+            )
         )
     })
 }
@@ -44,19 +52,36 @@ app_sidebar_update <- function(input, output, session) {
 #' @importFrom shinyjs useShinyjs
 app_body <- dashboardBody(
     useShinyjs(),
-    tabItems(
-        tabItem(
-            tabName = "home",
-            home_module_ui("home_page")    
-        )
-    )
+    uiOutput("tabs"),
 )
 
 #' App dashboard body update
 #' @keywords internal
 #' @author Ghislain Durif
 app_body_update <- function(input, output, session) {
-    callModule(home_module_server, "home_page")
+    
+    observe({
+        output$tabs <- renderUI({
+            # tab_list <- list()
+            # # home tab
+            # tab_list <- append(
+            #     tab_list, 
+            #     tabItem(
+            #         tabName = "home",
+            #         home_module_ui("home_page")    
+            #     )
+            # )
+            # do.call(tabItems, tab_list)
+            tabItems(
+                tabItem(
+                    tabName = "home",
+                    home_module_ui("home_page")    
+                )
+            )
+        })
+        
+        callModule(home_module_server, "home_page")
+    })
 }
 
 
