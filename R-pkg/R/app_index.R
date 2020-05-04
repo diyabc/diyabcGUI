@@ -12,46 +12,79 @@ app_sidebar <- dashboardSidebar(
     uiOutput("sidebar")
 )
 
+#' Render menu item
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom shinydashboard menuSubItem
+render_sidebar_menu <- function(project_list) {
+    if(length(project_list) > 0) {
+        out <- lapply(
+            project_list,
+            function(item) {
+                menuSubItem(
+                    item$project_name,
+                    tabName = item$project_name,
+                    icon = icon("folder")
+                )
+            }
+        )
+    } else {
+        out <- list(menuSubItem("Empty", icon = icon("warning")))
+    }
+    return(out)
+}
+
+
 #' App dashboard sidebar update
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard menuItem sidebarMenu
-app_sidebar_update <- function(input, output, session) {
+app_sidebar_update <- function(input, output, session,
+                               analysis_project_list = list(),
+                               simu_project_list = list()) {
     # to select home tab at start
     observeEvent(session, {
         updateTabItems(session, "main_menu", selected = "home")
     })
+    # init item lists
+    local <- reactiveValues(
+        analysis_item_list = list(),
+        analysis_menu_list = list()
+    )
     # render sidebar
-    output$sidebar <- renderUI({
-        tagList(
-            sidebarMenu(
-                id = "main_menu",
-                menuItem(
-                    "Home", 
-                    tabName = "home", 
-                    icon = icon("home"), 
-                    selected = TRUE
-                ), 
-                menuItem(
-                    "Data analysis", 
-                    tabName = "analysis_tab", 
-                    icon = icon("gear"), 
-                    startExpanded = TRUE,
-                    list(
-                        menuSubItem("Empty", icon = icon("warning"))
-                    )
-                ),
-                menuItem(
-                    "Data simulation", 
-                    tabName = "simu_tab", 
-                    icon = icon("dna"), 
-                    startExpanded = FALSE,
-                    list(
-                        menuSubItem("Empty", icon = icon("warning"))
+    observe({
+        # check if any current analysis project
+        local$analysis_item_list <- render_sidebar_menu(analysis_project_list)
+        # check if any current simulation project
+        local$simu_item_list <- render_sidebar_menu(simu_project_list)
+        # render
+        output$sidebar <- renderUI({
+            tagList(
+                sidebarMenu(
+                    id = "main_menu",
+                    menuItem(
+                        "Home", 
+                        tabName = "home", 
+                        icon = icon("home"), 
+                        selected = TRUE
+                    ), 
+                    menuItem(
+                        "Data analysis", 
+                        tabName = "analysis_tab", 
+                        icon = icon("gear"), 
+                        startExpanded = TRUE,
+                        local$analysis_item_list
+                    ),
+                    menuItem(
+                        "Data simulation", 
+                        tabName = "simu_tab", 
+                        icon = icon("dna"), 
+                        startExpanded = FALSE,
+                        local$simu_item_list
                     )
                 )
             )
-        )
+        })
     })
 }
 
