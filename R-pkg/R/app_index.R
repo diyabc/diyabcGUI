@@ -16,14 +16,14 @@ app_sidebar <- dashboardSidebar(
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard menuSubItem
-render_sidebar_menu <- function(project_list) {
+render_sidebar_menu <- function(project_list, tag) {
     if(length(project_list) > 0) {
+        tab_id <- paste0(tag, "_", item$project_name)
         out <- lapply(
             project_list,
             function(item) {
                 menuSubItem(
-                    item$project_name,
-                    tabName = item$project_name,
+                    tabName = tab_id,
                     icon = icon("folder")
                 )
             }
@@ -54,9 +54,11 @@ app_sidebar_update <- function(input, output, session,
     # render sidebar
     observe({
         # check if any current analysis project
-        local$analysis_item_list <- render_sidebar_menu(analysis_project_list)
+        local$analysis_item_list <- render_sidebar_menu(analysis_project_list,
+                                                        tag = "analysis")
         # check if any current simulation project
-        local$simu_item_list <- render_sidebar_menu(simu_project_list)
+        local$simu_item_list <- render_sidebar_menu(simu_project_list, 
+                                                    tag = "simu")
         # render
         output$sidebar <- renderUI({
             tagList(
@@ -98,25 +100,92 @@ app_body <- dashboardBody(
     uiOutput("tabs"),
 )
 
+#' List tab properties
+#' @keywords internal
+#' @author Ghislain Durif
+tab_prop <- function(tab_name, tab_ui_id, module_ui) {
+    return(
+        list(
+            tab_name = tab_id,
+            tab_ui_id = tab_ui_id,
+            tab_ui = module_ui(tab_ui_id)
+        )
+    )
+}
+
+#' Render menu item
+#' @keywords internal
+#' @author Ghislain Durif
+render_body <- function(project_list, module_ui, tag) {
+    if(length(project_list) > 0) {
+        out <- lapply(
+            project_list,
+            function(item) {
+                tab_name <- paste0(tag, "_", item$project_name)
+                tab_ui_id <- paste0("mod_", tab_name)
+                return(tab_prop(tab_name, tab_ui_id, tab_ui, module_ui))
+            }
+        )
+    } else {
+        out <- NULL
+    }
+    return(out)
+}
+
 #' App dashboard body update
 #' @keywords internal
 #' @author Ghislain Durif
-app_body_update <- function(input, output, session) {
+#' @importFrom shinydashboard tabItem
+app_body_update <- function(input, output, session,
+                            analysis_project_list = list(),
+                            simu_project_list = list()) {
     
+    # init local value
+    local <- reactiveValues(index_tab = NULL,
+                            analysis_tab_list = NULL,
+                            simu_tab_list = NULL)
+    
+    ## dynamically update tab list
+    # home page
+    observe({
+        local$index_tab <- tab_prop(tab_name = "home", 
+                                    tab_ui_id = "home_page", 
+                                    module_ui = home_module_ui)
+    })
+    # analysis items
+    observe({
+        local$analysis_tab_list <- render_body(analysis_project_list, 
+                                               analysis_module_ui, 
+                                               tag = "analysis")
+    })
+    # simu items
+    observe({
+        local$simu_tab_list <- render_body(simu_project_list, 
+                                           simu_module_ui, 
+                                           tag = "simu")
+    })
+    
+    ## render output
     observe({
         output$tabs <- renderUI({
-            # home tab
-            tab_list <- list(
-                tabItem(
-                    tabName = "home",
-                    home_module_ui("home_page")    
-                )
-            )
+            tab_list <- lapply(
+                            c(list(local$index_tab), 
+                              local$analysis_tab_list, 
+                              local$simu_tab_list), 
+                            function(tab) {
+                                tabItem(tabName = tab$tab_name, 
+                                        tab$tab_ui)
+                            })
             # process
-            do.call(tabItems, tab_list)
+            do.call(tabItems, local$tab_list)
         })
         
-        callModule(home_module_server, "home_page")
+        ## call modules
+        # home
+        lapply(local$index_tab, 
+               function(tab) {
+                   callModule(home_module_server, "home_page")
+               })
     })
 }
 
