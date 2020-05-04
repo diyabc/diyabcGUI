@@ -60,21 +60,36 @@ project_module_server <- function(input, output, session) {
 #' Create project module ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyjs disabled
 create_project_module_ui <- function(id, label = "New project") {
     ns <- NS(id)
     tagList(
         tags$br(),
         textInput(ns("project_name"), label = label),
-        actionButton(ns("create"), label = "Create")
+        shinyjs::disabled(
+            actionButton(ns("create"), label = "Create")
+        )
     )
 }
 
 #' Create project module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyjs disable enable
+#' @importFrom stringr str_length
 create_project_module_server <- function(input, output, session) {
     # init local values
     local <- reactiveValues()
+    # disable button if empty input name
+    observe({
+        if(is.null(input$project_name)) {
+            shinyjs::disable("create")
+        } else if(str_length(input$project_name) > 0) {
+                shinyjs::enable("create")
+        } else {
+            shinyjs::disable("create")
+        }
+    })
     # check for click
     observe({
         local$project_name <- input$project_name
