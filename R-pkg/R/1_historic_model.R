@@ -19,7 +19,7 @@ hist_model_def_module_ui <- function(
             ) %>% 
                 helper(type = "markdown", 
                        content = "hist_model_description"),
-            graph_module_ui(ns("model_graph"))
+            graph_display_module_ui(ns("model_graph"))
         )
     )
 }
@@ -41,7 +41,7 @@ hist_model_def_module_server <- function(input, output, session,
     # tmp graph
     # FIXME
     observe({
-        callModule(graph_module_server, "model_graph", 
+        callModule(graph_display_module_server, "model_graph", 
                    graph = plot_hist_model(scenario_def$param), 
                    project_path = project_path)
     })

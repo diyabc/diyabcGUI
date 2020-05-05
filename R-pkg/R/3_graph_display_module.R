@@ -1,24 +1,24 @@
-#' Graphical integration module ui
+#' Graph display module ui
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinyWidgets dropdownButton
-graph_module_ui <- function(id) {
+graph_display_module_ui <- function(id) {
     ns <- NS(id)
     verticalLayout(
-        plotOutput(ns("graph_plot"), height = "200px"),
-        uiOutput(ns("graph_saving"))
+        plotOutput(ns("display"), height = "200px"),
+        uiOutput(ns("saving"))
     )
 }
 
 
-#' Graphical integration module server
+#' Graph display module server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shiny showNotification
 #' @importFrom shinyjs disable enable
 #' @importFrom shinyWidgets dropdownButton
-graph_module_server  <- function(input, output, session, graph = NULL, 
-                                 project_path = NULL) {
+graph_display_module_server <- function(input, output, session, graph = NULL, 
+                                        project_path = NULL) {
     # namespace
     ns <- session$ns
     # init local values
@@ -27,12 +27,12 @@ graph_module_server  <- function(input, output, session, graph = NULL,
         check_filename = TRUE
     )
     # graph plot
-    output$graph_plot <- renderPlot({ 
+    output$display <- renderPlot({ 
         graph
     })
     # render ui
     observe({
-        output$graph_saving <- renderUI({
+        output$saving <- renderUI({
             fluidRow(
                 column(
                     2, 
