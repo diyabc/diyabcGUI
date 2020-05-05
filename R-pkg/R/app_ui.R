@@ -7,12 +7,9 @@
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardPage
 #' @return Shiny ui
-# diyabc_ui <- dashboardPage(
-#     app_header,
-#     app_sidebar,
-#     app_body,
-#     skin = "black"
-# )
-diyabc_ui <- fluidPage(
-    index_module_ui("index")
+diyabc_ui <- dashboardPage(
+    app_header,
+    app_simplified_sidebar,
+    app_simplified_body,
+    skin = "black"
 )
