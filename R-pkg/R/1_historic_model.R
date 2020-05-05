@@ -19,37 +19,7 @@ hist_model_def_module_ui <- function(
             ) %>% 
                 helper(type = "markdown", 
                        content = "hist_model_description"),
-            verticalLayout(
-                plotOutput(ns("scenario_graph"), height = "200px"),
-                fluidRow(
-                    column(
-                        4, 
-                        actionButton(ns("save"), label = "Save")
-                    ),
-                    column(
-                        2, 
-                        dropdownButton(
-                            h4("Graph parameters"),
-                            numericInput(
-                                ns("graph_width"), 
-                                label = "Graph width", 
-                                value = 100, min = 50
-                            ),
-                            numericInput(
-                                ns("graph_height"), 
-                                label = "Graph height", 
-                                value = 100, min = 50
-                            ),
-                            textInput(
-                                ns("size_unit"),
-                                label = "Unit",
-                                value = "mm"
-                            ),
-                            icon = icon("cog"), size = "sm", up = TRUE
-                        )
-                    )
-                )
-            )
+            graph_module_ui(ns("model_graph"))
         )
     )
 }
@@ -57,7 +27,8 @@ hist_model_def_module_ui <- function(
 #' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_def_module_server <- function(input, output, session) {
+hist_model_def_module_server <- function(input, output, session, 
+                                         project_path = NULL) {
     
     scenario_def <- reactiveValues()
     
@@ -69,8 +40,10 @@ hist_model_def_module_server <- function(input, output, session) {
     
     # tmp graph
     # FIXME
-    output$scenario_graph <- renderPlot({ 
-        plot_hist_model(scenario_def$param)
+    observe({
+        callModule(graph_module_server, "model_graph", 
+                   graph = plot_hist_model(scenario_def$param), 
+                   project_path = project_path)
     })
     
     # # Graph check
