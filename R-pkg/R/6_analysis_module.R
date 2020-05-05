@@ -3,36 +3,41 @@
 #' @author Ghislain Durif
 #' @importFrom shinydashboard box
 #' @importFrom shinyWidgets actionGroupButtons
-analysis_module_ui <- function(id) {
+analysis_module_ui <- function(id, project_name = "project_name") {
     ns <- NS(id)
     tagList(
         fluidRow(
             box(
-                title = "Project",
+                title = "Project settings",
                 width = 12,
                 status = "primary", solidHeader = TRUE,
                 collapsible = TRUE,
-                textInput("test", label = "test")
+                analysis_project_setting_module_ui(
+                    ns("project_settings"),
+                    project_name
+                ) %>% 
+                    helper(type = "markdown", 
+                           content = "analysis_project")
+            )
+        ),
+        fluidRow(
+            box(
+                title = "Training set simulation",
+                width = 12,
+                status = "info", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = TRUE,
+                trainset_simu_module_ui(ns("trainset_simu"))
+            )
+        ),
+        fluidRow(
+            box(
+                title = "Random Forest Analysis",
+                width = 12,
+                status = "warning", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = TRUE,
+                rf_module_ui(ns("rf_analysis"))
             )
         )
-        # fluidRow(
-        #     box(
-        #         title = "Historical model",
-        #         width = 12, 
-        #         status = "info", solidHeader = TRUE,
-        #         collapsible = TRUE, collapsed = TRUE,
-        #         fluidRow(
-        #             box(
-        #                 title = "test2",
-        #                 textInput("test2", label = "test")
-        #             ),
-        #             box(
-        #                 title = "test3",
-        #                 textInput("test3", label = "test")
-        #             )
-        #         )
-        #     )
-        # )
     )
 }
 
@@ -70,8 +75,20 @@ analysis_module_ui_old <- function(id) {
 #' Analysis module server
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_module_server <- function(input, output, session) {
+analysis_module_server <- function(input, output, session, 
+                                   project_name = "project_name", 
+                                   project_dir = NULL,
+                                   data_dir = NULL) {
     
+    
+    callModule(analysis_project_setting_module_server, 
+               "project_settings",
+               project_name = project_name, 
+               project_dir = project_dir)
+    
+    callModule(trainset_simu_module_server, "trainset_simu")
+    callModule(rf_module_server, "rf_analysis")
+
     # context <- reactiveValues(
     #     scenarii = init_hist_model_choice_module_context()
     # )
