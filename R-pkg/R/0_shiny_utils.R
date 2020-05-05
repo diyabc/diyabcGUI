@@ -72,18 +72,22 @@ data_input_file_module_server <- function(input, output, session) {
 #' Project module ui
 #' @keywords internal
 #' @author Ghislain Durif
-project_input_module_ui <- function(id, label = "Project", default = "Your project") {
+project_input_module_ui <- function(id, label = "Project", 
+                                    default = "project_name") {
     ns <- NS(id)
     tagList(
         textInput(
-            inputId = ns("project"), 
+            inputId = ns("project_name"), 
             label = label, 
             value = default
         ),
-        checkboxInput(ns("timestamp"), label = "Timestamp directory", 
-                      value = TRUE),
+        checkboxInput(
+            ns("timestamp"), 
+            label = "Timestamp directory", 
+            value = FALSE
+        ),
         verbatimTextOutput(
-            ns("project_name"), 
+            ns("project_fullname"), 
             placeholder = TRUE
         )
     )
@@ -93,23 +97,51 @@ project_input_module_ui <- function(id, label = "Project", default = "Your proje
 #' @keywords internal
 #' @importFrom lubridate today
 #' @author Ghislain Durif
-project_input_module_server <- function(input, output, session) {
-    
-    project_fullname <- reactive({
-        if(input$timestamp) {
-            paste0(input$project, "_", lubridate::today())
-        } else {
-            input$project
+#' @importFrom lubridate today
+#' @importFrom shinyjs disable
+#' @importFrom stringr str_detect str_extract
+project_input_module_server <- function(input, output, session, 
+                                        project_name = NULL, existing = FALSE) {
+    # init local reactive values
+    local <- reactiveValues(new = TRUE,
+                            timestamp = lubridate::today())
+    # init output reactive values
+    out <- reactiveValues(
+        project_name = project_name,
+        project_fullname = NULL
+    )
+    # deactivate timestamp if existing project
+    observe({
+        if(existing) {
+            # deactivate timestamp button
+            shinyjs::disable("timestamp")
         }
     })
-    
-    output$project_name <- renderText({ 
-        project_fullname()
+    # update project name if initial value is given
+    observe({
+        if(local$new & !is.null(out$project_name)) {
+            updateTextInput(session, "project_name", 
+                            value = out$project_name)
+        }
+        local$new <- FALSE
     })
-    
-    return(
-        list(
-            name = project_fullname
-        )
-    )
+    # project name update
+    observeEvent(input$project_name, {
+        out$project_name <- input$project_name
+    })
+    # update timestamp depending on initial project name value
+    observe({
+        if(input$timestamp & !existing) {
+            out$project_fullname <- paste0(out$project_name, "_", 
+                                           local$timestamp)
+        } else {
+            out$project_fullname <- out$project_name
+        }
+    })
+    # render project full name
+    output$project_fullname <- renderText({ 
+        out$project_fullname
+    })
+    # output
+    return(out)
 }
