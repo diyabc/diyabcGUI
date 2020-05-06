@@ -35,7 +35,7 @@ simu_module_ui <- function(id, project_name = "project_name") {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "genetic data" #genetic_data_module_ui(ns("genetic_data_simu"))
+                simu_genetic_spec_module_ui(ns("genetic_spec"))
             )
         )
         ,
@@ -64,6 +64,9 @@ simu_module_server <- function(input, output, session) {
     # model setting
     callModule(simu_model_setting_module_server,
                "model_settings")
+    # genetic spec
+    callModule(simu_genetic_spec_module_server,
+               "genetic_spec")
     # project actions
     local$action <- callModule(simu_project_action_module_server, 
                                "project_action")
