@@ -4,12 +4,11 @@
 #' @importFrom shinyWidgets dropdownButton
 hist_model_def_module_ui <- function(
     id, 
-    value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
-) {
+    value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2") {
     ns <- NS(id)
-    tagList(
-        tags$br(),
-        flowLayout(
+    fluidRow(
+        column(
+            width = 4,
             textAreaInput(
                 ns("scenario"), 
                 label = "Describe your scenario", 
@@ -18,8 +17,11 @@ hist_model_def_module_ui <- function(
                 resize = "none"
             ) %>% 
                 helper(type = "markdown", 
-                       content = "hist_model_description"),
-            graph_display_module_ui(ns("model_graph"))
+                       content = "hist_model_description")
+        ),
+        column(
+            width = 8,
+            graph_display_module_ui(ns("model_display"))
         )
     )
 }
@@ -28,20 +30,29 @@ hist_model_def_module_ui <- function(
 #' @keywords internal
 #' @author Ghislain Durif
 hist_model_def_module_server <- function(input, output, session, 
+                                         scenario_raw = NULL,
                                          project_path = NULL) {
-    
-    scenario_def <- reactiveValues()
-    
-    # scenario
+    # init local reactive values
+    local <- reactiveValues(new = TRUE)
+    # init output reactive values
+    out <- reactiveValues(scenario_raw = scenario_raw)
+    # update 
     observe({
-        scenario_def$raw <- input$scenario
-        scenario_def$param <- parse_scenario(input$scenario)
+        if(local$new & !is.null(out$scenario_raw)) {
+            updateTextAreaInput(session, "scenario", value = out$scenario_raw)
+        }
+        local$new <- FALSE
+    })
+    # parse input scenario
+    observe({
+        out$scenario_raw <- input$scenario
+        out$scenario_param <- parse_scenario(input$scenario)
     })
     
     # tmp graph
     # FIXME
     observe({
-        callModule(graph_display_module_server, "model_graph", 
+        callModule(graph_display_module_server, "model_display", 
                    graph = plot_hist_model(scenario_def$param), 
                    project_path = project_path)
     })
@@ -68,7 +79,7 @@ hist_model_def_module_server <- function(input, output, session,
     #     )
     # })
     
-    return(scenario_def)
+    return(out)
 }
 
 #' Parse scenario
