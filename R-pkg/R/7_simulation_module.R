@@ -26,7 +26,7 @@ simu_module_ui <- function(id, project_name = "project_name") {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "historical model"
+                simu_model_setting_module_ui(ns("model_settings"))
             )
         ),
         fluidRow(
@@ -35,7 +35,7 @@ simu_module_ui <- function(id, project_name = "project_name") {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "genetic data"
+                "genetic data" #genetic_data_module_ui(ns("genetic_data_simu"))
             )
         )
         ,
@@ -51,47 +51,6 @@ simu_module_ui <- function(id, project_name = "project_name") {
     )
 }
 
-
-
-
-
-
-
-
-#' Simulation module ui
-#' @keywords internal
-#' @author Ghislain Durif
-simu_module_ui_old <- function(id, label = "simu") {
-    ns <- NS(id)
-    tagList(
-        sidebarPanel(
-            project_input_module_ui(ns("project"), label = "Project", 
-                          default = "project_name") %>% 
-                helper(type = "markdown", 
-                       content = "simulation_project"),
-            dir_input_module_ui(ns("directory"), label = "Folder"),
-            radioButtons(ns("type"), label = "Simulation type",
-                         choices = list("MicroSAT/sequence" = "mss", 
-                                        "SNP" = "snp", 
-                                        "PoolSeq" = "poolseq"), 
-                         selected = "mss"),
-            actionButton(ns("simulate"), label = "Simulate")
-        ),
-        mainPanel(
-            tabsetPanel(
-                tabPanel(
-                    "Historical model",
-                    hist_model_module_ui(ns("hist_model_simu"))
-                ),
-                tabPanel(
-                    "Genetic data",
-                    genetic_data_module_ui(ns("genetic_data_simu"))
-                )
-            )
-        )
-    )
-}
-
 #' Simulation module server
 #' @keywords internal
 #' @author Ghislain Durif
@@ -102,6 +61,9 @@ simu_module_server <- function(input, output, session) {
     # project settings
     callModule(simu_project_setting_module_server,
                "project_settings")
+    # model setting
+    callModule(simu_model_setting_module_server,
+               "model_settings")
     # project actions
     local$action <- callModule(simu_project_action_module_server, 
                                "project_action")
@@ -115,6 +77,6 @@ simu_module_server <- function(input, output, session) {
     # callModule(project_input_module_server, "project")
     # callModule(dir_input_module_server, "directory")
     # 
-    # callModule(hist_model_module_server, "hist_model_simu")
+    # 
     # callModule(genetic_data_module, "genetic_data_simu", data_info = data_info)
 }

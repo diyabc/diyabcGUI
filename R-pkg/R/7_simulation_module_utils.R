@@ -1,54 +1,65 @@
 #' Simulation project setting module ui
 #' @keywords internal
 #' @author Ghislain Durif
-simu_project_setting_module_ui <- 
-    function(id, project_name = "project_name") {
-        ns <- NS(id)
-        tagList(
-            project_input_module_ui(
-                ns("project_name"), 
-                label = "Project", 
-                default = project_name
-            ),
-            dir_input_module_ui(
-                ns("project_dir"),
-                label = "Directory"
-            ),
-            hr(),
-            actionButton(
-                ns("simulate"), 
-                label = "Simulate"
-            )
+simu_project_setting_module_ui <- function(id, project_name = "project_name") {
+    ns <- NS(id)
+    tagList(
+        project_input_module_ui(
+            ns("project_name"), 
+            label = "Project", 
+            default = project_name
+        ),
+        dir_input_module_ui(
+            ns("project_dir"),
+            label = "Directory"
         )
-    }
+    )
+}
 
 #' Simulation project setting module server function
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinyjs disable enable
-simu_project_setting_module_server <- 
-    function(input, output, session, project_name = NULL, project_dir = NULL,
-             existing = FALSE, ready = FALSE) {
-        # init output reactive values
-        out <- reactiveValues(
-            project_name = project_name, 
-            project_dir = project_dir
-        )
-        # toggle simulate button
-        observe({
-            if(ready) {
-                shinyjs::enable("simulate")
-            } else {
-                shinyjs::disable("simulate")
-            }
-        })
-        # update name and directory
-        callModule(project_input_module_server, "project_name", 
-                   existing = existing)
-        callModule(dir_input_module_server, "project_dir")
-        
+simu_project_setting_module_server <- function(
+    input, output, session, project_name = NULL, project_dir = NULL,
+    existing = FALSE, ready = FALSE) {
+    # init output reactive values
+    out <- reactiveValues(
+        project_name = project_name, 
+        project_dir = project_dir
+    )
+    # toggle simulate button
+    observe({
+        if(ready) {
+            shinyjs::enable("simulate")
+        } else {
+            shinyjs::disable("simulate")
+        }
+    })
+    # update name and directory
+    callModule(project_input_module_server, "project_name", 
+               existing = existing)
+    callModule(dir_input_module_server, "project_dir")
 }
 
+#' Simulation model setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+simu_model_setting_module_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        hist_model_module_ui(ns("hist_model"))
+    )
+}
+
+#' Simulation model setting module server function
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom shinyjs disable enable
+simu_model_setting_module_server <- function(input, output, session) {
+    # historical model
+    callModule(hist_model_module_server, "hist_model")
+}
 
 #' Simulation project action module ui
 #' @keywords internal
