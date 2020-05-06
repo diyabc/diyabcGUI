@@ -11,7 +11,14 @@ graph_display_module_ui <- function(id) {
                 plotOutput(
                     ns("display")
                 ),
-                actionButton(ns("save"), label = "Save")
+                actionButton(ns("save"), label = "Save")  %>% 
+                    helper(
+                        type = "inline", 
+                        content = paste0(
+                            "Check 'Image settings' box to change saved ",
+                            "image parameters.")
+                    ),
+                br()
             ),
         ),
         box(
