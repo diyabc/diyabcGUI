@@ -4,9 +4,88 @@
 #' @importFrom shinyWidgets dropdownButton
 graph_display_module_ui <- function(id) {
     ns <- NS(id)
-    verticalLayout(
-        plotOutput(ns("display"), height = "200px"),
-        uiOutput(ns("saving"))
+    fluidRow(
+        column(
+            width = 6,
+            verticalLayout(
+                plotOutput(
+                    ns("display")
+                ),
+                actionButton(ns("save"), label = "Save")
+            ),
+        ),
+        box(
+            title = "Image settings",
+            width = 6,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            textInput(
+                ns("graph_filename"),
+                value = "Rplot.eps",
+                label = "Filename"
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = paste0(
+                        "Figures are saved 'fig' sub-folder in ",
+                        "project directory. ", 
+                        "Possible extensions are: ", 
+                        "'eps', 'ps', 'tex', 'pdf', 'jpeg', ", 
+                        "'tiff', 'png', 'bmp', 'svg'")
+                ),
+            numericInput(
+                ns("graph_scale"), 
+                label = "Graph scale", 
+                value = 1, min = 1
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = paste0(
+                        "Multiplicative scaling factor.")
+                ),
+            numericInput(
+                ns("graph_width"), 
+                label = "Graph width", 
+                value = 100, min = 1
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = paste0(
+                        "Output figure width in 'units'.")
+                ),
+            numericInput(
+                ns("graph_height"), 
+                label = "Graph height", 
+                value = 100, min = 1
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = paste0(
+                        "Output figure height in 'units'.")
+                ),
+            selectInput(
+                ns("size_unit"), 
+                label = "Unit", 
+                choices = list("mm" = "mm", 
+                               "cm" = "cm", 
+                               "in" = "in"), 
+                selected = "mm"
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = paste0(
+                        "Size units.")
+                ), 
+            numericInput(
+                ns("graph_dpi"), 
+                label = "Graph resolution", 
+                value = 320, min = 1
+            ) %>% 
+                helper(
+                    type = "inline", 
+                    content = "Image resolution."
+                )
+        )
     )
 }
 
@@ -23,96 +102,12 @@ graph_display_module_server <- function(input, output, session, graph = NULL,
     ns <- session$ns
     # init local values
     local <- reactiveValues(
-        filename = "Rplot.jpg",
+        filename = NULL,
         check_filename = TRUE
     )
     # graph plot
     output$display <- renderPlot({ 
         graph
-    })
-    # render ui
-    observe({
-        output$saving <- renderUI({
-            fluidRow(
-                column(
-                    2, 
-                    dropdownButton(
-                        h4("Graph parameters"),
-                        textInput(
-                            ns("graph_filename"),
-                            value = local$filename,
-                            label = "Filename"
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Figures are saved 'fig' sub-folder in ",
-                                    "project directory. ", 
-                                    "Possible extensions are: ", 
-                                    "'eps', 'ps', 'tex', 'pdf', 'jpeg', ", 
-                                    "'tiff', 'png', 'bmp', 'svg'")),
-                        numericInput(
-                            ns("graph_scale"), 
-                            label = "Graph scale", 
-                            value = 1, min = 1
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Multiplicative scaling factor.")
-                                ),
-                        numericInput(
-                            ns("graph_width"), 
-                            label = "Graph width", 
-                            value = 100, min = 1
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Output figure width in 'units'.")
-                            ),
-                        numericInput(
-                            ns("graph_height"), 
-                            label = "Graph height", 
-                            value = 100, min = 1
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Output figure height in 'units'.")
-                            ),
-                        selectInput(
-                            ns("size_unit"), 
-                            label = "Unit", 
-                            choices = list("mm" = "mm", 
-                                           "cm" = "cm", 
-                                           "in" = "in"), 
-                            selected = "mm"
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Size units.")
-                            ), 
-                        numericInput(
-                            ns("graph_dpi"), 
-                            label = "Graph resolution", 
-                            value = 320, min = 1
-                        ) %>% 
-                            helper(
-                                type = "inline", 
-                                content = paste0(
-                                    "Image resolution.")
-                            ),
-                        icon = icon("cog"), size = "sm", right = TRUE, inline = TRUE
-                    )
-                ),
-                column(
-                    4, 
-                    actionButton(ns("save"), label = "Save")
-                )
-            )
-        })
     })
     # update and check graph filename
     observe({
