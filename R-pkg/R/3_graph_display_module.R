@@ -27,7 +27,7 @@ graph_display_module_ui <- function(id) {
                 helper(
                     type = "inline", 
                     content = paste0(
-                        "Figures are saved 'fig' sub-folder in ",
+                        "Figures are saved in 'fig' sub-folder in ",
                         "project directory. ", 
                         "Possible extensions are: ", 
                         "'eps', 'ps', 'tex', 'pdf', 'jpeg', ", 
