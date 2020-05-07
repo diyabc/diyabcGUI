@@ -18,6 +18,7 @@ dir_input_module_ui <- function(id, label = "Directory",
 #' Directory choice module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyFiles shinyDirChoose
 dir_input_module_server <- function(input, output, session, 
                                     default_dir = NULL) {
     # init local reactive values
