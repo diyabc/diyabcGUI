@@ -2,9 +2,7 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinyWidgets dropdownButton
-hist_model_def_module_ui <- function(
-    id, 
-    value = "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2") {
+hist_model_def_module_ui <- function(id) {
     ns <- NS(id)
     fluidRow(
         column(
@@ -12,8 +10,7 @@ hist_model_def_module_ui <- function(
             textAreaInput(
                 ns("scenario"), 
                 label = "Describe your scenario", 
-                value = value, 
-                rows = 10,
+                rows = 12,
                 resize = "none"
             ) %>% 
                 helper(type = "markdown", 
@@ -29,24 +26,25 @@ hist_model_def_module_ui <- function(
 #' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param scenario `reactiveValues` with elements `raw` and `param`
 hist_model_def_module_server <- function(input, output, session, 
-                                         scenario_raw = NULL,
+                                         scenario = NULL,
                                          project_dir = NULL) {
     # init local reactive values
     local <- reactiveValues(new = TRUE)
     # init output reactive values
-    out <- reactiveValues(raw = scenario_raw, param = NULL)
+    out <- reactiveValues()
     # update 
-    observe({
-        if(local$new & !is.null(out$raw)) {
-            updateTextAreaInput(session, "scenario", value = out$raw)
+    observeEvent(scenario, {
+        if(!is.null(scenario)) {
+            updateTextAreaInput(session, "scenario", 
+                                value = scenario$raw)
         }
-        local$new <- FALSE
     })
     # parse input scenario
-    observe({
+    observeEvent(input$scenario, {
         out$raw <- input$scenario
-        out$param <- parse_scenario(input$scenario)
+        out$param <- reactiveValues(parse_scenario(input$scenario))
     })
     
     # tmp graph

@@ -37,7 +37,7 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
                           sampling_param = list(),
                           nsimu = NULL)
     # parameters
-    observe({
+    observeEvent(scenario_def, {
         # get Ne params
         param_list <- scenario_def$param$Ne_param
         # rendering
