@@ -1,8 +1,7 @@
 #' Analysis project setting module ui
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_project_setting_module_ui <- 
-    function(id, project_name = "project_name") {
+analysis_project_setting_module_ui <- function(id, project_name = "project_name") {
     ns <- NS(id)
     tagList(
         project_input_module_ui(

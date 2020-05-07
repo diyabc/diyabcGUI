@@ -41,37 +41,6 @@ analysis_module_ui <- function(id, project_name = "project_name") {
     )
 }
 
-
-
-
-analysis_module_ui_old <- function(id) {
-    ns <- NS(id)
-    tagList(
-        sidebarPanel(
-            project_input_module_ui(ns("project"), label = "Project", 
-                                    default = "project_name") %>% 
-                helper(type = "markdown", 
-                       content = "analysis_project"),
-            dir_input_module_ui(ns("directory"), label = "Folder"),
-            hr(),
-            data_input_file_module_ui(ns("data_file"), 
-                                      label = "Data input file")
-        ),
-        mainPanel(
-            tabsetPanel(
-                tabPanel(
-                    "Historical model",
-                    hist_model_choice_module_ui(ns("hist_model_choice"))
-                ),
-                tabPanel(
-                    "Summary statistics",
-                    "WORK-IN-PROGRESS"
-                )
-            )
-        )
-    )
-}
-
 #' Analysis module server
 #' @keywords internal
 #' @author Ghislain Durif
