@@ -16,9 +16,7 @@ hist_model_choice_module_ui <- function(id) {
                 labels = list("Add", "Remove"),
                 fullwidth = TRUE
             )
-        ),
-        hist_model_render_module_ui(ns("model_def")),
-        hist_model_prior_module_ui(ns("priors"))
+        )
     )
 }
 
@@ -26,100 +24,77 @@ hist_model_choice_module_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom stringr str_c
-hist_model_choice_module_server <- function(input, output, session, context) {
-    
+hist_model_choice_module_server <- function(input, output, session, 
+                                            scenario_choice = 1,
+                                            scenario_number = 1) {
+    # init local reactive values
+    local <- reactiveValues(
+        current_scenario = scenario_choice,
+        candidate_scenarii = 1:scenario_number,
+        choice_length = scenario_number
+    )
+    # init output reactive values
+    out <- reactiveValues()
     # choose scenario
     observeEvent(input$select, {
-        context$scenarii$current_scenario <- as.numeric(input$select)
-        # print("select scenario (current/length/possible)")
-        # print(context$scenarii$current_scenario)
-        # print(context$scenarii$choice_length)
-        # print(context$scenarii$candidate_scenarii)
+        local$current_scenario <- as.integer(input$select)
+        out$choice <- str_c("scenario", local$current_scenario)
+        print("select scenario (current/length/possible)")
+        print(local$current_scenario)
+        print(local$choice_length)
+        print(local$candidate_scenarii)
     })
-    
     # add scenario
     observeEvent(input$add, {
-        if(context$scenarii$choice_length < 100) {
+        if(local$choice_length < 100) {
             # update candidate scenarii id
-            context$scenarii$candidate_scenarii <-
-                c(context$scenarii$candidate_scenarii,
-                  max(context$scenarii$candidate_scenarii) + 1)
+            local$candidate_scenarii <- c(local$candidate_scenarii,
+                                          max(local$candidate_scenarii) + 1)
             # update candidate scenarii length
-            context$scenarii$choice_length <-
-                context$scenarii$choice_length + 1
+            local$choice_length <- local$choice_length + 1
             # update current scenario
-            context$scenarii$current_scenario <-
-                tail(context$scenarii$candidate_scenarii, 1)
+            current_scenario <- tail(local$candidate_scenarii, 1)
             # update selector
             updateSelectInput(
                 session, "select",
                 choices = setNames(
-                    as.list(context$scenarii$candidate_scenarii),
+                    as.list(local$candidate_scenarii),
                     str_c("Scenario",
-                          1:(context$scenarii$choice_length),
+                          1:(local$choice_length),
                           sep = " ")
                 ),
-                selected = context$scenarii$current_scenario
+                selected = current_scenario
             )
-            # create scenario in scenario list
-            key <- str_c("scenario", 
-                         context$scenarii$current_scenario)
-            # context$scenarii$scenarii_list[[ key ]] <- 
         }
     })
-
     # remove scenario
     observeEvent(input$remove, {
-        if(context$scenarii$choice_length > 1) {
+        if(local$choice_length > 1) {
             # find index of current scenario
-            ind <- which(context$scenarii$candidate_scenarii ==
-                             context$scenarii$current_scenario)
+            ind <- which(local$candidate_scenarii == local$current_scenario)
             # new current scenario = preceding scenario
             new_ind <- ifelse(ind > 1, ind-1, ind)
             # update candidate scenarii id
-            context$scenarii$candidate_scenarii <-
-                context$scenarii$candidate_scenarii[-ind]
+            local$candidate_scenarii <- local$candidate_scenarii[-ind]
             # update candidate scenarii length
-            context$scenarii$choice_length <-
-                context$scenarii$choice_length - 1
+            local$choice_length <- local$choice_length - 1
             # update current scenario
-            context$scenarii$current_scenario <-
-                context$scenarii$candidate_scenarii[new_ind]
+            current_scenario <- local$candidate_scenarii[new_ind]
             # update selector
             updateSelectInput(
                 session, "select",
                 choices = setNames(
-                    as.list(context$scenarii$candidate_scenarii),
+                    as.list(local$candidate_scenarii),
                     str_c("Scenario",
-                          1:(context$scenarii$choice_length),
+                          1:(local$choice_length),
                           sep = " ")
                 ),
-                selected = context$scenarii$current_scenario
+                selected = current_scenario
             )
-            # remove scenario from scenario list
-            key <- str_c("scenario", ind)
-            context$scenarii$scenarii_list[[ key ]] <- NULL
         }
     })
-     
-    ## Current scenarii definition
-    callModule(hist_model_render_module_server, "model_def", context = context)
-    ## Priors
-    callModule(hist_model_prior_module_server, "priors", context = context)
-}
-
-#' Historical model choice module context init
-#' @keywords internal
-#' @author Ghislain Durif
-init_hist_model_choice_module_context <- function() {
-    return(
-        reactiveValues(
-            candidate_scenarii = as.vector(1),
-            choice_length = 1,
-            current_scenario = 1,
-            scenarii_list = reactiveValues()
-        )
-    )
+    # output
+    return(out)
 }
 
 #' Historical model render module ui
@@ -133,43 +108,32 @@ hist_model_render_module_ui <- function(id) {
 #' Historical model render module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_render_module_server <- function(input, output, session, context) {
-    
-    current_scenario <- 
-    
-    # observe({
-    #     # ind <- as.character(context$scenarii$current_scenario)
-    #     # if(is.null(context$scenarii$scenario_list[[ ind ]])) {
-    #     #     context$scenarii$scenario_list[[ ind ]] <- 
-    #     #         init_hist_model_module_context()
-    #     # }
-    # })
-        
-    key <- reactive({
-        str_c("scenario", 
-              context$scenarii$current_scenario)
-    })
-    
+hist_model_render_module_server <- function(input, output, session, 
+                                            scenario_key, scenario,
+                                            project_dir = NULL) {
+    # init output reactive values
+    out <- reactiveValues()
+    # module namespace
+    ns <- session$ns
     # render current scenario
-    output$render_model <- renderUI({
-        ns <- session$ns
-        scenario <- context$scenarii$scenarii_list[[ key() ]]
-        value <- ifelse(!is.null(scenario), scenario$raw, "")
-        hist_model_def_module_ui(
-            ns(key()),
-            value
-        )
-    })
-    
     observe({
-        # ind <- as.character(context$scenarii$current_scenario)
-        # context$scenarii$scenario_list[[ ind ]] <-
-
-        callModule(
-            hist_model_def_module_server,
-            key()
-        )
+        output$render_model <- renderUI({
+            hist_model_def_module_ui(
+                ns(scenario_key)
+            )
+        })
     })
+    # server function
+    observe({
+        out$scenario <- callModule(
+                                hist_model_def_module_server, scenario_key, 
+                                scenario_raw = scenario$raw,
+                                project_dir = project_dir)
+        print("scenario update")
+        print(out$scenario$raw)
+    })
+    # output
+    return(out)
 }
 
 
@@ -179,26 +143,20 @@ hist_model_render_module_server <- function(input, output, session, context) {
 hist_model_prior_module_ui <- function(id, label = "hist_model") {
     ns <- NS(id)
     tagList(
-        navbarPage(
-            "Priors",
-            tabPanel(
-                "Scenarii",
-            ),
-            tabPanel(
-                "Parameters",
-                tagList(
-                    h4("Parameter values"),
-                    tags$hr(),
-                    uiOutput(ns("Ne_param_value")),
-                    uiOutput(ns("time_param_value")),
-                    uiOutput(ns("rate_param_value"))
-                )
-            )
-        )
+        h3("Priors"),
+        tagList(
+            h4("Parameter values"),
+            tags$hr(),
+            uiOutput(ns("Ne_param_value")),
+            uiOutput(ns("time_param_value")),
+            uiOutput(ns("rate_param_value"))
+        ),
+        hr(),
+        h3("Constraints")
     )
 }
 
 #' Historical model module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_prior_module_server <- function(input, output, session, context) {}
+hist_model_prior_module_server <- function(input, output, session) {}
