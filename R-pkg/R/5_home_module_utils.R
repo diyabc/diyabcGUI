@@ -3,6 +3,7 @@
 #' Wrapper to choose between creating a new project and opening an existing one 
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyWidgets actionGroupButtons
 project_module_ui <- function(id, label = "New project") {
     ns <- NS(id)
     tagList(
