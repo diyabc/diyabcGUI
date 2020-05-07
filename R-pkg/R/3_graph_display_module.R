@@ -104,7 +104,7 @@ graph_display_module_ui <- function(id) {
 #' @importFrom shinyjs disable enable
 #' @importFrom shinyWidgets dropdownButton
 graph_display_module_server <- function(input, output, session, graph = NULL, 
-                                        project_path = NULL) {
+                                        project_dir = NULL) {
     # namespace
     ns <- session$ns
     # init local values
@@ -146,7 +146,7 @@ graph_display_module_server <- function(input, output, session, graph = NULL,
     })
     # graph saving
     observeEvent(input$save, {
-        if(!is.null(project_path)) {
+        if(!is.null(project_dir)) {
             save_fig(graph = graph, dirname = path, 
                      filename = local$graph_filename, 
                      scale = input$graph_scale, 
