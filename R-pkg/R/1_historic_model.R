@@ -31,30 +31,30 @@ hist_model_def_module_ui <- function(
 #' @author Ghislain Durif
 hist_model_def_module_server <- function(input, output, session, 
                                          scenario_raw = NULL,
-                                         project_path = NULL) {
+                                         project_dir = NULL) {
     # init local reactive values
     local <- reactiveValues(new = TRUE)
     # init output reactive values
-    out <- reactiveValues(scenario_raw = scenario_raw)
+    out <- reactiveValues(raw = scenario_raw, param = NULL)
     # update 
     observe({
-        if(local$new & !is.null(out$scenario_raw)) {
-            updateTextAreaInput(session, "scenario", value = out$scenario_raw)
+        if(local$new & !is.null(out$raw)) {
+            updateTextAreaInput(session, "scenario", value = out$raw)
         }
         local$new <- FALSE
     })
     # parse input scenario
     observe({
-        out$scenario_raw <- input$scenario
-        out$scenario_param <- parse_scenario(input$scenario)
+        out$raw <- input$scenario
+        out$param <- parse_scenario(input$scenario)
     })
     
     # tmp graph
     # FIXME
     observe({
         callModule(graph_display_module_server, "model_display", 
-                   graph = plot_hist_model(scenario_def$param), 
-                   project_path = project_path)
+                   graph = plot_hist_model(out$param), 
+                   project_dir = project_dir)
     })
     
     # # Graph check
