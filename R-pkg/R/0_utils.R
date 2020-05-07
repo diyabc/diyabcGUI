@@ -1,3 +1,10 @@
+#' Logging function for debugging
+#' @keywords internal
+#' @author Ghislain Durif
+logging <- function(...) {
+    print(str_c(..., sep = " "))
+}
+
 #' Extract project name from path
 #' @keywords internal
 #' @author Ghislain Durif
