@@ -22,24 +22,27 @@ simu_project_setting_module_ui <- function(id, project_name = "project_name") {
 #' @importFrom shinyjs disable enable
 simu_project_setting_module_server <- function(
     input, output, session, project_name = NULL, project_dir = NULL,
-    existing = FALSE, ready = FALSE) {
+    existing = FALSE) {
     # init output reactive values
     out <- reactiveValues(
-        project_name = project_name, 
-        project_dir = project_dir
+        project_name = NULL,
+        project_dir = NULL
     )
-    # toggle simulate button
+    # update name
     observe({
-        if(ready) {
-            shinyjs::enable("simulate")
-        } else {
-            shinyjs::disable("simulate")
-        }
+        out$project_name <- callModule(project_input_module_server, 
+                                       "project_name", 
+                                       project_name = project_name, 
+                                       existing = existing)
     })
-    # update name and directory
-    callModule(project_input_module_server, "project_name", 
-               existing = existing)
-    callModule(dir_input_module_server, "project_dir")
+    # update directory
+    observe({
+        out$project_dir <- callModule(dir_input_module_server, 
+                                      "project_dir",
+                                      default_dir = project_dir)
+    })
+    # output
+    return(out)
 }
 
 #' Simulation model setting module ui
@@ -55,9 +58,17 @@ simu_model_setting_module_ui <- function(id) {
 #' Simulation model setting module server function
 #' @keywords internal
 #' @author Ghislain Durif
-simu_model_setting_module_server <- function(input, output, session) {
+simu_model_setting_module_server <- function(input, output, session, 
+                                             scenario_raw = NULL, 
+                                             project_dir = NULL) {
+    # init output reactive values
+    out <- reactiveValues()
     # historical model
-    callModule(hist_model_module_server, "hist_model")
+    observe({
+        out$hist_model <- callModule(hist_model_module_server, "hist_model",
+                                     scenario_raw = scenario_raw,
+                                     project_dir = project_dir)
+    })
 }
 
 #' Simulation genetic spec module ui

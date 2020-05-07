@@ -39,7 +39,7 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
     # parameters
     observe({
         # get Ne params
-        param_list <- scenario_def$scenario_param$Ne_param
+        param_list <- scenario_def$param$Ne_param
         # rendering
         output$Ne_param_value <- renderUI({
             render_model_param(session, param_list,
@@ -55,7 +55,7 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
     
     observe({
         # get time params
-        param_list <- scenario_def$scenario_param$time_param
+        param_list <- scenario_def$param$time_param
         # rendering
         output$time_param_value <- renderUI({
             render_model_param(session, param_list, "Time parameter(s)",
@@ -70,7 +70,7 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
     
     observe({
         # get rate params
-        param_list <- scenario_def$scenario_param$rate_param
+        param_list <- scenario_def$param$rate_param
         # rendering
         output$rate_param_value <- renderUI({
             render_model_param(session, param_list, "Admixture rate parameter(s)",
@@ -86,7 +86,7 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
     # sample
     observe({
         # parameter
-        param <- scenario_def$scenario_param
+        param <- scenario_def$param
         # number of sample event
         nsample <- sum(param$event_type == "sample")
         # number of population
@@ -139,7 +139,6 @@ hist_model_set_module_server <- function(input, output, session, scenario_def) {
     return(out)
 }
 
-
 #' Historical model module ui
 #' @keywords internal
 #' @author Ghislain Durif
@@ -156,18 +155,23 @@ hist_model_module_ui <- function(id, label = "hist_model", add=FALSE) {
 #' Historical model module server
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_module_server <- function(input, output, session) {
+hist_model_module_server <- function(input, output, session, 
+                                     scenario_raw = NULL, project_dir = NULL) {
     # init output reactive values
-    out <- reactiveValues()
+    out <- reactiveValues(def = NULL, set = NULL)
     # historical model definition
-    scenario_def <- callModule(hist_model_def_module_server, "hist_model_def")
-    # historical model setting
-    scenario_set <- callModule(hist_model_set_module_server, "hist_model_set", 
-                               scenario_def = scenario_def)
-    # check
     observe({
-        print(scenario_set)
+        out$def <- callModule(hist_model_def_module_server, "hist_model_def", 
+                              scenario_raw = scenario_raw, 
+                              project_dir = project_dir)
     })
+    # historical model setting
+    observe({
+        out$set <- callModule(hist_model_set_module_server, "hist_model_set", 
+                              scenario_def = out$def)
+    })
+    # output
+    return(out)
 }
 
 #' Render model parameter ui
