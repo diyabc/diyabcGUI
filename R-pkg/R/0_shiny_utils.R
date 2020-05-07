@@ -18,32 +18,38 @@ dir_input_module_ui <- function(id, label = "Directory",
 #' Directory choice module server
 #' @keywords internal
 #' @author Ghislain Durif
-dir_input_module_server <- function(input, output, session) {
+dir_input_module_server <- function(input, output, session, 
+                                    default_dir = NULL) {
+    # init local reactive values
+    local <- reactiveValues()
+    # check if default path is supplied
+    observe({
+        if(is.null(default_dir)) {
+            local$path <- getwd()
+        } else {
+            local$path <- default_dir
+        }
+    })
     # directory chooser
     shinyDirChoose(
         input,
         id = "dir",
-        roots = c(home = '~')
+        roots = c(home = normalizePath('~'))
     )
-    # default path
-    local <- reactiveValues(path = getwd())
+    # reactive directory
     dir <- reactive(input$dir)
     # print path
     output$dir_value <- renderText({
         local$path
     })
     # update path
-    observeEvent(
-        ignoreNULL = TRUE,
-        eventExpr = { input$dir },
-        handlerExpr = {
-            req(is.list(input$dir))
-            home <- normalizePath("~")
-            local$path <- file.path(home, 
-                                    paste(unlist(dir()$path[-1]), 
-                                          collapse = .Platform$file.sep))
-        }
-    )
+    observeEvent(input$dir, {
+        req(is.list(input$dir))
+        home <- normalizePath('~')
+        local$path <- file.path(home, 
+                                paste(unlist(dir()$path[-1]), 
+                                      collapse = .Platform$file.sep))
+    })
     # output
     return(local)
 }
@@ -101,14 +107,15 @@ project_input_module_ui <- function(id, label = "Project",
 #' @importFrom shinyjs disable
 #' @importFrom stringr str_detect str_extract
 project_input_module_server <- function(input, output, session, 
-                                        project_name = NULL, existing = FALSE) {
+                                        project_name = NULL, 
+                                        existing = FALSE) {
     # init local reactive values
     local <- reactiveValues(new = TRUE,
                             timestamp = lubridate::today())
     # init output reactive values
     out <- reactiveValues(
-        project_name = project_name,
-        project_fullname = NULL
+        name = project_name,
+        fullname = NULL
     )
     # deactivate timestamp if existing project
     observe({
@@ -119,28 +126,27 @@ project_input_module_server <- function(input, output, session,
     })
     # update project name if initial value is given
     observe({
-        if(local$new & !is.null(out$project_name)) {
+        if(local$new & !is.null(out$name)) {
             updateTextInput(session, "project_name", 
-                            value = out$project_name)
+                            value = out$name)
         }
         local$new <- FALSE
     })
     # project name update
     observeEvent(input$project_name, {
-        out$project_name <- input$project_name
+        out$name <- input$project_name
     })
     # update timestamp depending on initial project name value
     observe({
         if(input$timestamp & !existing) {
-            out$project_fullname <- paste0(out$project_name, "_", 
-                                           local$timestamp)
+            out$fullname <- paste0(out$name, "_", local$timestamp)
         } else {
-            out$project_fullname <- out$project_name
+            out$fullname <- out$name
         }
     })
     # render project full name
     output$project_fullname <- renderText({ 
-        out$project_fullname
+        out$fullname
     })
     # output
     return(out)
