@@ -25,13 +25,20 @@ hist_model_ui <- function(id) {
 #' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param project_dir `reactiveValues` with elements `path`.
 #' @param scenario `reactiveValues` with elements `raw`.
-#' @param project_spec `reactiveValues` with elements `dir`.
-hist_model_server <- function(input, output, session, 
-                              scenario = reactiveValues(raw = NULL),
-                              project_spec = reactiveValues(dir = NULL)) {
+hist_model_server <- function(input, output, session,
+                              project_dir = reactiveValues(path = NULL),
+                              scenario = reactiveValues(raw = NULL)) {
+    # init local reactive values
+    local <- reactiveValues(
+        graph = NULL
+    )
     # init output reactive values
-    out <- reactiveValues()
+    out <- reactiveValues(
+        raw = NULL,
+        param = NULL
+    )
     # update if input provided
     observeEvent(scenario$raw, {
         req(scenario$raw)
@@ -42,13 +49,22 @@ hist_model_server <- function(input, output, session,
         out$raw <- input$scenario
         out$param <- parse_scenario(input$scenario)
     })
+    # model graph
+    observeEvent(out$param, {
+        local$graph <- plot_hist_model(out$param)
+    })
     
-    # tmp graph
+    # debugging
+    observe({
+        logging("historic model :", out$raw)
+    })
+    
+    ## graph
     # FIXME
     observe({
-        callModule(graph_display_module_server, "model_display", 
-                   graph = plot_hist_model(out$param), 
-                   project_dir = project_spec$dir)
+        callModule(graph_display_server, "model_display", 
+                   graph = local$graph, 
+                   project_dir = project_dir)
     })
     # output
     return(out)
