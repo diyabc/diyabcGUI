@@ -21,7 +21,8 @@ simu_page_ui <- function(id) {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                simu_hist_model_ui(ns("hist_model"))
+                "FILLME"
+                # simu_hist_model_ui(ns("hist_model"))
             )
         ),
         fluidRow(
@@ -49,13 +50,9 @@ simu_page_ui <- function(id) {
 #' Simulation page server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project `reactiveValues` with `name`, `dir` attributes.
+#' @param project_dir
 #' @param scenario `reactiveValues` with `raw` attribute.
-simu_page_server <- function(input, output, session, 
-                             project = reactiveValues(name = NULL, 
-                                                      dir = NULL),
-                             scenario = reactiveValues(raw = NULL),
-                             existing = FALSE) {
+simu_page_server <- function(input, output, session) {
     # init output reactive values
     out <- reactiveValues(
         setting = NULL,
@@ -63,15 +60,14 @@ simu_page_server <- function(input, output, session,
     )
     # project setting
     observe({
-        out$setting <- callModule(simu_proj_set_server, "proj_set", 
-                                  project = project, existing = existing)
+        out$setting <- callModule(simu_proj_set_server, "proj_set")
     })
-    # historical model
-    observeEvent(scenario, {
-        out$scenario <- callModule(simu_hist_model_server, "hist_model",
-                                   project_dir = out$setting$project_dir, 
-                                   scenario = scenario)
-    })
+    # # historical model
+    # observeEvent(scenario, {
+    #     out$scenario <- callModule(simu_hist_model_server, "hist_model",
+    #                                project_dir = out$setting$project_dir, 
+    #                                scenario = scenario)
+    # })
     # output
     return(out)
 }
@@ -82,7 +78,7 @@ simu_page_server <- function(input, output, session,
 simu_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        proj_name_ui(ns("project_name"), label = "Project", 
+        proj_name_ui(ns("project_name"), label = "Project",
                      default = "project_name"),
         dir_choice_ui(ns("project_dir"), label = "Directory")
     )
@@ -93,10 +89,7 @@ simu_proj_set_ui <- function(id) {
 #' @author Ghislain Durif
 #' @param project `reactiveValues` with `name` and `dir` attributes.
 #' @importFrom shinyjs disable enable
-simu_proj_set_server <- function(input, output, session, 
-                                 project = reactiveValues(name = NULL,
-                                                          dir = NULL),
-                                 existing = FALSE) {
+simu_proj_set_server <- function(input, output, session) {
     # init output reactive values
     out <- reactiveValues(
         project_name = NULL,
@@ -105,45 +98,41 @@ simu_proj_set_server <- function(input, output, session,
     )
     # project name server side
     observe({
-        out$project_name <- callModule(proj_name_server, "project_name", 
-                                       project_name = project,
-                                       existing = existing)
+        out$project_name <- callModule(proj_name_server, "project_name")
     })
     # project folder server side
     observe({
-        out$parent_folder <- callModule(dir_choice_server, 
-                                        "project_dir", 
-                                        default = project)
+        out$parent_folder <- callModule(dir_choice_server, "project_dir")
     })
     # project directory
     observe({
-        out$project_dir$path <- file.path(out$parent_folder$path, 
+        out$project_dir$path <- file.path(out$parent_folder$path,
                                           out$project_name$fullname)
     })
     # output
     return(out)
 }
-
-#' Simulation historical model ui
-#' @keywords internal
-#' @author Ghislain Durif
-simu_hist_model_ui <- function(id) {
-    ns <- NS(id)
-    tagList(
-        hist_model_ui(ns("hist_model"))
-    )
-}
-
-#' Simulation historical model server
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param project_dir `reactiveValues` with `path` attributes.
-#' @param scenario `reactiveValues` with `raw` attribute.
-#' @importFrom shinyjs disable enable
-simu_hist_model_server <- function(input, output, session,
-                                   project_dir = reactiveValues(path = NULL),
-                                   scenario = reactiveValues(raw = NULL)) {
-    callModule(hist_model_server, "hist_model",
-               project_dir = project_dir,
-               scenario = scenario)
-}
+#' 
+#' #' Simulation historical model ui
+#' #' @keywords internal
+#' #' @author Ghislain Durif
+#' simu_hist_model_ui <- function(id) {
+#'     ns <- NS(id)
+#'     tagList(
+#'         hist_model_ui(ns("hist_model"))
+#'     )
+#' }
+#' 
+#' #' Simulation historical model server
+#' #' @keywords internal
+#' #' @author Ghislain Durif
+#' #' @param project_dir `reactiveValues` with `path` attributes.
+#' #' @param scenario `reactiveValues` with `raw` attribute.
+#' #' @importFrom shinyjs disable enable
+#' simu_hist_model_server <- function(input, output, session,
+#'                                    project_dir = reactiveValues(path = NULL),
+#'                                    scenario = reactiveValues(raw = NULL)) {
+#'     callModule(hist_model_server, "hist_model",
+#'                project_dir = project_dir,
+#'                scenario = scenario)
+#' }

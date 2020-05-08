@@ -18,19 +18,10 @@ dir_choice_ui <- function(id, label = "Directory",
 #' Directory choice module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param default `reactiveValues` with attribute `dir`.
 #' @importFrom shinyFiles shinyDirChoose
-dir_choice_server <- function(input, output, session, 
-                              default = reactiveValues(dir = NULL)) {
+dir_choice_server <- function(input, output, session) {
     # init output reactive values
     out <- reactiveValues(path = getwd())
-    # check if default path is supplied
-    observeEvent(default$dir, {
-        req(default$dir)
-        if(dir.exists(default$dir)) {
-            out$path <- default$dir
-        }
-    })
     # directory chooser
     shinyDirChoose(
         input,
@@ -50,10 +41,6 @@ dir_choice_server <- function(input, output, session,
         out$path <- file.path(home, 
                               paste(unlist(dir()$path[-1]), 
                                     collapse = .Platform$file.sep))
-    })
-    # debugging
-    observe({
-        logging("current path = ", out$path)
     })
     # output
     return(out)
@@ -85,14 +72,10 @@ proj_name_ui <- function(id, label = "Project", default = "project_name") {
 #' Project naming module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_name `reactiveValues` with attribute `name`.
-#' @param existing boolean, existing project ?
 #' @importFrom lubridate today
 #' @importFrom shinyjs disable
 #' @importFrom stringr str_detect str_extract
-proj_name_server <- function(input, output, session, 
-                                    project_name = reactiveValues(name = NULL), 
-                                    existing = FALSE) {
+proj_name_server <- function(input, output, session) {
     # init local reactive values
     local <- reactiveValues(timestamp = lubridate::today())
     # init output reactive values
@@ -100,25 +83,13 @@ proj_name_server <- function(input, output, session,
         name = NULL,
         fullname = NULL
     )
-    # deactivate timestamp if existing project
-    observe({
-        if(existing) {
-            # deactivate timestamp button
-            shinyjs::disable("timestamp")
-        }
-    })
-    # update project name if initial value is given
-    observeEvent(project_name$name, {
-        req(project_name$name)
-        updateTextInput(session, "project_name", value = project_name$name)
-    })
     # project name update
     observeEvent(input$project_name, {
         out$name <- input$project_name
     })
     # update timestamp depending on initial project name value
     observe({
-        if(input$timestamp & !existing) {
+        if(input$timestamp) {
             out$fullname <- paste0(out$name, "_", local$timestamp)
         } else {
             out$fullname <- out$name
