@@ -49,26 +49,31 @@ simu_page_ui <- function(id) {
 #' Simulation page server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_spec `reactiveValues` with `name`, `dir` attributes.
+#' @param project `reactiveValues` with `name`, `dir` attributes.
 #' @param scenario `reactiveValues` with `raw` attribute.
 simu_page_server <- function(input, output, session, 
-                             project_spec = reactiveValues(name = NULL, 
-                                                           dir = NULL),
+                             project = reactiveValues(name = NULL, 
+                                                      dir = NULL),
                              scenario = reactiveValues(raw = NULL),
                              existing = FALSE) {
+    # init output reactive values
+    out <- reactiveValues(
+        setting = NULL,
+        scenario = NULL
+    )
     # project setting
-    observeEvent(project_spec, {
-        callModule(simu_proj_set_server, "proj_set", 
-                   project_spec = project_spec)
+    observe({
+        out$setting <- callModule(simu_proj_set_server, "proj_set", 
+                                  project = project, existing = existing)
     })
     # historical model
     observeEvent(scenario, {
-        callModule(simu_hist_model_server, "hist_model",
-                   scenario = scenario)
+        out$scenario <- callModule(simu_hist_model_server, "hist_model",
+                                   project_dir = out$setting$project_dir, 
+                                   scenario = scenario)
     })
-    
-    
-    
+    # output
+    return(out)
 }
 
 #' Simulation project setting ui
@@ -86,26 +91,34 @@ simu_proj_set_ui <- function(id) {
 #' Simulation project setting server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_spec `reactiveValues` with `name` and `dir` attributes.
+#' @param project `reactiveValues` with `name` and `dir` attributes.
 #' @importFrom shinyjs disable enable
 simu_proj_set_server <- function(input, output, session, 
-                                 project_spec = reactiveValues(name = NULL,
-                                                               dir = NULL),
+                                 project = reactiveValues(name = NULL,
+                                                          dir = NULL),
                                  existing = FALSE) {
-    # init local reactive values
-    local <- reactiveValues()
     # init output reactive values
-    out <- reactiveValues()
+    out <- reactiveValues(
+        project_name = NULL,
+        parent_folder = NULL,
+        project_dir = reactiveValues(path = NULL)
+    )
     # project name server side
     observe({
         out$project_name <- callModule(proj_name_server, "project_name", 
-                                       project_name = project_spec,
+                                       project_name = project,
                                        existing = existing)
     })
-    # project dir server side
+    # project folder server side
     observe({
-        out$project_dir <- callModule(dir_choice_server, "project_dir", 
-                                      default = project_spec)
+        out$parent_folder <- callModule(dir_choice_server, 
+                                        "project_dir", 
+                                        default = project)
+    })
+    # project directory
+    observe({
+        out$project_dir$path <- file.path(out$parent_folder$path, 
+                                          out$project_name$fullname)
     })
     # output
     return(out)
@@ -116,13 +129,21 @@ simu_proj_set_server <- function(input, output, session,
 #' @author Ghislain Durif
 simu_hist_model_ui <- function(id) {
     ns <- NS(id)
-    tagList()
+    tagList(
+        hist_model_ui(ns("hist_model"))
+    )
 }
 
 #' Simulation historical model server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param project_dir `reactiveValues` with `path` attributes.
 #' @param scenario `reactiveValues` with `raw` attribute.
 #' @importFrom shinyjs disable enable
-simu_hist_model_server <- function(input, output, session, 
-                                 scenario = reactiveValues(raw = NULL)) {}
+simu_hist_model_server <- function(input, output, session,
+                                   project_dir = reactiveValues(path = NULL),
+                                   scenario = reactiveValues(raw = NULL)) {
+    callModule(hist_model_server, "hist_model",
+               project_dir = project_dir,
+               scenario = scenario)
+}
