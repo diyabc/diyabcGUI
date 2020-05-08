@@ -25,46 +25,54 @@ hist_model_ui <- function(id) {
 #' Historical model definition module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_dir `reactiveValues` with elements `path`.
-#' @param scenario `reactiveValues` with elements `raw`.
+#' @param project_dir project directory as a `reactive`.
+#' @param raw_scenario raw scenario as a `reactive`.
 hist_model_server <- function(input, output, session,
-                              project_dir = reactiveValues(path = NULL),
-                              scenario = reactiveValues(raw = NULL)) {
+                              project_dir = reactive({NULL}), 
+                              raw_scenario = reactive({NULL})) {
     # init local reactive values
     local <- reactiveValues(
-        graph = NULL
+        graph = NULL,
+        project_dir = NULL,
+        scenario = NULL
     )
+    # get input
+    observe({
+        local$project_dir = project_dir()
+        local$scenario = scenario()
+    })
     # init output reactive values
     out <- reactiveValues(
         raw = NULL,
-        param = NULL
+        param = NULL,
+        trigger = NULL
     )
     # update if input provided
-    observeEvent(scenario$raw, {
-        req(scenario$raw)
-        updateTextAreaInput(session, "scenario", value = scenario$raw)
+    observe({
+        req(local$raw_scenario)
+        updateTextAreaInput(session, "scenario", value = local$raw_scenario)
     })
     # parse input scenario
     observeEvent(input$scenario, {
         out$raw <- input$scenario
         out$param <- parse_scenario(input$scenario)
-    })
-    # model graph
-    observeEvent(out$param, {
+        out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
         local$graph <- plot_hist_model(out$param)
     })
-    
+    # update local
+    observeEvent(out$raw, {
+        local$raw_scenario <- out$raw
+    })
     # debugging
     observe({
         logging("historic model :", out$raw)
     })
     
-    ## graph
-    # FIXME
+    ## graph display
     observe({
         callModule(graph_display_server, "model_display", 
-                   graph = local$graph, 
-                   project_dir = project_dir)
+                   graph = reactive(local$graph), 
+                   project_dir = reactive(local$project_dir))
     })
     # output
     return(out)
