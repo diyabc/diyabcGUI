@@ -27,7 +27,7 @@ graph_display_ui <- function(id) {
             collapsible = TRUE,
             collapsed = TRUE,
             textInput(
-                ns("graph_filename"),
+                ns("filename"),
                 value = "Rplot.eps",
                 label = "Filename"
             ) %>% 
@@ -53,7 +53,7 @@ graph_display_ui <- function(id) {
             numericInput(
                 ns("graph_width"), 
                 label = "Graph width", 
-                value = 100, min = 1
+                value = 50, min = 1
             ) %>% 
                 helper(
                     type = "inline", 
@@ -63,7 +63,7 @@ graph_display_ui <- function(id) {
             numericInput(
                 ns("graph_height"), 
                 label = "Graph height", 
-                value = 100, min = 1
+                value = 50, min = 1
             ) %>% 
                 helper(
                     type = "inline", 
@@ -101,11 +101,11 @@ graph_display_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param graph a `ggplot2` graph.
-#' @param project_spec `reactiveValues` with `dir` attributes.
+#' @param project_dir `reactiveValues` with `path` attribute.
 #' @importFrom shiny showNotification
 #' @importFrom shinyjs disable enable
 graph_display_server <- function(input, output, session, graph = NULL, 
-                                 project_spec = reactiveValues(dir = NULL)) {
+                                 project_dir = reactiveValues(path = NULL)) {
     # namespace
     ns <- session$ns
     # init local values
@@ -113,15 +113,20 @@ graph_display_server <- function(input, output, session, graph = NULL,
         filename = NULL,
         check_filename = TRUE
     )
+    # debugging
+    observe({
+        logging("dir to save figure = ", project_dir$path)
+    })
     # graph plot
-    output$display <- renderPlot({ 
+    output$display <- renderPlot({
+        req(graph)
         graph
     })
     # update and check graph filename
     observe({
-        req(input$graph_filename)
-        local$filename <- input$graph_filename
-        local$check_filename <- check_graph_filename(input$graph_filename)
+        req(input$filename)
+        local$filename <- input$filename
+        local$check_filename <- check_graph_filename(input$filename)
     })
     # consequence of graph filename check
     observe({
@@ -147,17 +152,46 @@ graph_display_server <- function(input, output, session, graph = NULL,
     })
     # graph saving
     observeEvent(input$save, {
-        if(!is.null(project_dir)) {
-            save_fig(graph = graph, dirname = project_spec$dir, 
-                     filename = local$graph_filename, 
-                     scale = input$graph_scale, 
-                     width = input$graph_width, 
-                     height = input$graph_weight, 
-                     units = input$size_units, 
-                     dpi = input$graph_dpi)
+        req(project_dir$path)
+        req(graph)
+        ret <- tryCatch(
+            save_fig(
+                graph = graph, dirname = project_dir$path, 
+                filename = local$filename, 
+                scale = input$graph_scale, 
+                width = input$graph_width, 
+                height = input$graph_height, 
+                units = input$size_unit, 
+                dpi = input$graph_dpi),
+            error = function(e) return(e))
+        if(!is.null(ret)) {
+            showNotification(
+                id = "saving_graph", 
+                duration = 5, 
+                closeButton = TRUE,
+                type = "error", 
+                tagList(
+                    tags$p(
+                        icon("warning"), 
+                        paste0("Image was saved. ", ret)
+                    )
+                )
+            )
+        } else {
+            showNotification(
+                id = "saving_graph", 
+                duration = 5, 
+                closeButton = TRUE,
+                type = "message", 
+                tagList(
+                    tags$p(
+                        icon("check"), 
+                        paste0("Image was saved.")
+                    )
+                )
+            ) 
         }
     })
-    
 }
 
 #' Check file name
@@ -182,6 +216,12 @@ check_graph_filename <- function(filename) {
 #' @importFrom ggplot2 ggsave
 save_fig <- function(graph, dirname, filename, scale, 
                      width, height, units, dpi) {
+    if(!dir.exists(dirname)) {
+        dir.create(dirname, recursive = TRUE)
+    }
+    logging("save fig : file =", filename, "dir =", dirname)
+    logging("fig spec :", width, "x", height, units, "scale =", 
+            scale, "dpi =", dpi)
     ggsave(filename = filename, plot = graph, path = dirname, scale = scale, 
            width = width, height = height, units = units)
 }
