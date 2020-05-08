@@ -123,7 +123,7 @@ graph_display_server <- function(input, output, session,
     })
     # debugging
     observe({
-        logging("dir to save figure = ", local$project_dir)
+        logging("dir to save figure = ", local$dirname)
     })
     # graph plot
     output$display <- renderPlot({
@@ -160,44 +160,44 @@ graph_display_server <- function(input, output, session,
     })
     # graph saving
     observeEvent(input$save, {
-        req(local$project_dir)
+        req(local$dirname)
         req(local$graph)
         ret <- tryCatch(
             save_fig(
-                graph = local$graph, dirname = local$dirname, 
-                filename = local$filename, 
-                scale = input$graph_scale, 
-                width = input$graph_width, 
-                height = input$graph_height, 
-                units = input$size_unit, 
+                graph = local$graph, dirname = local$dirname,
+                filename = local$filename,
+                scale = input$graph_scale,
+                width = input$graph_width,
+                height = input$graph_height,
+                units = input$size_unit,
                 dpi = input$graph_dpi),
             error = function(e) return(e))
         if(!is.null(ret)) {
             showNotification(
-                id = "saving_graph", 
-                duration = 5, 
+                id = "saving_graph",
+                duration = 5,
                 closeButton = TRUE,
-                type = "error", 
+                type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"), 
+                        icon("warning"),
                         paste0("Image was saved. ", ret)
                     )
                 )
             )
         } else {
             showNotification(
-                id = "saving_graph", 
-                duration = 5, 
+                id = "saving_graph",
+                duration = 5,
                 closeButton = TRUE,
-                type = "message", 
+                type = "message",
                 tagList(
                     tags$p(
-                        icon("check"), 
+                        icon("check"),
                         paste0("Image was saved.")
                     )
                 )
-            ) 
+            )
         }
     })
 }

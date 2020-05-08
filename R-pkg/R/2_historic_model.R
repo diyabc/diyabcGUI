@@ -66,13 +66,11 @@ hist_model_server <- function(input, output, session,
     })
     # debugging
     observe({
+        logging("project dir :", local$project_dir)
         logging("historic model :", out$raw)
     })
     
     ## graph display
-    observe({
-        print(local$graph)
-    })
     callModule(graph_display_server, "model_display", 
                graph = reactive(local$graph), 
                project_dir = reactive(local$project_dir))
