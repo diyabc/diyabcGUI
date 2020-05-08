@@ -96,7 +96,10 @@ proj_name_server <- function(input, output, session,
     # init local reactive values
     local <- reactiveValues(timestamp = lubridate::today())
     # init output reactive values
-    out <- reactiveValues()
+    out <- reactiveValues(
+        name = NULL,
+        fullname = NULL
+    )
     # deactivate timestamp if existing project
     observe({
         if(existing) {
