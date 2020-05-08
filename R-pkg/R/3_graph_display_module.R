@@ -100,27 +100,35 @@ graph_display_ui <- function(id) {
 #' Graph display module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param graph a `ggplot2` graph.
-#' @param project_dir `reactiveValues` with `path` attribute.
+#' @param graph a `ggplot2` graph as a `reactive`
+#' @param project_dir porject directory as a `reactive`
 #' @importFrom shiny showNotification
 #' @importFrom shinyjs disable enable
-graph_display_server <- function(input, output, session, graph = NULL, 
-                                 project_dir = reactiveValues(path = NULL)) {
+graph_display_server <- function(input, output, session, 
+                                 graph = reactive({NULL}), 
+                                 project_dir = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local values
     local <- reactiveValues(
+        check_filename = TRUE,
         filename = NULL,
-        check_filename = TRUE
+        graph = NULL,
+        project_dir = NULL
     )
+    # get input
+    observe({
+        local$graph = graph()
+        local$dirname = project_dir()
+    })
     # debugging
     observe({
-        logging("dir to save figure = ", project_dir$path)
+        logging("dir to save figure = ", local$project_dir)
     })
     # graph plot
     output$display <- renderPlot({
-        req(graph)
-        graph
+        req(local$graph)
+        local$graph
     })
     # update and check graph filename
     observe({
@@ -152,11 +160,11 @@ graph_display_server <- function(input, output, session, graph = NULL,
     })
     # graph saving
     observeEvent(input$save, {
-        req(project_dir$path)
-        req(graph)
+        req(local$project_dir)
+        req(local$graph)
         ret <- tryCatch(
             save_fig(
-                graph = graph, dirname = project_dir$path, 
+                graph = local$graph, dirname = local$dirname, 
                 filename = local$filename, 
                 scale = input$graph_scale, 
                 width = input$graph_width, 
