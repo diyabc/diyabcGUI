@@ -34,19 +34,19 @@ hist_model_server <- function(input, output, session,
     local <- reactiveValues(
         graph = NULL,
         project_dir = NULL,
-        scenario = NULL
+        raw_scenario = NULL
     )
-    # get input
-    observe({
-        local$project_dir = project_dir()
-        local$scenario = scenario()
-    })
     # init output reactive values
     out <- reactiveValues(
         raw = NULL,
         param = NULL,
         trigger = NULL
     )
+    # get input
+    observe({
+        local$project_dir = project_dir()
+        local$raw_scenario = raw_scenario()
+    })
     # update if input provided
     observe({
         req(local$raw_scenario)
@@ -54,6 +54,7 @@ hist_model_server <- function(input, output, session,
     })
     # parse input scenario
     observeEvent(input$scenario, {
+        print("typing")
         out$raw <- input$scenario
         out$param <- parse_scenario(input$scenario)
         out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
@@ -70,10 +71,11 @@ hist_model_server <- function(input, output, session,
     
     ## graph display
     observe({
-        callModule(graph_display_server, "model_display", 
-                   graph = reactive(local$graph), 
-                   project_dir = reactive(local$project_dir))
+        print(local$graph)
     })
+    callModule(graph_display_server, "model_display", 
+               graph = reactive(local$graph), 
+               project_dir = reactive(local$project_dir))
     # output
     return(out)
 }

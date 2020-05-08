@@ -21,8 +21,7 @@ simu_page_ui <- function(id) {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "FILLME"
-                # simu_hist_model_ui(ns("hist_model"))
+                simu_hist_model_ui(ns("hist_model"))
             )
         ),
         fluidRow(
@@ -50,8 +49,6 @@ simu_page_ui <- function(id) {
 #' Simulation page server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_dir
-#' @param scenario `reactiveValues` with `raw` attribute.
 simu_page_server <- function(input, output, session) {
     # init output reactive values
     out <- reactiveValues(
@@ -62,12 +59,10 @@ simu_page_server <- function(input, output, session) {
     observe({
         out$setting <- callModule(simu_proj_set_server, "proj_set")
     })
-    # # historical model
-    # observeEvent(scenario, {
-    #     out$scenario <- callModule(simu_hist_model_server, "hist_model",
-    #                                project_dir = out$setting$project_dir, 
-    #                                scenario = scenario)
-    # })
+    # historical model
+    observe({
+        out$scenario <- callModule(simu_hist_model_server, "hist_model")
+    })
     # output
     return(out)
 }
@@ -112,27 +107,21 @@ simu_proj_set_server <- function(input, output, session) {
     # output
     return(out)
 }
-#' 
-#' #' Simulation historical model ui
-#' #' @keywords internal
-#' #' @author Ghislain Durif
-#' simu_hist_model_ui <- function(id) {
-#'     ns <- NS(id)
-#'     tagList(
-#'         hist_model_ui(ns("hist_model"))
-#'     )
-#' }
-#' 
-#' #' Simulation historical model server
-#' #' @keywords internal
-#' #' @author Ghislain Durif
-#' #' @param project_dir `reactiveValues` with `path` attributes.
-#' #' @param scenario `reactiveValues` with `raw` attribute.
-#' #' @importFrom shinyjs disable enable
-#' simu_hist_model_server <- function(input, output, session,
-#'                                    project_dir = reactiveValues(path = NULL),
-#'                                    scenario = reactiveValues(raw = NULL)) {
-#'     callModule(hist_model_server, "hist_model",
-#'                project_dir = project_dir,
-#'                scenario = scenario)
-#' }
+
+#' Simulation historical model ui
+#' @keywords internal
+#' @author Ghislain Durif
+simu_hist_model_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        hist_model_ui(ns("hist_model"))
+    )
+}
+
+#' Simulation historical model server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom shinyjs disable enable
+simu_hist_model_server <- function(input, output, session) {
+    callModule(hist_model_server, "hist_model")
+}
