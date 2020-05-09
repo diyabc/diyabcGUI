@@ -53,7 +53,6 @@ simu_page_ui <- function(id) {
 #' @param project_dir project directory as a `reactive`.
 #' @param project_name project name as a `reactive`.
 #' @param raw_scenario raw scenario as a `reactive`.
-#' @importFrom shinyjs enable disable
 simu_page_server <- function(input, output, session,
                              project_dir = reactive({NULL}),
                              project_name = reactive({NULL}),
@@ -87,10 +86,10 @@ simu_page_server <- function(input, output, session,
         out$setting <- setting
     })
     ## enable/disable input
+    # validate
     observeEvent(setting$validate, {
-        shinyjs::enable("hist_model")
         if(!dir.exists(setting$project_dir)) {
-            ret <- dir.create(setting$project_dir)
+            ret <- dir.create(setting$project_dir, recursive = TRUE)
             if(ret) {
                 showNotification(
                     id = "create_proj_dir_success",
@@ -133,10 +132,7 @@ simu_page_server <- function(input, output, session,
             )
         }
     })
-    observeEvent(setting$reset, {
-        shinyjs::disable("hist_model")
-    })
-    # FIXME duplicate, close
+    # FIXME reset, duplicate, close
     ## historical model
     scenario <- callModule(simu_hist_model_server, "hist_model",
                            project_dir = reactive(local$project_dir),
@@ -196,8 +192,11 @@ simu_proj_set_ui <- function(id) {
 #' Simulation project setting server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinyjs disable enable
 simu_proj_set_server <- function(input, output, session) {
+    # init local
+    local <- reactiveValues(
+        enabled = TRUE
+    )
     # init output reactive values
     out <- reactiveValues(
         project_name = NULL,
@@ -205,15 +204,17 @@ simu_proj_set_server <- function(input, output, session) {
         validate = NULL,
         reset = NULL,
         duplicate = NULL,
-        reset = NULL
+        close = NULL
     )
     # project name server side
-    proj_name <- callModule(proj_name_server, "project_name")
+    proj_name <- callModule(proj_name_server, "project_name",
+                            enabled = reactive(local$enabled))
     observeEvent(proj_name$name, {
         out$project_name <- proj_name$name
     })
     # parent folder server side
-    parent_folder <- callModule(dir_choice_server, "project_dir")
+    parent_folder <- callModule(dir_choice_server, "project_dir",
+                                enabled = reactive(local$enabled))
     ## project directory
     observe({
         out$project_dir <- file.path(parent_folder$path,
@@ -221,9 +222,11 @@ simu_proj_set_server <- function(input, output, session) {
     })
     ## actions
     observeEvent(input$validate, {
+        local$enabled <- FALSE
         out$validate <- ifelse(is.null(out$validate), 0, out$validate) + 1
     })
     observeEvent(input$reset, {
+        local$enabled <- TRUE
         out$reset <- ifelse(is.null(out$reset), 0, out$reset) + 1
     })
     observeEvent(input$duplicate, {
