@@ -1,6 +1,7 @@
 #' Simulation page ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @includeFrom shinyjs disabled
 simu_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
@@ -52,6 +53,7 @@ simu_page_ui <- function(id) {
 #' @param project_dir project directory as a `reactive`.
 #' @param project_name project name as a `reactive`.
 #' @param raw_scenario raw scenario as a `reactive`.
+#' @importFrom shinyjs enable disable
 simu_page_server <- function(input, output, session,
                              project_dir = reactive({NULL}),
                              project_name = reactive({NULL}),
@@ -84,6 +86,57 @@ simu_page_server <- function(input, output, session,
     observe({
         out$setting <- setting
     })
+    ## enable/disable input
+    observeEvent(setting$validate, {
+        shinyjs::enable("hist_model")
+        if(!dir.exists(setting$project_dir)) {
+            ret <- dir.create(setting$project_dir)
+            if(ret) {
+                showNotification(
+                    id = "create_proj_dir_success",
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "message",
+                    tagList(
+                        tags$p(
+                            icon("check"),
+                            paste0("Project directory was created.")
+                        )
+                    )
+                )
+            } else {
+                showNotification(
+                    id = "create_proj_dir_failed",
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "error",
+                    tagList(
+                        tags$p(
+                            icon("warning"),
+                            paste0("Error: project directory was created.")
+                        )
+                    )
+                )
+            }
+        } else {
+            showNotification(
+                id = "proj_dir_exist",
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        paste0("Project directory already exists.")
+                    )
+                )
+            )
+        }
+    })
+    observeEvent(setting$reset, {
+        shinyjs::disable("hist_model")
+    })
+    # FIXME duplicate, close
     ## historical model
     scenario <- callModule(simu_hist_model_server, "hist_model",
                            project_dir = reactive(local$project_dir),
@@ -104,25 +157,55 @@ simu_page_server <- function(input, output, session,
 #' Simulation project setting ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyWidgets actionGroupButtons
 simu_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
         proj_name_ui(ns("project_name"), label = "Project",
                      default = "project_name"),
-        dir_choice_ui(ns("project_dir"), label = "Directory")
+        dir_choice_ui(ns("project_dir"), label = "Directory"),
+        fluidRow(
+            column(
+                width = 6,
+                actionGroupButtons(
+                    inputIds = c(ns("validate"), 
+                                 ns("reset")),
+                    labels = list(
+                        tags$span(icon("check"), "Validate"),
+                        tags$span(icon("refresh"), "Reset")
+                    ),
+                    fullwidth = TRUE
+                )
+            ),
+            column(
+                width = 6,
+                actionGroupButtons(
+                    inputIds = c(ns("duplicate"), 
+                                 ns("close")),
+                    labels = list(
+                        tags$span(icon("copy"), "Duplicate"),
+                        tags$span(icon("window-close"), "Close")
+                    ),
+                    fullwidth = TRUE
+                )
+            )
+        )
     )
 }
 
 #' Simulation project setting server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' 
 #' @importFrom shinyjs disable enable
 simu_proj_set_server <- function(input, output, session) {
     # init output reactive values
     out <- reactiveValues(
         project_name = NULL,
-        project_dir = NULL
+        project_dir = NULL,
+        validate = NULL,
+        reset = NULL,
+        duplicate = NULL,
+        reset = NULL
     )
     # project name server side
     proj_name <- callModule(proj_name_server, "project_name")
@@ -131,10 +214,23 @@ simu_proj_set_server <- function(input, output, session) {
     })
     # parent folder server side
     parent_folder <- callModule(dir_choice_server, "project_dir")
-    # project directory
+    ## project directory
     observe({
         out$project_dir <- file.path(parent_folder$path,
                                      proj_name$fullname)
+    })
+    ## actions
+    observeEvent(input$validate, {
+        out$validate <- ifelse(is.null(out$validate), 0, out$validate) + 1
+    })
+    observeEvent(input$reset, {
+        out$reset <- ifelse(is.null(out$reset), 0, out$reset) + 1
+    })
+    observeEvent(input$duplicate, {
+        out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
+    })
+    observeEvent(input$close, {
+        out$close <- ifelse(is.null(out$close), 0, out$close) + 1
     })
     # output
     return(out)
