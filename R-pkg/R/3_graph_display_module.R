@@ -140,7 +140,7 @@ graph_display_server <- function(input, output, session,
         if(!local$check_filename) {
             shinyjs::disable("save")
             showNotification(
-                id = "graph_filename_issue", 
+                id = ns("graph_filename_issue"), 
                 duration = 5, 
                 closeButton = TRUE,
                 type = "warning", 
@@ -161,43 +161,62 @@ graph_display_server <- function(input, output, session,
     observeEvent(input$save, {
         req(local$dirname)
         req(local$graph)
-        ret <- tryCatch(
-            save_fig(
-                graph = local$graph, dirname = local$dirname,
-                filename = local$filename,
-                scale = input$graph_scale,
-                width = input$graph_width,
-                height = input$graph_height,
-                units = input$size_unit,
-                dpi = input$graph_dpi),
-            error = function(e) return(e))
-        if(!is.null(ret)) {
+        # check directory
+        if(dir.exists(local$dirname)) {
+            ret <- tryCatch(
+                save_fig(
+                    graph = local$graph, dirname = local$dirname,
+                    filename = local$filename,
+                    scale = input$graph_scale,
+                    width = input$graph_width,
+                    height = input$graph_height,
+                    units = input$size_unit,
+                    dpi = input$graph_dpi),
+                error = function(e) return(e))
+            if(!is.null(ret)) {
+                showNotification(
+                    id = ns("saving_graph_not_ok"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "error",
+                    tagList(
+                        tags$p(
+                            icon("warning"),
+                            paste0("Image was not saved. ", ret)
+                        )
+                    )
+                )
+            } else {
+                showNotification(
+                    id = ns("saving_graph_ok"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "message",
+                    tagList(
+                        tags$p(
+                            icon("check"),
+                            paste0("Image was saved.")
+                        )
+                    )
+                )
+            }
+        } else {
+            # directory not existing
             showNotification(
-                id = "saving_graph",
+                id = ns("saving_graph_issue"),
                 duration = 5,
                 closeButton = TRUE,
-                type = "error",
+                type = "warning",
                 tagList(
                     tags$p(
                         icon("warning"),
-                        paste0("Image was not saved. ", ret)
-                    )
-                )
-            )
-        } else {
-            showNotification(
-                id = "saving_graph",
-                duration = 5,
-                closeButton = TRUE,
-                type = "message",
-                tagList(
-                    tags$p(
-                        icon("check"),
-                        paste0("Image was saved.")
+                        paste0("Directory does not exists. ", 
+                               "Did you 'validate' the project?")
                     )
                 )
             )
         }
+        
     })
 }
 
@@ -223,9 +242,6 @@ check_graph_filename <- function(filename) {
 #' @importFrom ggplot2 ggsave
 save_fig <- function(graph, dirname, filename, scale, 
                      width, height, units, dpi) {
-    if(!dir.exists(dirname)) {
-        dir.create(dirname, recursive = TRUE)
-    }
     logging("save fig : file =", filename, "dir =", dirname)
     logging("fig spec :", width, "x", height, units, "scale =", 
             scale, "dpi =", dpi)
