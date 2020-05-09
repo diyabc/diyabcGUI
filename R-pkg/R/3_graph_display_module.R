@@ -102,7 +102,6 @@ graph_display_ui <- function(id) {
 #' @author Ghislain Durif
 #' @param graph a `ggplot2` graph as a `reactive`
 #' @param project_dir porject directory as a `reactive`
-#' @importFrom shiny showNotification
 #' @importFrom shinyjs disable enable
 graph_display_server <- function(input, output, session, 
                                  graph = reactive({NULL}), 
@@ -181,7 +180,7 @@ graph_display_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"),
-                        paste0("Image was saved. ", ret)
+                        paste0("Image was not saved. ", ret)
                     )
                 )
             )
