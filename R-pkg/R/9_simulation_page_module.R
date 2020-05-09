@@ -57,6 +57,8 @@ simu_page_server <- function(input, output, session,
                              project_dir = reactive({NULL}),
                              project_name = reactive({NULL}),
                              raw_scenario = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
     # init local
     local <- reactiveValues(
         project_dir = NULL,
@@ -92,7 +94,7 @@ simu_page_server <- function(input, output, session,
             ret <- dir.create(setting$project_dir, recursive = TRUE)
             if(ret) {
                 showNotification(
-                    id = "create_proj_dir_success",
+                    id = ns("create_proj_dir_success"),
                     duration = 5,
                     closeButton = TRUE,
                     type = "message",
@@ -105,7 +107,7 @@ simu_page_server <- function(input, output, session,
                 )
             } else {
                 showNotification(
-                    id = "create_proj_dir_failed",
+                    id = ns("create_proj_dir_failed"),
                     duration = 5,
                     closeButton = TRUE,
                     type = "error",
@@ -119,7 +121,7 @@ simu_page_server <- function(input, output, session,
             }
         } else {
             showNotification(
-                id = "proj_dir_exist",
+                id = ns("proj_dir_exist"),
                 duration = 5,
                 closeButton = TRUE,
                 type = "message",
