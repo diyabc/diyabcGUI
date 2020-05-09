@@ -18,8 +18,25 @@ dir_choice_ui <- function(id, label = "Directory",
 #' Directory choice module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param enabled boolean, enable input or not, as a `reactive`.
 #' @importFrom shinyFiles shinyDirChoose
-dir_choice_server <- function(input, output, session) {
+#' @importFrom shinyjs disable enable
+dir_choice_server <- function(input, output, session, 
+                              enabled = reactive({TRUE})) {
+    # init local
+    local <- reactiveValues(enabled = NULL)
+    # get input
+    observe({
+        local$enabled <- enabled()
+    })
+    # enable/disable ?
+    observeEvent(local$enabled, {
+        if(local$enabled) {
+            shinyjs::enable("dir_choice")
+        } else {
+            shinyjs::disable("dir_choice")
+        }
+    })
     # init output reactive values
     out <- reactiveValues(path = getwd())
     # directory chooser
@@ -72,12 +89,28 @@ proj_name_ui <- function(id, label = "Project", default = "project_name") {
 #' Project naming module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param enabled boolean, enable input or not, as a `reactive`.
 #' @importFrom lubridate today
 #' @importFrom shinyjs disable
 #' @importFrom stringr str_detect str_extract
-proj_name_server <- function(input, output, session) {
+proj_name_server <- function(input, output, session,
+                             enabled = reactive({TRUE})) {
     # init local reactive values
-    local <- reactiveValues(timestamp = lubridate::today())
+    local <- reactiveValues(enabled = NULL, timestamp = lubridate::today())
+    # get input
+    observe({
+        local$enabled <- enabled()
+    })
+    # enable/disable ?
+    observeEvent(local$enabled, {
+        if(local$enabled) {
+            shinyjs::enable("project_name")
+            shinyjs::enable("timestamp")
+        } else {
+            shinyjs::disable("project_name")
+            shinyjs::disable("timestamp")
+        }
+    })
     # init output reactive values
     out <- reactiveValues(
         name = NULL,
