@@ -31,7 +31,7 @@ simu_page_ui <- function(id) {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "FILLME"
+                genetic_loci_ui(ns("genetic_loci"))
             )
         )
         ,
@@ -148,6 +148,8 @@ simu_page_server <- function(input, output, session,
     observe({
         out$scenario <- scenario
     })
+    ## genetic loci
+    genetic_loci <- callModule(genetic_loci_server, "genetic_loci")
     # output
     return(out)
 }
