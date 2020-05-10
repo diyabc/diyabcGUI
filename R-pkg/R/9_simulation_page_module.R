@@ -412,7 +412,8 @@ simu_hist_model_param_server <- function(input, output, session,
     # info on conditions
     observeEvent(local$scenario_cond, {
         output$conditions <- renderUI({
-            if(!is.null(local$scenario_cond) & is.list(local$scenario_cond)) {
+            if(!is.null(local$scenario_cond) & is.list(local$scenario_cond) & 
+               length(local$scenario_cond > 0)) {
                 helpText(
                     h4(icon("warning"), "Conditions"),
                     tags$p(
@@ -431,6 +432,8 @@ simu_hist_model_param_server <- function(input, output, session,
                         })
                     )
                 )
+            } else {
+                tagList()
             }
         })
     })
