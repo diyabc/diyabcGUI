@@ -12,11 +12,29 @@ num_rate_regex <- function() {
     return("[0-9]+\\.?[0-9]*")
 }
 
+#' return event single param regex
+#' @keywords internal
+#' @author Ghislain Durif
+single_param_regex <- function() {
+    return("[a-zA-Z_][a-zA-Z0-9_]*")
+}
+
+#' return event alphanum param regex
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom stringr str_c
+alphanum_param_regex <- function() {
+    return(str_c("(", single_param_regex(), 
+                 "((\\+|-)", single_param_regex(), ")?", ")"))
+}
+
 #' return event param regex
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom stringr str_c
 param_regex <- function() {
-    return("([a-zA-Z_][a-zA-Z0-9_]*|[0-9]+)")
+    return(str_c("(", alphanum_param_regex(), "|", 
+                 int_regex(), ")"))
 }
 
 #' return event rate regex
