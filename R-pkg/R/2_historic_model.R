@@ -6,14 +6,17 @@ hist_model_ui <- function(id) {
     fluidRow(
         column(
             width = 4,
-            textAreaInput(
-                ns("scenario"), 
-                label = "Describe your scenario", 
-                rows = 12,
-                resize = "none"
-            ) %>% 
-                helper(type = "markdown", 
-                       content = "hist_model_description")
+            verticalLayout(
+                textAreaInput(
+                    ns("scenario"), 
+                    label = "Describe your scenario", 
+                    rows = 12,
+                    resize = "none"
+                ) %>% 
+                    helper(type = "markdown", 
+                           content = "hist_model_description"),
+                uiOutput(ns("parser_msg"))
+            )
         ),
         column(
             width = 8,
@@ -33,6 +36,7 @@ hist_model_server <- function(input, output, session,
     # init local reactive values
     local <- reactiveValues(
         graph = NULL,
+        parser_msg = NULL,
         project_dir = NULL,
         raw_scenario = NULL
     )
@@ -53,17 +57,51 @@ hist_model_server <- function(input, output, session,
         req(local$raw_scenario)
         updateTextAreaInput(session, "scenario", value = local$raw_scenario)
     })
-    # parse input scenario
+    # parse and check input scenario
     observeEvent(input$scenario, {
+        # input
         out$raw <- input$scenario
-        out$param <- parse_scenario(input$scenario)
         out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
-        local$graph <- plot_hist_model(out$param)
+        # parse
+        out$param <- parse_scenario(input$scenario)
+        # parser message list
+        local$parser_msg <- out$param$msg_list
+        # if valid
+        if(out$param$valid) {
+            # graphical representation
+            local$graph <- plot_hist_model(out$param)
+            # check
+            out$cond <- check_scenario(input$scenario)
+        } else {
+            local$graph <- NULL
+            out$cond <- NULL
+        }
     })
     # update local
     observeEvent(out$raw, {
         local$raw_scenario <- out$raw
     })
+    # update parser message
+    observeEvent(local$parser_msg, {
+        output$parser_msg <- renderUI({
+            if(!is.null(local$parser_msg) & is.list(local$parser_msg) & 
+               length(local$parser_msg) > 0) {
+                helpText(
+                    h4(icon("warning"), "Issue(s) with scenario"),
+                    do.call(
+                        tags$ul,
+                        lapply(local$parser_msg, function(item) {
+                            return(tags$li(item))
+                        })
+                    )
+                )
+            } else {
+                tagList()
+            }
+        })
+    })
+    # check scenario
+    scenario_check <- check_scenario()
     # debugging
     observe({
         logging("project dir :", local$project_dir)
@@ -78,73 +116,128 @@ hist_model_server <- function(input, output, session,
     return(out)
 }
 
-#' Parse scenario
+#' Check scenario
+#' @description 
+#' Check for scenario validity, regarding time consistency, possible conditions, 
+#' etc.
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_count str_detect str_extract_all str_split
+check_scenario <- function(text) {
+    # TODO
+    return(NULL)
+}
+
+#' Parse scenario
+#' @description 
+#' Extract event and parameters from raw scenario, check for syntax validity.
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom stringr str_c str_count str_detect str_extract_all str_length str_split
 #' @importFrom tibble lst
 parse_scenario <- function(text) {
-    if(is.null(text)) return(NULL)
-    keywords <- c("sample", "varNe", "merge", "split")
-    scenario <- unlist(str_split(text, pattern = "\n"))
+    # init output
+    npop <- NULL
+    nevent <- NULL 
+    event_type <- NULL
+    event_time <- NULL
+    event_pop <- NULL
+    event_param <- NULL
+    valid <- TRUE
     Ne_param <- NULL
+    Ne_list_t0 <- NULL
     rate_param <- NULL
-    time_param <- NULL
-    scenario_check <- TRUE
-    # number of populations
-    npop <- ifelse(str_detect(scenario[1], pattern = " |[a-z]"),
-                   str_count(scenario[1], pattern = " ") + 1,
-                   0)
-    # population effective size at time 0
-    Ne_list_t0 <- unlist(
-        str_extract_all(
-            scenario[1], 
-            pattern = paste0(c("[a-zA-Z][a-zA-Z0-9]*(?= |\n)", 
-                               "[a-zA-Z][a-zA-Z0-9]*$"), 
-                             collapse = "|")))
-    
-    ## events
-    events <- str_extract_all(scenario, 
-                              pattern = paste0(keywords, collapse = "|"))
-    # no event on 1st line
-    scenario_check <- scenario_check & (length(events[0]) == 0)
-    # one event per remaining line
-    scenario_check <- scenario_check & 
-        all(unlist(lapply(events[-1], function(event) length(event) == 1)))
-    ## parse events
-    description <- lapply(scenario[-1], parse_event)
-    # event number
-    nevents <- length(description)
-    # event type
-    event_type <- unlist(lapply(description, function(event) event$event_type))
-    # event time
-    event_time <- lapply(description, function(event) event$event_time)
-    # population concerned by events
-    event_pop <- lapply(description, function(event) event$event_pop)
-    # event parameters
-    event_param <- lapply(description, function(event) event$event_param)
-    # event check
-    event_check <- unlist(lapply(description, function(event) event$event_check))
-    scenario_check <- scenario_check & all(event_check)
-    
-    ## parameters
-    Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
-                         Ne_list_t0))
-    Ne_param <- Ne_param[!str_detect(string = Ne_param, 
-                                     pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
-    
-    rate_param <- unique(unlist(event_param[event_type == "split"]))
-    rate_param <- rate_param[!str_detect(string = rate_param, 
+    time_param <- NULL 
+    msg_list <- list()
+    # possible events
+    possible_events <- c("sample", "varNe", "merge", "split")
+    event_regex <- str_c(possible_events, collapse = "|")
+    ## check if input is not empty
+    if(is.null(text) | str_length(text) == 0) {
+        valid <- FALSE
+        msg_list <- list("Empty input")
+    } else {
+        # extract scenario rows
+        scenario <- unlist(str_split(text, pattern = "\n"))
+        ## first line
+        # population effective size at time 0
+        Ne_list_t0 <- unlist(
+            str_extract_all(
+                unlist(str_split(scenario[1], pattern = " ")), 
+                pattern = param_regex()
+            )
+        )
+        if(length(Ne_list_t0) == 0) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, str_c("First row with initial population effective ",
+                                "sizes is not well formatted."))
+        }
+        # number of populations
+        npop <- length(Ne_list_t0)
+        ## events
+        # no event on 1st line
+        events <- str_extract_all(scenario, pattern = event_regex)
+        if(length(events[0]) > 0) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, str_c("First row should specify initial population ", 
+                                "effective sizes and not define an event."))
+        } 
+        # one event per remaining line
+        if(any(unlist(lapply(events[-1], function(event) length(event) != 1)))) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, str_c("All rows (except first one) should define a ",
+                                "single event."))
+        }
+        ## parse events
+        event_list <- lapply(scenario[-1], parse_event)
+        # event type
+        event_type <- unlist(lapply(event_list, 
+                                    function(event) event$event_type))
+        # event time
+        event_time <- lapply(event_list, function(event) event$event_time)
+        # population concerned by events
+        event_pop <- lapply(event_list, function(event) event$event_pop)
+        # event parameters
+        event_param <- lapply(event_list, function(event) event$event_param)
+        # event check
+        event_valid <- unlist(lapply(event_list, 
+                                     function(event) event$event_valid))
+        if(!all(event_valid)) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, lapply(which(!event_valid), function(row) {
+                    return(str_c("There is an issue with event at row ", row+1))
+                }))
+        }
+        # number of events
+        nevent <- ifelse(length(scenario) > 0, length(scenario) - 1, 0)
+        if(nevent == 0) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, str_c("No event in scenario."))
+        }
+        
+        ## parameters
+        Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
+                             Ne_list_t0))
+        Ne_param <- Ne_param[!str_detect(string = Ne_param, 
                                          pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
-    
-    time_param <- unique(unlist(event_time))
-    time_param <- time_param[!str_detect(string = time_param, 
-                                         pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
-    
-    # out
-    return(lst(npop, nevents, event_type, event_time, 
-               event_pop, event_param, event_check, Ne_param, Ne_list_t0, 
-               rate_param, time_param, scenario_check))
+        
+        rate_param <- unique(unlist(event_param[event_type == "split"]))
+        rate_param <- rate_param[!str_detect(string = rate_param, 
+                                             pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
+        
+        time_param <- unique(unlist(event_time))
+        time_param <- time_param[!str_detect(string = time_param, 
+                                             pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
+    }
+    ## output
+    return(lst(npop, nevent, 
+               event_type, event_time, event_pop, event_param, 
+               valid, Ne_param, Ne_list_t0, rate_param, time_param, 
+               msg_list))
 }
 
 #' Parse a scenario event
@@ -153,56 +246,57 @@ parse_scenario <- function(text) {
 #' @importFrom stringr str_detect str_extract str_extract_all str_match
 #' @importFrom tibble lst
 parse_event <- function(event) {
-    keywords <- c("sample", "varNe", "merge", "split")
+    # possible event
+    possible_events <- c("sample", "varNe", "merge", "split")
+    event_regex <- str_c(possible_events, collapse = "|")
+    # init output 
     event_type <- NULL
     event_time <- NULL
     event_param <- NULL
     event_pop <- NULL
-    event_check <- TRUE
-    # check event presence and structure (<time> <event> ...)
-    event_check <- event_check &
-        str_detect(string = event,
-                   pattern = paste0("^[a-zA-Z0-9]+ (",
-                                    paste0(keywords, collapse = "|"),
-                                    ")"))
-    if(event_check) {
-        # event type
-        event_type <- as.vector(str_match(string = event, 
-                                          pattern = paste0(keywords, 
-                                                           collapse = "|")))
-        
+    event_valid <- TRUE
+    # event type
+    event_type <- str_extract(string = event, pattern = event_regex)
+    if(is.na(event_type)) {
+        event_type <- NULL
+        event_valid <- FALSE
+    } else {
         # event time
-        event_time <- str_extract(string = event,
-                                  pattern = "^[a-zA-Z0-9]+(?= )")
-        # check numeric value for <time>
-        tmp <- str_detect(string = event_time,
-                          pattern = "^[0-9]+$")
-        if(tmp) {
-            event_time <- as.numeric(event_time)
+        event_time <- str_extract(string = event, 
+                                  pattern = str_c("^", time_regex(), "(?= )"))
+        if(is.na(event_time)) {
+            event_time <- NULL
+            event_valid <- FALSE
+        } else {
+            # check numeric value for <time>
+            num_check <- str_detect(string = event_time, pattern = "^[0-9]+$")
+            if(num_check) {
+                event_time <- as.numeric(event_time)
+            }
+            ## possible event
+            out <- switch(
+                event_type, 
+                "sample" = parse_sample(event),
+                "varNe" = parse_varNe(event),
+                "merge" = parse_merge(event),
+                "split" = parse_split(event))
+            # param
+            event_param <- out$event_param
+            # pop
+            event_pop <- out$event_pop
+            # validity
+            event_valid <- out$event_check
         }
-        
-        ## possible event
-        out <- switch(
-            event_type, 
-            "sample" = parse_sample(event),
-            "varNe" = parse_varNe(event),
-            "merge" = parse_merge(event),
-            "split" = parse_split(event))
-        
-        event_param <- out$event_param
-        event_pop <- out$event_pop
-        # check
-        event_check <- event_check & out$event_check
     }
     # out
     return(lst(event_type, event_time, event_param, 
-               event_pop, event_check))
+               event_pop, event_valid))
 }
 
 #' Parse merge event
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_detect str_extract_all
+#' @importFrom stringr str_c str_detect str_extract_all
 #' @importFrom tibble lst
 parse_merge <- function(event) {
     event_type <- "merge"
@@ -211,8 +305,7 @@ parse_merge <- function(event) {
     # <time> merge <pop0> <pop1>
     event_check <- str_detect(
         string = event, 
-        pattern = paste0("^", time_regex(), 
-                         " merge [0-9]+ [0-9]+$"))
+        pattern = str_c("^", time_regex(), " merge [0-9]+ [0-9]+$"))
     if(event_check) {
         event_pop <- as.integer(unlist(str_extract_all(
             string = event, 
@@ -224,16 +317,16 @@ parse_merge <- function(event) {
 #' Parse sample event
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_detect str_extract
+#' @importFrom stringr str_c str_detect str_extract
 #' @importFrom tibble lst
 parse_sample <- function(event) {
     event_type <- "sample"
     event_param <- NULL
     event_pop <- NULL
     # <time> sample <pop>
-    event_check <- str_detect(string = event, 
-                              pattern = paste0("^", time_regex(), 
-                                               " sample [0-9]+$"))
+    event_check <- str_detect(
+        string = event, 
+        pattern = str_c("^", time_regex(), " sample [0-9]+$"))
     if(event_check) {
         event_pop <- as.integer(str_extract(string = event, 
                                             pattern = "(?<=sample )[0-9]+$"))
@@ -244,17 +337,17 @@ parse_sample <- function(event) {
 #' Parse split event
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_detect str_extract
+#' @importFrom stringr str_c str_detect str_extract
 #' @importFrom tibble lst
 parse_split <- function(event) {
     event_type <- "split"
     event_param <- NULL
     event_pop <- NULL
-    # <time> split <pop0> <pop1> <pop2> <rate>
+    # <time> split <pop3> <pop1> <pop2> <rate>
     event_check <- str_detect(
         string = event, 
-        pattern = paste0("^", time_regex(), " split [0-9]+ [0-9]+ [0-9]+ ",
-                         rate_regex(), "$"))
+        pattern = str_c("^", time_regex(), " split [0-9]+ [0-9]+ [0-9]+ ",
+                        rate_regex(), "$"))
     if(event_check) {
         event_pop <- as.integer(unlist(str_extract_all(
             string = event, 
@@ -263,9 +356,9 @@ parse_split <- function(event) {
             string = event, 
             pattern = paste0("(?<= )", rate_regex(), "$"))
         # check numeric value for <rate>
-        tmp <- str_detect(string = event_param,
-                          pattern = paste0("^", num_rate_regex(), "$"))
-        if(tmp) {
+        num_check <- str_detect(string = event_param,
+                                pattern = paste0("^", num_rate_regex(), "$"))
+        if(num_check) {
             event_param <- as.numeric(event_param)
             event_check <- event_check & (event_param >= 0 & event_param <= 1)
         }
@@ -276,72 +369,29 @@ parse_split <- function(event) {
 #' Parse varNe event
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_detect str_extract
+#' @importFrom stringr str_c str_detect str_extract
 #' @importFrom tibble lst
 parse_varNe <- function(event) {
     event_type <- "varNe"
     event_param <- NULL
     event_pop <- NULL
     # <time> varNe <pop> <Ne>
-    event_check <- str_detect(string = event, 
-                              pattern = "^[a-zA-Z0-9]+ varNe [0-9]+ [a-zA-Z0-9]+$")
+    event_check <- str_detect(
+        string = event, 
+        pattern = str_c("^", time_regex(), " varNe [0-9]+ ", 
+                        param_regex(), "$"))
     if(event_check) {
         event_pop <- as.integer(str_extract(
             string = event, 
-            pattern = "(?<=varNe )[0-9]+(?= [a-zA-Z0-9]+$)"))
-        event_param <- str_extract(string = event, 
-                                   pattern = "(?<= )[a-zA-Z0-9]+$")
+            pattern = "(?<=varNe )[0-9]+(?= )"))
+        event_param <- str_extract(
+            string = event, 
+            pattern = str_c("(?<= )", param_regex(), "$"))
         # check numeric value for <Ne>
-        tmp <- str_detect(string = event_param,
-                          pattern = "^[0-9]+$")
-        if(tmp) {
+        num_check <- str_detect(string = event_param, pattern = "^[0-9]+$")
+        if(num_check) {
             event_param <- as.integer(event_param)
         }
     }
     return(lst(event_type, event_param, event_pop, event_check))
-}
-
-#' Plot historical model
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom ggplot2 ggplot geom_point geom_segment theme_void
-plot_hist_model <- function(scenario_param) {
-    
-    add_edge <- function(g, start, end, colour = "black") {
-        g <- g + 
-            geom_segment(x = start[1], y = start[2], 
-                         xend = end[1], 
-                         yend = end[2], 
-                         size = 1.2, 
-                         colour = colour)
-        return(g)
-    }
-    
-    add_timeline <- function(g, events=NULL) {
-        g <- g + 
-            geom_segment(x = 11, y = 0, 
-                         xend = 11, 
-                         yend = 11)
-        g <- g + 
-            geom_segment(x = 11-0.2, y = 10, 
-                         xend = 11+0.2, 
-                         yend = 10)
-        g <- g + 
-            geom_segment(x = 11-0.2, y = 0, 
-                         xend = 11+0.2, 
-                         yend = 0)
-        if(!is.null(events) | missing(events)) {
-            
-        }
-        return(g)
-    }
-    
-    box_frame <- data.frame(x=c(0,12), y=c(0,11))
-    g1 <- ggplot(box_frame, aes(x,y)) + geom_point(alpha=0) + 
-        theme_void()
-    g1 <- add_edge(g1, start = c(5,10), end = c(5,11), colour = "black")
-    g1 <- add_edge(g1, start = c(5,10), end = c(0,0), colour = "black")
-    g1 <- add_edge(g1, start = c(5,10), end = c(10,0), colour = "black")
-    g1 <- add_timeline(g1)
-    return(g1)
 }
