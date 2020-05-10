@@ -38,6 +38,7 @@ hist_model_server <- function(input, output, session,
     )
     # init output reactive values
     out <- reactiveValues(
+        cond = NULL,
         raw = NULL,
         param = NULL,
         trigger = NULL
@@ -54,7 +55,6 @@ hist_model_server <- function(input, output, session,
     })
     # parse input scenario
     observeEvent(input$scenario, {
-        print("typing")
         out$raw <- input$scenario
         out$param <- parse_scenario(input$scenario)
         out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1

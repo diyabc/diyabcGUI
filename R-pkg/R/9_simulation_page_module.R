@@ -295,6 +295,7 @@ simu_hist_model_server <- function(input, output, session,
     observe({
         out$param_values <- callModule(simu_hist_model_param_server,
                                        "param_setting",
+                                       scenario_cond = reactive(scenario$cond),
                                        scenario_param = reactive(scenario$param))
     })
     # output
@@ -313,7 +314,8 @@ simu_hist_model_param_ui <- function(id) {
                 h3("Parameter values"),
                 uiOutput(ns("Ne_param_values")),
                 uiOutput(ns("time_param_values")),
-                uiOutput(ns("rate_param_values"))
+                uiOutput(ns("rate_param_values")),
+                uiOutput(ns("conditions"))
             ),
             tagList(
                 hr(),
@@ -336,14 +338,21 @@ simu_hist_model_param_ui <- function(id) {
 #' Simulation historical model parameter setting server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param scenario_cond list of conditions on scenario parameters as a `reactive`.
 #' @param scenario_param scenario parameter list as `reactive`.
+#' @importFrom shinydashboard infoBox renderInfoBox
 #' @importFrom shinyjs disable enable
 simu_hist_model_param_server <- function(input, output, session,
+                                         scenario_cond = reactive({NULL}),
                                          scenario_param = reactive({NULL})) {
     # local reactive values
-    local <- reactiveValues(scenario_param = NULL)
+    local <- reactiveValues(
+        scenario_cond = NULL,
+        scenario_param = NULL
+    )
     # get input
     observe({
+        local$scenario_cond = scenario_cond()
         local$scenario_param = scenario_param()
     })
     # init output reactive values
@@ -399,7 +408,33 @@ simu_hist_model_param_server <- function(input, output, session,
             return(input$param)
         })
     })
-
+    
+    # info on conditions
+    observeEvent(local$scenario_cond, {
+        output$conditions <- renderUI({
+            if(!is.null(local$scenario_cond) & is.list(local$scenario_cond)) {
+                helpText(
+                    h4(icon("warning"), "Conditions"),
+                    tags$p(
+                        "You may want to consider the following conditions ",
+                        "when setting the parameter values above."
+                    ),
+                    tags$p(
+                        "This is an advisory warning to avoid gene genealogy ",
+                        "incongruenties. You may prefer to ignore it or ",
+                        "to define your own conditions."
+                    ),
+                    do.call(
+                        tags$ul,
+                        lapply(local$scenario_cond, function(item) {
+                            return(tags$li(item))
+                        })
+                    )
+                )
+            }
+        })
+    })
+    
     # sample
     observe({
         req(local$scenario_param)
