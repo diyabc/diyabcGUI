@@ -87,54 +87,6 @@ simu_page_server <- function(input, output, session,
     observe({
         out$setting <- setting
     })
-    ## enable/disable input
-    # validate
-    observeEvent(setting$validate, {
-        if(!dir.exists(setting$project_dir)) {
-            ret <- dir.create(setting$project_dir, recursive = TRUE)
-            if(ret) {
-                showNotification(
-                    id = ns("create_proj_dir_success"),
-                    duration = 5,
-                    closeButton = TRUE,
-                    type = "message",
-                    tagList(
-                        tags$p(
-                            icon("check"),
-                            paste0("Project directory was created.")
-                        )
-                    )
-                )
-            } else {
-                showNotification(
-                    id = ns("create_proj_dir_failed"),
-                    duration = 5,
-                    closeButton = TRUE,
-                    type = "error",
-                    tagList(
-                        tags$p(
-                            icon("warning"),
-                            paste0("Error: project directory was created.")
-                        )
-                    )
-                )
-            }
-        } else {
-            showNotification(
-                id = ns("proj_dir_exist"),
-                duration = 5,
-                closeButton = TRUE,
-                type = "message",
-                tagList(
-                    tags$p(
-                        icon("check"),
-                        paste0("Project directory already exists.")
-                    )
-                )
-            )
-        }
-    })
-    # FIXME reset, duplicate, close
     ## historical model
     scenario <- callModule(simu_hist_model_server, "hist_model",
                            project_dir = reactive(local$project_dir),

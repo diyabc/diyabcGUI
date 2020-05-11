@@ -41,6 +41,8 @@ new_proj_set_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 new_proj_set_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
     # init local
     local <- reactiveValues(
         enabled = TRUE
@@ -83,6 +85,54 @@ new_proj_set_server <- function(input, output, session) {
     observeEvent(input$close, {
         out$close <- ifelse(is.null(out$close), 0, out$close) + 1
     })
+    ## react
+    # validate
+    observeEvent(input$validate, {
+        if(!dir.exists(out$project_dir)) {
+            ret <- dir.create(out$project_dir, recursive = TRUE)
+            if(ret) {
+                showNotification(
+                    id = ns("create_proj_dir_success"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "message",
+                    tagList(
+                        tags$p(
+                            icon("check"),
+                            paste0("Project directory was created.")
+                        )
+                    )
+                )
+            } else {
+                showNotification(
+                    id = ns("create_proj_dir_failed"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "error",
+                    tagList(
+                        tags$p(
+                            icon("warning"),
+                            paste0("Error: project directory was created.")
+                        )
+                    )
+                )
+            }
+        } else {
+            showNotification(
+                id = ns("proj_dir_exist"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        paste0("Project directory already exists.")
+                    )
+                )
+            )
+        }
+    })
+    # FIXME reset, duplicate, close
     # output
     return(out)
 }
