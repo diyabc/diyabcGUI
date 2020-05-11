@@ -7,14 +7,15 @@ hist_model_ui <- function(id) {
         column(
             width = 4,
             verticalLayout(
-                textAreaInput(
-                    ns("scenario"), 
-                    label = "Describe your scenario", 
-                    rows = 12,
-                    resize = "none"
-                ) %>% 
+                h4("Describe your scenario") %>% 
                     helper(type = "markdown", 
                            content = "hist_model_description"),
+                textAreaInput(
+                    ns("scenario"), 
+                    label = NULL, 
+                    rows = 12,
+                    resize = "none"
+                ),
                 uiOutput(ns("parser_msg"))
             )
         ),
@@ -51,6 +52,7 @@ hist_model_server <- function(input, output, session,
     observe({
         local$project_dir = project_dir()
         local$raw_scenario = raw_scenario()
+        # logging("input raw scenario = ", local$raw_scenario)
     })
     # update if input provided
     observe({
@@ -71,7 +73,7 @@ hist_model_server <- function(input, output, session,
             # graphical representation
             local$graph <- plot_hist_model(out$param)
             # check
-            out$cond <- check_scenario(input$scenario)
+            out$cond <- check_timeline(input$scenario)$cond
         } else {
             local$graph <- NULL
             out$cond <- NULL
@@ -100,8 +102,6 @@ hist_model_server <- function(input, output, session,
             }
         })
     })
-    # check scenario
-    scenario_check <- check_scenario()
     # debugging
     observe({
         logging("project dir :", local$project_dir)
@@ -116,15 +116,16 @@ hist_model_server <- function(input, output, session,
     return(out)
 }
 
-#' Check scenario
+#' Check timeline
 #' @description 
 #' Check for scenario validity, regarding time consistency, possible conditions, 
 #' etc.
 #' @keywords internal
 #' @author Ghislain Durif
-check_scenario <- function(text) {
+check_timeline <- function(text) {
     # TODO
-    return(NULL)
+    condition <- c("Example of condition...", "Time should be positive.")
+    return(list(cond = condition))
 }
 
 #' Parse scenario
