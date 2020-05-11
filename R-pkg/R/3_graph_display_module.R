@@ -2,22 +2,34 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard box
+#' @importFrom shinyjs hidden
 graph_display_ui <- function(id) {
     ns <- NS(id)
     fluidRow(
         column(
             width = 6,
             verticalLayout(
-                plotOutput(
-                    ns("display")
-                ),
-                actionButton(ns("save"), label = "Save")  %>% 
+                h4("Graphical representation") %>% 
                     helper(
                         type = "inline", 
                         content = paste0(
                             "Check 'Image settings' box to change saved ",
                             "image parameters.")
                     ),
+                shinyjs::hidden(
+                    plotOutput(
+                        ns("display")
+                    )
+                ),
+                actionGroupButtons(
+                    inputIds = c(ns("draw"), 
+                                 ns("save")),
+                    labels = list(
+                        tags$span(icon("project-diagram"), "Draw scenario"),
+                        tags$span(icon("save"), "Save image")
+                    ),
+                    fullwidth = TRUE
+                ),
                 br()
             ),
         ),
@@ -102,7 +114,7 @@ graph_display_ui <- function(id) {
 #' @author Ghislain Durif
 #' @param graph a `ggplot2` graph as a `reactive`
 #' @param project_dir porject directory as a `reactive`
-#' @importFrom shinyjs disable enable
+#' @importFrom shinyjs disable enable hide show
 graph_display_server <- function(input, output, session, 
                                  graph = reactive({NULL}), 
                                  project_dir = reactive({NULL})) {
@@ -110,6 +122,7 @@ graph_display_server <- function(input, output, session,
     ns <- session$ns
     # init local values
     local <- reactiveValues(
+        show_graph = FALSE,
         check_filename = TRUE,
         filename = NULL,
         graph = NULL,
@@ -124,6 +137,17 @@ graph_display_server <- function(input, output, session,
     observe({
         logging("dir to save figure = ", local$dirname)
     })
+    # show/hide plot
+    observeEvent(input$draw, {
+        local$show_graph <- (1 - local$show_graph == 1)
+    })
+    observeEvent(local$show_graph, {
+        if(local$show_graph) {
+            shinyjs::show("display")
+        } else {
+            shinyjs::hide("display")
+        }
+    })
     # graph plot
     output$display <- renderPlot({
         req(local$graph)
@@ -135,7 +159,7 @@ graph_display_server <- function(input, output, session,
         local$filename <- input$filename
         local$check_filename <- check_graph_filename(input$filename)
     })
-    # consequence of graph filename check
+    # disable saving if issue with file name
     observe({
         if(!local$check_filename) {
             shinyjs::disable("save")
@@ -159,6 +183,20 @@ graph_display_server <- function(input, output, session,
     })
     # graph saving
     observeEvent(input$save, {
+        if(is.null(local$graph)) {
+            showNotification(
+                id = ns("graph_input_issue"), 
+                duration = 5, 
+                closeButton = TRUE,
+                type = "warning", 
+                tagList(
+                    tags$p(
+                        icon("warning"), 
+                        paste0("Cannot save image: graph is empty.")
+                    )
+                )
+            )
+        }
         req(local$dirname)
         req(local$graph)
         # check directory
