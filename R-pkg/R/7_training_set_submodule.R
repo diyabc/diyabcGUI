@@ -59,6 +59,7 @@ hist_model_panel_server <- function(input, output, session) {
     # init local
     local <- reactiveValues(
         current_scenario = 1,
+        current_tab = NULL,
         scenario_id_list = 1,
         scenario_list = list(s1 = new_scenario(1)),
         scenario_nb = 1
@@ -99,7 +100,6 @@ hist_model_panel_server <- function(input, output, session) {
     ## output scenario number
     observeEvent(local$scenario_nb, {
         logging("scenario nb = ", local$scenario_nb)
-        print(local$scenario_list)
         output$scenario_nb <- renderUI({
             helpText(
                 str_c("Current number of scenario = ", local$scenario_nb)
@@ -126,12 +126,16 @@ hist_model_panel_server <- function(input, output, session) {
         updateTabsetPanel(session, "scenario_tabs",
                           selected = as.character(local$current_scenario))
     })
-    ## tab switch
-    observeEvent(input$scenario_tabs, {
-        req(input$scenario_tabs)
-        logging("current tab = ", input$scenario_tabs)
-        # local$current_scenario <- as.integer(input$scenario_tabs)
-    })
+    # ## tab switch
+    # FIXME
+    # observeEvent(input$scenario_tabs, {
+    #     req(input$scenario_tabs)
+    #     local$current_tab <- input$scenario_tabs
+    # })
+    # observeEvent(local$current_tab, {
+    #     logging("current tab = ", local$current_tab)
+    #     local$current_scenario <- as.numeric(local$current_tab)
+    # })
     ## debugging
     observeEvent(local$current_scenario, {
         logging("current scenario = ", local$current_scenario)
