@@ -87,7 +87,8 @@ analysis_page_server <- function(input, output, session,
         out$setting <- setting
     })
     ## Training set sub-module
-    training_set <- callModule(training_set_server, "train_set")
+    training_set <- callModule(training_set_server, "train_set", 
+                               project_dir = reactive(local$project_dir))
     # output
     return(out)
 }

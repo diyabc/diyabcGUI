@@ -11,11 +11,30 @@ training_set_ui <- function(id) {
 #' Training set sub-module server
 #' @keywords internal
 #' @author Ghislain Durif
-training_set_server <- function(input, output, session) {
+#' @param project_dir project directory as a `reactive`.
+#' @param project_name project name as a `reactive`.
+#' @param scenario_list list of raw scenarii as a `reactive`.
+training_set_server <- function(input, output, session,
+                                project_dir = reactive({NULL}),
+                                project_name = reactive({NULL}),
+                                scenario_list = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(
+        project_dir = NULL,
+        project_name = NULL,
+        scenario_list = NULL
+    )
+    # get input
+    observe({
+        local$project_dir = project_dir()
+        local$project_name = project_name()
+        local$scenario_list = scenario_list()
+    })
     # init output
     out <- reactiveValues()
     # historic model panel
-    callModule(hist_model_panel_server, "hist_model_panel")
+    callModule(hist_model_panel_server, "hist_model_panel",
+               project_dir = reactive(local$project_dir))
     # output
     return(out)
 }
@@ -23,21 +42,15 @@ training_set_server <- function(input, output, session) {
 #' Historical model input panel module ui
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinyWidgets actionGroupButtons
 hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
         fluidRow(
             column(
                 width = 6,
-                actionGroupButtons(
-                    inputIds = c(ns("add"), 
-                                 ns("remove")),
-                    labels = list(
-                        tags$span(icon("plus"), "Add"),
-                        tags$span(icon("minus"), "Remove")
-                    ),
-                    fullwidth = TRUE
+                actionButton(
+                    ns("add"), 
+                    label = tags$span(icon("plus"), "Add")
                 )
             ),
             column(
@@ -45,113 +58,98 @@ hist_model_panel_ui <- function(id) {
                 uiOutput(ns("scenario_nb"))
             )
         ),
-        uiOutput(ns("scenario_tabs"))
+        br(),
+        tabsetPanel(id = ns("scenario_tabs"))
     )
 }
 
 #' Historical model input panel module server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyjs onclick
+#' @importFrom shinyWidgets actionBttn
 #' @importFrom stringr str_c
-hist_model_panel_server <- function(input, output, session) {
+hist_model_panel_server <- function(input, output, session,
+                                    project_dir = reactive({NULL}), 
+                                    raw_scenario_list = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local
     local <- reactiveValues(
-        current_scenario = 1,
-        current_tab = NULL,
-        scenario_id_list = 1,
-        scenario_list = list(s1 = new_scenario(1)),
-        scenario_nb = 1
+        count = NULL,
+        project_dir = NULL,
+        raw_scenario_list = NULL,
+        scenario_list = list()
     )
+    # get input
+    observe({
+        local$project_dir <- project_dir()
+        # FIXME raw_scenario_list
+    })
     # init output
-    out <- reactiveValues()
-    ## add scenario
+    out <- reactiveValues(scenario_list = NULL)
+    
+    # add scenario
     observeEvent(input$add, {
-        if(local$scenario_nb < 20) {
-            # new scenario id
-            new_id <- max(local$scenario_id_list) + 1
-            # increment number of scenarii
-            local$scenario_nb <- local$scenario_nb + 1
-            # new current scenario
-            local$current_scenario <- local$scenario_nb
-            # update list of scenario ids
-            local$scenario_id_list <- c(local$scenario_id_list, 
-                                        new_id)
-            # update list of scenarii
-            local$scenario_list[[ scenario_key(new_id) ]] <- new_scenario(new_id)
+        # increment count
+        local$count <- ifelse(is.null(local$count), 0, local$count) + 1
+        # id
+        id <- local$count
+        # add new tab
+        appendTab(
+            inputId = "scenario_tabs",
+            tabPanel(
+                title = closable_tab_title(id, 
+                                           label = str_c("Scenario ", id),
+                                           ns = ns),
+                value = id,
+                tags$br(),
+                hist_model_ui(ns(str_c("model", id)))
+            ),
+            select = TRUE
+        )
+        # observe closing
+        observe({
+            shinyjs::onclick(id = str_c("close", id), {
+                removeTab(inputId = "scenario_tabs", target = str_c(id))
+                local$scenario_list[[ id ]] <<- NULL
+            })
+        })
+        # module function
+        local$scenario_list[[ id ]] <<- callModule(
+            hist_model_server, str_c("model", id),
+            project_dir = reactive(local$project_dir), 
+            raw_scenario = reactive(local$raw_scenario)
+        )
+    })
+    
+    # update output
+    observe({
+        out$scenario_list <- local$scenario_list
+        
+        if(length(local$scenario_list) > 0) {
+            print(local$scenario_list[[1]]$raw)
+            print(local$scenario_list[[1]]$param)
         }
     })
-    ## remove scenario
-    observeEvent(input$remove, {
-        if(local$scenario_nb > 1) {
-            # find index of current scenario
-            current_id <- local$scenario_list_id[local$current_scenario]
-            # update list of scenario ids
-            local$scenario_id_list <- local$scenario_id_list[-local$current_scenario]
-            # update list of scenarii
-            local$scenario_list[[ scenario_key(current_id)]] <- NULL
-            local$current_scenario <- ifelse(local$current_scenario > 1, 
-                                             local$current_scenario - 1,
-                                             local$current_scenario)
-            local$scenario_nb <- local$scenario_nb - 1
-        }
-    })
-    ## output scenario number
-    observeEvent(local$scenario_nb, {
-        logging("scenario nb = ", local$scenario_nb)
-        output$scenario_nb <- renderUI({
-            helpText(
-                str_c("Current number of scenario = ", local$scenario_nb)
+    
+    ## output
+    return(out)
+}
+
+#' Return closable panel title
+#' @keywords internal
+#' @author Ghislain Durif
+closable_tab_title <- function(id, label, ns) {
+    tags$span(
+        label,
+        HTML("&nbsp;"),
+        tags$span(
+            actionButton(
+                ns(str_c("close", id)), 
+                label = NULL,
+                icon = icon("close")
             )
-        })
-    })
-    ## update scenario tabs
-    observeEvent(local$scenario_nb, {
-        output$scenario_tabs <- renderUI({
-            tabs <- lapply(
-                1:local$current_scenario,
-                function(ind) {
-                    tabPanel(
-                        title = str_c("Scenario ", ind),
-                        value = as.character(ind),
-                        str_c("scenario key = ", 
-                              scenario_key(local$scenario_id_list[ind]))
-                    )
-                })
-            tabs <- c(tabs, list(id = ns("scenario_tabs")))
-            do.call(tabsetPanel, tabs)
-        })
-        # update current tab
-        updateTabsetPanel(session, "scenario_tabs",
-                          selected = as.character(local$current_scenario))
-    })
-    # ## tab switch
-    # FIXME
-    # observeEvent(input$scenario_tabs, {
-    #     req(input$scenario_tabs)
-    #     local$current_tab <- input$scenario_tabs
-    # })
-    # observeEvent(local$current_tab, {
-    #     logging("current tab = ", local$current_tab)
-    #     local$current_scenario <- as.numeric(local$current_tab)
-    # })
-    ## debugging
-    observeEvent(local$current_scenario, {
-        logging("current scenario = ", local$current_scenario)
-    })
+        )
+    )
 }
-
-#' New scenario function
-#' @keywords internal
-#' @author Ghislain Durif
-new_scenario <- function(id) {
-    return(list(id = id, raw_scenario = NULL))
-}
-
-#' Scenario id key
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom stringr str_c
-scenario_key <- function(id)
-    return(str_c("s", id))
