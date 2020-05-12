@@ -4,7 +4,9 @@
 training_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        hist_model_panel_ui(ns("hist_model_panel"))
+        hist_model_panel_ui(ns("hist_model_panel")),
+        hr(),
+        prior_cond_set_ui(ns("prior_cond"))
     )
 }
 
@@ -33,8 +35,16 @@ training_set_server <- function(input, output, session,
     # init output
     out <- reactiveValues()
     # historic model panel
-    callModule(hist_model_panel_server, "hist_model_panel",
-               project_dir = reactive(local$project_dir))
+    hist_model_def <- callModule(hist_model_panel_server, "hist_model_panel",
+                                 project_dir = reactive(local$project_dir))
+    # update local
+    observe({
+        local$scenario_list <- hist_model_def$scenario_list
+    })
+    # parameter prior and conditon setting
+    prior_cond_set <- callModule(
+                        prior_cond_set_server, "prior_cond",
+                        scenario_list = reactive(local$scenario_list))
     # output
     return(out)
 }
@@ -45,16 +55,17 @@ training_set_server <- function(input, output, session,
 hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        h3(tags$span(icon("history"), "Define historical models")),
         fluidRow(
             column(
-                width = 6,
+                width = 4,
                 actionButton(
                     ns("add"), 
                     label = tags$span(icon("plus"), "Add")
                 )
             ),
             column(
-                width = 6,
+                width = 4,
                 uiOutput(ns("scenario_nb"))
             )
         ),
@@ -79,7 +90,8 @@ hist_model_panel_server <- function(input, output, session,
         count = NULL,
         project_dir = NULL,
         raw_scenario_list = NULL,
-        scenario_list = list()
+        scenario_list = list(),
+        scenario_nb = 0
     )
     # get input
     observe({
@@ -93,6 +105,8 @@ hist_model_panel_server <- function(input, output, session,
     observeEvent(input$add, {
         # increment count
         local$count <- ifelse(is.null(local$count), 0, local$count) + 1
+        local$scenario_nb <- ifelse(is.null(local$scenario_nb), 
+                                    0, local$scenario_nb) + 1
         # id
         id <- local$count
         # add new tab
@@ -111,11 +125,13 @@ hist_model_panel_server <- function(input, output, session,
         # observe closing
         observe({
             shinyjs::onclick(id = str_c("close", id), {
+                local$scenario_nb <<- ifelse(!is.null(local$scenario_nb), 
+                                             local$scenario_nb - 1, 0)
                 removeTab(inputId = "scenario_tabs", target = str_c(id))
                 local$scenario_list[[ id ]] <<- NULL
             })
         })
-        # module function
+        # server function
         local$scenario_list[[ id ]] <<- callModule(
             hist_model_server, str_c("model", id),
             project_dir = reactive(local$project_dir), 
@@ -123,14 +139,20 @@ hist_model_panel_server <- function(input, output, session,
         )
     })
     
+    # update scenario number
+    output$scenario_nb <- renderUI({
+        helpText(
+            str_c("Current number of scenarii = ", local$scenario_nb)
+        )
+    })
+    
     # update output
     observe({
         out$scenario_list <- local$scenario_list
-        
-        if(length(local$scenario_list) > 0) {
-            print(local$scenario_list[[1]]$raw)
-            print(local$scenario_list[[1]]$param)
-        }
+        # if(length(local$scenario_list) > 0) {
+        #     print(local$scenario_list[[1]]$raw)
+        #     print(local$scenario_list[[1]]$param)
+        # }
     })
     
     ## output
@@ -152,4 +174,215 @@ closable_tab_title <- function(id, label, ns) {
             )
         )
     )
+}
+
+#' Parameter prior and condition setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+prior_cond_set_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h3(icon("chart-bar"), "Priors and conditions"),
+        prior_ui(ns("test"))
+    )
+}
+
+#' Parameter prior and condition setting module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param scenario_list list of raw scenarii as a `reactive`.
+prior_cond_set_server <- function(input, output, session, 
+                              scenario_list = reactive({list()})) {
+    # init local
+    local <- reactiveValues(
+        scenario_list = NULL,
+        param_list = list(),
+        cond_list = list()
+    )
+    # get input
+    observe({
+        local$scenario_list <- scenario_list()
+        # pop effective size
+        local$param_list$Ne_param <- unlist(
+            lapply(local$scenario_list, 
+                   function(item) return(item$param$Ne_param))
+        )
+        # time param
+        local$param_list$time_param <- unlist(
+            lapply(local$scenario_list, 
+                   function(item) return(item$param$time_param))
+        )
+        # rate param
+        local$param_list$rate_param <- unlist(
+            lapply(local$scenario_list, 
+                   function(item) return(item$param$rate_param))
+        )
+        # condition
+        local$cond_list <- unlist(
+            lapply(local$scenario_list, 
+                   function(item) return(item$cond))
+        )
+    })
+    # debugging
+    observe({
+        print(local$param_list$Ne_param)
+        print(local$cond_list)
+    })
+    # 
+    callModule(prior_server, "test", param_name = reactive({"test"}))
+}
+
+#' Prior choice module ui
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom shinyWidgets radioGroupButtons
+prior_ui <- function(id) {
+    ns <- NS(id)
+    # flowLayout(
+    #     textOutput(
+    #         ns("param_name")
+    #     ),
+    #     radioButtons(
+    #         ns("radio"), 
+    #         label = NULL,
+    #         choices = list("Uniform" = "UN", "Log-Uniform" = "LU",
+    #                        "Normal" = "NO", "Log-Normal" = "LN"), 
+    #         selected = "UN",
+    #         inline = TRUE
+    #     ),
+    #     fluidRow(
+    #         column(
+    #             width = 4,
+    #             tags$p("Min.")
+    #         ),
+    #         column(
+    #             width = 8,
+    #             numericInput(
+    #                 ns("min"), label = NULL, 
+    #                 value = 10, step = 0.01
+    #             )
+    #         )
+    #     ),
+    #     splitLayout(
+    #         tags$p("Max."),
+    #         numericInput(
+    #             ns("max"), label = NULL, 
+    #             value = 10, step = 0.01
+    #         )
+    #     ),
+    #     splitLayout(
+    #         tags$p("Mean"),
+    #         numericInput(
+    #             ns("mean"), label = NULL, 
+    #             value = 10, step = 0.01
+    #         )
+    #     ),
+    #     splitLayout(
+    #         tags$p("Std. Dev."),
+    #         numericInput(
+    #             ns("stdev"), label = NULL, 
+    #             value = 10, step = 0.01
+    #         )
+    #     )
+    tagList(
+        fluidRow(
+            column(
+                width = 1,
+                textOutput(
+                    ns("param_name")
+                )
+            ),
+            column(
+                width = 4,
+                radioGroupButtons(
+                    ns("radio"),
+                    label = NULL,
+                    choices = list("Uniform" = "UN", "Log-Unif." = "LU",
+                                   "Normal" = "NO", "Log-Norm." = "LN"),
+                    selected = "UN",
+                    justified = TRUE
+                )
+            ),
+            column(
+                width = 7,
+                fluidRow(
+                    column(
+                        width = 3,
+                        splitLayout(
+                            tags$p(
+                                "Min.", 
+                                style="text-align:right;margin-right:1em;"
+                            ),
+                            numericInput(
+                                ns("min"), label = NULL,
+                                value = 10, step = 0.01
+                            ),
+                            cellWidths = c("40%", "60%")
+                        )
+                    ),
+                    column(
+                        width = 3,
+                        splitLayout(
+                            tags$p(
+                                "Max.", 
+                                style="text-align:right;margin-right:1em;"
+                            ),
+                            numericInput(
+                                ns("max"), label = NULL,
+                                value = 10, step = 0.01
+                            ),
+                            cellWidths = c("40%", "60%")
+                        )
+                    ),
+                    column(
+                        width = 3,
+                        splitLayout(
+                            tags$p(
+                                "Mean", 
+                                style="text-align:right;margin-right:1em;"
+                            ),
+                            numericInput(
+                                ns("mean"), label = NULL,
+                                value = 10, step = 0.01
+                            ),
+                            cellWidths = c("40%", "60%")
+                        )
+                    ),
+                    column(
+                        width = 3,
+                        splitLayout(
+                            tags$p(
+                                "Std. dev.", 
+                                style="text-align:right;margin-right:1em;"
+                            ),
+                            numericInput(
+                                ns("stdev"), label = NULL,
+                                value = 10, step = 0.01
+                            ),
+                            cellWidths = c("40%", "60%")
+                        )
+                    )
+                )
+            )
+        )
+    )
+}
+
+#' Prior choice module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param scenario_list list of raw scenarii as a `reactive`.
+prior_server <- function(input, output, session, 
+                         param_name = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(param_name = NULL)
+    # get input
+    observe({
+        local$param_name <- param_name()
+    })
+    # update param name
+    observeEvent(local$param_name, {
+        print(local$param_name)
+    })
+    output$param_name <- renderText({local$param_name})
 }
