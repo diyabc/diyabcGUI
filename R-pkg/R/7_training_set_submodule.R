@@ -22,6 +22,9 @@ training_set_server <- function(input, output, session,
                                 scenario_list = reactive({NULL})) {
     # init local
     local <- reactiveValues(
+        cond_list = list(),
+        param_list = list(),
+        param_type_list = list(),
         project_dir = NULL,
         project_name = NULL,
         scenario_list = NULL
@@ -40,11 +43,42 @@ training_set_server <- function(input, output, session,
     # update local
     observe({
         local$scenario_list <- hist_model_def$scenario_list
+        # extract input
+        if(length(local$scenario_list) > 0) {
+            # param list
+            local$param_list <- Reduce("c", lapply(
+                local$scenario_list,
+                function(item) {
+                    c(lapply(
+                        item$param$Ne_param,
+                        function(subitem) return(list(type = "N", 
+                                                      name = subitem))
+                     ),
+                     lapply(
+                         item$param$time_param,
+                         function(subitem) return(list(type = "T", 
+                                                       name = subitem))
+                     ),
+                     lapply(
+                         item$param$rate_param,
+                         function(subitem) return(list(type = "A", 
+                                                       name = subitem))
+                     ))
+                }
+            ))
+            # condition
+            local$cond_list <- lapply(
+                local$scenario_list,
+                function(item) return(item$cond)
+            )
+        }
     })
     # parameter prior and conditon setting
     prior_cond_set <- callModule(
                         prior_cond_set_server, "prior_cond",
-                        scenario_list = reactive(local$scenario_list))
+                        cond_list = reactive(local$cond_list),
+                        param_list = reactive(local$param_list))
+                        # param_type_list = reactive(local$param_type_list))
     # output
     return(out)
 }
@@ -183,55 +217,69 @@ prior_cond_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("chart-bar"), "Priors and conditions"),
-        prior_ui(ns("test"))
+        uiOutput(ns("param_prior_def")),
+        hr(),
+        h4("Condition setting"),
+        uiOutput(ns("cond_def"))
     )
 }
 
 #' Parameter prior and condition setting module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param scenario_list list of raw scenarii as a `reactive`.
+#' @param cond_list list of conditions on parameters, as a `reactive`.
+#' @param param_list list of scenario parameters, as a `reactive`.
+#' @importFrom stringr str_c
 prior_cond_set_server <- function(input, output, session, 
-                              scenario_list = reactive({list()})) {
+                                  cond_list = reactive({list()}),
+                                  param_list = reactive({list()})) {
+    # namespace
+    ns <- session$ns
     # init local
     local <- reactiveValues(
-        scenario_list = NULL,
-        param_list = list(),
-        cond_list = list()
+        cond_list = NULL,
+        param_list = NULL,
+        prior_list = NULL
     )
     # get input
     observe({
-        local$scenario_list <- scenario_list()
-        # pop effective size
-        local$param_list$Ne_param <- unlist(
-            lapply(local$scenario_list, 
-                   function(item) return(item$param$Ne_param))
-        )
-        # time param
-        local$param_list$time_param <- unlist(
-            lapply(local$scenario_list, 
-                   function(item) return(item$param$time_param))
-        )
-        # rate param
-        local$param_list$rate_param <- unlist(
-            lapply(local$scenario_list, 
-                   function(item) return(item$param$rate_param))
-        )
-        # condition
-        local$cond_list <- unlist(
-            lapply(local$scenario_list, 
-                   function(item) return(item$cond))
-        )
+        local$cond_list <- cond_list()
+        local$param_list <- param_list()
     })
-    # debugging
+    # init output
+    out <- reactiveValues(raw_prior_list = list())
+    # render ui param prior setting
+    observeEvent(local$param_list, {
+        output$param_prior_def <- renderUI({
+            tag_list <- lapply(
+                local$param_list,
+                function(item) return(prior_ui(ns(str_c("prior_", item$name))))
+            )
+            do.call(tagList, tag_list)
+        })
+    })
+    # server side
     observe({
-        print(local$param_list$Ne_param)
-        print(local$cond_list)
+        local$prior_list <<- lapply(
+            local$param_list,
+            function(item) {
+                req(item$name)
+                req(item$type)
+                callModule(prior_server, str_c("prior_", item$name),
+                           param_name = reactive({item$name}),
+                           param_type = reactive({item$type}))
+            }
+        )
     })
-    # 
-    callModule(prior_server, "test", 
-               param_name = reactive({"t0"}),
-               param_type = reactive({"A"}))
+    observe({
+        out$raw_prior_list <- unlist(lapply(
+            local$prior_list,
+            function(item) return(item$raw)
+        ))
+        print(out$raw_prior_list)
+    })
+    ## output
+    return(out)
 }
 
 #' Prior choice module ui
@@ -267,7 +315,7 @@ prior_ui <- function(id) {
                         splitLayout(
                             tags$p(
                                 "Min.", 
-                                style="text-align:right;margin-right:1em;"
+                                style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
                             numericInput(
                                 ns("min"), label = NULL,
@@ -281,7 +329,7 @@ prior_ui <- function(id) {
                         splitLayout(
                             tags$p(
                                 "Max.", 
-                                style="text-align:right;margin-right:1em;"
+                                style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
                             numericInput(
                                 ns("max"), label = NULL,
@@ -295,7 +343,7 @@ prior_ui <- function(id) {
                         splitLayout(
                             tags$p(
                                 "Mean", 
-                                style="text-align:right;margin-right:1em;"
+                                style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
                             numericInput(
                                 ns("mean"), label = NULL,
@@ -309,7 +357,7 @@ prior_ui <- function(id) {
                         splitLayout(
                             tags$p(
                                 "Std. dev.", 
-                                style="text-align:right;margin-right:1em;"
+                                style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
                             numericInput(
                                 ns("stdev"), label = NULL,
@@ -346,13 +394,13 @@ prior_server <- function(input, output, session,
     })
     # init output
     out <- reactiveValues(raw = NULL, valid = TRUE)
-    # update param name
-    observeEvent(local$param_name, {
-        print(local$param_name)
-    })
+    # update param name output
     output$param_name <- renderText({local$param_name})
     ## check for min/max
     observe({
+        req(local$param_name)
+        req(input$min)
+        req(input$max)
         if(input$min >= input$max) {
             out$valid <- FALSE
             showNotification(
@@ -387,6 +435,11 @@ prior_server <- function(input, output, session,
     })
     ## check for normal and log-normal parameter setting
     observe({
+        req(local$param_name)
+        req(input$prior_type)
+        req(input$min)
+        req(input$max)
+        req(input$mean)
         if(input$prior_type %in% c("NO", "LN")) {
             if(input$mean < input$min | input$mean > input$max) {
                 out$valid <- FALSE
@@ -411,7 +464,6 @@ prior_server <- function(input, output, session,
     ## deal with admixture rate
     observeEvent(local$param_type, {
         req(local$param_type)
-        req(local$param_name)
         if(local$param_type == "A") {
             updateNumericInput(session, "min", value = 0.001, min = 0, max = 1)
             updateNumericInput(session, "max", value = 0.999, min = 0, max = 1)
@@ -422,16 +474,29 @@ prior_server <- function(input, output, session,
                                min = NULL, max = NULL)
         }
     })
+    # observe({
+    #     logging("min = ", input$min)
+    #     logging("max = ", input$max)
+    #     logging("mean = ", input$mean)
+    #     logging("stdev = ", input$stdev)
+    # })
     ## encode output
     observe({
         req(local$param_name)
         req(local$param_type)
+        req(input$prior_type)
+        req(input$min)
+        req(input$max)
+        req(input$mean)
+        req(input$stdev)
         out$raw <- str_c(local$param_name, " ",
                          local$param_type, " ",
                          input$prior_type, "[",
                          input$min, ",", input$max, ",",
                          input$mean, ",", input$stdev, "]")
-        logging("raw prior def = ", out$raw)
+        # logging("raw prior def = ", out$raw)
     })
+    ## output
+    return(out)
     
 }
