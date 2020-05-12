@@ -50,3 +50,10 @@ rate_regex <- function() {
 time_regex <- function() {
     return(param_regex())
 }
+
+#' return event time regex
+#' @keywords internal
+#' @author Ghislain Durif
+single_time_regex <- function() {
+    return(alphanum_param_regex())
+}
