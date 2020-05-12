@@ -229,7 +229,9 @@ prior_cond_set_server <- function(input, output, session,
         print(local$cond_list)
     })
     # 
-    callModule(prior_server, "test", param_name = reactive({"test"}))
+    callModule(prior_server, "test", 
+               param_name = reactive({"t0"}),
+               param_type = reactive({"A"}))
 }
 
 #' Prior choice module ui
@@ -238,52 +240,6 @@ prior_cond_set_server <- function(input, output, session,
 #' @importFrom shinyWidgets radioGroupButtons
 prior_ui <- function(id) {
     ns <- NS(id)
-    # flowLayout(
-    #     textOutput(
-    #         ns("param_name")
-    #     ),
-    #     radioButtons(
-    #         ns("radio"), 
-    #         label = NULL,
-    #         choices = list("Uniform" = "UN", "Log-Uniform" = "LU",
-    #                        "Normal" = "NO", "Log-Normal" = "LN"), 
-    #         selected = "UN",
-    #         inline = TRUE
-    #     ),
-    #     fluidRow(
-    #         column(
-    #             width = 4,
-    #             tags$p("Min.")
-    #         ),
-    #         column(
-    #             width = 8,
-    #             numericInput(
-    #                 ns("min"), label = NULL, 
-    #                 value = 10, step = 0.01
-    #             )
-    #         )
-    #     ),
-    #     splitLayout(
-    #         tags$p("Max."),
-    #         numericInput(
-    #             ns("max"), label = NULL, 
-    #             value = 10, step = 0.01
-    #         )
-    #     ),
-    #     splitLayout(
-    #         tags$p("Mean"),
-    #         numericInput(
-    #             ns("mean"), label = NULL, 
-    #             value = 10, step = 0.01
-    #         )
-    #     ),
-    #     splitLayout(
-    #         tags$p("Std. Dev."),
-    #         numericInput(
-    #             ns("stdev"), label = NULL, 
-    #             value = 10, step = 0.01
-    #         )
-    #     )
     tagList(
         fluidRow(
             column(
@@ -295,7 +251,7 @@ prior_ui <- function(id) {
             column(
                 width = 4,
                 radioGroupButtons(
-                    ns("radio"),
+                    ns("prior_type"),
                     label = NULL,
                     choices = list("Uniform" = "UN", "Log-Unif." = "LU",
                                    "Normal" = "NO", "Log-Norm." = "LN"),
@@ -329,7 +285,7 @@ prior_ui <- function(id) {
                             ),
                             numericInput(
                                 ns("max"), label = NULL,
-                                value = 10, step = 0.01
+                                value = 10000, step = 0.01
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -343,7 +299,7 @@ prior_ui <- function(id) {
                             ),
                             numericInput(
                                 ns("mean"), label = NULL,
-                                value = 10, step = 0.01
+                                value = 0, step = 0.01
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -357,7 +313,7 @@ prior_ui <- function(id) {
                             ),
                             numericInput(
                                 ns("stdev"), label = NULL,
-                                value = 10, step = 0.01
+                                value = 0, step = 0.01
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -371,18 +327,111 @@ prior_ui <- function(id) {
 #' Prior choice module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param scenario_list list of raw scenarii as a `reactive`.
+#' @param param_name parameter name as a `reactive`.
+#' @param param_type parameter type as a `reactive`, `'N'` for population 
+#' effective size, `'T'` for time, and `'A'` for admixture rate.
+#' @importFrom shinyjs disable enable
+#' @importFrom stringr str_c
 prior_server <- function(input, output, session, 
-                         param_name = reactive({NULL})) {
+                         param_name = reactive({NULL}),
+                         param_type = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
     # init local
-    local <- reactiveValues(param_name = NULL)
+    local <- reactiveValues(param_name = NULL, param_type = NULL)
     # get input
     observe({
         local$param_name <- param_name()
+        local$param_type <- param_type()
     })
+    # init output
+    out <- reactiveValues(raw = NULL, valid = TRUE)
     # update param name
     observeEvent(local$param_name, {
         print(local$param_name)
     })
     output$param_name <- renderText({local$param_name})
+    ## check for min/max
+    observe({
+        if(input$min >= input$max) {
+            out$valid <- FALSE
+            showNotification(
+                id = ns("issue_min_max"),
+                type = "warning",
+                closeButton = TRUE,
+                duration = 10,
+                tags$p(
+                    icon("warning"),
+                    str_c(
+                        "For parameter `", local$param_name, "`: ",
+                        "min should be lower than max."
+                    )
+                )
+            )
+        } else {
+            out$valid <- TRUE
+        }
+    })
+    ## disable mean and stdev if uniform or log-uniform
+    observeEvent(input$prior_type, {
+        req(input$prior_type)
+        if(input$prior_type %in% c("UN", "LU")) {
+            updateNumericInput(session, "mean", value = 0)
+            updateNumericInput(session, "stdev", value = 0)
+            shinyjs::disable("mean")
+            shinyjs::disable("stdev")
+        } else {
+            shinyjs::enable("mean")
+            shinyjs::enable("stdev")
+        }
+    })
+    ## check for normal and log-normal parameter setting
+    observe({
+        if(input$prior_type %in% c("NO", "LN")) {
+            if(input$mean < input$min | input$mean > input$max) {
+                out$valid <- FALSE
+                showNotification(
+                    id = ns("issue_norm_lognorm"),
+                    type = "warning",
+                    closeButton = TRUE,
+                    duration = 10,
+                    tags$p(
+                        icon("warning"),
+                        str_c(
+                            "For parameter `", local$param_name, "`: ",
+                            "mean should be between max and min values."
+                        )
+                    )
+                )
+            } else {
+                out$valid <- TRUE
+            }
+        }
+    })
+    ## deal with admixture rate
+    observeEvent(local$param_type, {
+        req(local$param_type)
+        req(local$param_name)
+        if(local$param_type == "A") {
+            updateNumericInput(session, "min", value = 0.001, min = 0, max = 1)
+            updateNumericInput(session, "max", value = 0.999, min = 0, max = 1)
+        } else {
+            updateNumericInput(session, "min", value = 10, 
+                               min = NULL, max = NULL)
+            updateNumericInput(session, "max", value = 10000, 
+                               min = NULL, max = NULL)
+        }
+    })
+    ## encode output
+    observe({
+        req(local$param_name)
+        req(local$param_type)
+        out$raw <- str_c(local$param_name, " ",
+                         local$param_type, " ",
+                         input$prior_type, "[",
+                         input$min, ",", input$max, ",",
+                         input$mean, ",", input$stdev, "]")
+        logging("raw prior def = ", out$raw)
+    })
+    
 }
