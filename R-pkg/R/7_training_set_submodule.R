@@ -437,9 +437,9 @@ prior_server <- function(input, output, session,
     observe({
         req(local$param_name)
         req(input$prior_type)
-        req(input$min)
-        req(input$max)
-        req(input$mean)
+        req(is.numeric(input$min))
+        req(is.numeric(input$max))
+        req(is.numeric(input$mean))
         if(input$prior_type %in% c("NO", "LN")) {
             if(input$mean < input$min | input$mean > input$max) {
                 out$valid <- FALSE
@@ -485,10 +485,10 @@ prior_server <- function(input, output, session,
         req(local$param_name)
         req(local$param_type)
         req(input$prior_type)
-        req(input$min)
-        req(input$max)
-        req(input$mean)
-        req(input$stdev)
+        req(is.numeric(input$min))
+        req(is.numeric(input$max))
+        req(is.numeric(input$mean))
+        req(is.numeric(input$stdev))
         out$raw <- str_c(local$param_name, " ",
                          local$param_type, " ",
                          input$prior_type, "[",
