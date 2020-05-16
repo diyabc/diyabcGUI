@@ -95,16 +95,6 @@ index_server <- function(input, output, session) {
     # home page server side
     home_page <- callModule(home_page_server, "home_page")
     
-    # # dynamic content in the dynamic tabs
-    # observe({ 
-    #     lapply(analysis_setting$proj_list, function(proj) {
-    #         
-    #         analysis_setting$content_list[[ proj$id ]] <<- callModule(
-    #             analysis_page_server, str_c("mod_" , proj$id)
-    #         )
-    #     })
-    # })
-    
     ## open analysis project
     # update analysis project list
     observeEvent(home_page$new_analysis_project, {
@@ -113,21 +103,46 @@ index_server <- function(input, output, session) {
                                                  0, analysis_setting$count) + 1
         # project id
         proj_id <- str_c("analysis_proj", analysis_setting$count)
+        # server function
+        analysis_setting$content_list[[ proj_id ]] <<- callModule(
+            analysis_page_server, 
+            str_c("mod_" , proj_id)
+            # project_name = reactive(analysis_setting$proj_list[[ proj_id ]]$name)
+        )
+        # FIXME close project
+        
+        # print(analysis_setting$content_list[[ proj_id ]]$setting$project_name)
+        
+        
+        
+        
         # update analysis project list
         analysis_setting$proj_list[[ proj_id ]] <- list(
-            # name = analysis_setting$content_list[[ proj_id ]]$setting$project_name,
-            name = "test",
+            # name = analysis_setting$content_list[[ proj$id ]]$setting$project_name,
+            name = proj_id,
             id = proj_id
         )
-
-        # # server side call
-        # analysis_setting$content_list[[ proj_id ]] <- callModule(
-        #     analysis_page_server, proj_id
-        # )
-        # select corresponding item
-        # updateTabItems(session, "app_tabs", selected = proj_id)
-        # updateTabItems(session, "app_tabs", selected = "home_page")
+        # 
+        # # update tab Name
+        # analysis_setting$proj_list[[ proj$id ]]$name <<- observe({
+        #     analysis_setting$content_list[[ proj$id ]]$setting$project_name
+        # })
+        
     })
+    
+    # # dynamic content in the dynamic analysis tabs
+    # observe({
+    #     lapply(analysis_setting$proj_list, function(proj) {
+    #         
+    #     })
+    # })
+    # 
+    # # update project name
+    # observe({
+    #     lapply(analysis_setting$proj_list, function(proj) {
+    #         
+    #     })
+    # })
     
     # update analysis menu sub item list
     # observeEvent(analysis_setting$proj_list, {
