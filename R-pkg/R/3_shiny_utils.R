@@ -31,6 +31,7 @@ dir_choice_server <- function(input, output, session,
     })
     # enable/disable ?
     observeEvent(local$enabled, {
+        req(!is.null(local$enabled))
         if(local$enabled) {
             shinyjs::enable("dir_choice")
         } else {
@@ -103,6 +104,7 @@ proj_name_server <- function(input, output, session,
     })
     # enable/disable ?
     observeEvent(local$enabled, {
+        req(!is.null(local$enabled))
         if(local$enabled) {
             shinyjs::enable("project_name")
             shinyjs::enable("timestamp")
@@ -122,6 +124,7 @@ proj_name_server <- function(input, output, session,
     })
     # update timestamp depending on initial project name value
     observe({
+        req(!is.null(input$timestamp))
         if(input$timestamp) {
             out$fullname <- paste0(out$name, "_", local$timestamp)
         } else {
