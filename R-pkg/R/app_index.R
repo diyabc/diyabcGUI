@@ -1,53 +1,3 @@
-#' App dashboard header
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardHeader
-app_header <- dashboardHeader(title = "DIYABC-RF")
-
-#' App dashboard simplified sidebar
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
-app_simplified_sidebar <- dashboardSidebar(
-    sidebarMenu(
-        menuItem(
-            "Home", 
-            tabName = "home_tab", 
-            icon = icon("home")
-        ),
-        menuItem(
-            "Data analysis", 
-            tabName = "analysis_tab", 
-            icon = icon("gear")
-        ),
-        menuItem(
-            "Data simulation", 
-            tabName = "simu_tab", 
-            icon = icon("dna")
-        )
-    )
-)
-
-#' App dashboard simplified body
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardBody tabItems tabItem
-#' @importFrom shinyjs useShinyjs
-app_simplified_body <- dashboardBody(
-    useShinyjs(),
-    tabItems(
-        tabItem(tabName = "home_tab",
-                home_page_ui("home_page")
-        ),
-        tabItem(tabName = "analysis_tab",
-                analysis_page_ui("analysis_page")
-        ),
-        tabItem(tabName = "simu_tab",
-                simu_page_ui("simu_page")
-        )
-    )
-)
-
 #' App simplified dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
@@ -57,27 +7,10 @@ simplified_index_server <- function(input, output, session) {
     callModule(simu_page_server, "simu_page")
 }
 
-#' App dashboard sidebar
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
-app_sidebar <- dashboardSidebar(
-    sidebarMenuOutput("app_menu")
-)
-
-#' App dashboard body
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardBody tabItems tabItem
-#' @importFrom shinyjs useShinyjs
-app_body <- dashboardBody(
-    useShinyjs(),
-    uiOutput("app_tabs")
-)
-
 #' App dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFRom shinydashboard tabItem tabItems
 index_server <- function(input, output, session) {
     
     # init local
@@ -85,34 +18,15 @@ index_server <- function(input, output, session) {
     
     # init project list
     analysis_setting <- reactiveValues(
-        menu_subitems = NULL,
         count = NULL,
-        proj_list = list(),
-        tab_list = list()
+        content_list = list(),
+        proj_list = list()
     )
     simu_setting <- reactiveValues(
-        menu_subitems = NULL,
         count = NULL,
-        proj_list = list(),
-        tab_list = list()
+        content_list = list(),
+        proj_list = list()
     )
-    
-    # update analysis menu sub item list
-    observeEvent(analysis_setting$proj_list, {
-        
-        print(analysis_setting$proj_list)
-        
-        analysis_setting$menu_subitems <- render_menu_subitem_list(
-            analysis_setting$proj_list, 
-            tag = "analysis_project")
-    })
-    
-    # update simu menu sub item list
-    observeEvent(simu_setting$proj_list, {
-        simu_setting$menu_subitems <- render_menu_subitem_list(
-            simu_setting$proj_list, 
-            tag = "simu_project")
-    })
     
     # render sidebar menu
     observe({
@@ -128,20 +42,20 @@ index_server <- function(input, output, session) {
                     tabName = "analysis_tab", 
                     icon = icon("gear"), 
                     startExpanded = TRUE,
-                    analysis_setting$menu_subitems
+                    render_menu_subitem_list(analysis_setting$proj_list)
                 ),
                 menuItem(
                     "Data simulation", 
                     tabName = "simu_tab", 
                     icon = icon("dna"),
                     startExpanded = TRUE,
-                    simu_setting$menu_subitems
+                    render_menu_subitem_list(simu_setting$proj_list)
                 )
             )
         })
     })
     
-    # FIXME render body
+    # dynamic tab update
     output$app_tabs <- renderUI({
         ## static tabs
         static_tabs <- list(
@@ -155,10 +69,25 @@ index_server <- function(input, output, session) {
             #         simu_page_ui("simu_page")
             # )
         )
+        # dynamic analysis tab
+        analysis_tabs <- lapply(analysis_setting$proj_list, function(proj) {
+            tabItem(
+                tabName = proj$id, 
+                analysis_page_ui(str_c("mod_" , proj$id))
+            )
+        })
+        # dynamic simu tab
+        simu_tabs <- lapply(simu_setting$proj_list, function(proj) {
+            tabItem(
+                tabName = proj$id, 
+                simu_page_ui(str_c("mod_" , proj$id))
+            )
+        })
         ## combine static and dynamic tabs
         current_tabs <- c(static_tabs,
-                          analysis_setting$tab_list,
-                          simu_setting$tab_list)
+                          unname(analysis_tabs),
+                          unname(simu_tabs))
+        
         ## render
         do.call(tabItems, current_tabs)
     })
@@ -166,7 +95,18 @@ index_server <- function(input, output, session) {
     # home page server side
     home_page <- callModule(home_page_server, "home_page")
     
-    # open new analysis project
+    # # dynamic content in the dynamic tabs
+    # observe({ 
+    #     lapply(analysis_setting$proj_list, function(proj) {
+    #         
+    #         analysis_setting$content_list[[ proj$id ]] <<- callModule(
+    #             analysis_page_server, str_c("mod_" , proj$id)
+    #         )
+    #     })
+    # })
+    
+    ## open analysis project
+    # update analysis project list
     observeEvent(home_page$new_analysis_project, {
         # update project count
         analysis_setting$count <- ifelse(is.null(analysis_setting$count), 
@@ -174,10 +114,35 @@ index_server <- function(input, output, session) {
         # project id
         proj_id <- str_c("analysis_proj", analysis_setting$count)
         # update analysis project list
-        analysis_setting$proj_list[[ proj_id ]] <- list(name = "project_name", 
-                                                        id = proj_id)
+        analysis_setting$proj_list[[ proj_id ]] <- list(
+            # name = analysis_setting$content_list[[ proj_id ]]$setting$project_name,
+            name = "test",
+            id = proj_id
+        )
+
+        # # server side call
+        # analysis_setting$content_list[[ proj_id ]] <- callModule(
+        #     analysis_page_server, proj_id
+        # )
         # select corresponding item
-        updateTabItems(session, "app_tabs", selected = proj_id)
+        # updateTabItems(session, "app_tabs", selected = proj_id)
+        # updateTabItems(session, "app_tabs", selected = "home_page")
+    })
+    
+    # update analysis menu sub item list
+    # observeEvent(analysis_setting$proj_list, {
+    #     print(analysis_setting$proj_list)
+    #     analysis_setting$menu_subitems <- render_menu_subitem_list(
+    #         analysis_setting$proj_list
+    #     )
+    #     print(analysis_setting$menu_subitems)
+    # })
+    
+    # update simu menu sub item list
+    observeEvent(simu_setting$proj_list, {
+        simu_setting$menu_subitems <- render_menu_subitem_list(
+            simu_setting$proj_list
+        )
     })
     
     # callModule(analysis_page_server, "analysis_page")
@@ -189,15 +154,14 @@ index_server <- function(input, output, session) {
 #' @author Ghislain Durif
 #' @param proj_list list of projects with `$name` (string) and `$id` (unique 
 #' integer).
-#' @param tag string, tag to identify 'analysis' or 'simulation' projects.
 #' @importFrom shinydashboard menuSubItem
-render_menu_subitem_list <- function(proj_list, tag = "proj") {
+render_menu_subitem_list <- function(proj_list) {
     out <- NULL
     if(length(proj_list) > 0) {
         out <- lapply(proj_list, function(proj) {
             menuSubItem(
                 closable_menu_title(id = proj$id, label = proj$name), 
-                tabName = str_c(tag, proj$id),
+                tabName = proj$id,
                 icon = icon("folder")
             )
         })
