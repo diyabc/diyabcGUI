@@ -7,11 +7,6 @@
 \title{diyabcGUI
 
 diyabcGUI package}
-\description{
-diyabcGUI
-
-diyabcGUI package
-}
 \author{
 Ghislain Durif
 }

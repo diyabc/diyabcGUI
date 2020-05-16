@@ -1,7 +1,7 @@
 #' Simulation page ui
 #' @keywords internal
 #' @author Ghislain Durif
-#' @includeFrom shinyjs disabled
+#' @importFrom shinyjs disabled
 simu_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
