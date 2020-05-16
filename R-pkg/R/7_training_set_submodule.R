@@ -92,7 +92,7 @@ hist_model_panel_ui <- function(id) {
         h3(tags$span(icon("history"), "Define historical models")),
         fluidRow(
             column(
-                width = 4,
+                width = 2,
                 actionButton(
                     ns("add"), 
                     label = tags$span(icon("plus"), "Add")

@@ -12,7 +12,7 @@ analysis_page_ui <- function(id) {
                 collapsible = TRUE,
                 new_proj_set_ui(ns("proj_set")) %>% 
                     helper(type = "markdown", 
-                           content = "simulation_project")
+                           content = "analysis_project")
             )
         ),
         fluidRow(
