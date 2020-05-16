@@ -88,6 +88,7 @@ new_proj_set_server <- function(input, output, session) {
     ## react
     # validate
     observeEvent(input$validate, {
+        req(out$project_dir)
         if(!dir.exists(out$project_dir)) {
             ret <- dir.create(out$project_dir, recursive = TRUE)
             if(ret) {
