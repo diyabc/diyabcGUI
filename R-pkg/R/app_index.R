@@ -14,7 +14,9 @@ simplified_index_server <- function(input, output, session) {
 index_server <- function(input, output, session) {
     
     # init local
-    local <- reactiveValues()
+    local <- reactiveValues(
+        current_tab = "home_page"
+    )
     
     # init project list
     analysis_setting <- reactiveValues(
@@ -53,6 +55,8 @@ index_server <- function(input, output, session) {
                 )
             )
         })
+        # FIXME
+        updateTabItems(session, "app_menu", selected = local$current_tab)
     })
     
     # dynamic tab update
@@ -62,12 +66,6 @@ index_server <- function(input, output, session) {
             tabItem(tabName = "home_tab",
                     home_page_ui("home_page")
             )
-            # tabItem(tabName = "analysis_tab",
-            #         # analysis_page_ui("analysis_page")
-            # ),
-            # tabItem(tabName = "simu_tab",
-            #         simu_page_ui("simu_page")
-            # )
         )
         # dynamic analysis tab
         analysis_tabs <- lapply(analysis_setting$proj_list, function(proj) {
@@ -92,10 +90,15 @@ index_server <- function(input, output, session) {
         do.call(tabItems, current_tabs)
     })
     
+    # FIXME update selected tab
+    observeEvent(local$current_tab, {
+        print(local$current_tab)
+        updateTabItems(session, "app_menu", selected = local$current_tab)
+    })
+    
     # home page server side
     home_page <- callModule(home_page_server, "home_page")
     
-    ## open analysis project
     # update analysis project list
     observeEvent(home_page$new_analysis_project, {
         # update project count
@@ -103,65 +106,66 @@ index_server <- function(input, output, session) {
                                                  0, analysis_setting$count) + 1
         # project id
         proj_id <- str_c("analysis_proj", analysis_setting$count)
+        # update analysis project list
+        analysis_setting$proj_list[[ proj_id ]] <- reactiveValues(
+            name = "project_name",
+            id = proj_id
+        )
         # server function
         analysis_setting$content_list[[ proj_id ]] <<- callModule(
             analysis_page_server, 
-            str_c("mod_" , proj_id)
-            # project_name = reactive(analysis_setting$proj_list[[ proj_id ]]$name)
+            str_c("mod_" , proj_id),
+            project_name = reactive(analysis_setting$proj_list[[ proj_id ]]$name)
         )
+        
         # FIXME close project
         
-        # print(analysis_setting$content_list[[ proj_id ]]$setting$project_name)
-        
-        
-        
-        
-        # update analysis project list
-        analysis_setting$proj_list[[ proj_id ]] <- list(
-            # name = analysis_setting$content_list[[ proj$id ]]$setting$project_name,
-            name = proj_id,
-            id = proj_id
-        )
-        # 
-        # # update tab Name
-        # analysis_setting$proj_list[[ proj$id ]]$name <<- observe({
-        #     analysis_setting$content_list[[ proj$id ]]$setting$project_name
+        # # FIXME update tab Name
+        # observeEvent(analysis_setting$content_list[[ proj_id ]]$setting$validate, {
+        #     req(analysis_setting$content_list[[ proj_id ]]$setting)
+        #     req(analysis_setting$content_list[[ proj_id ]]$setting$project_name)
+        #     analysis_setting$proj_list[[ proj_id ]]$name <- 
+        #         analysis_setting$content_list[[ proj_id ]]$setting$project_name
+        #     updateTabItems(session, "app_menu", selected = proj_id)
         # })
         
+        # update current tab
+        local$current_tab <- proj_id
     })
     
-    # # dynamic content in the dynamic analysis tabs
-    # observe({
-    #     lapply(analysis_setting$proj_list, function(proj) {
-    #         
-    #     })
-    # })
-    # 
-    # # update project name
-    # observe({
-    #     lapply(analysis_setting$proj_list, function(proj) {
-    #         
-    #     })
-    # })
-    
-    # update analysis menu sub item list
-    # observeEvent(analysis_setting$proj_list, {
-    #     print(analysis_setting$proj_list)
-    #     analysis_setting$menu_subitems <- render_menu_subitem_list(
-    #         analysis_setting$proj_list
-    #     )
-    #     print(analysis_setting$menu_subitems)
-    # })
-    
-    # update simu menu sub item list
-    observeEvent(simu_setting$proj_list, {
-        simu_setting$menu_subitems <- render_menu_subitem_list(
-            simu_setting$proj_list
+    # update simu project list
+    observeEvent(home_page$new_simu_project, {
+        # update project count
+        simu_setting$count <- ifelse(is.null(simu_setting$count), 
+                                         0, simu_setting$count) + 1
+        # project id
+        proj_id <- str_c("simu_proj", simu_setting$count)
+        # update simu project list
+        simu_setting$proj_list[[ proj_id ]] <- reactiveValues(
+            name = "project_name",
+            id = proj_id
         )
+        # server function
+        simu_setting$content_list[[ proj_id ]] <<- callModule(
+            simu_page_server, 
+            str_c("mod_" , proj_id),
+            project_name = reactive(simu_setting$proj_list[[ proj_id ]]$name)
+        )
+        
+        # FIXME close project
+        
+        # # FIXME update tab Name
+        # observeEvent(simu_setting$content_list[[ proj_id ]]$setting$validate, {
+        #     req(simu_setting$content_list[[ proj_id ]]$setting)
+        #     req(simu_setting$content_list[[ proj_id ]]$setting$project_name)
+        #     simu_setting$proj_list[[ proj_id ]]$name <- 
+        #         simu_setting$content_list[[ proj_id ]]$setting$project_name
+        #     updateTabItems(session, "app_menu", selected = proj_id)
+        # })
+        
+        # update current tab
+        local$current_tab <- proj_id
     })
-    
-    # callModule(analysis_page_server, "analysis_page")
-    # callModule(simu_page_server, "simu_page")
 }
 
 #' Render menu sub item list function
