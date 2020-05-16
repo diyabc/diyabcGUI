@@ -99,11 +99,11 @@ open_project_server <- function(input, output, session) {
     # init output
     out <- reactiveValues(new = NULL, existing = NULL)
     # react to new project request
-    observeEvent(input$new, {
+    observeEvent(input$new_project, {
         out$new <- ifelse(is.null(out$new), 0, out$new) + 1
     })
     # react to open existing project request
-    observeEvent(input$existing, {
+    observeEvent(input$existing_project, {
         out$existing <- ifelse(is.null(out$existing), 0, out$existing) + 1
     })
     # output
