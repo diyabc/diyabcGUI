@@ -5,12 +5,12 @@ bin_dir <- function() {
     pkgdir <- find.package("diyabcGUI")
     bindir <- file.path(pkgdir, "bin")
     if(!dir.exists(bindir)) {
-        binpdir <- file.path(pkgdir, "inst", "help")
-        if(!dir.exists(binpdir)) {
+        bindir <- file.path(pkgdir, "inst", "bin")
+        if(!dir.exists(bindir)) {
             stop("bin directory not found")
         }
     }
-    return(binpdir)
+    return(bindir)
 }
 
 #' find help directory
