@@ -67,10 +67,13 @@ training_set_server <- function(input, output, session,
                 }
             ))
             # condition
-            local$cond_list <- lapply(
+            local$cond_list <- Reduce("c", lapply(
                 local$scenario_list,
                 function(item) return(item$cond)
-            )
+            ))
+            
+            print("condition = ")
+            print(local$cond_list)
         }
     })
     # parameter prior and conditon setting
@@ -90,6 +93,7 @@ hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(tags$span(icon("history"), "Define historical models")),
+        br(),
         fluidRow(
             column(
                 width = 2,
@@ -220,7 +224,19 @@ prior_cond_set_ui <- function(id) {
         uiOutput(ns("param_prior_def")),
         hr(),
         h4("Condition setting"),
-        uiOutput(ns("cond_def"))
+        textAreaInput(
+            ns("cond_set"), 
+            label = NULL, 
+            rows = 12,
+            resize = "none"
+        ),
+        helpText(
+            "Enter a single condition per line.",
+            "Conditions should have the following format: XX<YY.", 
+            "where 'XX' and 'YY' are parameters of the same type.",
+            "You can use the standard comparison signs: '>', '>=', '<', '=<'."
+        ),
+        uiOutput(ns("cond_help"))
     )
 }
 
@@ -278,6 +294,25 @@ prior_cond_set_server <- function(input, output, session,
         ))
         print(out$raw_prior_list)
     })
+    # condition help
+    output$cond_help <- renderUI({
+        req(!is.null(local$cond_list))
+        print(local$cond_list)
+        tagList(
+            "We recommend that you enter the following conditions:",
+            do.call(
+                tags$ul,
+                lapply(local$cond_list, function(item) {
+                    return(tags$li(item))
+                })
+            )
+        )
+    })
+    # get input condition
+    observeEvent(cond_set, {
+        # FIXME
+    })
+    
     ## output
     return(out)
 }
