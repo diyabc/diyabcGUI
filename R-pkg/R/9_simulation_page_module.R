@@ -31,7 +31,7 @@ simu_page_ui <- function(id) {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                genetic_loci_ui(ns("genetic_loci"))
+                genetic_loci_ui(ns("genetic_setting"))
             )
         )
         ,
@@ -73,7 +73,7 @@ simu_page_server <- function(input, output, session,
     })
     # init output
     out <- reactiveValues(
-        genetic_loci = NULL,
+        genetic_setting = NULL,
         setting = NULL,
         scenario = NULL
     )
@@ -104,21 +104,34 @@ simu_page_server <- function(input, output, session,
         out$scenario <- scenario
     })
     ## genetic loci
-    genetic_loci <- callModule(genetic_loci_server, "genetic_loci")
-    # update output
-    observe({
-        # print("---- genetic_loci = ")
-        # print(genetic_loci)
-        out$genetic_loci <- genetic_loci
-    })
+    genetic_setting <- callModule(genetic_loci_server, "genetic_setting")
+    # # update output
+    # observe({
+    #     # print("---- genetic_setting = ")
+    #     # print(genetic_setting)
+    #     # print(genetic_setting$locus_description)
+    #     # out$genetic_setting <- genetic_setting
+    # })
+    # ## debugging
+    # observe({
+    #     # print(scenario)
+    #     print("sample sizes = ")
+    #     print(scenario$param_setting$sample_sizes)
+    #     # print(genetic_setting)
+    # })
     ## simulation project action
     callModule(simu_proj_action_server, "proj_action",
                project_dir = reactive(setting$project_dir),
                project_name = reactive(setting$project_name),
                validation = reactive(setting$validation),
-               param_setting = reactive(scenario$param_setting),
+               raw_param = reactive(scenario$param_setting$param_values),
                raw_scenario = reactive(scenario$raw_scenario),
-               genetic_loci = reactive(genetic_loci))
+               locus_description = reactive(genetic_setting$locus_description),
+               sample_sizes = reactive(scenario$param_setting$sample_sizes),
+               n_rep = reactive(scenario$param_setting$nrep),
+               sex_ratio = reactive(genetic_setting$sex_ratio),
+               seq_mode = reactive(genetic_setting$seq_mode),
+               locus_type = reactive(genetic_setting$locus_type))
     
     # output
     return(out)
@@ -180,7 +193,6 @@ simu_hist_model_server <- function(input, output, session,
     # update output
     observe({
         out$param_setting <- param_setting
-        print(out$param_setting$param_values)
     })
     # output
     return(out)
@@ -321,7 +333,7 @@ simu_hist_model_param_server <- function(input, output, session,
                     ),
                     tags$p(
                         "This is an advisory warning to avoid gene genealogy ",
-                        "incongruenties. You may prefer to ignore."
+                        "incongruenties. You may prefer to ignore it."
                     ),
                     do.call(
                         tags$ul,
@@ -343,6 +355,7 @@ simu_hist_model_param_server <- function(input, output, session,
         param <- local$scenario_param
         # number of sample event
         nsample <- sum(param$event_type == "sample")
+        # logging("nsample = ", nsample)
         # number of population
         npop <- param$npop
         # populations concerned by sample
@@ -366,22 +379,16 @@ simu_hist_model_param_server <- function(input, output, session,
             )
         })
         # return value
-        sampling_grid <- expand.grid(sample_id = 1:nsample,
-                                     sex = c("f", "m"),
-                                     KEEP.OUT.ATTRS = FALSE,
-                                     stringsAsFactors = FALSE)
-        out$sample_sizes <- lapply(
-            split(sampling_grid,
-                  seq(nrow(sampling_grid))),
-            function(row) {
-                do.call(function(sample_id, sex) {
-                    return(paste0("sample", sample_id,
-                                  "_pop", unlist(sample_time[sample_id]),
-                                  "_time", unlist(sample_pop[sample_id]),
-                                  "_", sex))
-                }, row)
-            }
-        )
+        if(nsample > 0) {
+            out$sample_sizes <- Reduce("rbind", lapply(
+                1:nsample,
+                function(sample_id) {
+                    tag_name <- str_c("sample", sample_id)
+                    return(c(input[[str_c(tag_name, "_f")]],
+                             input[[str_c(tag_name, "_m")]]))
+                }
+            ))
+        }
     })
     # number of repetitions
     observe({
@@ -440,9 +447,9 @@ render_sample_sizes <- function(session, sample_id, time_tag, pop_id) {
     # module namespace
     ns <- session$ns
     # sampling tag
-    tag_name <- paste0("sample", sample_id ,
-                       "_pop", pop_id,
-                       "_time", time_tag)
+    tag_name <- paste0("sample", sample_id)
+                       # "_pop", pop_id,
+                       # "_time", time_tag)
     # ui
     tagList(
         h5(tags$b("# ", sample_id), " from pop. ", tags$b(pop_id),
@@ -506,16 +513,21 @@ simu_proj_action_ui <- function(id) {
 #' @param project_name project name as a `reactive`.
 #' @param validation boolean indicating if the project setting are validated, 
 #' as a `reactive`.
-#' @param param_setting scenario parameter setting as a `reactive`. 
+#' @param raw_param scenario parameter raw setting as a `reactive`. 
 #' @param raw_scenario raw scenario as a `reactive`.
-#' @param genetic_loci genetic locus setting as a `reactive`.
+#' @param locus_description genetic locus setting as a `reactive`.
 simu_proj_action_server <- function(input, output, session,
                                     project_dir = reactive({NULL}),
                                     project_name = reactive({NULL}),
                                     validation = reactive({TRUE}),
-                                    param_setting = reactive({NULL}),
+                                    raw_param = reactive({NULL}),
                                     raw_scenario = reactive({NULL}),
-                                    genetic_loci = reactive({NULL})) {
+                                    locus_description = reactive({NULL}),
+                                    sample_sizes = reactive({NULL}),
+                                    n_rep = reactive({NULL}),
+                                    sex_ratio = reactive({NULL}),
+                                    seq_mode = reactive({NULL}),
+                                    locus_type = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local
@@ -524,18 +536,28 @@ simu_proj_action_server <- function(input, output, session,
         project_dir = NULL,
         project_name = NULL,
         validation = NULL,
-        param_setting = NULL,
+        raw_param = NULL,
         raw_scenario = NULL,
-        genetic_loci = NULL
+        locus_description = NULL,
+        sample_sizes = NULL,
+        sex_ratio = NULL,
+        n_rep = NULL,
+        seq_mode = NULL,
+        locus_type = NULL
     )
     # get input
     observe({
         local$project_dir <- project_dir()
         local$project_name <- project_name()
         local$validation <- validation()
-        local$param_setting <- param_setting()
+        local$raw_param <- raw_param()
         local$raw_scenario <- raw_scenario()
-        local$genetic_loci <- genetic_loci()
+        local$locus_description <- locus_description()
+        local$sample_sizes <- sample_sizes()
+        local$sex_ratio <- sex_ratio()
+        local$n_rep <- n_rep()
+        local$seq_mode <- seq_mode()
+        local$locus_type <- locus_type()
     })
     # init output
     out <- reactiveValues(
@@ -571,9 +593,11 @@ simu_proj_action_server <- function(input, output, session,
     observeEvent({
         local$project_dir
         local$project_name
-        local$param_setting
+        local$raw_param
         local$raw_scenario
-        local$genetic_loci
+        local$locus_description
+        local$n_rep
+        local$sex_ratio
     }, {
         local$saved <- FALSE
     })
@@ -599,7 +623,51 @@ simu_proj_action_server <- function(input, output, session,
         out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
     })
     
-    # FIXME run simulation
+    ## prepare for simulation
+    # # debugging
+    # observe({
+    #     req(local$raw_param)
+    #     print(local$raw_param)
+    # })
+    
+    ## write header file
+    observeEvent(input$save, {
+        req(!is.null(local$project_dir))
+        req(!is.null(local$project_name))
+        req(!is.null(local$raw_param))
+        req(!is.null(local$raw_scenario))
+        req(!is.null(local$locus_description))
+        req(!is.null(local$n_rep))
+        req(!is.null(local$sex_ratio))
+        req(!is.null(local$seq_mode))
+        req(!is.null(local$locus_type))
+        
+        # print(local$samples_sizes)
+        # 
+        # print(local$locus_type)
+        
+        write_headersim(local$project_name, local$project_dir, 
+                        local$seq_mode, local$locus_type,
+                        local$raw_scenario, local$raw_param, 
+                        local$locus_description, 
+                        local$sample_sizes,
+                        local$n_rep, local$sex_ratio)
+        
+        showNotification(
+            id = ns("headerfile_ok"),
+            duration = 5,
+            closeButton = TRUE,
+            type = "message",
+            tagList(
+                tags$p(
+                    icon("check"),
+                    paste0("Project is ready to run simulations.")
+                )
+            )
+        )
+    })
+    
+    ## FIXME run simulation
     observeEvent(input$simulate, {
         logging("Running simulation")
     })
