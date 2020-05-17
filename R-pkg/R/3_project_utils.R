@@ -8,31 +8,14 @@ new_proj_set_ui <- function(id) {
         proj_name_ui(ns("project_name"), label = "Project",
                      default = "project_name"),
         dir_choice_ui(ns("project_dir"), label = "Directory"),
-        fluidRow(
-            column(
-                width = 6,
-                actionGroupButtons(
-                    inputIds = c(ns("validate"), 
-                                 ns("reset")),
-                    labels = list(
-                        tags$span(icon("check"), "Validate"),
-                        tags$span(icon("refresh"), "Reset")
-                    ),
-                    fullwidth = TRUE
-                )
+        actionGroupButtons(
+            inputIds = c(ns("validate"), 
+                         ns("reset")),
+            labels = list(
+                tags$span(icon("check"), "Validate"),
+                tags$span(icon("refresh"), "Reset")
             ),
-            column(
-                width = 6,
-                actionGroupButtons(
-                    inputIds = c(ns("save"), 
-                                 ns("duplicate")),
-                    labels = list(
-                        tags$span(icon("save"), "Save"),
-                        tags$span(icon("copy"), "Duplicate")
-                    ),
-                    fullwidth = TRUE
-                )
-            )
+            fullwidth = TRUE
         )
     )
 }
@@ -52,9 +35,7 @@ new_proj_set_server <- function(input, output, session) {
         project_name = NULL,
         project_dir = NULL,
         validate = NULL,
-        reset = NULL,
-        duplicate = NULL,
-        save = NULL
+        reset = NULL
     )
     # project name server side
     proj_name <- callModule(proj_name_server, "project_name",
@@ -78,12 +59,6 @@ new_proj_set_server <- function(input, output, session) {
     observeEvent(input$reset, {
         local$enabled <- TRUE
         out$reset <- ifelse(is.null(out$reset), 0, out$reset) + 1
-    })
-    observeEvent(input$duplicate, {
-        out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
-    })
-    observeEvent(input$save, {
-        out$save <- ifelse(is.null(out$save), 0, out$save) + 1
     })
     ## react
     # validate
@@ -133,7 +108,6 @@ new_proj_set_server <- function(input, output, session) {
             )
         }
     })
-    # FIXME reset, save, duplicate
     # output
     return(out)
 }
