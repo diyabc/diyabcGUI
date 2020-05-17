@@ -108,7 +108,7 @@ index_server <- function(input, output, session) {
         proj_id <- str_c("analysis_proj", analysis_setting$count)
         # update analysis project list
         analysis_setting$proj_list[[ proj_id ]] <- reactiveValues(
-            name = "project_name",
+            name = proj_id, #"project_name",
             id = proj_id
         )
         # server function
@@ -142,7 +142,7 @@ index_server <- function(input, output, session) {
         proj_id <- str_c("simu_proj", simu_setting$count)
         # update simu project list
         simu_setting$proj_list[[ proj_id ]] <- reactiveValues(
-            name = "project_name",
+            name = proj_id, #"project_name",
             id = proj_id
         )
         # server function
