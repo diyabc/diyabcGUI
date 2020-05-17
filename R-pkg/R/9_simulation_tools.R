@@ -52,7 +52,39 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
     ## merge
     # out <- str_split(str_c(sec1, sec2, sec3, sec4, sep = "\n\n"), "\n")
     out <- str_c(sec1, sec2, sec3, sec4, sep = "\n\n")
+    out <- str_c(out, "\n\n")
     
     ## write to file
     writeLines(out, file.path(project_dir, "headersim.txt"))
+}
+
+#' Run simulation
+#' @keywords internal
+#' @author Ghislain Durif
+run_diyabc <- function(project_dir, n_core = 1) {
+    diyabc_bin <- find_bin("diyabc")
+    # check project dir
+    if(!dir.exists(project_dir)) {
+        stop("Input directory does not exist")
+    }
+    if(!str_detect(string = project_dir, pattern = "/$")) {
+        project_dir <- str_c(project_dir, "/")
+    }
+    # init seeds
+    cmd <- str_c(diyabc_bin, 
+                 "-p", project_dir, "-f", "-n",
+                 str_c("'t:", n_core, "'"),
+                 sep = " ")
+    check <- system(cmd)
+    if(check != 0) {
+        stop("Issue with seed initialization")
+    }
+    # run
+    cmd <- str_c(diyabc_bin, "-p", project_dir, "-k", sep = " ")
+    check <- system(cmd)
+    if(check != 0) {
+        stop("Issue with simulation run")
+    }
+    # output
+    return(NULL)
 }
