@@ -41,7 +41,7 @@ simu_page_ui <- function(id) {
                 width = 12,
                 status = "danger", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = FALSE,
-                "FILLME"
+                simu_proj_action_ui(ns("proj_action"))
             )
         )
     )
@@ -73,6 +73,7 @@ simu_page_server <- function(input, output, session,
     })
     # init output
     out <- reactiveValues(
+        genetic_loci = NULL,
         setting = NULL,
         scenario = NULL
     )
@@ -98,10 +99,27 @@ simu_page_server <- function(input, output, session,
     })
     # update output
     observe({
+        # print("---- scenario = ")
+        # print(scenario)
         out$scenario <- scenario
     })
     ## genetic loci
     genetic_loci <- callModule(genetic_loci_server, "genetic_loci")
+    # update output
+    observe({
+        # print("---- genetic_loci = ")
+        # print(genetic_loci)
+        out$genetic_loci <- genetic_loci
+    })
+    ## simulation project action
+    callModule(simu_proj_action_server, "proj_action",
+               project_dir = reactive(setting$project_dir),
+               project_name = reactive(setting$project_name),
+               validation = reactive(setting$validation),
+               param_setting = reactive(scenario$param_setting),
+               raw_scenario = reactive(scenario$raw_scenario),
+               genetic_loci = reactive(genetic_loci))
+    
     # output
     return(out)
 }
@@ -155,11 +173,14 @@ simu_hist_model_server <- function(input, output, session,
         out$scenario_param <- scenario$param
     })
     # scenario parameter values
+    param_setting <- callModule(simu_hist_model_param_server,
+                               "param_setting",
+                               scenario_cond = reactive(scenario$cond),
+                               scenario_param = reactive(scenario$param))
+    # update output
     observe({
-        out$param_values <- callModule(simu_hist_model_param_server,
-                                       "param_setting",
-                                       scenario_cond = reactive(scenario$cond),
-                                       scenario_param = reactive(scenario$param))
+        out$param_setting <- param_setting
+        print(out$param_setting$param_values)
     })
     # output
     return(out)
@@ -211,18 +232,22 @@ simu_hist_model_param_server <- function(input, output, session,
     # local reactive values
     local <- reactiveValues(
         scenario_cond = NULL,
-        scenario_param = NULL
+        scenario_param = NULL,
+        param_values = list()
     )
     # get input
     observe({
         local$scenario_cond = scenario_cond()
         local$scenario_param = scenario_param()
+        # print("check input")
+        # print(local$scenario_cond)
+        # print(local$scenario_param)
     })
     # init output reactive values
     out <- reactiveValues(param_values = list(),
                           sample_sizes = list(),
                           nrep = NULL)
-    # parameters
+    # Ne parameters
     observe({
         req(local$scenario_param)
         # get Ne params
@@ -235,11 +260,11 @@ simu_hist_model_param_server <- function(input, output, session,
                                value = 100, min = 0, max = NA, step = 1)
         })
         # return value
-        out$param_values$Ne <- lapply(param_list, function(param) {
-            return(input$param)
+        local$param_values$Ne <- lapply(param_list, function(param) {
+            return(list(name = param, type = "N", value = input[[ param ]]))
         })
     })
-
+    # time parameters
     observe({
         req(local$scenario_param)
         # get time params
@@ -251,11 +276,11 @@ simu_hist_model_param_server <- function(input, output, session,
                                value = 100, min = 0, max = NA, step = 1)
         })
         # return value
-        out$param_values$time <- lapply(param_list, function(param) {
-            return(input$param)
+        local$param_values$time <- lapply(param_list, function(param) {
+            return(list(name = param, type = "T", value = input[[ param ]]))
         })
     })
-
+    # rate parameters
     observe({
         req(local$scenario_param)
         # get rate params
@@ -267,9 +292,21 @@ simu_hist_model_param_server <- function(input, output, session,
                                value = 0.5, min = 0, max = 1, step = 0.001)
         })
         # return value
-        out$param_values$rate_param <- lapply(param_list, function(param) {
-            return(input$param)
+        local$param_values$rate_param <- lapply(param_list, function(param) {
+            return(list(name = param, type = "A", value = input[[ param ]]))
         })
+    })
+    
+    # update output
+    observe({
+        param_list <- c(local$param_values$Ne, 
+                        local$param_values$time, 
+                        local$param_values$rate)
+        out$param_values <- unlist(lapply(param_list, function(item) {
+            return(
+                str_c(item$name, item$type, item$value, sep = " ")
+            )
+        }))
     })
     
     # info on conditions
@@ -435,4 +472,135 @@ render_sample_sizes <- function(session, sample_id, time_tag, pop_id) {
             )
         )
     )
+}
+
+#' Simulation project action module ui
+#' @keywords internal
+#' @author Ghislain Durif
+simu_proj_action_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        actionGroupButtons(
+            inputIds = c(ns("save"),
+                         ns("duplicate")),
+            labels = list(
+                tags$span(icon("save"), "Save"),
+                tags$span(icon("copy"), "Duplicate")
+            ),
+            fullwidth = TRUE
+        ),
+        hr(),
+        actionBttn(
+            inputId = ns("simulate"),
+            label = "Simulate",
+            style = "fill",
+            block = TRUE
+        )
+    )
+}
+
+#' Simulation project action module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param project_dir project directory as a `reactive`.
+#' @param project_name project name as a `reactive`.
+#' @param validation boolean indicating if the project setting are validated, 
+#' as a `reactive`.
+#' @param param_setting scenario parameter setting as a `reactive`. 
+#' @param raw_scenario raw scenario as a `reactive`.
+#' @param genetic_loci genetic locus setting as a `reactive`.
+simu_proj_action_server <- function(input, output, session,
+                                    project_dir = reactive({NULL}),
+                                    project_name = reactive({NULL}),
+                                    validation = reactive({TRUE}),
+                                    param_setting = reactive({NULL}),
+                                    raw_scenario = reactive({NULL}),
+                                    genetic_loci = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        saved = FALSE,
+        project_dir = NULL,
+        project_name = NULL,
+        validation = NULL,
+        param_setting = NULL,
+        raw_scenario = NULL,
+        genetic_loci = NULL
+    )
+    # get input
+    observe({
+        local$project_dir <- project_dir()
+        local$project_name <- project_name()
+        local$validation <- validation()
+        local$param_setting <- param_setting()
+        local$raw_scenario <- raw_scenario()
+        local$genetic_loci <- genetic_loci()
+    })
+    # init output
+    out <- reactiveValues(
+        duplicate = NULL,
+        save = NULL
+    )
+    
+    # disable saved if not validated
+    observeEvent(local$validation, {
+        req(!is.null(local$validation))
+        if(local$validation) {
+            shinyjs::enable("save")
+        } else {
+            shinyjs::disable("save")
+            # # directory not existing
+            # showNotification(
+            #     id = ns("project_dir_issue"),
+            #     duration = 5,
+            #     closeButton = TRUE,
+            #     type = "warning",
+            #     tagList(
+            #         tags$p(
+            #             icon("warning"),
+            #             paste0("Directory does not exists. ", 
+            #                    "Did you 'validate' the project?")
+            #         )
+            #     )
+            # )
+        }
+    })
+    
+    # un-saved if modification to input
+    observeEvent({
+        local$project_dir
+        local$project_name
+        local$param_setting
+        local$raw_scenario
+        local$genetic_loci
+    }, {
+        local$saved <- FALSE
+    })
+    
+    # deactivate simulate if not saved
+    observeEvent(local$saved, {
+        req(!is.null(local$saved))
+        if(local$saved) {
+            shinyjs::enable("simulate")
+        } else {
+            shinyjs::disable("simulate")
+        }
+    })
+    
+    # save project = write header file
+    observeEvent(input$save, {
+        # FIXME write header file
+        local$saved <- TRUE
+    })
+    
+    # FIXME project duplication
+    observeEvent(input$duplicate, {
+        out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
+    })
+    
+    # FIXME run simulation
+    observeEvent(input$simulate, {
+        logging("Running simulation")
+    })
 }
