@@ -35,6 +35,7 @@ new_proj_set_server <- function(input, output, session) {
         project_name = NULL,
         project_dir = NULL,
         validate = NULL,
+        validation = FALSE,
         reset = NULL
     )
     # project name server side
@@ -54,10 +55,12 @@ new_proj_set_server <- function(input, output, session) {
     ## actions
     observeEvent(input$validate, {
         local$enabled <- FALSE
+        out$validation <- TRUE
         out$validate <- ifelse(is.null(out$validate), 0, out$validate) + 1
     })
     observeEvent(input$reset, {
         local$enabled <- TRUE
+        out$validation <- FALSE
         out$reset <- ifelse(is.null(out$reset), 0, out$reset) + 1
     })
     ## react
