@@ -61,7 +61,7 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
 #' Run simulation
 #' @keywords internal
 #' @author Ghislain Durif
-run_diyabc <- function(project_dir, n_core = 1) {
+diyabc_run_simu <- function(project_dir, n_core = 1) {
     diyabc_bin <- find_bin("diyabc")
     # check project dir
     if(!dir.exists(project_dir)) {

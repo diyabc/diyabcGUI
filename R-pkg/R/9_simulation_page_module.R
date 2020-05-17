@@ -671,7 +671,7 @@ simu_proj_action_server <- function(input, output, session,
     observeEvent(input$simulate, {
         logging("Running simulation")
         check <- tryCatch(
-            run_diyabc(project_dir = local$project_dir, n_core = 1),
+            diyabc_run_simu(project_dir = local$project_dir, n_core = 1),
             error = function(e) return(e)
         )
         if(!is.null(check) & !is.null(check$message)) {
