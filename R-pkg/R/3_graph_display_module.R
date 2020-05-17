@@ -133,10 +133,10 @@ graph_display_server <- function(input, output, session,
         local$graph = graph()
         local$dirname = project_dir()
     })
-    # debugging
-    observe({
-        logging("dir to save figure = ", local$dirname)
-    })
+    # # debugging
+    # observe({
+    #     logging("dir to save figure = ", local$dirname)
+    # })
     # show/hide plot
     observeEvent(input$draw, {
         local$show_graph <- (1 - local$show_graph == 1)
@@ -280,9 +280,9 @@ check_graph_filename <- function(filename) {
 #' @importFrom ggplot2 ggsave
 save_fig <- function(graph, dirname, filename, scale, 
                      width, height, units, dpi) {
-    logging("save fig : file =", filename, "dir =", dirname)
-    logging("fig spec :", width, "x", height, units, "scale =", 
-            scale, "dpi =", dpi)
+    # logging("save fig : file =", filename, "dir =", dirname)
+    # logging("fig spec :", width, "x", height, units, "scale =", 
+    #         scale, "dpi =", dpi)
     ggsave(filename = filename, plot = graph, path = dirname, scale = scale, 
            width = width, height = height, units = units)
 }

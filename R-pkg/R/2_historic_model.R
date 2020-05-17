@@ -104,11 +104,11 @@ hist_model_server <- function(input, output, session,
             }
         })
     })
-    # debugging
-    observe({
-        logging("project dir :", local$project_dir)
-        logging("historic model :", out$raw)
-    })
+    # # debugging
+    # observe({
+    #     logging("project dir :", local$project_dir)
+    #     logging("historic model :", out$raw)
+    # })
     
     ## graph display
     callModule(graph_display_server, "model_display", 

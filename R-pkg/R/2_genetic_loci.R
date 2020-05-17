@@ -43,6 +43,7 @@ locus_nb_server <- function(input, output, session,
     # init output reactive values
     out <- reactiveValues(
         locus_count = NULL,
+        total_count = NULL,
         haploid = FALSE
     )
     # enable/disable input
@@ -116,6 +117,9 @@ locus_nb_server <- function(input, output, session,
             local$auto_dip, local$auto_hap,
             local$x_linked, local$y_linked,
             local$mito)
+        out$total_count <- sum(c(local$auto_dip, local$auto_hap,
+                                 local$x_linked, local$y_linked,
+                                 local$mito))
         # print("-- locus count =")
         # print(out$locus_count)
     })
@@ -202,13 +206,13 @@ genetic_loci_server <- function(input, output, session) {
         local$seq_mode <- input$seq_mode
         local$poolseq <- (input$seq_mode == "poolseq")
     })
-    # debugging
-    observe({
-        logging("locus type:", local$locus_type)
-        logging("seq mode:", local$seq_mode)
-        logging("poolseq:", local$poolseq)
-        logging("haploid:", local$haploid)
-    })
+    # # debugging
+    # observe({
+    #     logging("locus type:", local$locus_type)
+    #     logging("seq mode:", local$seq_mode)
+    #     logging("poolseq:", local$poolseq)
+    #     logging("haploid:", local$haploid)
+    # })
     # locus number ui
     observe({
         req(local$locus_type)
