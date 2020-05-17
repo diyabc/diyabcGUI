@@ -61,8 +61,10 @@ hist_model_server <- function(input, output, session,
     })
     # parse and check input scenario
     observeEvent(input$scenario, {
-        # input
-        out$raw <- input$scenario
+        # input (remove empty final line)
+        out$raw <- str_replace(string = input$scenario, 
+                               pattern = "\\n$", 
+                               replacement = "")
         out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
         # parse
         out$param <- parse_scenario(input$scenario)
@@ -73,7 +75,7 @@ hist_model_server <- function(input, output, session,
             # graphical representation
             local$graph <- plot_hist_model(out$param)
             # check
-            out$cond <- check_timeline(input$scenario)$cond
+            out$cond <- check_timeline(input$scenario, out$param)$cond
         } else {
             local$graph <- NULL
             out$cond <- NULL
@@ -122,9 +124,21 @@ hist_model_server <- function(input, output, session,
 #' etc.
 #' @keywords internal
 #' @author Ghislain Durif
-check_timeline <- function(text) {
-    # TODO
-    condition <- c("Example of condition...", "Time should be positive.")
+check_timeline <- function(raw_scenario, parsed_scenario) {
+    # FIXME
+    condition <- NULL
+    # condition <- c("Example of condition...", "Time should be positive.")
+    # time related condtion
+    time_param <- parsed_scenario$time_param
+    if(!is.null(time_param) & length(time_param > 1)) {
+        time_cond <- unlist(lapply(
+            1:(length(time_param)-1), 
+            function(ind) {
+                return(str_c(time_param[ind], ">=", time_param[ind+1]))
+            }))
+        condition <- c(condition, time_cond)
+    }
+    # output
     return(list(cond = condition))
 }
 
