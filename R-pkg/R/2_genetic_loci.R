@@ -31,7 +31,10 @@ locus_nb_server <- function(input, output, session,
                             haploid = reactive({FALSE}),
                             poolseq = reactive({FALSE})) {
     # init local
-    local <- reactiveValues(haploid = NULL, poolseq = NULL)
+    local <- reactiveValues(haploid = NULL, poolseq = NULL, 
+                            auto_dip = NULL, auto_hap = NULL,
+                            x_linked = NULL, y_linked = NULL,
+                            mito = NULL)
     # get input
     observe({
         local$haploid <- haploid()
@@ -39,9 +42,8 @@ locus_nb_server <- function(input, output, session,
     })
     # init output reactive values
     out <- reactiveValues(
-        auto_dip = NULL, auto_hap = NULL,
-        x_linked = NULL, y_linked = NULL,
-        mito = NULL, haploid = NULL
+        locus_count = NULL,
+        haploid = FALSE
     )
     # enable/disable input
     observe({
@@ -51,12 +53,19 @@ locus_nb_server <- function(input, output, session,
             shinyjs::disable("auto_dip")
             shinyjs::disable("x_linked")
             shinyjs::disable("y_linked")
+            updateNumericInput(session, "auto_dip", value = 0)
+            updateNumericInput(session, "x_linked", value = 0)
+            updateNumericInput(session, "y_linked", value = 0)
         } else if(!local$haploid & local$poolseq) {
-            shinyjs::enable("auto_hap")
-            shinyjs::disable("auto_dip")
+            shinyjs::enable("auto_dip")
+            shinyjs::disable("auto_hap")
             shinyjs::disable("x_linked")
             shinyjs::disable("y_linked")
             shinyjs::disable("mito")
+            updateNumericInput(session, "auto_hap", value = 0)
+            updateNumericInput(session, "x_linked", value = 0)
+            updateNumericInput(session, "y_linked", value = 0)
+            updateNumericInput(session, "mito", value = 0)
         } else {
             shinyjs::enable("auto_hap")
             shinyjs::enable("auto_dip")
@@ -67,20 +76,48 @@ locus_nb_server <- function(input, output, session,
     })
     # get input
     observe({
-        out$auto_dip <- input$auto_dip
-        out$auto_hap <- input$auto_hap
-        out$x_linked <- input$x_linked
-        out$y_linked <- input$y_linked
-        out$mito <- input$mito
+        # print(input$auto_dip)
+        # print(input$auto_hap)
+        # print(input$x_linked)
+        # print(input$y_linked)
+        # print(input$mito)
+        local$auto_dip <- input$auto_dip
+        local$auto_hap <- input$auto_hap
+        local$x_linked <- input$x_linked
+        local$y_linked <- input$y_linked
+        local$mito <- input$mito
     })
     # update haploid
     observeEvent(input$auto_hap, {
-        req(input$auto_hap)
+        req(!is.null(input$auto_hap))
         if(input$auto_hap > 0) {
-            out$haploid <- TRUE
+            local$haploid <- TRUE
         } else {
-            out$haploid <- FALSE
+            local$haploid <- FALSE
         }
+    })
+    # update output
+    observeEvent(local$haploid, {
+        out$haploid <- local$haploid
+    })
+    # parse input
+    observe({
+        req(!is.null(local$auto_dip))
+        req(!is.null(local$auto_hap))
+        req(!is.null(local$x_linked))
+        req(!is.null(local$y_linked))
+        req(!is.null(local$mito))
+        # print(local$auto_dip)
+        # print(local$auto_hap)
+        # print(local$x_linked)
+        # print(local$y_linked)
+        # print(local$mito)
+        out$locus_count <- parse_locus_count(
+            local$auto_dip, local$auto_hap,
+            local$x_linked, local$y_linked,
+            local$mito)
+        # print("-- locus count =")
+        # print(out$locus_count)
     })
     # output
     return(out)
@@ -140,9 +177,9 @@ genetic_loci_server <- function(input, output, session) {
                             poolseq = FALSE,
                             seq_mode = NULL)
     # init output values
-    out <- reactiveValues(dna_loci = NULL, 
-                          microsat_loci = NULL, 
-                          snp_loci = NULL,
+    out <- reactiveValues(locus_description = NULL,
+                          locus_type = NULL,
+                          seq_mode = NULL,
                           sex_ratio = NULL)
     # disable seq mode if relevant
     observeEvent(input$locus_type, {
@@ -206,22 +243,95 @@ genetic_loci_server <- function(input, output, session) {
     snp_loci <- callModule(locus_nb_server, "snp_loci", 
                            haploid = reactive(local$haploid),
                            poolseq = reactive(local$poolseq))
-    # get output
-    observe({
-        out$dna_loci <- dna_loci
-        out$microsat_loci <- microsat_loci
-        out$snp_loci <- snp_loci
-    })
     # update haploid status
     observe({
+        # print(dna_loci)
+        # print(microsat_loci)
+        # print(snp_loci)
         local$haploid <- any(c(dna_loci$haploid, 
                                microsat_loci$haploid,
                                snp_loci$haploid))
+    })
+    # parse numerical input and format output
+    observe({
+        req(!is.null(local$locus_type))
+        # req(!is.null(dna_loci$locus_count))
+        # req(!is.null(microsat_loci$locus_count))
+        # req(!is.null(snp_loci$locus_count))
+        locus_count <- switch(local$locus_type,
+                              "mss" = c(dna_loci$locus_count,
+                                        microsat_loci$locus_count),
+                              "snp" = snp_loci$locus_count)
+        out$locus_description <- parse_locus_description(locus_count,
+                                                         local$locus_type)
+        # print(out$locus_description)
+    })
+    # get seq mode and locus type
+    observe({
+        out$locus_type <- local$locus_type
+        out$seq_mode <- local$seq_mode
     })
     # get sex ratio
     observe({
         out$sex_ratio <- input$sex_ratio
     })
     # output
+    return(out)
+}
+
+
+#' Parse locus count
+#' @keywords internal
+#' @author Ghislain Durif
+parse_locus_count <- function(auto_dip, auto_hap, 
+                              x_linked, y_linked, 
+                              mito) {
+    out <- NULL
+    ## numerical input
+    locus_list <- list(list(type = "A", count = auto_dip),
+                       list(type = "H", count = auto_hap),
+                       list(type = "X", count =  x_linked),
+                       list(type = "Y", count =  y_linked),
+                       list(type = "M", count =  mito))
+    ## check if any non-null values in input
+    if(!is.null(locus_list)) {
+        out <- unlist(lapply(
+                1:length(locus_list), 
+                function(ind) {
+                    if(locus_list[[ind]]$count > 0) {
+                        return(str_c(locus_list[[ind]]$count, " ",
+                                     "<", locus_list[[ind]]$type, ">"))
+                    }
+                }
+            ))
+    }
+    ## output
+    return(out)
+}
+
+
+#' Parse locus description setting
+#' @keywords internal
+#' @author Ghislain Durif
+parse_locus_description <- function(locus_count, locus_type = "snp") {
+    out <- NULL
+    ## check for null input
+    if(!is.null(locus_count)) {
+        ## snp format
+        if(locus_type == "snp") {
+            ## format locus description
+            out <- unlist(lapply(
+                1:length(locus_count), 
+                function(ind) {
+                    return(str_c(locus_count[ind], " ",
+                                 "[P]", " ",
+                                 "G", ind))
+                }
+            ))
+        } else {
+            warning("other locus type not supported at the moment.")
+        }
+    }
+    ## output
     return(out)
 }
