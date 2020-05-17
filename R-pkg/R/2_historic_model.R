@@ -126,16 +126,16 @@ hist_model_server <- function(input, output, session,
 #' @author Ghislain Durif
 check_timeline <- function(raw_scenario, parsed_scenario) {
     # FIXME
-    condition <- NULL
+    condition <- list()
     # condition <- c("Example of condition...", "Time should be positive.")
     # time related condtion
     time_param <- parsed_scenario$time_param
     if(!is.null(time_param) & length(time_param > 1)) {
-        time_cond <- unlist(lapply(
+        time_cond <- lapply(
             1:(length(time_param)-1), 
             function(ind) {
                 return(str_c(time_param[ind], ">=", time_param[ind+1]))
-            }))
+            })
         condition <- c(condition, time_cond)
     }
     # output
@@ -169,7 +169,7 @@ parse_scenario <- function(text) {
     ## check if input is not empty
     if(is.null(text) | str_length(text) == 0) {
         valid <- FALSE
-        msg_list <- list("Empty input")
+        msg_list <- append(msg_list, "Empty input")
     } else {
         # extract scenario rows
         scenario <- unlist(str_split(text, pattern = "\n"))
