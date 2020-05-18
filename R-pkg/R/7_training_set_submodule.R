@@ -983,39 +983,41 @@ training_set_action_server <- function(input, output, session,
         )
     })
     
-    # ## FIXME run simulation
-    # observeEvent(input$simulate, {
-    #     logging("Running simulation")
-    #     check <- tryCatch(
-    #         diyabc_run_simu(project_dir = local$project_dir, n_core = 1),
-    #         error = function(e) return(e)
-    #     )
-    #     if(!is.null(check) & !is.null(check$message)) {
-    #         showNotification(
-    #             id = ns("run_not_ok"),
-    #             duration = 5,
-    #             closeButton = TRUE,
-    #             type = "error",
-    #             tagList(
-    #                 tags$p(
-    #                     icon("warning"),
-    #                     str_c(check$message)
-    #                 )
-    #             )
-    #         )
-    #     } else {
-    #         showNotification(
-    #             id = ns("run_ok"),
-    #             duration = 5,
-    #             closeButton = TRUE,
-    #             type = "error",
-    #             tagList(
-    #                 tags$p(
-    #                     icon("check"),
-    #                     "Simulations are done."
-    #                 )
-    #             )
-    #         )
-    #     }
-    # })
+    ## FIXME run simulation
+    observeEvent(input$simulate, {
+        logging("Running simulation")
+        check <- tryCatch(
+            diyabc_run_trainset_simu(local$project_dir, 
+                                     local$data_file, 
+                                     n_core = 1),
+            error = function(e) return(e)
+        )
+        if(!is.null(check) & !is.null(check$message)) {
+            showNotification(
+                id = ns("run_not_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        str_c(check$message)
+                    )
+                )
+            )
+        } else {
+            showNotification(
+                id = ns("run_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        "Simulations are done."
+                    )
+                )
+            )
+        }
+    })
 }

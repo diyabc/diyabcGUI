@@ -147,7 +147,7 @@ write_header <- function(project_name, project_dir, data_file,
 diyabc_run_trainset_simu <- function(project_dir, data_file, n_core = 1) {
     diyabc_bin <- find_bin("diyabc")
     # copy data file into project dir
-    # FIXME
+    file.copy(from = data_file, to = project_dir, overwrite = TRUE)
     # check project dir
     if(!dir.exists(project_dir)) {
         stop("Input directory does not exist")
@@ -157,19 +157,19 @@ diyabc_run_trainset_simu <- function(project_dir, data_file, n_core = 1) {
     }
     # init seeds
     cmd <- str_c(diyabc_bin, 
-                 "-p", project_dir, "-f", "-n",
+                 "-p", project_dir, "-n",
                  str_c("'t:", n_core, "'"),
                  sep = " ")
     check <- system(cmd)
     if(check != 0) {
-        stop("Issue with seed initialization")
+        warning("Issue with seed initialization")
     }
-    # # run
-    # cmd <- str_c(diyabc_bin, "-p", project_dir, "-k", sep = " ")
-    # check <- system(cmd)
-    # if(check != 0) {
-    #     stop("Issue with simulation run")
-    # }
+    # run
+    cmd <- str_c(diyabc_bin, "-p", project_dir, "-R", "-m", "-t 1", sep = " ")
+    check <- system(cmd)
+    if(check != 0) {
+        stop("Issue with simulation run")
+    }
     # output
     return(NULL)
 }
