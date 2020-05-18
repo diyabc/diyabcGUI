@@ -78,7 +78,7 @@ app_body <- dashboardBody(
 #' @return Shiny ui
 diyabc_ui <- dashboardPage(
     app_header,
-    app_simplified_sidebar,
-    app_simplified_body,
+    app_sidebar,
+    app_body,
     skin = "black"
 )
