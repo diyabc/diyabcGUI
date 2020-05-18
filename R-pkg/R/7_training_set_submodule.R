@@ -71,9 +71,6 @@ training_set_server <- function(input, output, session,
                 local$scenario_list,
                 function(item) return(item$cond)
             ))
-            
-            print("condition = ")
-            print(local$cond_list)
         }
     })
     # parameter prior and conditon setting
@@ -236,7 +233,8 @@ prior_cond_set_ui <- function(id) {
             "where 'XX' and 'YY' are parameters of the same type.",
             "You can use the standard comparison signs: '>', '>=', '<', '=<'."
         ),
-        uiOutput(ns("cond_help"))
+        uiOutput(ns("cond_help")),
+        uiOutput(ns("cond_format"))
     )
 }
 
@@ -254,6 +252,7 @@ prior_cond_set_server <- function(input, output, session,
     # init local
     local <- reactiveValues(
         cond_list = NULL,
+        cond_check = NULL,
         param_list = NULL,
         prior_list = NULL
     )
@@ -263,7 +262,10 @@ prior_cond_set_server <- function(input, output, session,
         local$param_list <- param_list()
     })
     # init output
-    out <- reactiveValues(raw_prior_list = list())
+    out <- reactiveValues(
+        raw_prior_list = list(),
+        raw_cond_set = list()
+    )
     # render ui param prior setting
     observeEvent(local$param_list, {
         output$param_prior_def <- renderUI({
@@ -292,12 +294,11 @@ prior_cond_set_server <- function(input, output, session,
             local$prior_list,
             function(item) return(item$raw)
         ))
-        print(out$raw_prior_list)
+        # print(out$raw_prior_list)
     })
     # condition help
     output$cond_help <- renderUI({
         req(!is.null(local$cond_list))
-        print(local$cond_list)
         tagList(
             "We recommend that you enter the following conditions:",
             do.call(
@@ -309,12 +310,94 @@ prior_cond_set_server <- function(input, output, session,
         )
     })
     # get input condition
-    observeEvent(cond_set, {
+    observeEvent(input$cond_set, {
+        req(input$cond_set)
+        req(local$param_list)
         # FIXME
+        # input (remove last empty line)
+        logging("input cond set = ", input$cond_set)
+        input_cond_list <- str_split(
+            str_replace(
+                string = input$cond_set,
+                pattern = "\\n$",
+                replacement = ""
+            ), 
+            pattern = "\\n"
+        )
+        # check
+        local$cond_check <- check_cond(input_cond_list, local$param_list)
+        # output possible issues
+        output$cond_format <- renderUI({
+            req(!is.null(local$cond_check$valid))
+            req(!is.null(local$cond_check$msg))
+            print(local$cond_check)
+            if(!local$cond_check$valid) {
+                helpText(
+                    tags$span(icon("warning"), 
+                              "Issues with your input conditions:"),
+                    do.call(
+                        tags$ul,
+                        lapply(local$cond_check$msg, function(item) {
+                            return(tags$li(item))
+                        })
+                    )
+                )
+            } else {
+                tagList()
+            }
+        })
     })
     
     ## output
     return(out)
+}
+
+#' Check condition provided by users
+#' @keywords internal
+#' @author Ghislain Durif
+check_cond <- function(input_cond_list, param_list) {
+    # init output
+    msg <- NULL
+    valid <- TRUE
+    # check if input
+    if(length(input_cond_list) > 0 & length(param_list) > 0) {
+        # check condition formatting
+        format_check <- str_detect(
+            string = unlist(input_cond_list),
+            pattern = str_c("^", single_param_regex(), "(<|=<|>|>=)",
+                            single_param_regex(),  "$")
+        )
+        if(!all(format_check)) {
+            msg <- append(
+                msg, 
+                str_c(
+                    "Syntax issue with input conditions of following line(s):", 
+                     str_c(which(!format_check), collapse = " "), 
+                    sep = " "
+                )
+            )
+            valid <- FALSE
+        }
+        # concerned parameters
+        input_param <- str_extract_all(
+            string = unlist(input_cond_list),
+            pattern = single_param_regex()
+        )
+        # check for duplicate
+        # FIXME
+        if(length(unique(input_param)) < length(input_param)) {
+            logging("check for duplicate")
+            msg <- append(
+                msg,
+                "Possible duplicated conditions."
+            )
+            valid <- FALSE
+        }
+        # check for parameter validity
+        # FIXME
+    }
+    # output
+    return(lst(msg, valid))
 }
 
 #' Prior choice module ui
