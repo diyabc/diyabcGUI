@@ -5,8 +5,12 @@ training_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
         hist_model_panel_ui(ns("hist_model_panel")),
+        br(),
         hr(),
         prior_cond_set_ui(ns("prior_cond")),
+        br(),
+        hr(),
+        locus_setup_ui(ns("locus_setup")),
         br(),
         hr(),
         training_set_action_ui(ns("action"))
@@ -92,17 +96,17 @@ training_set_server <- function(input, output, session,
                 }
             ))
             # param count list
-            print("--- param")
+            # print("--- param")
             local$param_count_list <- lapply(
                 local$scenario_list,
                 function(item) {
-                    print(item$param)
+                    # print(item$param)
                     return(length(item$param$Ne_param) + 
                                length(item$param$time) + 
                                length(item$param$rate))
                 }
             )
-            print("----")
+            # print("----")
             # condition
             local$cond_list <- Reduce("c", lapply(
                 local$scenario_list,
@@ -121,6 +125,11 @@ training_set_server <- function(input, output, session,
                         cond_list = reactive(local$cond_list),
                         param_list = reactive(local$param_list))
                         # param_type_list = reactive(local$param_type_list))
+    
+    # locus type
+    locus_setup <- callModule(
+                        locus_setup_server, "locus_setup",
+                        locus_type = reactive(local$locus_type))
     
     # update param list
     observe({
@@ -697,6 +706,94 @@ prior_server <- function(input, output, session,
     return(out)
 }
 
+#' Locus setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+locus_setup_ui <- function(id) {
+    ns <- NS(id)
+    h4(icon("dna"), "Locus description")
+    uiOutput(ns("setup"))
+}
+
+#' Locus setup server
+#' @keywords internal
+#' @author Ghislain Durif
+locus_setup_server <- function(input, output, session, 
+                               locus_type = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(locus_type = NULL)
+    # get input
+    observe({
+        local$locus_type <- locus_type()
+        # print(local$locus_type)
+    })
+    # init out
+    out <- reactiveValues(locus_type = NULL)
+    # render ui
+    output$setup <- renderUI({
+        req(!is.null(local$locus_type))
+        tag_list <- lapply(
+            local$locus_type,
+            function(item) {
+                return(
+                    fluidRow(
+                        column(
+                            width = 2,
+                            item
+                        ),
+                        column(
+                            width = 4,
+                            numericInput(
+                                inputId = str_c(
+                                    "num_",
+                                    str_extract(item,
+                                                pattern = "(A|H|X|Y|M)")
+                                ),
+                                label = "Number of locus",
+                                min = 0,
+                                max = as.numeric(
+                                    str_extract(item,
+                                                pattern = "^[0-9]+")
+                                ),
+                                value = as.numeric(
+                                    str_extract(item,
+                                                pattern = "^[0-9]+")
+                                )
+                            )
+                        ),
+                        column(
+                            width = 4,
+                            numericInput(
+                                inputId = str_c(
+                                    str_extract(item,
+                                                pattern = "(A|H|X|Y|M)"),
+                                    "_from"
+                                ),
+                                label = "from",
+                                min = 1,
+                                max = as.numeric(
+                                    str_extract(item,
+                                                pattern = "^[0-9]+")
+                                ),
+                                value = 1
+                            )
+                        )
+                        
+                    )
+                )
+            }
+        )
+        do.call(tagList, tag_list)
+    })
+    
+    ## update output
+    # FIXME
+    return(out)
+    
+}
+
 #' Training set simulation action module ui
 #' @keywords internal
 #' @author Ghislain Durif
@@ -841,34 +938,36 @@ training_set_action_server <- function(input, output, session,
 
     ## write header file
     observeEvent(input$save, {
-        # req(!is.null(local$project_dir))
-        # req(!is.null(local$project_name))
-        # req(!is.null(local$raw_param))
-        # req(!is.null(local$raw_scenario))
-        # req(!is.null(local$data_file))
-        # req(!is.null(local$locus_type))
+        req(!is.null(local$project_dir))
+        req(!is.null(local$project_name))
+        req(!is.null(local$param_list))
+        req(!is.null(local$param_count_list))
+        req(!is.null(local$scenario_list))
+        req(!is.null(local$cond_list))
+        req(!is.null(local$data_file))
+        req(!is.null(local$locus_type))
 
-        print("project_dir =")
-        print(local$project_dir)
-        print("project_name =")
-        print(local$project_name)
-        print("param_list =")
-        print(local$param_list)
-        print("param_count_list =")
-        print(local$param_count_list)
-        print("scenario_list =")
-        print(local$scenario_list)
-        print("cond_list =")
-        print(local$cond_list)
-        print("data_file =")
-        print(local$data_file)
-        print("locus_type =")
-        print(local$locus_type)
+        # print("project_dir =")
+        # print(local$project_dir)
+        # print("project_name =")
+        # print(local$project_name)
+        # print("param_list =")
+        # print(local$param_list)
+        # print("param_count_list =")
+        # print(local$param_count_list)
+        # print("scenario_list =")
+        # print(local$scenario_list)
+        # print("cond_list =")
+        # print(local$cond_list)
+        # print("data_file =")
+        # print(local$data_file)
+        # print("locus_type =")
+        # print(local$locus_type)
 
         write_header(local$project_name, local$project_dir, local$data_file, 
-                     local$raw_scenario_list, local$param_count_list, 
-                     local$raw_param_list, 
-                     local$raw_cond_list, local$locus_type)
+                     local$scenario_list, local$param_count_list, 
+                     local$param_list, local$cond_list, 
+                     local$locus_type)
 
         showNotification(
             id = ns("headerfile_ok"),

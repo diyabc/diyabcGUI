@@ -1,38 +1,57 @@
 #' Write training set simulation diyabc header file
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param raw_scenario string, historical scenario.
-#' @param raw_param string, parameter value setting.
+#' @param scenario string, historical scenario.
+#' @param param string, parameter value setting.
 #' @param locus_type list of locus type.
 write_header <- function(project_name, project_dir, data_file, 
-                         raw_scenario_list, param_count_list, 
-                         raw_param_list, raw_cond_list, 
+                         scenario_list, param_count_list, 
+                         param_list, cond_list, 
                          locus_type) {
     
     # FIXME check input
+    
+    # print("project_dir =")
+    # print(project_dir)
+    # print("project_name =")
+    # print(project_name)
+    # print("param_list =")
+    # print(param_list)
+    # print("param_count_list =")
+    # print(param_count_list)
+    # print("scenario_list =")
+    # print(scenario_list)
+    # print("cond_list =")
+    # print(cond_list)
+    # print("data_file =")
+    # print(data_file)
+    # print("locus_type =")
+    # print(locus_type)
     
     out <- NULL
     
     filename <- "header.txt"
     
+    # print("log1")
     ## data filename and summary
     sec1 <- str_c(basename(data_file),
-                  str_c(length(raw_param_list), 
+                  str_c(length(param_list), 
                         "parameters and 2 summary statistics", 
                         sep = " "),
                   sep = "\n")
-
+    
+    # print("log2")
     ## scenario
-    sec2 <- str_c(length(raw_scenario_list), "scenarios:",
-                  str_c(str_count(string = raw_scenario_list, 
+    sec2 <- str_c(length(scenario_list), "scenarios:",
+                  str_c(str_count(string = scenario_list, 
                                   pattern = "\n") + 1, 
                         collapse = " "),
                   sep = " ")
     format_scenario <- lapply(
-        1:length(raw_scenario_list),
+        1:length(scenario_list),
         function(ind) {
-            tmp_scenario <- raw_scenario_list[[ind]]
-            tmp_prior <- round(1/length(raw_scenario_list), digits = 5)
+            tmp_scenario <- scenario_list[[ind]]
+            tmp_prior <- round(1/length(scenario_list), digits = 5)
             tmp_param_count <- param_count_list[[ind]]
             return(
                 str_c(
@@ -51,33 +70,61 @@ write_header <- function(project_name, project_dir, data_file,
     sec2 <- str_c(sec2,
                   str_c(format_scenario, collapse = "\n"),
                   sep = "\n")
-
+    
+    # print("log3")
     ## historical parameters priors
     sec3 <- str_c(
         str_c("historical parameters priors ",
-              "(", length(raw_param_list), ",", length(raw_cond_list), ")"),
-        str_c(raw_param_list, collapse = "\n"),
-        str_c(raw_cond_list, collapse = "\n"),
+              "(", length(param_list), ",", length(cond_list), ")"),
+        str_c(param_list, collapse = "\n"),
+        str_c(cond_list, collapse = "\n"),
         "DRAW UNTIL",
         sep = "\n"
     )
+    
+    # print("log4")
     ## loci description
     # FIXME
-    sec4 <- str_c("loci description ")
+    format_locus_type <- lapply(
+        1:length(locus_type),
+        function(ind) {
+            return(
+                str_c(
+                    locus_type[[ind]],
+                    str_c("G", ind),
+                    "from 1", # FIXME
+                    sep = " "
+                )
+            )
+        }
+    )
     
+    sec4 <- str_c(
+        str_c(
+            "loci description",
+            str_c("(", length(locus_type), ")"),
+            sep = " "
+        ),
+        str_c(format_locus_type, collapse = "\n"),
+        sep = "\n"
+    )
+    
+    # print("log5")
     ## group summary statistics
     sec5 <- str_c(
         "group summary statistics (2)",
         "group G1 (2)",
-        "HP0 1 2"
+        "HP0 1 2",
+        sep = "\n"
     )
     
+    # print("log6")
     ## final summary
     sec6 <- str_c(
         "scenario",
         str_c(
             str_extract(
-                string = raw_param_list, 
+                string = param_list, 
                 pattern = str_c("^", single_param_regex(), "(?= )")
             ),
             collapse = "    "
