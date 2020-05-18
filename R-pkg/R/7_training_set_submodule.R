@@ -32,7 +32,9 @@ training_set_server <- function(input, output, session,
         cond_list = list(),
         param_list = list(),
         param_type_list = list(),
+        param_count_list = list(),
         raw_scneario_list = list(),
+        raw_param_list = list(),
         valid = FALSE,
         project_dir = NULL,
         project_name = NULL,
@@ -89,6 +91,18 @@ training_set_server <- function(input, output, session,
                      ))
                 }
             ))
+            # param count list
+            print("--- param")
+            local$param_count_list <- lapply(
+                local$scenario_list,
+                function(item) {
+                    print(item$param)
+                    return(length(item$param$Ne_param) + 
+                               length(item$param$time) + 
+                               length(item$param$rate))
+                }
+            )
+            print("----")
             # condition
             local$cond_list <- Reduce("c", lapply(
                 local$scenario_list,
@@ -107,6 +121,13 @@ training_set_server <- function(input, output, session,
                         cond_list = reactive(local$cond_list),
                         param_list = reactive(local$param_list))
                         # param_type_list = reactive(local$param_type_list))
+    
+    # update param list
+    observe({
+        req(!is.null(prior_cond_set$raw_prior_list))
+        # print(prior_cond_set$raw_prior_list)
+        local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
+    })
 
     
     # # debugging
@@ -122,7 +143,8 @@ training_set_server <- function(input, output, session,
                validation = reactive(local$valid),
                data_file = reactive(local$data_file),
                locus_type = reactive(local$locus_type),
-               param_list = reactive(prior_cond_set$raw_prior_list),
+               param_list = reactive(local$raw_param_list),
+               param_count_list = reactive(local$param_count_list),
                scenario_list = reactive(local$raw_scenario_list),
                cond_list = reactive(prior_cond_set$raw_cond_set))
     
@@ -346,11 +368,11 @@ prior_cond_set_server <- function(input, output, session,
     # condition help
     output$cond_help <- renderUI({
         req(!is.null(local$cond_list))
-        tagList(
+        helpText(
             "We recommend that you enter the following conditions:",
             do.call(
                 tags$ul,
-                lapply(local$cond_list, function(item) {
+                lapply(unique(local$cond_list), function(item) {
                     return(tags$li(item))
                 })
             )
@@ -716,6 +738,7 @@ training_set_action_server <- function(input, output, session,
                                        data_file = reactive({NULL}),
                                        locus_type = reactive({NULL}),
                                        param_list = reactive({NULL}),
+                                       param_count_list = reactive({NULL}),
                                        scenario_list = reactive({NULL}),
                                        cond_list = reactive({NULL})) {
     # namespace
@@ -729,6 +752,7 @@ training_set_action_server <- function(input, output, session,
         data_file = NULL,
         locus_type = NULL,
         param_list = NULL,
+        param_count_list = NULL,
         scenario_list = NULL,
         cond_list = NULL
     )
@@ -740,6 +764,7 @@ training_set_action_server <- function(input, output, session,
         local$data_file <- data_file()
         local$locus_type <- locus_type()
         local$param_list <- param_list()
+        local$param_count_list <- param_count_list()
         local$scenario_list <- scenario_list()
         local$cond_list <- cond_list()
     })
@@ -829,6 +854,8 @@ training_set_action_server <- function(input, output, session,
         print(local$project_name)
         print("param_list =")
         print(local$param_list)
+        print("param_count_list =")
+        print(local$param_count_list)
         print("scenario_list =")
         print(local$scenario_list)
         print("cond_list =")
@@ -838,27 +865,25 @@ training_set_action_server <- function(input, output, session,
         print("locus_type =")
         print(local$locus_type)
 
-        # write_headersim(local$project_name, local$project_dir,
-        #                 local$seq_mode, local$locus_type,
-        #                 local$raw_scenario, local$raw_param,
-        #                 local$locus_description,
-        #                 local$sample_sizes,
-        #                 local$n_rep, local$sex_ratio)
+        write_header(local$project_name, local$project_dir, local$data_file, 
+                     local$raw_scenario_list, local$param_count_list, 
+                     local$raw_param_list, 
+                     local$raw_cond_list, local$locus_type)
 
-        # showNotification(
-        #     id = ns("headerfile_ok"),
-        #     duration = 5,
-        #     closeButton = TRUE,
-        #     type = "message",
-        #     tagList(
-        #         tags$p(
-        #             icon("check"),
-        #             paste0("Project is ready to run simulations.")
-        #         )
-        #     )
-        # )
+        showNotification(
+            id = ns("headerfile_ok"),
+            duration = 5,
+            closeButton = TRUE,
+            type = "message",
+            tagList(
+                tags$p(
+                    icon("check"),
+                    paste0("Project is ready to run simulations.")
+                )
+            )
+        )
     })
-    # 
+    
     # ## FIXME run simulation
     # observeEvent(input$simulate, {
     #     logging("Running simulation")
