@@ -51,7 +51,7 @@ app_simplified_body <- dashboardBody(
 #' App dashboard sidebar
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
+#' @importFrom shinydashboard dashboardSidebar sidebarMenuOutput
 app_sidebar <- dashboardSidebar(
     sidebarMenuOutput("app_menu")
 )
@@ -78,7 +78,7 @@ app_body <- dashboardBody(
 #' @return Shiny ui
 diyabc_ui <- dashboardPage(
     app_header,
-    app_sidebar,
-    app_body,
+    app_simplified_sidebar,
+    app_simplified_body,
     skin = "black"
 )
