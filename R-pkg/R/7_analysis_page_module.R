@@ -32,7 +32,7 @@ analysis_page_ui <- function(id) {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                "FILL ME"
+                rf_module_ui(ns("rf"))
             )
         )
         ,
