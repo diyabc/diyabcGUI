@@ -145,10 +145,10 @@ input_data_server <- function(input, output, session) {
         })
         out$data_file <- unname(selected_file$datapath)
     })
-    # debugging
-    observe({
-        print(out$data_file)
-    })
+    # # debugging
+    # observe({
+    #     logging("data file = ", out$data_file)
+    # })
     # data info
     observeEvent(out$data_file, {
         req(!is.null(out$data_file))
