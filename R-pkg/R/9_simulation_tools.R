@@ -35,8 +35,9 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
     sec1 <- str_c(sec1, sample_string, sep = "\n")
     
     ## scenario
+    # FIXME
     sec2 <- str_c("scenario ", 
-                  "(", str_count(string = raw_scenario, pattern = "\n") -1,
+                  "(", str_count(string = raw_scenario, pattern = "\n") + 1,
                   ")\n",
                   raw_scenario)
     ## historical parameters
@@ -72,12 +73,12 @@ diyabc_run_simu <- function(project_dir, n_core = 1) {
     }
     # init seeds
     cmd <- str_c(diyabc_bin, 
-                 "-p", project_dir, "-f", "-n",
+                 "-p", project_dir, "-n",
                  str_c("'t:", n_core, "'"),
                  sep = " ")
     check <- system(cmd)
     if(check != 0) {
-        stop("Issue with seed initialization")
+        warning("Issue with seed initialization")
     }
     # run
     cmd <- str_c(diyabc_bin, "-p", project_dir, "-k", sep = " ")
