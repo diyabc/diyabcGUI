@@ -1,0 +1,89 @@
+#' Write training set simulation diyabc header file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param raw_scenario string, historical scenario.
+#' @param raw_param string, parameter value setting.
+#' @param locus_description list of locus description.
+#' @param nrep integer, number of repetitions.
+#' @param sex_ratio float, between 0 and 1.
+#' @param sample_sizes list of integer sample sizes.
+write_header <- function(project_name, project_dir, data_file, 
+                         raw_scenario_list, raw_param_list, raw_cond_list, 
+                         locus_description) {
+    
+    # FIXME check input
+    
+    out <- NULL
+    
+    filename <- "headersim.txt"
+    
+    ## line 1 and samples
+    sec1 <- str_c(project_name, n_rep, sex_ratio, sep = " ")
+    # FIXME
+    if(seq_mode == "poolseq") {
+        sec1 <- str_c("poolseq", sec1, sep = "_")
+    } else if(seq_mode == "indseq" & locus_type == "snp") {
+        sec1 <- str_c("SNP", sec1, sep = "_")
+    }
+    sec1 <- str_c(sec1, 
+                  str_c(nrow(sample_sizes), "samples", sep = " "), 
+                  sep = "\n")
+    
+    sample_string <- str_c(apply(sample_sizes, 1, str_c, collapse = " "),
+                           collapse = "\n")
+    sec1 <- str_c(sec1, sample_string, sep = "\n")
+    
+    ## scenario
+    sec2 <- str_c("scenario ", 
+                  "(", str_count(string = raw_scenario, pattern = "\n") -1,
+                  ")\n",
+                  raw_scenario)
+    ## historical parameters
+    sec3 <- str_c("historical parameters ", 
+                  "(", length(raw_param), ")\n",
+                  str_c(raw_param, collapse = "\n"))
+    ## loci description
+    total_locus_count <- sum(as.numeric(str_extract(
+        string = locus_description, pattern = "^[0-9]+")))
+    sec4 <- str_c("loci description ",
+                  "(", total_locus_count, ")\n",
+                  str_c(locus_description, collapse = "\n"))
+    ## merge
+    # out <- str_split(str_c(sec1, sec2, sec3, sec4, sep = "\n\n"), "\n")
+    out <- str_c(sec1, sec2, sec3, sec4, sep = "\n\n")
+    out <- str_c(out, "\n\n")
+    
+    ## write to file
+    writeLines(out, file.path(project_dir, "headersim.txt"))
+}
+
+#' Run Write training set simulation
+#' @keywords internal
+#' @author Ghislain Durif
+diyabc_run_trainset_simu <- function(project_dir, n_core = 1) {
+    diyabc_bin <- find_bin("diyabc")
+    # check project dir
+    if(!dir.exists(project_dir)) {
+        stop("Input directory does not exist")
+    }
+    if(!str_detect(string = project_dir, pattern = "/$")) {
+        project_dir <- str_c(project_dir, "/")
+    }
+    # init seeds
+    cmd <- str_c(diyabc_bin, 
+                 "-p", project_dir, "-f", "-n",
+                 str_c("'t:", n_core, "'"),
+                 sep = " ")
+    check <- system(cmd)
+    if(check != 0) {
+        stop("Issue with seed initialization")
+    }
+    # # run
+    # cmd <- str_c(diyabc_bin, "-p", project_dir, "-k", sep = " ")
+    # check <- system(cmd)
+    # if(check != 0) {
+    #     stop("Issue with simulation run")
+    # }
+    # output
+    return(NULL)
+}

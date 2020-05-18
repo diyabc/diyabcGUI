@@ -92,7 +92,12 @@ analysis_page_server <- function(input, output, session,
     input_data <- callModule(input_data_server, "input_data")
     ## Training set sub-module
     training_set <- callModule(training_set_server, "train_set", 
-                               project_dir = reactive(local$project_dir))
+                               project_dir = reactive(local$project_dir),
+                               project_name = reactive(local$project_name),
+                               data_file = reactive(input_data$data_file),
+                               valid_data_file = reactive(input_data$valid),
+                               locus_type = reactive(input_data$locus_type),
+                               validation = reactive(setting$validation))
     # output
     return(out)
 }
@@ -128,7 +133,7 @@ input_data_server <- function(input, output, session) {
     # init local
     local <- reactiveValues(data_info = NULL)
     # init output
-    out <- reactiveValues(data_file = NULL)
+    out <- reactiveValues(data_file = NULL, valid = FALSE, locus_type = NULL)
     # get filename
     shinyFileChoose(
         input, 
@@ -154,13 +159,14 @@ input_data_server <- function(input, output, session) {
         req(!is.null(out$data_file))
         req(str_length(out$data_file) > 0)
         local$data_info <- check_data_file(out$data_file)
-        print(local$data_info)
+        req(!is.null(local$data_info$valid))
+        out$valid <- local$data_info$valid
+        out$locus_type <- local$data_info$locus_type
     })
     
     # show data info
     observeEvent(local$data_info, {
         req(local$data_info$msg)
-        print(local$data_info$msg)
         output$data_info <- renderUI({
             helpText(
                 h5("Data file info"),

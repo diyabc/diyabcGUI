@@ -6,7 +6,10 @@ training_set_ui <- function(id) {
     tagList(
         hist_model_panel_ui(ns("hist_model_panel")),
         hr(),
-        prior_cond_set_ui(ns("prior_cond"))
+        prior_cond_set_ui(ns("prior_cond")),
+        br(),
+        hr(),
+        training_set_action_ui(ns("action"))
     )
 }
 
@@ -19,24 +22,44 @@ training_set_ui <- function(id) {
 training_set_server <- function(input, output, session,
                                 project_dir = reactive({NULL}),
                                 project_name = reactive({NULL}),
-                                scenario_list = reactive({NULL})) {
+                                scenario_list = reactive({NULL}),
+                                validation = reactive({FALSE}),
+                                data_file = reactive({NULL}),
+                                locus_type = reactive({NULL}),
+                                valid_data_file = reactive({FALSE})) {
     # init local
     local <- reactiveValues(
         cond_list = list(),
         param_list = list(),
         param_type_list = list(),
+        raw_scneario_list = list(),
+        valid = FALSE,
         project_dir = NULL,
         project_name = NULL,
-        scenario_list = NULL
+        scenario_list = NULL,
+        validation = NULL,
+        data_file = NULL,
+        locus_type = NULL,
+        valid_data_file = NULL
     )
     # get input
     observe({
-        local$project_dir = project_dir()
-        local$project_name = project_name()
-        local$scenario_list = scenario_list()
+        local$project_dir <- project_dir()
+        local$project_name <- project_name()
+        local$scenario_list <- scenario_list()
+        local$validation <- validation()
+        local$data_file <- data_file()
+        local$locus_type <- locus_type()
+        local$valid_data_file <- valid_data_file()
     })
     # init output
     out <- reactiveValues()
+    # update valid input
+    observe({
+        req(!is.null(local$validation))
+        req(!is.null(local$valid_data_file))
+        local$valid <- local$validation & local$valid_data_file
+    })
     # historic model panel
     hist_model_def <- callModule(hist_model_panel_server, "hist_model_panel",
                                  project_dir = reactive(local$project_dir))
@@ -71,6 +94,11 @@ training_set_server <- function(input, output, session,
                 local$scenario_list,
                 function(item) return(item$cond)
             ))
+            # raw scenario
+            local$raw_scenario_list <- Reduce("c", lapply(
+                local$scenario_list,
+                function(item) return(item$raw)
+            ))
         }
     })
     # parameter prior and conditon setting
@@ -79,6 +107,25 @@ training_set_server <- function(input, output, session,
                         cond_list = reactive(local$cond_list),
                         param_list = reactive(local$param_list))
                         # param_type_list = reactive(local$param_type_list))
+
+    
+    # # debugging
+    # observe({
+    #     # print(prior_cond_set)
+    #     print(prior_cond_set$raw_cond_set)
+    # })
+    
+    ## action
+    callModule(training_set_action_server, "action",
+               project_dir = reactive(local$project_dir),
+               project_name = reactive(local$project_name),
+               validation = reactive(local$valid),
+               data_file = reactive(local$data_file),
+               locus_type = reactive(local$locus_type),
+               param_list = reactive(prior_cond_set$raw_prior_list),
+               scenario_list = reactive(local$raw_scenario_list),
+               cond_list = reactive(prior_cond_set$raw_cond_set))
+    
     # output
     return(out)
 }
@@ -311,41 +358,51 @@ prior_cond_set_server <- function(input, output, session,
     })
     # get input condition
     observeEvent(input$cond_set, {
-        req(input$cond_set)
-        req(local$param_list)
+        req(!is.null(input$cond_set))
+        req(!is.null(local$param_list))
         # FIXME
         # input (remove last empty line)
         logging("input cond set = ", input$cond_set)
-        input_cond_list <- str_split(
-            str_replace(
-                string = input$cond_set,
-                pattern = "\\n$",
-                replacement = ""
-            ), 
-            pattern = "\\n"
-        )
-        # check
-        local$cond_check <- check_cond(input_cond_list, local$param_list)
-        # output possible issues
-        output$cond_format <- renderUI({
-            req(!is.null(local$cond_check$valid))
-            req(!is.null(local$cond_check$msg))
-            print(local$cond_check)
-            if(!local$cond_check$valid) {
-                helpText(
-                    tags$span(icon("warning"), 
-                              "Issues with your input conditions:"),
-                    do.call(
-                        tags$ul,
-                        lapply(local$cond_check$msg, function(item) {
-                            return(tags$li(item))
-                        })
+        if(str_length(input$cond_set) > 0) {
+            input_cond_list <- str_split(
+                str_replace(
+                    string = input$cond_set,
+                    pattern = "\\n$",
+                    replacement = ""
+                ), 
+                pattern = "\\n"
+            )
+            # check
+            local$cond_check <- check_cond(input_cond_list, local$param_list)
+            # output possible issues
+            output$cond_format <- renderUI({
+                req(!is.null(local$cond_check$valid))
+                req(!is.null(local$cond_check$msg))
+                # print(local$cond_check)
+                if(!local$cond_check$valid) {
+                    helpText(
+                        tags$span(icon("warning"), 
+                                  "Issues with your input conditions:"),
+                        do.call(
+                            tags$ul,
+                            lapply(local$cond_check$msg, function(item) {
+                                return(tags$li(item))
+                            })
+                        )
                     )
-                )
+                } else {
+                    tagList()
+                }
+            })
+            # output
+            if(local$cond_check$valid) {
+                out$raw_cond_set <- input_cond_list
             } else {
-                tagList()
+                out$raw_cond_set <- list()
             }
-        })
+        } else {
+            out$raw_cond_set <- list()
+        }
     })
     
     ## output
@@ -616,5 +673,225 @@ prior_server <- function(input, output, session,
     })
     ## output
     return(out)
+}
+
+#' Training set simulation action module ui
+#' @keywords internal
+#' @author Ghislain Durif
+training_set_action_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        actionGroupButtons(
+            inputIds = c(ns("save"),
+                         ns("duplicate")),
+            labels = list(
+                tags$span(icon("save"), "Save"),
+                tags$span(icon("copy"), "Duplicate")
+            ),
+            fullwidth = TRUE
+        ),
+        hr(),
+        actionBttn(
+            inputId = ns("simulate"),
+            label = "Simulate",
+            style = "fill",
+            block = TRUE
+        )
+    )
+}
+
+#' Training set simulation action module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param project_dir project directory as a `reactive`.
+#' @param project_name project name as a `reactive`.
+#' @param validation boolean indicating if the project setting are validated, 
+#' as a `reactive`.
+#' @param raw_param scenario parameter raw setting as a `reactive`. 
+#' @param raw_scenario list of raw scenario as a `reactive`.
+training_set_action_server <- function(input, output, session,
+                                       project_dir = reactive({NULL}),
+                                       project_name = reactive({NULL}),
+                                       validation = reactive({TRUE}),
+                                       data_file = reactive({NULL}),
+                                       locus_type = reactive({NULL}),
+                                       param_list = reactive({NULL}),
+                                       scenario_list = reactive({NULL}),
+                                       cond_list = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        saved = FALSE,
+        project_dir = NULL,
+        project_name = NULL,
+        validation = NULL,
+        data_file = NULL,
+        locus_type = NULL,
+        param_list = NULL,
+        scenario_list = NULL,
+        cond_list = NULL
+    )
+    # get input
+    observe({
+        local$project_dir <- project_dir()
+        local$project_name <- project_name()
+        local$validation <- validation()
+        local$data_file <- data_file()
+        local$locus_type <- locus_type()
+        local$param_list <- param_list()
+        local$scenario_list <- scenario_list()
+        local$cond_list <- cond_list()
+    })
+    # init output
+    out <- reactiveValues(
+        duplicate = NULL,
+        save = NULL
+    )
     
+    # disable saved if not validated
+    observeEvent(local$validation, {
+        req(!is.null(local$validation))
+        if(local$validation) {
+            shinyjs::enable("save")
+        } else {
+            shinyjs::disable("save")
+            # # directory not existing
+            # showNotification(
+            #     id = ns("project_dir_issue"),
+            #     duration = 5,
+            #     closeButton = TRUE,
+            #     type = "warning",
+            #     tagList(
+            #         tags$p(
+            #             icon("warning"),
+            #             paste0("Directory does not exists. ",
+            #                    "Did you 'validate' the project?")
+            #         )
+            #     )
+            # )
+        }
+    })
+
+    # un-saved if modification to input
+    observeEvent({
+        local$project_dir
+        local$project_name
+        local$param_list
+        local$scenario_list
+        local$cond_list
+        local$data_file
+        local$locus_type
+    }, {
+        local$saved <- FALSE
+    })
+
+    # deactivate simulate if not saved
+    observeEvent(local$saved, {
+        req(!is.null(local$saved))
+        if(local$saved) {
+            shinyjs::enable("simulate")
+        } else {
+            shinyjs::disable("simulate")
+        }
+    })
+
+    # save project = write header file
+    observeEvent(input$save, {
+        # FIXME write header file
+        local$saved <- TRUE
+    })
+
+    # FIXME project duplication
+    observeEvent(input$duplicate, {
+        out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
+    })
+
+    ## prepare for simulation
+    # # debugging
+    # observe({
+    #     req(local$raw_param)
+    #     print(local$raw_param)
+    # })
+
+    ## write header file
+    observeEvent(input$save, {
+        # req(!is.null(local$project_dir))
+        # req(!is.null(local$project_name))
+        # req(!is.null(local$raw_param))
+        # req(!is.null(local$raw_scenario))
+        # req(!is.null(local$data_file))
+        # req(!is.null(local$locus_type))
+
+        print("project_dir =")
+        print(local$project_dir)
+        print("project_name =")
+        print(local$project_name)
+        print("param_list =")
+        print(local$param_list)
+        print("scenario_list =")
+        print(local$scenario_list)
+        print("cond_list =")
+        print(local$cond_list)
+        print("data_file =")
+        print(local$data_file)
+        print("locus_type =")
+        print(local$locus_type)
+
+        # write_headersim(local$project_name, local$project_dir,
+        #                 local$seq_mode, local$locus_type,
+        #                 local$raw_scenario, local$raw_param,
+        #                 local$locus_description,
+        #                 local$sample_sizes,
+        #                 local$n_rep, local$sex_ratio)
+
+        # showNotification(
+        #     id = ns("headerfile_ok"),
+        #     duration = 5,
+        #     closeButton = TRUE,
+        #     type = "message",
+        #     tagList(
+        #         tags$p(
+        #             icon("check"),
+        #             paste0("Project is ready to run simulations.")
+        #         )
+        #     )
+        # )
+    })
+    # 
+    # ## FIXME run simulation
+    # observeEvent(input$simulate, {
+    #     logging("Running simulation")
+    #     check <- tryCatch(
+    #         diyabc_run_simu(project_dir = local$project_dir, n_core = 1),
+    #         error = function(e) return(e)
+    #     )
+    #     if(!is.null(check) & !is.null(check$message)) {
+    #         showNotification(
+    #             id = ns("run_not_ok"),
+    #             duration = 5,
+    #             closeButton = TRUE,
+    #             type = "error",
+    #             tagList(
+    #                 tags$p(
+    #                     icon("warning"),
+    #                     str_c(check$message)
+    #                 )
+    #             )
+    #         )
+    #     } else {
+    #         showNotification(
+    #             id = ns("run_ok"),
+    #             duration = 5,
+    #             closeButton = TRUE,
+    #             type = "error",
+    #             tagList(
+    #                 tags$p(
+    #                     icon("check"),
+    #                     "Simulations are done."
+    #                 )
+    #             )
+    #         )
+    #     }
+    # })
 }
