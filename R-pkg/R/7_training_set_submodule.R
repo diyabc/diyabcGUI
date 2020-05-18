@@ -393,7 +393,7 @@ prior_cond_set_server <- function(input, output, session,
         req(!is.null(local$param_list))
         # FIXME
         # input (remove last empty line)
-        logging("input cond set = ", input$cond_set)
+        # logging("input cond set = ", input$cond_set)
         if(str_length(input$cond_set) > 0) {
             input_cond_list <- str_split(
                 str_replace(
@@ -810,6 +810,30 @@ training_set_action_ui <- function(id) {
             fullwidth = TRUE
         ),
         hr(),
+        checkboxInput(
+            ns("prior_mod_check"), 
+            label = "Run prior/model checking", 
+            value = FALSE
+        ),
+        numericInput(
+            ns("nrun"),
+            label = "Number of simulation",
+            value = 0,
+            min = 0
+        ),
+        helpText(
+            icon("warning"),
+            tags$ul(
+                tags$li(
+                    "1000 to 20000 simulations per scenario are needed",
+                    "for model choice."
+                ),
+                tags$li(
+                    "1000 to 100000 simulations under the scenario of interest",
+                    "are needed for parameter estimation."
+                )
+            )
+        ),
         actionBttn(
             inputId = ns("simulate"),
             label = "Simulate",
@@ -985,7 +1009,7 @@ training_set_action_server <- function(input, output, session,
     
     ## FIXME run simulation
     observeEvent(input$simulate, {
-        logging("Running simulation")
+        # logging("Running simulation")
         check <- tryCatch(
             diyabc_run_trainset_simu(local$project_dir, 
                                      local$data_file, 
