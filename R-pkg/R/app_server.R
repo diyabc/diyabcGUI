@@ -10,6 +10,7 @@
 #' @param session shiny session.
 #' @importFrom shinyhelper observe_helpers
 #' @return None
+#' @export
 diyabc_server <- function(input, output, session) {
     # help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)

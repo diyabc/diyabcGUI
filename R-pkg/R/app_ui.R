@@ -85,6 +85,7 @@ app_body <- function() {
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardPage
 #' @return Shiny ui
+#' @export
 diyabc_ui <- function() {
     dashboardPage(
         app_header(),

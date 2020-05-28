@@ -1,10 +1,17 @@
 Package: diyabcGUI
 Type: Package
-Title: What the package does (short line)
+Title: User interface to DYIABC-RF software
 Version: 1.0
 Date: 2020-01-27
-Author: Ghislain Durif
-Maintainer: Who to complain to <yourfault@somewhere.net>
+Authors@R: c(
+    person(given="Ghislain", family="Durif", 
+           comment="<https://gdurif.perso.math.cnrs.fr/>", 
+           email="gd.dev@libertymail.net", 
+           role=c("aut", "cre")), 
+    person(given="François-David", family="Collin", 
+           comment="DIYABC-RF developer", 
+           role="aut"))
+Maintainer: Ghislain Durif <gd.dev@libertymail.net>
 Description: More about what it does (maybe more than one line)
 License: What license is it under?
 URL: https://github.com/diyabc/diyabcGUI

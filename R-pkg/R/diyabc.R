@@ -12,5 +12,5 @@
 #' }
 #' @export
 diyabc <- function() {
-    shinyApp(ui = diyabc_ui, server = diyabc_server)
+    shiny::runApp(appDir = system.file("application", package = "diyabcGUI"))
 }
