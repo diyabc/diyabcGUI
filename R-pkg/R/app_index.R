@@ -10,7 +10,7 @@ simplified_index_server <- function(input, output, session) {
 #' App dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFRom shinydashboard tabItem tabItems
+#' @importFrom shinydashboard renderMenu tabItem tabItems updateTabItems
 index_server <- function(input, output, session) {
     
     # init local
