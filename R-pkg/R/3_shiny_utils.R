@@ -19,12 +19,20 @@ dir_choice_ui <- function(id, label = "Directory",
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param enabled boolean, enable input or not, as a `reactive`.
-#' @importFrom shinyFiles shinyDirChoose
+#' @importFrom fs path_home
+#' @importFrom shinyFiles parseDirPath shinyDirChoose
 #' @importFrom shinyjs disable enable
 dir_choice_server <- function(input, output, session, 
                               enabled = reactive({TRUE})) {
     # init local
     local <- reactiveValues(enabled = NULL)
+    # temp dir
+    temp_dir <- tempfile("diyabc")
+    dir.create(temp_dir, showWarnings = FALSE)
+    # init output
+    out <- reactiveValues(path = temp_dir)
+    # local volumes
+    volumes <- c(home = fs::path_home(), wd = temp_dir)
     # get input
     observe({
         local$enabled <- enabled()
@@ -38,27 +46,21 @@ dir_choice_server <- function(input, output, session,
             shinyjs::disable("dir_choice")
         }
     })
-    # init output reactive values
-    out <- reactiveValues(path = getwd())
     # directory chooser
     shinyDirChoose(
         input,
         id = "dir_choice",
-        roots = c(home = normalizePath('~'))
+        roots = volumes,
+        defaultRoot = "wd"
     )
-    # reactive directory
-    dir <- reactive(input$dir_choice)
     # print path
     output$dir_value <- renderText({
         out$path
     })
     # update path
     observeEvent(input$dir_choice, {
-        req(is.list(input$dir_choice))
-        home <- normalizePath('~')
-        out$path <- file.path(home, 
-                              paste(unlist(dir()$path[-1]), 
-                                    collapse = .Platform$file.sep))
+        req(input$dir_choice)
+        out$path <- parseDirPath(volumes, input$directory)
     })
     # output
     return(out)
