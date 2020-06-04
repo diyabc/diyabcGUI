@@ -5,7 +5,6 @@
 #' FIXME
 #' @author Ghislain Durif
 #' @return shiny application object
-#' @import shiny
 #' @examples
 #' \dontrun{
 #' diyabc()

@@ -12,9 +12,9 @@
 #' @return None
 #' @export
 diyabc_server <- function(input, output, session) {
-    # help
+    ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
-    # index server function
-    index_server(input, output, session)
+    ## index server function
     # simplified_index_server(input, output, session)
+    index_server(input, output, session)
 }
