@@ -7,7 +7,7 @@ new_proj_set_ui <- function(id) {
     tagList(
         proj_name_ui(ns("project_name"), label = "Project",
                      default = "project_name"),
-        dir_choice_ui(ns("project_dir"), label = "Directory"),
+        dir_choice_ui(ns("project_dir"), label = "Parent directory"),
         actionGroupButtons(
             inputIds = c(ns("validate"), 
                          ns("reset")),
