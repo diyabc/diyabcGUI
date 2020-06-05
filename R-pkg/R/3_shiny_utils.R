@@ -27,8 +27,7 @@ dir_choice_server <- function(input, output, session,
     # init local
     local <- reactiveValues(enabled = NULL)
     # temp dir
-    temp_dir <- tempfile("diyabc")
-    dir.create(temp_dir, showWarnings = FALSE)
+    temp_dir <- getOption("diyabc")$tmp_dir
     # init output
     out <- reactiveValues(path = temp_dir)
     # local volumes
