@@ -1,4 +1,4 @@
-poolseq_sim_dataset_4POP_cov100_001.snp
+poolseq_SNP_sim_dataset_4POP_cov100_001.snp
 13 parameters and 2 summary statistics
 
 1 scenarios: 8 
