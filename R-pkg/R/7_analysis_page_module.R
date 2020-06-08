@@ -9,12 +9,13 @@ analysis_page_ui <- function(id) {
                 title = "Project settings",
                 width = 12,
                 status = "primary", solidHeader = TRUE,
-                collapsible = TRUE,
-                new_proj_set_ui(ns("proj_set")) %>% 
-                    helper(type = "markdown", 
-                           content = "analysis_project"),
-                hr(),
-                input_data_ui(ns("input_data"))
+                collapsible = FALSE,
+                # new_proj_set_ui(ns("proj_set")) %>% 
+                #     helper(type = "markdown", 
+                #            content = "analysis_project"),
+                # hr(),
+                # input_data_ui(ns("input_data"))
+                analysis_proj_set_ui(ns("proj_set"))
             )
         ),
         fluidRow(
@@ -51,26 +52,20 @@ analysis_page_ui <- function(id) {
 #' Analysis page server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_dir project directory as a `reactive`.
-#' @param project_name project name as a `reactive`.
-#' @param scenario_list list of raw scenarii as a `reactive`.
+#' @param proj_name project name as a `reactive`.
 analysis_page_server <- function(input, output, session,
-                                 project_dir = reactive({NULL}),
-                                 project_name = reactive({NULL}),
-                                 scenario_list = reactive({NULL})) {
+                                 proj_name = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local
     local <- reactiveValues(
-        project_dir = NULL,
-        project_name = NULL,
+        proj_dir = NULL,
+        proj_name = NULL,
         scenario_list = NULL
     )
     # get input
     observe({
-        local$project_dir = project_dir()
-        local$project_name = project_name()
-        local$scenario_list = scenario_list()
+        local$proj_name = proj_name()
     })
     # init output
     out <- reactiveValues(
@@ -78,28 +73,216 @@ analysis_page_server <- function(input, output, session,
         scenario = NULL
     )
     ## project setting
-    setting <- callModule(new_proj_set_server, "proj_set")
+    proj_set <- callModule(analysis_proj_set_server, "proj_set", 
+                           proj_name = reactive(local$proj_name))
+    setting <- proj_set # FIXME
     # update local
     observe({
-        local$project_dir <- setting$project_dir
-        local$project_name <- setting$project_name
+        local$proj_dir <- proj_set$proj_dir
+        local$proj_name <- proj_set$proj_name
     })
-    # update output
-    observe({
-        out$setting <- setting
-    })
-    ## input data
-    input_data <- callModule(input_data_server, "input_data")
-    ## Training set sub-module
-    training_set <- callModule(training_set_server, "train_set", 
-                               project_dir = reactive(local$project_dir),
-                               project_name = reactive(local$project_name),
-                               data_file = reactive(input_data$data_file),
-                               valid_data_file = reactive(input_data$valid),
-                               locus_type = reactive(input_data$locus_type),
-                               validation = reactive(setting$validation))
+    # # update output
+    # observe({
+    #     out$setting <- setting
+    # })
+    # ## input data
+    # input_data <- callModule(input_data_server, "input_data")
+    # ## Training set sub-module
+    # training_set <- callModule(training_set_server, "train_set", 
+    #                            project_dir = reactive(local$project_dir),
+    #                            project_name = reactive(local$project_name),
+    #                            data_file = reactive(input_data$data_file),
+    #                            valid_data_file = reactive(input_data$valid),
+    #                            locus_type = reactive(input_data$locus_type),
+    #                            validation = reactive(setting$validation))
     # output
     return(out)
+}
+
+#' Analysis project setting ui
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_proj_set_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        helpText(
+            "You can either start with a new project", 
+            "or open an existing project (one of your own or", 
+            "one of the project examples joined with the application)."
+        ),
+        radioGroupButtons(
+            ns("proj_type"),
+            label = NULL,
+            choices = c("New", "Existing", "Example"),
+            selected = "New",
+            justified = TRUE
+        ),
+        conditionalPanel(
+            condition = "input.proj_type == 'Existing'",
+            ns = ns,
+            h4(tags$b("Project files")),
+            fileInput(
+                ns("file_input"),
+                label = NULL, 
+                multiple = TRUE,
+                accept = c(
+                    ".txt",
+                    ".bin"
+                )
+            ),
+            uiOutput(ns("file_check"))
+        ),
+        conditionalPanel(
+            condition = "input.proj_type == 'Example'",
+            ns = ns,
+            selectInput(
+                ns("proj_example"),
+                label = "Examples",
+                choices = c("", "Not available at the moment"),
+                selected = NULL,
+                multiple = FALSE
+            ),
+        ),
+        hr(),
+        h4(tags$b("Project name")),
+        fluidRow(
+            column(
+                width = 11,
+                textInput(
+                    ns("proj_name"), 
+                    label = NULL,
+                    placeholder = "project_name"
+                )
+            ),
+            column(
+                width = 1,
+                actionButton(
+                    ns("edit_proj_name"),
+                    label = "Edit",
+                    icon = icon("edit"),
+                    width = "100%"
+                )
+            )
+        )
+    )
+}
+
+#' Analysis project setting ui
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param proj_name project name as a `reactive`.
+#' @param reset reactive to pass a reset command
+analysis_proj_set_server <- function(input, output, session, 
+                                     proj_name = reactive({NULL}),
+                                     reset = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(
+        input_file_list = NULL,
+        proj_file_check = NULL,
+        reset = NULL
+    )
+    # init output
+    out <- reactiveValues(
+        proj_dir = mk_proj_dir(session),
+        proj_name = NULL
+    )
+    # get input
+    observe({
+        out$proj_name <- proj_name()
+        local$reset <- reset()
+    })
+    # FIXME reset
+    observeEvent(reset, {
+        local$proj_dir <- mk_proj_dir(session)
+    })
+    # new or existing project
+    observeEvent(input$proj_type, {
+        req(input$proj_type)
+        if(input$proj_type == "New") {
+            shinyjs::disable("edit_proj_name")
+            shinyjs::enable("proj_name")
+        } else if(input$proj_type %in% c("Existing", "Example")) {
+            shinyjs::enable("edit_proj_name")
+            shinyjs::disable("proj_name")
+        }
+    })
+    ## Manage existing project
+    possible_files <- c("diyabcGUI_proj.txt", "header.txt", "headerRF.txt", 
+                        "reftableRF.bin", "statobsRF.txt")
+    # check and copy uploaded files to project working directory (server-side)
+    observeEvent(input$file_input, {
+        req(input$file_input)
+        # data.frame with 4 columns: name (chr), size (int), type (chr), datapath (chr)
+        req(is.data.frame(input$file_input))
+        req(nrow(input$file_input) > 0)
+        local$input_file_list <- input$file_input
+        # FIXME check
+    })
+    # possible files when uploading existing projects
+    output$file_check <- renderUI({
+        helpText(
+            tags$p(
+                "Project-related files can be:", 
+                tags$div(
+                    style = "column-count:2;",
+                    do.call(
+                        tags$ul, 
+                        lapply(
+                            possible_files,
+                            function(item) tags$li(
+                                if(item %in% local$input_file_list) {
+                                    tags$div(
+                                        item,
+                                        icon("check")
+                                    )
+                                } else {
+                                    item
+                                }
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    })
+    
+    # debugging
+    observe({
+        print(input$file_input)
+    })
+    # copy uploaded file to project working directory (server-side)
+    # observeEvent(input$proj_file, {
+    #     ##
+    #     
+    # })
+    
+    
+    # if existing project, allow to modify its name
+    observeEvent(input$edit_proj_name, {
+        req(input$edit_proj_name)
+        shinyjs::enable("proj_name")
+    })
+    
+    ## Manage example project
+    # TODO
+    
+    ## get project name
+    # TODO
+}
+
+#' Create a project directory server-side
+#' @keywords internal
+#' @author Ghislain Durif
+mk_proj_dir <- function(session, tag = "diyabc") {
+    # create tmp dir
+    tmp_dir <- tempfile(tag)
+    dir.create(tmp_dir, showWarnings = FALSE)
+    # clean on exit
+    session$onSessionEnded(function() {
+        unlink(tmp_dir)
+    })
+    # output
+    return(tmp_dir)
 }
 
 #' Input data ui
