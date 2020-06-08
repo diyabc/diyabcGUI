@@ -13,6 +13,21 @@ bin_dir <- function() {
     return(bindir)
 }
 
+#' find example directory
+#' @keywords internal
+#' @author Ghislain Durif
+example_dir <- function() {
+    pkgdir <- find.package("diyabcGUI")
+    exampledir <- file.path(pkgdir, "example")
+    if(!dir.exists(exampledir)) {
+        exampledir <- file.path(pkgdir, "inst", "example")
+        if(!dir.exists(exampledir)) {
+            stop("example directory not found")
+        }
+    }
+    return(exampledir)
+}
+
 #' find help directory
 #' @keywords internal
 #' @author Ghislain Durif
