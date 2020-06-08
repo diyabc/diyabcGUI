@@ -1,2 +1,6 @@
 # UserInterface
-User interface to DYIABC/AbcRanger 
+User interface to DYIABC/AbcRanger
+
+## Project file
+
+`diyabcGUI_proj.txt` provides project name.
