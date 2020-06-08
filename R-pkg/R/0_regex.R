@@ -5,6 +5,13 @@ int_regex <- function() {
     return("[0-9]+")
 }
 
+#' return numerical (float) regex
+#' @keywords internal
+#' @author Ghislain Durif
+num_regex <- function() {
+    return("[0-9]+\\.?[0-9]*")
+}
+
 #' return event numerical rate regex
 #' @keywords internal
 #' @author Ghislain Durif
