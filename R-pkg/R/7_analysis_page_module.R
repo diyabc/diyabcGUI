@@ -59,7 +59,11 @@ analysis_page_server <- function(input, output, session,
     ns <- session$ns
     # init local
     local <- reactiveValues(
+        locus_type = NULL,
+        seq_mode = NULL,
+        new_proj = NULL,
         proj_dir = NULL,
+        proj_header = NULL,
         proj_name = NULL,
         scenario_list = NULL
     )
@@ -75,9 +79,23 @@ analysis_page_server <- function(input, output, session,
     ## project setting
     proj_set <- callModule(analysis_proj_set_server, "proj_set", 
                            proj_name = reactive(local$proj_name))
+    # output: 
+    # data_file, data_info,
+    # locus_type, seq_mode,
+    # new_proj,
+    # proj_dir, proj_file_list, proj_header, proj_name,
+    # valid_data_file, valid_proj, valid_proj_file
+    
+    # # debugging
+    # observe({
+    #     print("#### Project settings ####")
+    #     print(reactiveValuesToList(proj_set))
+    # })
+    
     setting <- proj_set # FIXME
     # update local
     observe({
+        # FIXME obsolete
         local$proj_dir <- proj_set$proj_dir
         local$proj_name <- proj_set$proj_name
     })
@@ -87,13 +105,13 @@ analysis_page_server <- function(input, output, session,
     # })
     # ## input data
     # input_data <- callModule(input_data_server, "input_data")
-    # ## Training set sub-module
-    # training_set <- callModule(training_set_server, "train_set", 
-    #                            project_dir = reactive(local$project_dir),
-    #                            project_name = reactive(local$project_name),
-    #                            data_file = reactive(input_data$data_file),
-    #                            valid_data_file = reactive(input_data$valid),
-    #                            locus_type = reactive(input_data$locus_type),
+    ## Training set sub-module
+    # training_set <- callModule(training_set_server, "train_set",
+    #                            project_dir = reactive(proj_set$proj_dir),
+    #                            project_name = reactive(proj_set$proj_name),
+    #                            data_file = reactive(proj_set$data_file),
+    #                            valid_data_file = reactive(proj_set$valid),
+    #                            locus_type = reactive(proj_set$locus_type),
     #                            validation = reactive(setting$validation))
     # output
     return(out)
@@ -176,7 +194,9 @@ analysis_proj_set_ui <- function(id) {
         uiOutput(ns("proj_name_feedback")),
         hr(),
         h4(tags$b("Data file")),
-        input_data_ui(ns("data_file"))
+        input_data_ui(ns("data_file")),
+        hr(),
+        uiOutput(ns("proj_is_ready"))
     )
 }
 
@@ -189,21 +209,30 @@ analysis_proj_set_ui <- function(id) {
 analysis_proj_set_server <- function(input, output, session, 
                                      proj_name = reactive({NULL}),
                                      reset = reactive({NULL})) {
+    # namespace
+    ns <- session$ns
     # init local
     local <- reactiveValues(
         file_input = NULL,
+        header_data_file = NULL,
         proj_file_check = NULL,
         proj_name = NULL,
         reset = NULL
     )
     # init output
     out <- reactiveValues(
+        data_file = NULL,
+        data_info = NULL,
         locus_type = NULL,
         seq_mode = NULL,
         new_proj = NULL,
         proj_dir = mk_proj_dir(session),
+        proj_file_list = character(0),
         proj_header = NULL,
-        proj_name = NULL
+        proj_name = NULL,
+        valid_data_file = TRUE,
+        valid_proj = TRUE,
+        valid_proj_file = TRUE
     )
     # get input
     observe({
@@ -304,8 +333,15 @@ analysis_proj_set_server <- function(input, output, session,
                 data_type = locus_type$locus_type
             )
             local$file_input$valid[ind] <- header_file$valid
+            local$header_data_file <- header_file$data_file
+            print("header data file")
+            print(local$header_data_file)
             out$proj_header <- header_file
         }
+        # project file list
+        out$proj_file_list <- local$file_input$name[local$file_input$valid]
+        # valid project file
+        out$valid_proj_file <- any(local$file_input$valid)
     })
     # possible files when uploading existing projects
     output$file_check <- renderUI({
@@ -343,10 +379,11 @@ analysis_proj_set_server <- function(input, output, session,
         )
     })
     
-    # debugging
-    observe({
-        print(local$file_input)
-    })
+    # # debugging
+    # observe({
+    #     print(local$file_input)
+    # })
+    
     # if existing project, allow to modify its name
     observeEvent(input$edit_proj_name, {
         req(input$edit_proj_name)
@@ -379,8 +416,39 @@ analysis_proj_set_server <- function(input, output, session,
     
     ## Data file
     data_file <- callModule(input_data_server, "data_file",
+                            expected_data_file = reactive(local$header_data_file),
                             locus_type = reactive(out$locus_type),
+                            seq_mode = reactive(out$seq_mode),
                             proj_dir = reactive(out$proj_dir))
+    
+    # update output
+    observe({
+        out$data_file <- data_file$file
+        out$data_info <- data_file$info
+        out$valid_data_file <- data_file$valid
+    })
+    
+    # valid set up ?
+    observe({
+        req(!is.null(out$valid_data_file))
+        req(!is.null(out$valid_proj_file))
+        if(!is.null(out$proj_name)) {
+            out$valid <- out$valid_data_file & out$valid_proj_file &
+                (str_length(out$proj_name) > 0)
+        } else {
+            out$valid <- FALSE
+        }
+        if(!out$valid) {
+            output$proj_is_ready <- renderUI({
+                h2(icon("warning"), "Project set up is not ready.", 
+                   style="color:red")
+            })
+        } else {
+            output$proj_is_ready <- renderUI({
+                h3(icon("check"), "Project set up is ok.")
+            })
+        }
+    })
     
     ## output
     return(out)
@@ -427,34 +495,68 @@ input_data_ui <- function(id) {
 #' Input data server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param locus_type string, `"mss"` or `"snp"` as a `reactive`.
-#' @param proj_dir string, project directory as a `reactive`.
+#' @param expected_data_file string as a `reactive`, expected data file if a 
+#' header file is provided.
+#' @param locus_type string as a `reactive`, `"mss"` or `"snp"`.
+#' @param seq_mode string as a `reactive`, `"indseq"` or `"poolseq"`.
+#' @param proj_dir string as a `reactive`, project directory.
 input_data_server <- function(input, output, session,
+                              expected_data_file = reactive({NULL}),
                               locus_type = reactive({"snp"}),
+                              seq_mode = reactive({"indseq"}),
                               proj_dir = reactive({NULL})) {
     # init local
     local <- reactiveValues(
+        exp_data_file = NULL,
         file_check = NULL,
         locus_type = NULL,
+        seq_mode = NULL,
         data_info = NULL,
         proj_dir = NULL
     )
     # get input
     observe({
+        local$exp_data_file <- expected_data_file()
         local$locus_type <- locus_type()
+        local$seq_mode <- seq_mode()
         local$proj_dir <- proj_dir()
+        
+        # debugging
+        print(paste0("input data file = ", local$exp_data_file))
+        print(paste0("input locus type = ", local$locus_type))
+        print(paste0("input seq mode = ", local$seq_mode))
+        print(paste0("input proj dir = ", local$proj_dir))
     })
     # init output
     out <- reactiveValues(
-        data_file = NULL, 
+        file = NULL, 
+        data_info = NULL,
         valid = FALSE
     )
     # message if missing file
     output$missing_file <- renderUI({
-        req(is.null(input$data_file))
-        helpText(
-            icon("warning"), "Missing data file"
-        )
+        if(is.null(input$data_file)) {
+            helpText(
+                icon("warning"), "Missing data file"
+            )
+        } else {
+            # if existing project ?
+            if(!is.null(local$exp_data_file)) {
+                req(is.data.frame(input$data_file))
+                req(nrow(input$data_file) > 0)
+                if(local$exp_data_file != input$data_file$name) {
+                    helpText(
+                        icon("warning"), 
+                        "Provided data file does not correspond",
+                        "to provided header file."
+                    )
+                } else {
+                    NULL
+                }
+            } else {
+                NULL
+            }
+        }
     })
     # get data file
     observeEvent(input$data_file, {
@@ -466,38 +568,54 @@ input_data_server <- function(input, output, session,
         req(is.data.frame(input$data_file))
         req(nrow(input$data_file) > 0)
         # data file
-        out$data_file <- file.path(local$proj_dir,
-                                   input$data_file$name)
+        out$file <- file.path(local$proj_dir, input$data_file$name)
         # copy to project directory
         fs::file_copy(input$data_file$datapath,
-                      out$data_file,
+                      out$file,
                       overwrite = TRUE)
         tryCatch(fs::file_delete(input$data_file$datapath))
     })
     # # debugging
     # observe({
-    #     logging("data file = ", out$data_file)
+    #     logging("data file = ", out$file)
     # })
     # data check and user feedback
-    observeEvent(out$data_file, {
+    observeEvent(out$file, {
         output$data_info <- renderUI({
+            out_text <- list()
             # check
-            local$file_check <- check_data_file(out$data_file, local$locus_type)
+            print("comparison expected data file vs data file")
+            print(local$exp_data_file)
+            print(out$file)
+            local$file_check <- check_data_file(
+                out$file, local$proj_dir, local$locus_type, local$seq_mode,
+                local$exp_data_file
+            )
             # data info
             req(!is.null(local$file_check))
             req(!is.null(local$file_check$valid))
+            # valid data
             out$valid <- local$file_check$valid
+            # data spec
+            req(!is.null(local$file_check$spec))
+            out$info <- local$file_check$spec 
             # show data info
-            req(local$file_check$msg)
-            helpText(
-                h5("Data file info"),
-                do.call(
-                    tags$ul,
-                    lapply(local$file_check$msg, function(item) {
-                        return(tags$li(item))
-                    })
+            if(local$file_check$valid) {
+                req(local$file_check$msg)
+                helpText(
+                    h5("Data file info"),
+                    do.call(
+                        tags$ul,
+                        lapply(local$file_check$msg, function(item) {
+                            return(tags$li(item))
+                        })
+                    )
                 )
-            )
+            } else {
+                helpText(
+                    icon("warning"), "Issue with data file."
+                )
+            }
         })
     })
     # output

@@ -15,12 +15,15 @@ check_file_name <- function(file_name) {
 #' @author Ghislain Durif
 #' @param data_file string, path to data file.
 #' @param locus_type string, locus type `"mss"` or `"snp"`.
+#' @param seq_mode string, `"indseq"` or `"poolseq"`.
+#' @param expected_data_file string, default is NULL.
 #' @importFrom tools file_ext
-check_data_file <- function(data_file, locus_type) {
+check_data_file <- function(data_file, data_dir, locus_type, seq_mode, 
+                            expected_data_file = NULL) {
     header <- NULL
     info <- NULL
     msg <- list()
-    specific <- NULL
+    spec <- NULL
     valid <- TRUE
     # ## debugging
     # logging("data_file = ", data_file)
@@ -28,8 +31,8 @@ check_data_file <- function(data_file, locus_type) {
     if(!file.exists(data_file)) {
         msg <- append(msg, "Input file does not exist")
         valid <- FALSE
-        # snp locus
-    } else if(locus_type == "snp") {
+    # snp locus
+    } else if((locus_type == "snp") & (seq_mode == "indseq")) {
         # init output
         locus <- NULL
         n_loci <- NULL
@@ -81,14 +84,21 @@ check_data_file <- function(data_file, locus_type) {
             header <- str_c(header, collapse = " ")
         }
         # output
-        specific <- lst(locus, n_indiv, n_loci, n_pop)
+        spec <- lst(locus, n_indiv, n_loci, n_pop)
         # mss locus
+    } else if((locus_type == "snp") & (seq_mode == "poolseq")) {
+        warning("Not implemented yet")
+        # FIXME
     } else if(locus_type == "mss") {
         warning("Not implemented yet")
         # FIXME
     }
+    # expected data file ?
+    if(!is.null(expected_data_file)) {
+        valid <- valid & (data_file == file.path(data_dir, expected_data_file))
+    }
     ## output    
-    out <- lst(header, info, msg, specific, valid)
+    out <- lst(header, info, msg, spec, valid)
     return(out)
 }
 
