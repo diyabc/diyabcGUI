@@ -28,9 +28,9 @@ test("parse_diyabc_project", {
     expect_equal(parse_diyabc_project(file_name, file_type = "bin"),
                  list(proj_name=NULL, valid=FALSE))
     
-    file_name <- file.path(example_dir(),
+    file_name <- file.path(test_input_dir(),
                            "bad_files",
-                           "proj1.txt")
+                           "diyabcGUI_proj.txt")
     file_type = "text/plain"
     expect_equal(parse_diyabc_project(file_name, file_type),
                  list(proj_name=NULL, valid=FALSE))
@@ -103,9 +103,9 @@ test("parse_diyabc_header", {
     )
     
     # bad input
-    file_name <- file.path(example_dir(),
+    file_name <- file.path(test_input_dir(),
                            "bad_files",
-                           "header1.txt")
+                           "header.txt")
     file_type = "text/plain"
     expect_equal(
         parse_diyabc_header(file_name, file_type, data_type = "snp"),

@@ -2,13 +2,9 @@
 #' @keywords internal
 #' @author Ghislain Durif
 bin_dir <- function() {
-    pkgdir <- find.package("diyabcGUI")
-    bindir <- file.path(pkgdir, "bin")
-    if(!dir.exists(bindir)) {
-        bindir <- file.path(pkgdir, "inst", "bin")
-        if(!dir.exists(bindir)) {
-            stop("bin directory not found")
-        }
+    bindir <- system.file("bin", package = "diyabcGUI")
+    if(str_length(bindir) == 0) {
+        stop("bin directory not found")
     }
     return(bindir)
 }
@@ -17,13 +13,9 @@ bin_dir <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 example_dir <- function() {
-    pkgdir <- find.package("diyabcGUI")
-    exampledir <- file.path(pkgdir, "example")
-    if(!dir.exists(exampledir)) {
-        exampledir <- file.path(pkgdir, "inst", "example")
-        if(!dir.exists(exampledir)) {
-            stop("example directory not found")
-        }
+    exampledir <- system.file("example", package = "diyabcGUI")
+    if(str_length(exampledir) == 0) {
+        stop("example directory not found")
     }
     return(exampledir)
 }
@@ -32,13 +24,20 @@ example_dir <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 help_dir <- function() {
-    pkgdir <- find.package("diyabcGUI")
-    helpdir <- file.path(pkgdir, "help")
-    if(!dir.exists(helpdir)) {
-        helpdir <- file.path(pkgdir, "inst", "help")
-        if(!dir.exists(helpdir)) {
-            stop("Help directory not found")
-        }
+    helpdir <- system.file("help", package = "diyabcGUI")
+    if(str_length(helpdir) == 0) {
+        stop("help directory not found")
     }
     return(helpdir)
+}
+
+#' find test_input directory
+#' @keywords internal
+#' @author Ghislain Durif
+test_input_dir <- function() {
+    testinputdir <- system.file("test_input", package = "diyabcGUI")
+    if(str_length(testinputdir) == 0) {
+        stop("test_input directory not found")
+    }
+    return(testinputdir)
 }
