@@ -1,4 +1,4 @@
-indeseq_SNP_sim_dataset_4POP_001.snp
+indseq_SNP_sim_dataset_4POP_001.snp
 13 parameters and 2 summary statistics
 
 6 scenarios: 8 8 8 8 8 8 
