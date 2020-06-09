@@ -49,18 +49,14 @@ training_set_server <- function(input, output, session,
     #     print(local$data_info)
     # })
     
-    ## enable training set def
+    ## enable training set def (if no header file provided)
     output$project_def <- renderUI({
-        if(local$valid_proj) {
-            if(is.null(local$proj_file_list)) {
-                tagList(
-                    training_set_def_ui(ns("def")),
-                )
-            } else if(!"header.txt" %in% local$proj_file_list) {
-                tagList(
-                    training_set_def_ui(ns("def")),
-                )
-            }
+        req(!is.null(valid_proj))
+        if(local$valid_proj & 
+           !("header.txt" %in% c("empty", local$proj_file_list))) {
+            tagList(
+                training_set_def_ui(ns("def")),
+            )
         } else {
             NULL
         }
@@ -73,9 +69,11 @@ training_set_server <- function(input, output, session,
         raw_scenario_list = reactive({NULL})
     )
     
-    ## enable locus setup
+    ## enable locus setup (if no header file provided)
     output$project_locus_setup <- renderUI({
-        if(local$valid_proj) {
+        req(!is.null(valid_proj))
+        if(local$valid_proj & 
+           !("header.txt" %in% c("empty", local$proj_file_list))) {
             tagList(
                 locus_setup_ui(ns("locus_setup")),
             )
@@ -92,7 +90,9 @@ training_set_server <- function(input, output, session,
         seq_mode = reactive(local$seq_mode)
     )
     
-    # ## action
+    ## write header file (if necessary) and check it
+    
+    ## action
     # callModule(training_set_action_server, "action",
     #            project_dir = reactive(local$project_dir),
     #            project_name = reactive(local$project_name),
@@ -103,6 +103,11 @@ training_set_server <- function(input, output, session,
     #            param_count_list = reactive(local$param_count_list),
     #            scenario_list = reactive(local$raw_scenario_list),
     #            cond_list = reactive(prior_cond_set$raw_cond_set))
+    callModule(
+        training_set_action_server, "action", 
+        proj_dir = reactive(local$proj_dir),
+        valid = reactive(local$valid_proj)
+    )
 }
 
 #' Training set sub-module ui
