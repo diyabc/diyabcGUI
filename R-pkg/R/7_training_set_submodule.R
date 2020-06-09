@@ -5,7 +5,6 @@ training_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
         uiOutput(ns("project_def")),
-        uiOutput(ns("project_locus_setup")),
         training_set_action_ui(ns("action"))
     )
 }
@@ -14,6 +13,7 @@ training_set_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 training_set_server <- function(input, output, session,
+                                data_file = reactive({NULL}),
                                 data_info = reactive({NULL}),
                                 locus_type = reactive({NULL}),
                                 seq_mode = reactive({NULL}),
@@ -26,6 +26,7 @@ training_set_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        data_file = NULL,
         data_info = NULL,
         locus_type = NULL,
         seq_mode = NULL,
@@ -35,6 +36,7 @@ training_set_server <- function(input, output, session,
     )
     # get input
     observe({
+        local$data_file <- data_file()
         local$data_info <- data_info()
         local$locus_type <- locus_type()
         local$seq_mode <- seq_mode()
@@ -55,7 +57,7 @@ training_set_server <- function(input, output, session,
         if(local$valid_proj & 
            !("header.txt" %in% c("empty", local$proj_file_list))) {
             tagList(
-                training_set_def_ui(ns("def")),
+                training_set_def_ui(ns("def"))
             )
         } else {
             NULL
@@ -65,51 +67,16 @@ training_set_server <- function(input, output, session,
     ## training set def
     training_set_def <- callModule(
         training_set_def_server, "def",
-        proj_dir = reactive(local$proj_dir),
-        raw_scenario_list = reactive({NULL})
-    )
-    
-    ## enable locus setup (if no header file provided)
-    output$project_locus_setup <- renderUI({
-        req(!is.null(valid_proj))
-        if(local$valid_proj & 
-           !("header.txt" %in% c("empty", local$proj_file_list))) {
-            tagList(
-                locus_setup_ui(ns("locus_setup")),
-            )
-        } else {
-            NULL
-        }
-    })
-    
-    ## locus setup
-    locus_setup <- callModule(
-        locus_setup_server, "locus_setup",
+        data_file = reactive(local$data_file),
         data_info = reactive(local$data_info),
         locus_type = reactive(local$locus_type),
-        seq_mode = reactive(local$seq_mode)
+        seq_mode = reactive(local$seq_mode),
+        proj_dir = reactive(local$proj_dir),
+        raw_scenario_list = reactive({NULL}),
+        valid_proj = reactive(local$valid_proj)
     )
     
-    ## write header file (if necessary) and check it
-    observe({
-        if(local$valid_proj & 
-           !("header.txt" %in% c("empty", local$proj_file_list))) {
-            # FIXME
-            warning("fix me")
-        }
-    })
-    
     ## action
-    # callModule(training_set_action_server, "action",
-    #            project_dir = reactive(local$project_dir),
-    #            project_name = reactive(local$project_name),
-    #            validation = reactive(local$valid),
-    #            data_file = reactive(local$data_file),
-    #            locus_type = reactive(local$locus_type),
-    #            param_list = reactive(local$raw_param_list),
-    #            param_count_list = reactive(local$param_count_list),
-    #            scenario_list = reactive(local$raw_scenario_list),
-    #            cond_list = reactive(prior_cond_set$raw_cond_set))
     callModule(
         training_set_action_server, "action", 
         proj_dir = reactive(local$proj_dir),
@@ -128,6 +95,17 @@ training_set_def_ui <- function(id) {
         hr(),
         prior_cond_set_ui(ns("prior_cond")),
         br(),
+        hr(),
+        locus_setup_ui(ns("locus_setup")),
+        br(),
+        br(),
+        actionBttn(
+            ns("validate"),
+            label = "Validate",
+            style = "fill",
+            block = TRUE
+        ),
+        br(),
         hr()
     )
 }
@@ -136,8 +114,13 @@ training_set_def_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 training_set_def_server <- function(input, output, session, 
+                                    data_file = reactive({NULL}),
+                                    data_info = reactive({NULL}),
+                                    locus_type = reactive({NULL}),
+                                    seq_mode = reactive({NULL}),
                                     proj_dir = reactive({NULL}),
-                                    raw_scenario_list = reactive({NULL})) {
+                                    raw_scenario_list = reactive({NULL}),
+                                    valid_proj = reactive({TRUE})) {
     
     # namespace
     ns <- session$ns
@@ -146,24 +129,35 @@ training_set_def_server <- function(input, output, session,
         cond_list = list(),
         param_list = list(),
         raw_param_list = list(),
+        data_file = NULL,
+        data_info = NULL,
+        locus_type = NULL,
+        seq_mode = NULL,
         proj_dir = NULL,
         raw_scenario_list = NULL,
-        scenario_list = NULL
+        scenario_list = NULL,
+        valid_proj = NULL
     )
     # get input
     observe({
+        local$data_file <- data_file()
+        local$data_info <- data_info()
+        local$locus_type <- locus_type()
+        local$seq_mode <- seq_mode()
         local$proj_dir <- proj_dir()
         local$raw_scenario_list <- raw_scenario_list()
+        local$valid_proj <- valid_proj()
     })
     
     # init output
     out <- reactiveValues(
         cond_list = list(),
         param_list = list(),
-        raw_param_list = list()
+        raw_param_list = list(),
+        valid_proj = FALSE
     )
     
-    # historic model panel
+    ## historic model panel
     hist_model_def <- callModule(
         hist_model_panel_server, "hist_model_panel",
         project_dir = reactive(local$proj_dir), 
@@ -227,7 +221,7 @@ training_set_def_server <- function(input, output, session,
         }
     })
     
-    # parameter prior and conditon setting
+    ## parameter prior and conditon setting
     prior_cond_set <- callModule(
         prior_cond_set_server, "prior_cond",
         cond_list = reactive(local$cond_list),
@@ -241,6 +235,62 @@ training_set_def_server <- function(input, output, session,
         local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
     })
     
+    ## locus setup
+    locus_setup <- callModule(
+        locus_setup_server, "locus_setup",
+        data_info = reactive(local$data_info),
+        locus_type = reactive(local$locus_type),
+        seq_mode = reactive(local$seq_mode)
+    )
+    
+    ## write header file (if necessary) and check it
+    observe(input$validate, {
+        req(!is.null(local$project_dir))
+        req(!is.null(local$project_name))
+        req(!is.null(local$param_list))
+        req(!is.null(local$param_count_list))
+        req(!is.null(local$scenario_list))
+        req(!is.null(local$cond_list))
+        req(!is.null(local$data_file))
+        req(!is.null(local$locus_type))
+
+        # print("project_dir =")
+        # print(local$project_dir)
+        # print("project_name =")
+        # print(local$project_name)
+        # print("param_list =")
+        # print(local$param_list)
+        # print("param_count_list =")
+        # print(local$param_count_list)
+        # print("scenario_list =")
+        # print(local$scenario_list)
+        # print("cond_list =")
+        # print(local$cond_list)
+        # print("data_file =")
+        # print(local$data_file)
+        # print("locus_type =")
+        # print(local$locus_type)
+
+        write_header(local$project_name, local$project_dir, local$data_file,
+                     local$scenario_list, local$param_count_list,
+                     local$param_list, local$cond_list,
+                     local$locus_type)
+
+        showNotification(
+            id = ns("headerfile_ok"),
+            duration = 5,
+            closeButton = TRUE,
+            type = "message",
+            tagList(
+                tags$p(
+                    icon("check"),
+                    paste0("Project is ready to run simulations.")
+                )
+            )
+        )
+    })
+    
+
     # get output
     observe({
         out$cond_list = local$cond_list
@@ -248,170 +298,6 @@ training_set_def_server <- function(input, output, session,
         out$raw_param_list = local$raw_param_list
     })
     ## output
-    return(out)
-}
-
-
-#' Training set sub-module ui
-#' @keywords internal
-#' @author Ghislain Durif
-training_set_bis_ui <- function(id) {
-    ns <- NS(id)
-    tagList(
-        hist_model_panel_ui(ns("hist_model_panel")),
-        br(),
-        hr(),
-        prior_cond_set_ui(ns("prior_cond")),
-        br(),
-        hr(),
-        locus_setup_ui(ns("locus_setup")),
-        br(),
-        hr(),
-        training_set_action_ui(ns("action"))
-    )
-}
-
-#' Training set sub-module server
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param project_dir project directory as a `reactive`.
-#' @param project_name project name as a `reactive`.
-#' @param scenario_list list of raw scenarii as a `reactive`.
-training_set_bis_server <- function(input, output, session,
-                                project_dir = reactive({NULL}),
-                                project_name = reactive({NULL}),
-                                scenario_list = reactive({NULL}),
-                                validation = reactive({FALSE}),
-                                data_file = reactive({NULL}),
-                                locus_type = reactive({NULL}),
-                                valid_data_file = reactive({FALSE})) {
-    # init local
-    local <- reactiveValues(
-        cond_list = list(),
-        param_list = list(),
-        param_type_list = list(),
-        param_count_list = list(),
-        raw_scneario_list = list(),
-        raw_param_list = list(),
-        valid = FALSE,
-        project_dir = NULL,
-        project_name = NULL,
-        scenario_list = NULL,
-        validation = NULL,
-        data_file = NULL,
-        locus_type = NULL,
-        valid_data_file = NULL
-    )
-    # get input
-    observe({
-        local$project_dir <- project_dir()
-        local$project_name <- project_name()
-        local$scenario_list <- scenario_list()
-        local$validation <- validation()
-        local$data_file <- data_file()
-        local$locus_type <- locus_type()
-        local$valid_data_file <- valid_data_file()
-    })
-    # init output
-    out <- reactiveValues()
-    # update valid input
-    observe({
-        req(!is.null(local$validation))
-        req(!is.null(local$valid_data_file))
-        local$valid <- local$validation & local$valid_data_file
-    })
-    # historic model panel
-    hist_model_def <- callModule(hist_model_panel_server, "hist_model_panel",
-                                 project_dir = reactive(local$project_dir))
-    # update local
-    observe({
-        local$scenario_list <- hist_model_def$scenario_list
-        # extract input
-        if(length(local$scenario_list) > 0) {
-            # param list
-            local$param_list <- Reduce("c", lapply(
-                local$scenario_list,
-                function(item) {
-                    c(lapply(
-                        item$param$Ne_param,
-                        function(subitem) return(list(type = "N", 
-                                                      name = subitem))
-                     ),
-                     lapply(
-                         item$param$time_param,
-                         function(subitem) return(list(type = "T", 
-                                                       name = subitem))
-                     ),
-                     lapply(
-                         item$param$rate_param,
-                         function(subitem) return(list(type = "A", 
-                                                       name = subitem))
-                     ))
-                }
-            ))
-            # param count list
-            # print("--- param")
-            local$param_count_list <- lapply(
-                local$scenario_list,
-                function(item) {
-                    # print(item$param)
-                    return(length(item$param$Ne_param) + 
-                               length(item$param$time) + 
-                               length(item$param$rate))
-                }
-            )
-            # print("----")
-            # condition
-            local$cond_list <- Reduce("c", lapply(
-                local$scenario_list,
-                function(item) return(item$cond)
-            ))
-            # raw scenario
-            local$raw_scenario_list <- Reduce("c", lapply(
-                local$scenario_list,
-                function(item) return(item$raw)
-            ))
-        }
-    })
-    # parameter prior and conditon setting
-    prior_cond_set <- callModule(
-                        prior_cond_set_server, "prior_cond",
-                        cond_list = reactive(local$cond_list),
-                        param_list = reactive(local$param_list))
-                        # param_type_list = reactive(local$param_type_list))
-    
-    # locus type
-    locus_setup <- callModule(
-                        locus_setup_server, "locus_setup",
-                        locus_type = reactive(local$locus_type))
-    
-    # update param list
-    observe({
-        req(!is.null(prior_cond_set$raw_prior_list))
-        # print(prior_cond_set$raw_prior_list)
-        local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
-    })
-
-    
-    # # debugging
-    # observe({
-    #     # print(prior_cond_set)
-    #     print(prior_cond_set$raw_cond_set)
-    # })
-    
-    ## action
-    callModule(training_set_action_server, "action",
-               project_dir = reactive(local$project_dir),
-               project_name = reactive(local$project_name),
-               validation = reactive(local$valid),
-               data_file = reactive(local$data_file),
-               locus_type = reactive(local$locus_type),
-               param_list = reactive(local$raw_param_list),
-               param_count_list = reactive(local$param_count_list),
-               scenario_list = reactive(local$raw_scenario_list),
-               cond_list = reactive(prior_cond_set$raw_cond_set))
-    
-    # output
     return(out)
 }
 
@@ -967,9 +853,7 @@ locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("dna"), "Locus description"),
-        uiOutput(ns("setup")),
-        br(),
-        hr()
+        uiOutput(ns("setup"))
     )
 }
 
