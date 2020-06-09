@@ -1,11 +1,11 @@
-#' Check filename
+#' Check file_name
 #' @keywords internal
 #' @author Ghislain Durif
-check_filename <- function(filename) {
+check_file_name <- function(file_name) {
     valid <- TRUE
-    if(!is.character(filename))
+    if(!is.character(file_name))
         valid <- FALSE
-    else if(!file.exists(filename))
+    else if(!file.exists(file_name))
         valid <- FALSE
     return(valid)
 }
@@ -19,21 +19,21 @@ check_filename <- function(filename) {
 #' ```
 #' project_name: <project_name>
 #' ```
-#' @param filename string, (server-side) path to a project file.
+#' @param file_name string, (server-side) path to a project file.
 #' @param type string, MIME file type.
-parse_diyabc_project <- function(filename, type) {
+parse_diyabc_project <- function(file_name, file_type) {
     # init output
     issues <- list()
     proj_name <- NULL
     valid <- TRUE
     # check file name
-    valid <- check_filename(filename)
+    valid <- check_file_name(file_name)
     # check file type
-    if(type != "text/plain")
+    if(file_type != "text/plain")
         valid <- FALSE
     ## read file
     if(valid) {
-        raw_content <- readLines(filename)
+        raw_content <- readLines(file_name)
         ## extract project name
         strng <- raw_content[1]
         pttrn <- "(?<=^project_name=).*$"
@@ -53,10 +53,10 @@ parse_diyabc_project <- function(filename, type) {
 #' @author Ghislain Durif
 #' @description
 #' Content: see doc
-#' @param filename string, (server-side) path to a header file.
+#' @param file_name string, (server-side) path to a header file.
 #' @param file_type string, MIME file type.
 #' @param data_type string, `"mss"` for MicroSat/Sequence or `"snp"` for SNP.
-parse_diyabc_header <- function(filename, file_type, data_type) {
+parse_diyabc_header <- function(file_name, file_type, data_type) {
     # init output
     data_file <- NULL
     issues <- list()
@@ -70,7 +70,7 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
     simu_mode <- NULL
     valid <- TRUE
     # check file name
-    valid <- check_filename(filename)
+    valid <- check_file_name(file_name)
     # check file type
     if(file_type != "text/plain")
         valid <- FALSE
@@ -79,7 +79,7 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
         # local variable
         next_sec_line <- 3
         # file content
-        raw_content <- readLines(filename)
+        raw_content <- readLines(file_name)
         raw_content <- raw_content[raw_content != ""]
         ## data file
         data_file <- raw_content[1]
@@ -98,7 +98,10 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
         ## scenarios
         pttrn <- "^[0-9]+ scenarios:( [0-9]+)+ ?$"
         # find section
-        if(!which(str_detect(raw_content, pttrn)) == next_sec_line) {
+        if(!any(str_detect(raw_content, pttrn))) {
+            issues <- append(issues, pttrn)
+            valid <- FALSE
+        } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
             issues <- append(issues, pttrn)
             valid <- FALSE
         } else {
@@ -117,7 +120,7 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
                 ), 
                 function(content) {
                     parse_diyabc_header_scenarii(content)
-            })
+                })
             # check extracted scnenarii
             valid <- all(unlist(lapply(scenario_list, 
                                        function(item) item$valid)))
@@ -126,15 +129,18 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
                 lapply(
                     scenario_list, 
                     function(item) item$raw_scenario
-                    )
-                ))
+                )
+            ))
             # next section
             next_sec_line <- next_sec_line + max(line_seq)
         }
         ## historical parameters
         pttrn <- "^historical parameters priors \\([0-9]+,[0-9]+\\)$"
         # find section
-        if(!which(str_detect(raw_content, pttrn)) == next_sec_line) {
+        if(!any(str_detect(raw_content, pttrn))) {
+            issues <- append(issues, pttrn)
+            valid <- FALSE
+        } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
             issues <- append(issues, pttrn)
             valid <- FALSE
         } else {
@@ -163,7 +169,10 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
         ## loci description
         pttrn <- "^loci description \\([0-9]+\\)$"
         # find section
-        if(!which(str_detect(raw_content, pttrn)) == next_sec_line) {
+        if(!any(str_detect(raw_content, pttrn))) {
+            issues <- append(issues, pttrn)
+            valid <- FALSE
+        } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
             issues <- append(issues, pttrn)
             valid <- FALSE
         } else {
@@ -181,7 +190,10 @@ parse_diyabc_header <- function(filename, file_type, data_type) {
         ## group summary statistics
         pttrn <- "^group summary statistics \\([0-9]+\\)$"
         # find section
-        if(!which(str_detect(raw_content, pttrn)) == next_sec_line) {
+        if(!any(str_detect(raw_content, pttrn))) {
+            issues <- append(issues, pttrn)
+            valid <- FALSE
+        } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
             issues <- append(issues, pttrn)
             valid <- FALSE
         } else {
@@ -318,8 +330,8 @@ check_header_loci_des <- function(strng, type = "mss") {
 #' @author Ghislain Durif
 #' @description
 #' Content: see doc
-#' @param filename string, (server-side) path to a headersim file.
+#' @param file_name string, (server-side) path to a headersim file.
 #' @param type string, MIME file type.
-parse_diyabc_headersim <- function(filename, type) {
+parse_diyabc_headersim <- function(file_name, type) {
     
 }
