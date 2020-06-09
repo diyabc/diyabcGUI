@@ -1,5 +1,13 @@
 context("io_management")
 
+test("check_data_file", {
+    data_file <- file.path(example_dir(),
+                           "IndSeq_SNP_estim_param",
+                           "indseq_SNP_sim_dataset_4POP_001.snp")
+    locus_type <- "snp"
+    check_data_file(data_file, locus_type)
+})
+
 test("check_file_name", {
     expect_true(check_file_name(system.file("DESCRIPTION", 
                                             package = "diyabcGUI")))
@@ -7,6 +15,7 @@ test("check_file_name", {
     expect_false(check_file_name(file.path(fs::path_home(), 
                                            "not_existing_file")))
 })
+
 
 test("parse_diyabc_project", {
     file_name <- file.path(example_dir(),

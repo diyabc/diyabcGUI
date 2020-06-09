@@ -10,6 +10,89 @@ check_file_name <- function(file_name) {
     return(valid)
 }
 
+#' Check data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, path to data file.
+#' @param locus_type string, locus type `"mss"` or `"snp"`.
+#' @importFrom tools file_ext
+check_data_file <- function(data_file, locus_type) {
+    header <- NULL
+    info <- NULL
+    msg <- list()
+    specific <- NULL
+    valid <- TRUE
+    # ## debugging
+    # logging("data_file = ", data_file)
+    ## file exists?
+    if(!file.exists(data_file)) {
+        msg <- append(msg, "Input file does not exist")
+        valid <- FALSE
+        # snp locus
+    } else if(locus_type == "snp") {
+        # init output
+        locus <- NULL
+        n_loci <- NULL
+        n_pop <- NULL
+        n_indiv <- NULL
+        # check file type
+        if(tools::file_ext(data_file) != "snp") {
+            # FIXME
+            msg <- append(msg, "Only SNP files are managed at the moment")
+            valid <- FALSE
+        } else {
+            # header
+            info <- readLines(data_file, n = 1)
+            msg <- append(
+                msg,
+                str_extract(info, pattern = "(?<=<)MAF=.*(?=>)")
+            )
+            # header
+            header <- read.table(file = data_file, skip = 1, nrows = 1)
+            # nb of locus
+            n_loci <- length(header) - 3
+            msg <- append(
+                msg,
+                str_c(n_loci, "loci", sep = " ")
+            )
+            # content
+            content <- read.table(file = data_file, skip = 2)
+            n_pop <- length(unique(content[,3]))
+            n_indiv <- nrow(content)
+            msg <- append(
+                msg,
+                str_c(n_indiv, "individuals from", n_pop, "populations", 
+                      sep = " ")
+            )
+            # locus type
+            candidate_locus <- c("A", "H", "X", "Y", "M")
+            locus <- unlist(lapply(candidate_locus, function(type) {
+                count <- str_count(str_c(header[-(1:3)], collapse = " "), 
+                                   pattern = type)
+                if(count > 0)
+                    return(str_c(count,
+                                 " <", type, ">"))
+            }))
+            msg <- append(
+                msg,
+                str_c("loci:", str_c(locus, collapse =  ", "), sep = " ")
+            )
+            # fix header
+            header <- str_c(header, collapse = " ")
+        }
+        # output
+        specific <- lst(locus, n_indiv, n_loci, n_pop)
+        # mss locus
+    } else if(locus_type == "mss") {
+        warning("Not implemented yet")
+        # FIXME
+    }
+    ## output    
+    out <- lst(header, info, msg, specific, valid)
+    return(out)
+}
+
+
 #' Parse diyabcGUI project file
 #' @keywords internal
 #' @author Ghislain Durif
