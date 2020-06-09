@@ -137,6 +137,13 @@ analysis_page_server <- function(input, output, session,
     #                            valid_data_file = reactive(proj_set$valid),
     #                            locus_type = reactive(proj_set$locus_type),
     #                            validation = reactive(setting$validation))
+    
+    ## Training set sub-module
+    training_set <- callModule(
+        training_set_server, "train_set",
+        proj_file_list = reactive(proj_set$proj_file_list), 
+        valid_proj = reactive(proj_set$valid_proj))
+    
     # output
     return(out)
 }

@@ -4,6 +4,89 @@
 training_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        uiOutput(ns("project_def")),
+        uiOutput(ns("project_locus_setup")),
+        training_set_action_ui(ns("action"))
+    )
+}
+
+#' Training set sub-module server
+#' @keywords internal
+#' @author Ghislain Durif
+training_set_server <- function(input, output, session,
+                                proj_file_list = reactive({NULL}), 
+                                valid_proj = reactive({TRUE})) {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        proj_file_list = NULL,
+        valid_proj = NULL
+    )
+    # get input
+    observe({
+        local$proj_file_list <- proj_file_list()
+        local$valid_proj <- valid_proj()
+    })
+    
+    # enable training set def
+    output$project_def <- renderUI({
+        if(local$valid_proj) {
+            if(is.null(local$proj_file_list)) {
+                tagList(
+                    training_set_def_ui(ns("def")),
+                )
+            } else if(!"header.txt" %in% local$proj_file_list) {
+                tagList(
+                    training_set_def_ui(ns("def")),
+                )
+            }
+        } else {
+            NULL
+        }
+    })
+    
+    # enable locus setup
+    output$project_locus_setup <- renderUI({
+        if(local$valid_proj) {
+            tagList(
+                locus_setup_ui(ns("locus_setup")),
+            )
+        } else {
+            NULL
+        }
+    })
+}
+
+#' Training set sub-module ui
+#' @keywords internal
+#' @author Ghislain Durif
+training_set_def_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        hist_model_panel_ui(ns("hist_model_panel")),
+        br(),
+        hr(),
+        prior_cond_set_ui(ns("prior_cond")),
+        br(),
+        hr()
+    )
+}
+
+#' Training set sub-module server
+#' @keywords internal
+#' @author Ghislain Durif
+training_set_def_server <- function(input, output, session) {}
+
+
+#' Training set sub-module ui
+#' @keywords internal
+#' @author Ghislain Durif
+training_set_bis_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
         hist_model_panel_ui(ns("hist_model_panel")),
         br(),
         hr(),
@@ -23,7 +106,7 @@ training_set_ui <- function(id) {
 #' @param project_dir project directory as a `reactive`.
 #' @param project_name project name as a `reactive`.
 #' @param scenario_list list of raw scenarii as a `reactive`.
-training_set_server <- function(input, output, session,
+training_set_bis_server <- function(input, output, session,
                                 project_dir = reactive({NULL}),
                                 project_name = reactive({NULL}),
                                 scenario_list = reactive({NULL}),
@@ -167,7 +250,7 @@ training_set_server <- function(input, output, session,
 hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(tags$span(icon("history"), "Define historical models")),
+        h3(icon("history"), "Define historical models"),
         br(),
         fluidRow(
             column(
@@ -711,8 +794,12 @@ prior_server <- function(input, output, session,
 #' @author Ghislain Durif
 locus_setup_ui <- function(id) {
     ns <- NS(id)
-    h4(icon("dna"), "Locus description")
-    uiOutput(ns("setup"))
+    tagList(
+        h3(icon("dna"), "Locus description"),
+        uiOutput(ns("setup")),
+        br(),
+        hr()
+    )
 }
 
 #' Locus setup server
