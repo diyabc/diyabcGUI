@@ -127,6 +127,69 @@ locus_nb_server <- function(input, output, session,
     return(out)
 }
 
+#' Sequencing locus type module ui
+#' @keywords internal
+#' @author Ghislain Durif
+locus_type_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        splitLayout(
+            radioButtons(
+                ns("locus_type"), 
+                label = "Locus type",
+                choices = list("MicroSat/Sequence" = "mss", "SNP" = "snp"),
+                selected = "snp"
+            ),
+            radioButtons(
+                ns("seq_mode"), 
+                label = "Sequencing mode",
+                choices = list("Individual Seq." = "indseq", 
+                               "PoolSeq" = "poolseq"),
+                selected = "indseq"
+            )
+        )
+    )
+}
+
+#' Sequencing locus type module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom shinyjs disable enable
+locus_type_server <- function(input, output, session) {
+    # init output
+    out <- reactiveValues(
+        locus_type = NULL,
+        seq_mode = NULL
+    )
+    # disable seq mode if relevant
+    observeEvent(input$locus_type, {
+        req(input$locus_type)
+        # enable/disable
+        if(input$locus_type != "snp") {
+            updateRadioButtons(session, "seq_mode", selected = "indseq")
+            shinyjs::disable("seq_mode")
+        } else {
+            shinyjs::enable("seq_mode")
+        }
+    })
+    # react
+    observeEvent(input$locus_type, {
+        req(input$locus_type)
+        out$locus_type <- input$locus_type
+    })
+    observeEvent(input$seq_mode, {
+        req(input$seq_mode)
+        out$seq_mode <- input$seq_mode
+    })
+    # # debugging
+    # observe({
+    #     logging("locus type:", out$locus_type)
+    #     logging("seq mode:", out$seq_mode)
+    # })
+    # output
+    return(out)
+}
+
 #' Genetic loci module ui
 #' @keywords internal
 #' @author Ghislain Durif
