@@ -91,6 +91,13 @@ training_set_server <- function(input, output, session,
     )
     
     ## write header file (if necessary) and check it
+    observe({
+        if(local$valid_proj & 
+           !("header.txt" %in% c("empty", local$proj_file_list))) {
+            # FIXME
+            warning("fix me")
+        }
+    })
     
     ## action
     # callModule(training_set_action_server, "action",
@@ -1089,17 +1096,27 @@ training_set_action_ui <- function(id) {
             min = 0
         ),
         helpText(
-            icon("warning"),
+            tags$div(
+                icon("warning"),
+                "The number of simulations depends on your analysis:"
+            ),
             tags$ul(
                 tags$li(
                     "1000 to 20000 simulations per scenario are needed",
-                    "for model choice."
+                    "for" , tags$b("model choice"), "."
                 ),
                 tags$li(
-                    "1000 to 100000 simulations under the scenario of interest",
-                    "are needed for parameter estimation."
+                    "1000 to 100000 simulations under the scenario",
+                    "of interest are needed for",
+                    tags$p("parameter estimation"), "."
                 )
             )
+        ),
+        hr(),
+        checkboxInput(
+            ns("prior_mod_check"),
+            label = "Run prior and scenario checking",
+            value = FALSE
         ),
         hr(),
         actionBttn(
@@ -1107,14 +1124,7 @@ training_set_action_ui <- function(id) {
             label = "Simulate",
             style = "fill",
             block = TRUE
-        ),
-        br(),
-        shinyjs::hidden(actionBttn(
-            inputId = ns("prior_mod_check"),
-            label = "Run prior/model checking",
-            style = "fill",
-            block = TRUE
-        ))
+        )
     )
 }
 
@@ -1134,6 +1144,7 @@ training_set_action_server <- function(input, output, session,
     ns <- session$ns
     # init local
     local <- reactiveValues(
+        proj_file_list = NULL,
         valid = NULL,
         proj_dir = NULL
     )
@@ -1142,6 +1153,20 @@ training_set_action_server <- function(input, output, session,
         local$proj_dir <- proj_dir()
         local$valid <- valid()
     })
+    
+    # project file list
+    observeEvent(local$proj_dir, {
+        req(!is.null(local$proj_dir))
+        local$proj_file_list <- list.files(local$proj_dir)
+    })
+    
+    # debugging
+    observe({
+        print("Training set action input")
+        print(local$proj_dir)
+        print(local$valid)
+    })
+    
     # init output
     out <- reactiveValues()
     
@@ -1155,33 +1180,40 @@ training_set_action_server <- function(input, output, session,
         }
     })
     
-    # deactivate prior_mod_check if not valid
+    ## run simulation
     observeEvent(input$simulate, {
-        req(!is.null(local$valid))
-        if(local$valid) {
-            shinyjs::enable("prior_mod_check")
-        } else {
-            shinyjs::disable("prior_mod_check")
-        }
-    })
-    
-    ## FIXME run simulation
-    observeEvent(input$simulate, {
+        
+        req(input$nrun)
+        req(local$proj_dir)
+        req(!is.null(input$prior_mod_check))
         
         # debugging
         print("check options")
         print(getOption("diyabcGUI"))
         print(getOption("shiny.maxRequestSize"))
         
-        
         # logging("Running simulation")
-        check <- tryCatch(
-            diyabc_run_trainset_simu(local$project_dir, 
-                                     local$data_file, 
-                                     n_core = 1),
-            error = function(e) return(e)
+        cmd_out <- diyabc_run_trainset_simu(
+            local$proj_dir, 
+            as.integer(input$nrun),
+            input$prior_mod_check
         )
-        if(!is.null(check) & !is.null(check$message)) {
+        
+        # check run
+        if(cmd_out$run_check == 0) {
+            showNotification(
+                id = ns("run_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        "Simulations are done."
+                    )
+                )
+            )
+        } else {
             showNotification(
                 id = ns("run_not_ok"),
                 duration = 5,
@@ -1190,20 +1222,7 @@ training_set_action_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"),
-                        str_c(check$message)
-                    )
-                )
-            )
-        } else {
-            showNotification(
-                id = ns("run_ok"),
-                duration = 5,
-                closeButton = TRUE,
-                type = "error",
-                tagList(
-                    tags$p(
-                        icon("check"),
-                        "Simulations are done."
+                        "A problem during simulations."
                     )
                 )
             )

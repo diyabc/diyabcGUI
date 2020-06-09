@@ -141,35 +141,59 @@ write_header <- function(project_name, project_dir, data_file,
     writeLines(out, file.path(project_dir, filename))
 }
 
-#' Run Write training set simulation
+#' Run training set simulation
 #' @keywords internal
 #' @author Ghislain Durif
-diyabc_run_trainset_simu <- function(project_dir, data_file, n_core = 1) {
+diyabc_run_trainset_simu <- function(proj_dir, n_run = 1, 
+                                     run_prior_check = FALSE) {
+    # executable
     diyabc_bin <- find_bin("diyabc")
-    # copy data file into project dir
-    file.copy(from = data_file, to = project_dir, overwrite = TRUE)
     # check project dir
-    if(!dir.exists(project_dir)) {
+    if(!dir.exists(proj_dir)) {
         stop("Input directory does not exist")
     }
-    if(!str_detect(string = project_dir, pattern = "/$")) {
-        project_dir <- str_c(project_dir, "/")
+    safe_proj_dir <- proj_dir
+    if(!str_detect(string = proj_dir, 
+                   pattern = str_c(.Platform$file.sep, "$"))) {
+        safe_proj_dir <- str_c(proj_dir, .Platform$file.sep)
     }
     # init seeds
-    cmd <- str_c(diyabc_bin, 
-                 "-p", project_dir, "-n",
-                 str_c("'t:", n_core, "'"),
-                 sep = " ")
-    check <- system(cmd)
-    if(check != 0) {
+    cmd <- str_c(
+        diyabc_bin, 
+        "-p", safe_proj_dir, 
+        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'"),
+        ">", file.path(proj_dir, "diyabc_seed_init_call.log"),
+        sep = " "
+    )
+    logging("diyabc seed init cmd", cmd)
+    init_check <- system(cmd)
+    logging("diyabc init", init_check)
+    if(init_check != 0) {
         warning("Issue with seed initialization")
     }
     # run
-    cmd <- str_c(diyabc_bin, "-p", project_dir, "-R", "-m", "-t 1", sep = " ")
-    check <- system(cmd)
-    if(check != 0) {
-        stop("Issue with simulation run")
+    cmd <- str_c(
+        diyabc_bin, 
+        "-p", safe_proj_dir, 
+        "-R \"\"", "-m", 
+        "-r", n_run,
+        "-t", getOption("diyabcGUI")$ncore, 
+        sep = " "
+    )
+    if(run_prior_check) {
+        cmd <- str_c(cmd, "-d a:pl", sep = " ")
+    }
+    cmd <- str_c(
+        cmd,
+        ">", file.path(proj_dir, "diyabc_run_call.log"),
+        sep = " "
+    )
+    logging("diyabc run cmd", cmd)
+    run_check <- system(cmd)
+    logging("diyabc run", run_check)
+    if(run_check != 0) {
+        warning("Issue with simulation run")
     }
     # output
-    return(NULL)
+    return(lst(init_check, run_check))
 }

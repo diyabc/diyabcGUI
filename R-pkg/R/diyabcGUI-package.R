@@ -6,11 +6,11 @@
 #' diyabcGUI package
 #' 
 #' @author Ghislain Durif
-#' @importFrom fs path_home file_copy file_delete
+#' @importFrom fs path_home dir_delete file_copy file_delete
 #' @importFrom magrittr %>%
 #' @import shiny
+#' @importFrom shinybusy add_busy_spinner
 #' @importFrom shinydashboard box
-#' @importFrom shinycssloaders withSpinner
 #' @importFrom shinyhelper helper
 #' @importFrom shinyjs disable enable hidden hide reset show
 #' @importFrom shinyWidgets actionBttn actionGroupButtons radioGroupButtons

@@ -4,6 +4,7 @@
 analysis_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        add_busy_spinner(spin = "fading-circle"),
         fluidRow(
             box(
                 title = "Project settings",
