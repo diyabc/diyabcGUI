@@ -492,17 +492,6 @@ analysis_proj_set_server <- function(input, output, session,
     return(out)
 }
 
-#' Create a project directory server-side
-#' @keywords internal
-#' @author Ghislain Durif
-mk_proj_dir <- function(tag = "diyabc") {
-    # create tmp dir
-    tmp_dir <- tempfile(tag)
-    dir.create(tmp_dir, showWarnings = FALSE)
-    # output
-    return(tmp_dir)
-}
-
 #' Input data ui
 #' @keywords internal
 #' @author Ghislain Durif

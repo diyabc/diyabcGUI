@@ -41,3 +41,14 @@ test_input_dir <- function() {
     }
     return(testinputdir)
 }
+
+#' Create a project directory server-side
+#' @keywords internal
+#' @author Ghislain Durif
+mk_proj_dir <- function(tag = "diyabc") {
+    # create tmp dir
+    tmp_dir <- tempfile(tag)
+    dir.create(tmp_dir, showWarnings = FALSE)
+    # output
+    return(tmp_dir)
+}
