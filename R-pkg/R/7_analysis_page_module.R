@@ -92,6 +92,30 @@ analysis_page_server <- function(input, output, session,
     #     print(reactiveValuesToList(proj_set))
     # })
     
+    ## write files if required
+    observeEvent(proj_set$valid_proj, {
+        req(!is.null(proj_set$valid_proj))
+        req(proj_set$proj_dir)
+        req(proj_set$proj_name)
+        
+        # # debugging
+        # print("Writing project file (if necessary)")
+        # print(proj_set$valid_proj)
+        # print(proj_set$proj_dir)
+        # print(proj_set$proj_name)
+        # print(proj_set$proj_file_list)
+        
+        if(proj_set$valid_proj) {
+            # write project file if not existing
+            if(!"diyabcGUI_proj.txt" %in% proj_set$proj_file_list) {
+                write_proj_file(proj_set$proj_dir, proj_set$proj_name)
+            }
+        }
+    })
+    
+    
+    ##
+    
     setting <- proj_set # FIXME
     # update local
     observe({
@@ -226,7 +250,7 @@ analysis_proj_set_server <- function(input, output, session,
         locus_type = NULL,
         seq_mode = NULL,
         new_proj = NULL,
-        proj_dir = mk_proj_dir(session),
+        proj_dir = mk_proj_dir(),
         proj_file_list = character(0),
         proj_header = NULL,
         proj_name = NULL,
@@ -239,10 +263,14 @@ analysis_proj_set_server <- function(input, output, session,
         local$proj_name <- proj_name()
         local$reset <- reset()
     })
-    # FIXME reset
-    observeEvent(reset, {
-        local$proj_dir <- mk_proj_dir(session)
+    # clean on exit
+    session$onSessionEnded(function() {
+        isolate(tryCatch(fs::dir_delete(out$proj_dir)))
     })
+    # # FIXME reset
+    # observeEvent(reset, {
+    #     local$proj_dir <- mk_proj_dir(session)
+    # })
     # locus type
     locus_type <- callModule(locus_type_server, "locus_type")
     observe({
@@ -334,8 +362,6 @@ analysis_proj_set_server <- function(input, output, session,
             )
             local$file_input$valid[ind] <- header_file$valid
             local$header_data_file <- header_file$data_file
-            print("header data file")
-            print(local$header_data_file)
             out$proj_header <- header_file
         }
         # project file list
@@ -433,12 +459,12 @@ analysis_proj_set_server <- function(input, output, session,
         req(!is.null(out$valid_data_file))
         req(!is.null(out$valid_proj_file))
         if(!is.null(out$proj_name)) {
-            out$valid <- out$valid_data_file & out$valid_proj_file &
+            out$valid_proj <- out$valid_data_file & out$valid_proj_file &
                 (str_length(out$proj_name) > 0)
         } else {
-            out$valid <- FALSE
+            out$valid_proj <- FALSE
         }
-        if(!out$valid) {
+        if(!out$valid_proj) {
             output$proj_is_ready <- renderUI({
                 h2(icon("warning"), "Project set up is not ready.", 
                    style="color:red")
@@ -457,14 +483,10 @@ analysis_proj_set_server <- function(input, output, session,
 #' Create a project directory server-side
 #' @keywords internal
 #' @author Ghislain Durif
-mk_proj_dir <- function(session, tag = "diyabc") {
+mk_proj_dir <- function(tag = "diyabc") {
     # create tmp dir
     tmp_dir <- tempfile(tag)
     dir.create(tmp_dir, showWarnings = FALSE)
-    # clean on exit
-    session$onSessionEnded(function() {
-        unlink(tmp_dir)
-    })
     # output
     return(tmp_dir)
 }
@@ -521,11 +543,11 @@ input_data_server <- function(input, output, session,
         local$seq_mode <- seq_mode()
         local$proj_dir <- proj_dir()
         
-        # debugging
-        print(paste0("input data file = ", local$exp_data_file))
-        print(paste0("input locus type = ", local$locus_type))
-        print(paste0("input seq mode = ", local$seq_mode))
-        print(paste0("input proj dir = ", local$proj_dir))
+        # # debugging
+        # print(paste0("input data file = ", local$exp_data_file))
+        # print(paste0("input locus type = ", local$locus_type))
+        # print(paste0("input seq mode = ", local$seq_mode))
+        # print(paste0("input proj dir = ", local$proj_dir))
     })
     # init output
     out <- reactiveValues(
@@ -584,9 +606,6 @@ input_data_server <- function(input, output, session,
         output$data_info <- renderUI({
             out_text <- list()
             # check
-            print("comparison expected data file vs data file")
-            print(local$exp_data_file)
-            print(out$file)
             local$file_check <- check_data_file(
                 out$file, local$proj_dir, local$locus_type, local$seq_mode,
                 local$exp_data_file
