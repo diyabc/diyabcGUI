@@ -1,7 +1,7 @@
 #' Plot historical model
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom ggplot2 ggplot geom_point geom_segment theme_void
+#' @importFrom ggplot2 aes ggplot geom_point geom_segment theme_void
 plot_hist_model <- function(scenario_param) {
     
     add_edge <- function(g, start, end, colour = "black") {
