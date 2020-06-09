@@ -14,9 +14,6 @@
 diyabc_server <- function(input, output, session) {
     ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
-    ## set maximum upload size
-    # FIXME allow to modify in settings
-    options(shiny.maxRequestSize=50*1024^2)
     ## index server function
     simplified_index_server(input, output, session)
     # index_server(input, output, session)

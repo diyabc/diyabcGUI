@@ -1143,7 +1143,7 @@ training_set_action_server <- function(input, output, session,
     # deactivate simulate if not valid
     observeEvent(local$valid, {
         req(!is.null(local$valid))
-        if(local$saved) {
+        if(local$valid) {
             shinyjs::enable("simulate")
         } else {
             shinyjs::disable("simulate")
@@ -1151,9 +1151,9 @@ training_set_action_server <- function(input, output, session,
     })
     
     # deactivate prior_mod_check if not valid
-    observeEvent(local$valid, {
+    observeEvent(input$simulate, {
         req(!is.null(local$valid))
-        if(local$saved) {
+        if(local$valid) {
             shinyjs::enable("prior_mod_check")
         } else {
             shinyjs::disable("prior_mod_check")
@@ -1162,6 +1162,13 @@ training_set_action_server <- function(input, output, session,
     
     ## FIXME run simulation
     observeEvent(input$simulate, {
+        
+        # debugging
+        print("check options")
+        print(getOption("diyabcGUI"))
+        print(getOption("shiny.maxRequestSize"))
+        
+        
         # logging("Running simulation")
         check <- tryCatch(
             diyabc_run_trainset_simu(local$project_dir, 

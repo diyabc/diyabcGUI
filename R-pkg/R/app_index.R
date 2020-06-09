@@ -13,12 +13,17 @@ app_simplified_sidebar <- function() {
             menuItem(
                 "Data analysis", 
                 tabName = "analysis_tab", 
-                icon = icon("gear")
+                icon = icon("flask")
             ),
             menuItem(
                 "Data simulation", 
                 tabName = "simu_tab", 
                 icon = icon("dna")
+            ),
+            menuItem(
+                "Preferences", 
+                tabName = "pref_tab", 
+                icon = icon("gear")
             )
         )
     )
@@ -33,14 +38,21 @@ app_simplified_body <- function() {
     dashboardBody(
         useShinyjs(),
         tabItems(
-            tabItem(tabName = "home_tab",
-                    home_page_ui("home_page")
+            tabItem(
+                tabName = "home_tab",
+                home_page_ui("home_page")
             ),
-            tabItem(tabName = "analysis_tab",
-                    analysis_page_ui("analysis_page")
+            tabItem(
+                tabName = "analysis_tab",
+                analysis_page_ui("analysis_page")
             ),
-            tabItem(tabName = "simu_tab",
-                    simu_page_ui("simu_page")
+            tabItem(
+                tabName = "simu_tab",
+                simu_page_ui("simu_page")
+            ),
+            tabItem(
+                tabName = "pref_tab",
+                pref_page_ui("pref_page")
             )
         )
     )
@@ -53,6 +65,7 @@ simplified_index_server <- function(input, output, session) {
     callModule(home_page_server, "home_page")
     callModule(analysis_page_server, "analysis_page")
     callModule(simu_page_server, "simu_page")
+    callModule(pref_page_server, "pref_page")
 }
 
 #' App dashboard sidebar
