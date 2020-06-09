@@ -14,12 +14,6 @@
 diyabc_server <- function(input, output, session) {
     ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
-    ##  temp dir
-    # FIXME obsolete
-    tmp_dir <- tempfile("diyabc")
-    dir.create(tmp_dir, showWarnings = FALSE)
-    diyabc_options <- lst(tmp_dir)
-    options("diyabc" = diyabc_options)
     ## set maximum upload size
     # FIXME allow to modify in settings
     options(shiny.maxRequestSize=50*1024^2)
