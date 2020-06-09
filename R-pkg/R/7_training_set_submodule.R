@@ -14,6 +14,10 @@ training_set_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 training_set_server <- function(input, output, session,
+                                data_info = reactive({NULL}),
+                                locus_type = reactive({NULL}),
+                                seq_mode = reactive({NULL}),
+                                proj_dir = reactive({NULL}), 
                                 proj_file_list = reactive({NULL}), 
                                 valid_proj = reactive({TRUE})) {
     
@@ -22,16 +26,30 @@ training_set_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        data_info = NULL,
+        locus_type = NULL,
+        seq_mode = NULL,
+        proj_dir = NULL,
         proj_file_list = NULL,
         valid_proj = NULL
     )
     # get input
     observe({
+        local$data_info <- data_info()
+        local$locus_type <- locus_type()
+        local$seq_mode <- seq_mode()
+        local$proj_dir <- proj_dir()
         local$proj_file_list <- proj_file_list()
         local$valid_proj <- valid_proj()
     })
     
-    # enable training set def
+    # # debugging
+    # observe({
+    #     print("data info")
+    #     print(local$data_info)
+    # })
+    
+    ## enable training set def
     output$project_def <- renderUI({
         if(local$valid_proj) {
             if(is.null(local$proj_file_list)) {
@@ -48,7 +66,14 @@ training_set_server <- function(input, output, session,
         }
     })
     
-    # enable locus setup
+    ## training set def
+    training_set_def <- callModule(
+        training_set_def_server, "def",
+        proj_dir = reactive(local$proj_dir),
+        raw_scenario_list = reactive({NULL})
+    )
+    
+    ## enable locus setup
     output$project_locus_setup <- renderUI({
         if(local$valid_proj) {
             tagList(
@@ -58,6 +83,26 @@ training_set_server <- function(input, output, session,
             NULL
         }
     })
+    
+    ## locus setup
+    locus_setup <- callModule(
+        locus_setup_server, "locus_setup",
+        data_info = reactive(local$data_info),
+        locus_type = reactive(local$locus_type),
+        seq_mode = reactive(local$seq_mode)
+    )
+    
+    # ## action
+    # callModule(training_set_action_server, "action",
+    #            project_dir = reactive(local$project_dir),
+    #            project_name = reactive(local$project_name),
+    #            validation = reactive(local$valid),
+    #            data_file = reactive(local$data_file),
+    #            locus_type = reactive(local$locus_type),
+    #            param_list = reactive(local$raw_param_list),
+    #            param_count_list = reactive(local$param_count_list),
+    #            scenario_list = reactive(local$raw_scenario_list),
+    #            cond_list = reactive(prior_cond_set$raw_cond_set))
 }
 
 #' Training set sub-module ui
@@ -78,7 +123,121 @@ training_set_def_ui <- function(id) {
 #' Training set sub-module server
 #' @keywords internal
 #' @author Ghislain Durif
-training_set_def_server <- function(input, output, session) {}
+training_set_def_server <- function(input, output, session, 
+                                    proj_dir = reactive({NULL}),
+                                    raw_scenario_list = reactive({NULL})) {
+    
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        cond_list = list(),
+        param_list = list(),
+        raw_param_list = list(),
+        proj_dir = NULL,
+        raw_scenario_list = NULL,
+        scenario_list = NULL
+    )
+    # get input
+    observe({
+        local$proj_dir <- proj_dir()
+        local$raw_scenario_list <- raw_scenario_list()
+    })
+    
+    # init output
+    out <- reactiveValues(
+        cond_list = list(),
+        param_list = list(),
+        raw_param_list = list()
+    )
+    
+    # historic model panel
+    hist_model_def <- callModule(
+        hist_model_panel_server, "hist_model_panel",
+        project_dir = reactive(local$proj_dir), 
+        raw_scenario_list = reactive(local$raw_scenario_list)
+    )
+    
+    # # debugging
+    # observe({
+    #     print("hist_model_def")
+    #     print(hist_model_def$scenario_list)
+    # })
+    
+    # update local
+    observe({
+        local$scenario_list <- hist_model_def$scenario_list
+        # extract input
+        if(length(local$scenario_list) > 0) {
+            # param list
+            local$param_list <- Reduce("c", lapply(
+                local$scenario_list,
+                function(item) {
+                    c(lapply(
+                        item$param$Ne_param,
+                        function(subitem) return(list(type = "N", 
+                                                      name = subitem))
+                    ),
+                    lapply(
+                        item$param$time_param,
+                        function(subitem) return(list(type = "T", 
+                                                      name = subitem))
+                    ),
+                    lapply(
+                        item$param$rate_param,
+                        function(subitem) return(list(type = "A", 
+                                                      name = subitem))
+                    ))
+                }
+            ))
+            # param count list
+            # print("--- param")
+            local$param_count_list <- lapply(
+                local$scenario_list,
+                function(item) {
+                    # print(item$param)
+                    return(length(item$param$Ne_param) + 
+                               length(item$param$time) + 
+                               length(item$param$rate))
+                }
+            )
+            # print("----")
+            # condition
+            local$cond_list <- Reduce("c", lapply(
+                local$scenario_list,
+                function(item) return(item$cond)
+            ))
+            # raw scenario
+            local$raw_scenario_list <- Reduce("c", lapply(
+                local$scenario_list,
+                function(item) return(item$raw)
+            ))
+        }
+    })
+    
+    # parameter prior and conditon setting
+    prior_cond_set <- callModule(
+        prior_cond_set_server, "prior_cond",
+        cond_list = reactive(local$cond_list),
+        param_list = reactive(local$param_list)
+    )
+    
+    # update param list
+    observe({
+        req(!is.null(prior_cond_set$raw_prior_list))
+        # print(prior_cond_set$raw_prior_list)
+        local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
+    })
+    
+    # get output
+    observe({
+        out$cond_list = local$cond_list
+        out$param_list = local$param_list
+        out$raw_param_list = local$raw_param_list
+    })
+    ## output
+    return(out)
+}
 
 
 #' Training set sub-module ui
@@ -806,73 +965,103 @@ locus_setup_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 locus_setup_server <- function(input, output, session, 
-                               locus_type = reactive({NULL})) {
+                               data_info = reactive({NULL}),
+                               locus_type = reactive({NULL}),
+                               seq_mode = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local
-    local <- reactiveValues(locus_type = NULL)
+    local <- reactiveValues(
+        data_info = NULL,
+        locus_type = NULL,
+        seq_mode = NULL
+    )
     # get input
     observe({
+        local$data_info <- data_info()
         local$locus_type <- locus_type()
-        # print(local$locus_type)
+        local$seq_mode <- seq_mode()
     })
+    
+    # # debugging
+    # observe({
+    #     print("data info")
+    #     print(local$data_info)
+    #     print("locus type")
+    #     print(local$locus_type)
+    #     print("seq mode")
+    #     print(local$seq_mode)
+    # })
+    
     # init out
-    out <- reactiveValues(locus_type = NULL)
+    out <- reactiveValues(
+        locus = NULL
+    )
     # render ui
     output$setup <- renderUI({
-        req(!is.null(local$locus_type))
-        tag_list <- lapply(
-            local$locus_type,
-            function(item) {
-                return(
-                    fluidRow(
-                        column(
-                            width = 2,
-                            item
-                        ),
-                        column(
-                            width = 4,
-                            numericInput(
-                                inputId = str_c(
-                                    "num_",
-                                    str_extract(item,
-                                                pattern = "(A|H|X|Y|M)")
-                                ),
-                                label = "Number of locus",
-                                min = 0,
-                                max = as.numeric(
-                                    str_extract(item,
-                                                pattern = "^[0-9]+")
-                                ),
-                                value = as.numeric(
-                                    str_extract(item,
-                                                pattern = "^[0-9]+")
+        req(local$locus_type)
+        req(local$seq_mode)
+        req(!is.null(local$data_info$locus))
+        
+        if(local$locus_type == "snp" & local$seq_mode == "indseq") {
+            tag_list <- lapply(
+                local$data_info$locus,
+                function(item) {
+                    return(
+                        fluidRow(
+                            column(
+                                width = 2,
+                                item
+                            ),
+                            column(
+                                width = 4,
+                                numericInput(
+                                    inputId = str_c(
+                                        "num_",
+                                        str_extract(item,
+                                                    pattern = "(A|H|X|Y|M)")
+                                    ),
+                                    label = "Number of locus",
+                                    min = 0,
+                                    max = as.numeric(
+                                        str_extract(item,
+                                                    pattern = "^[0-9]+")
+                                    ),
+                                    value = as.numeric(
+                                        str_extract(item,
+                                                    pattern = "^[0-9]+")
+                                    )
+                                )
+                            ),
+                            column(
+                                width = 4,
+                                numericInput(
+                                    inputId = str_c(
+                                        str_extract(item,
+                                                    pattern = "(A|H|X|Y|M)"),
+                                        "_from"
+                                    ),
+                                    label = "from",
+                                    min = 1,
+                                    max = as.numeric(
+                                        str_extract(item,
+                                                    pattern = "^[0-9]+")
+                                    ),
+                                    value = 1
                                 )
                             )
-                        ),
-                        column(
-                            width = 4,
-                            numericInput(
-                                inputId = str_c(
-                                    str_extract(item,
-                                                pattern = "(A|H|X|Y|M)"),
-                                    "_from"
-                                ),
-                                label = "from",
-                                min = 1,
-                                max = as.numeric(
-                                    str_extract(item,
-                                                pattern = "^[0-9]+")
-                                ),
-                                value = 1
-                            )
                         )
-                        
                     )
-                )
-            }
-        )
-        do.call(tagList, tag_list)
+                }
+            )
+            do.call(tagList, tag_list)
+        } else if(local$locus_type == "snp" & local$seq_mode == "poolseq") {
+            # FIXME
+            warning("not supported")
+        } else if(local$locus_type == "mss") {
+            # FIXME
+            warning("not supported")
+        }
     })
     
     ## update output
@@ -942,7 +1131,6 @@ training_set_action_ui <- function(id) {
 training_set_action_server <- function(input, output, session,
                                        project_dir = reactive({NULL}),
                                        project_name = reactive({NULL}),
-                                       validation = reactive({TRUE}),
                                        data_file = reactive({NULL}),
                                        locus_type = reactive({NULL}),
                                        param_list = reactive({NULL}),
@@ -954,9 +1142,9 @@ training_set_action_server <- function(input, output, session,
     # init local
     local <- reactiveValues(
         saved = FALSE,
+        valid = FALSE,
         project_dir = NULL,
         project_name = NULL,
-        validation = NULL,
         data_file = NULL,
         locus_type = NULL,
         param_list = NULL,
@@ -968,7 +1156,6 @@ training_set_action_server <- function(input, output, session,
     observe({
         local$project_dir <- project_dir()
         local$project_name <- project_name()
-        local$validation <- validation()
         local$data_file <- data_file()
         local$locus_type <- locus_type()
         local$param_list <- param_list()
