@@ -412,13 +412,14 @@ input_data_ui <- function(id) {
             label = NULL, 
             multiple = FALSE
         ),
-        conditionalPanel(
-            condition = "typeof input.data_file !== 'undefined'",
-            helpText(
-                icon("warning"), "Missing data file"
-            ),
-            ns = ns
-        ),
+        uiOutput(ns("missing_file")),
+        # conditionalPanel(
+        #     condition = "input.data_file.length > 0",
+        #     ns = ns,
+        #     helpText(
+        #         icon("warning"), "Missing data file"
+        #     )
+        # ),
         uiOutput(ns("data_info")) #%>% withSpinner() # FIXME
     )
 }
@@ -448,6 +449,13 @@ input_data_server <- function(input, output, session,
         data_file = NULL, 
         valid = FALSE
     )
+    # message if missing file
+    output$missing_file <- renderUI({
+        req(is.null(input$data_file))
+        helpText(
+            icon("warning"), "Missing data file"
+        )
+    })
     # get data file
     observeEvent(input$data_file, {
         req(input$data_file)
