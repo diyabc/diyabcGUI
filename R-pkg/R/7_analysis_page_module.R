@@ -144,7 +144,23 @@ analysis_page_server <- function(input, output, session,
         seq_mode = reactive(proj_set$seq_mode),
         proj_dir = reactive(proj_set$proj_dir),
         proj_file_list = reactive(proj_set$proj_file_list), 
-        valid_proj = reactive(proj_set$valid_proj))
+        valid_proj = reactive(proj_set$valid_proj)
+    )
+    
+    # debugging
+    observe({
+        print("training set valid proj")
+        print(training_set$valid_proj)
+    })
+    
+    ## random forest module
+    rf <- callModule(
+        rf_module_server, "rf",
+        locus_type = reactive(proj_set$locus_type),
+        proj_dir = reactive(proj_set$proj_dir),
+        # proj_file_list = reactive(proj_set$proj_file_list),
+        valid_proj = reactive(proj_set$valid_proj)
+    )
     
     ## action
     proj_action <- callModule(
@@ -489,12 +505,13 @@ analysis_proj_set_server <- function(input, output, session,
         }
         if(!out$valid_proj) {
             output$proj_is_ready <- renderUI({
-                h2(icon("warning"), "Project set up is not ready.", 
-                   style="color:red")
+                h3(icon("warning"), "Project set up is not ready.", 
+                   style="color:red;text-align:center;")
             })
         } else {
             output$proj_is_ready <- renderUI({
-                h3(icon("check"), "Project set up is ok.")
+                h4(icon("check"), "Project set up is ok.",
+                   style="text-align:center;")
             })
         }
     })

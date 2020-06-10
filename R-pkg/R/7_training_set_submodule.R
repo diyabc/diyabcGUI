@@ -44,9 +44,14 @@ training_set_server <- function(input, output, session,
         local$proj_file_list <- proj_file_list()
         local$valid_proj <- valid_proj()
         
-        # debugging
-        print(local$data_file)
+        # # debugging
+        # print(local$data_file)
     })
+    
+    # init output
+    out <- reactiveValues(
+        valid_proj = TRUE
+    )
     
     # # debugging
     # observe({
@@ -80,9 +85,14 @@ training_set_server <- function(input, output, session,
     )
     
     # get output
-    observeEvent(training_set_def$valid_def, {
+    observeEvent(training_set_def$trigger, {
+        req(!is.null(training_set_def$trigger))
         req(!is.null(training_set_def$valid_def))
         local$valid_proj <- local$valid_proj & training_set_def$valid_def
+        
+        # debugging
+        print("training set valid def")
+        print(training_set_def$valid_def)
     })
     
     ## action
@@ -91,6 +101,14 @@ training_set_server <- function(input, output, session,
         proj_dir = reactive(local$proj_dir),
         valid = reactive(local$valid_proj)
     )
+    
+    # update output
+    observe({
+        out$valid_proj <- local$valid_proj
+    })
+    
+    # output
+    return(out)
 }
 
 #' Training set sub-module ui
@@ -165,6 +183,7 @@ training_set_def_server <- function(input, output, session,
         cond_list = list(),
         param_list = list(),
         raw_param_list = list(),
+        trigger = NULL,
         valid_def = FALSE
     )
     
@@ -333,6 +352,8 @@ training_set_def_server <- function(input, output, session,
                 )
             )
         }
+        
+        out$trigger <- ifelse(!is.null(out$trigger), out$trigger, 0) + 1
     })
     
 
@@ -1109,12 +1130,12 @@ training_set_action_server <- function(input, output, session,
         local$proj_file_list <- list.files(local$proj_dir)
     })
     
-    # debugging
-    observe({
-        print("Training set action input")
-        print(local$proj_dir)
-        print(local$valid)
-    })
+    # # debugging
+    # observe({
+    #     print("Training set action input")
+    #     print(local$proj_dir)
+    #     print(local$valid)
+    # })
     
     # init output
     out <- reactiveValues()
@@ -1136,10 +1157,10 @@ training_set_action_server <- function(input, output, session,
         req(local$proj_dir)
         req(!is.null(input$prior_mod_check))
         
-        # debugging
-        print("check options")
-        print(getOption("diyabcGUI"))
-        print(getOption("shiny.maxRequestSize"))
+        # # debugging
+        # print("check options")
+        # print(getOption("diyabcGUI"))
+        # print(getOption("shiny.maxRequestSize"))
         
         # logging("Running simulation")
         cmd_out <- diyabc_run_trainset_simu(
@@ -1178,205 +1199,3 @@ training_set_action_server <- function(input, output, session,
         }
     })
 }
-
-
-#' #' Training set simulation action module server
-#' #' @keywords internal
-#' #' @author Ghislain Durif
-#' #' @param project_dir project directory as a `reactive`.
-#' #' @param project_name project name as a `reactive`.
-#' #' @param validation boolean indicating if the project setting are validated, 
-#' #' as a `reactive`.
-#' #' @param raw_param scenario parameter raw setting as a `reactive`. 
-#' #' @param raw_scenario list of raw scenario as a `reactive`.
-#' training_set_action_server <- function(input, output, session,
-#'                                        project_dir = reactive({NULL}),
-#'                                        project_name = reactive({NULL}),
-#'                                        data_file = reactive({NULL}),
-#'                                        locus_type = reactive({NULL}),
-#'                                        param_list = reactive({NULL}),
-#'                                        param_count_list = reactive({NULL}),
-#'                                        scenario_list = reactive({NULL}),
-#'                                        cond_list = reactive({NULL})) {
-#'     # namespace
-#'     ns <- session$ns
-#'     # init local
-#'     local <- reactiveValues(
-#'         saved = FALSE,
-#'         valid = FALSE,
-#'         project_dir = NULL,
-#'         project_name = NULL,
-#'         data_file = NULL,
-#'         locus_type = NULL,
-#'         param_list = NULL,
-#'         param_count_list = NULL,
-#'         scenario_list = NULL,
-#'         cond_list = NULL
-#'     )
-#'     # get input
-#'     observe({
-#'         local$project_dir <- project_dir()
-#'         local$project_name <- project_name()
-#'         local$data_file <- data_file()
-#'         local$locus_type <- locus_type()
-#'         local$param_list <- param_list()
-#'         local$param_count_list <- param_count_list()
-#'         local$scenario_list <- scenario_list()
-#'         local$cond_list <- cond_list()
-#'     })
-#'     # init output
-#'     out <- reactiveValues(
-#'         duplicate = NULL,
-#'         save = NULL
-#'     )
-#'     
-#'     # disable saved if not validated
-#'     observeEvent(local$validation, {
-#'         req(!is.null(local$validation))
-#'         if(local$validation) {
-#'             shinyjs::enable("save")
-#'         } else {
-#'             shinyjs::disable("save")
-#'             # # directory not existing
-#'             # showNotification(
-#'             #     id = ns("project_dir_issue"),
-#'             #     duration = 5,
-#'             #     closeButton = TRUE,
-#'             #     type = "warning",
-#'             #     tagList(
-#'             #         tags$p(
-#'             #             icon("warning"),
-#'             #             paste0("Directory does not exists. ",
-#'             #                    "Did you 'validate' the project?")
-#'             #         )
-#'             #     )
-#'             # )
-#'         }
-#'     })
-#' 
-#'     # un-saved if modification to input
-#'     observeEvent({
-#'         local$project_dir
-#'         local$project_name
-#'         local$param_list
-#'         local$scenario_list
-#'         local$cond_list
-#'         local$data_file
-#'         local$locus_type
-#'     }, {
-#'         local$saved <- FALSE
-#'     })
-#' 
-#'     # deactivate simulate if not saved
-#'     observeEvent(local$saved, {
-#'         req(!is.null(local$saved))
-#'         if(local$saved) {
-#'             shinyjs::enable("simulate")
-#'         } else {
-#'             shinyjs::disable("simulate")
-#'         }
-#'     })
-#' 
-#'     # save project = write header file
-#'     observeEvent(input$save, {
-#'         # FIXME write header file
-#'         local$saved <- TRUE
-#'     })
-#' 
-#'     # FIXME project duplication
-#'     observeEvent(input$duplicate, {
-#'         out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
-#'     })
-#' 
-#'     ## prepare for simulation
-#'     # # debugging
-#'     # observe({
-#'     #     req(local$raw_param)
-#'     #     print(local$raw_param)
-#'     # })
-#' 
-#'     ## write header file
-#'     observeEvent(input$save, {
-#'         req(!is.null(local$project_dir))
-#'         req(!is.null(local$project_name))
-#'         req(!is.null(local$param_list))
-#'         req(!is.null(local$param_count_list))
-#'         req(!is.null(local$scenario_list))
-#'         req(!is.null(local$cond_list))
-#'         req(!is.null(local$data_file))
-#'         req(!is.null(local$locus_type))
-#' 
-#'         # print("project_dir =")
-#'         # print(local$project_dir)
-#'         # print("project_name =")
-#'         # print(local$project_name)
-#'         # print("param_list =")
-#'         # print(local$param_list)
-#'         # print("param_count_list =")
-#'         # print(local$param_count_list)
-#'         # print("scenario_list =")
-#'         # print(local$scenario_list)
-#'         # print("cond_list =")
-#'         # print(local$cond_list)
-#'         # print("data_file =")
-#'         # print(local$data_file)
-#'         # print("locus_type =")
-#'         # print(local$locus_type)
-#' 
-#'         write_header(local$project_name, local$project_dir, local$data_file, 
-#'                      local$scenario_list, local$param_count_list, 
-#'                      local$param_list, local$cond_list, 
-#'                      local$locus_type)
-#' 
-#'         showNotification(
-#'             id = ns("headerfile_ok"),
-#'             duration = 5,
-#'             closeButton = TRUE,
-#'             type = "message",
-#'             tagList(
-#'                 tags$p(
-#'                     icon("check"),
-#'                     paste0("Project is ready to run simulations.")
-#'                 )
-#'             )
-#'         )
-#'     })
-#'     
-#'     ## FIXME run simulation
-#'     observeEvent(input$simulate, {
-#'         # logging("Running simulation")
-#'         check <- tryCatch(
-#'             diyabc_run_trainset_simu(local$project_dir, 
-#'                                      local$data_file, 
-#'                                      n_core = 1),
-#'             error = function(e) return(e)
-#'         )
-#'         if(!is.null(check) & !is.null(check$message)) {
-#'             showNotification(
-#'                 id = ns("run_not_ok"),
-#'                 duration = 5,
-#'                 closeButton = TRUE,
-#'                 type = "error",
-#'                 tagList(
-#'                     tags$p(
-#'                         icon("warning"),
-#'                         str_c(check$message)
-#'                     )
-#'                 )
-#'             )
-#'         } else {
-#'             showNotification(
-#'                 id = ns("run_ok"),
-#'                 duration = 5,
-#'                 closeButton = TRUE,
-#'                 type = "error",
-#'                 tagList(
-#'                     tags$p(
-#'                         icon("check"),
-#'                         "Simulations are done."
-#'                     )
-#'                 )
-#'             )
-#'         }
-#'     })
-#' }
