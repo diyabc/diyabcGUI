@@ -43,8 +43,8 @@ analysis_page_ui <- function(id) {
                 title = "Project action",
                 width = 12,
                 status = "danger", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = FALSE,
-                "FILLME"
+                collapsible = FALSE, collapsed = FALSE,
+                proj_action_ui(ns("proj_action"))
             )
         )
     )
@@ -146,6 +146,13 @@ analysis_page_server <- function(input, output, session,
         proj_dir = reactive(proj_set$proj_dir),
         proj_file_list = reactive(proj_set$proj_file_list), 
         valid_proj = reactive(proj_set$valid_proj))
+    
+    ## action
+    proj_action <- callModule(
+        proj_action_server, "proj_action",
+        proj_dir = reactive(proj_set$proj_dir),
+        proj_name = reactive(proj_set$proj_name)
+    )
     
     # output
     return(out)
@@ -638,4 +645,61 @@ input_data_server <- function(input, output, session,
     })
     # output
     return(out)
+}
+
+#' Analysis project action ui
+#' @keywords internal
+#' @author Ghislain Durif
+proj_action_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        fluidRow(
+            column(
+                width = 6,
+                downloadButton(
+                    ns("save"), 
+                    label = "Save",
+                    style = "width:100%;"
+                )
+            ),
+            column(
+                width = 6,
+                actionButton(
+                    ns("reset"),
+                    label = tags$span(icon("refresh"), "Reset"),
+                    width = "100%"
+                )
+            )
+        )
+    )
+}
+
+#' Analysis project action server
+#' @keywords internal
+#' @author Ghislain Durif
+proj_action_server <- function(input, output, session,
+                               proj_dir = reactive({NULL}),
+                               proj_name = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(
+        proj_dir = NULL,
+        proj_name = NULL
+    )
+    # get input
+    observe({
+        local$proj_dir <- proj_dir()
+        local$proj_name <- proj_name()
+    })
+    # save
+    output$save <- downloadHandler(
+        filename = function() {
+            str_c(local$proj_name, ".zip")
+        },
+        content = function(file) {
+            wd <- getwd()
+            on.exit(setwd(wd))
+            setwd(local$proj_dir)
+            zip(file, list.files(local$proj_dir))
+        }
+    )
 }
