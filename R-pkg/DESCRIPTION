@@ -25,7 +25,8 @@ Imports:
     ggplot2,
     lubridate, 
     magrittr, 
-    shiny, shinydashboard, shinyFiles, shinyhelper, shinyjs, shinyWidgets, 
+    parallel,
+    shiny, shinybusy, shinydashboard, shinyFiles, shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
     tibble
 Suggests: 
