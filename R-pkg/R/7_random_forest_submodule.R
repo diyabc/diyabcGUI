@@ -293,31 +293,31 @@ rf_module_server <- function(input, output, session,
     # run
     observeEvent(input$run, {
         
-        print("abcranger args")
-        print("proj_dir =")
-        print(local$proj_dir)
-        print("mode =")
-        print(input$mode)
+        # print("abcranger args")
+        # print("proj_dir =")
+        # print(local$proj_dir)
+        # print("mode =")
+        # print(input$mode)
         
-        print("min_node_size =")
-        print(input$min_node_size)
-        print("noise_columns =")
-        print(input$noise_columns)
-        print("linear =")
-        print(input$linear)
-        print("pls_max_var")
-        print(input$pls_max_var)
-        print("n_tree")
-        print(input$n_tree)
-        
-        if(input$mode == "param_estim") {
-            print("chosen_scen =")
-            print(input$chosen_scenario)
-            print("noob =")
-            print(input$noob)
-            print("parameter =")
-            print(input$parameter)
-        }
+        # print("min_node_size =")
+        # print(input$min_node_size)
+        # print("noise_columns =")
+        # print(input$noise_columns)
+        # print("linear =")
+        # print(input$linear)
+        # print("pls_max_var")
+        # print(input$pls_max_var)
+        # print("n_tree")
+        # print(input$n_tree)
+        # 
+        # if(input$mode == "param_estim") {
+        #     print("chosen_scen =")
+        #     print(input$chosen_scenario)
+        #     print("noob =")
+        #     print(input$noob)
+        #     print("parameter =")
+        #     print(input$parameter)
+        # }
         
         req(!is.null(local$proj_dir))
         req(!is.null(input$mode))

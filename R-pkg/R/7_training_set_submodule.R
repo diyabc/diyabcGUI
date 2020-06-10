@@ -961,6 +961,13 @@ locus_setup_server <- function(input, output, session,
     )
     # render ui
     output$setup <- renderUI({
+        
+        # # debugging
+        # print("locus_type")
+        # print(local$locus_type)
+        # print("locus")
+        # print(local$data_info$locus_type)
+        
         req(local$locus_type)
         req(local$seq_mode)
         req(!is.null(local$data_info$locus))

@@ -29,9 +29,9 @@ abcranger_run <- function(proj_dir, mode, n_ref,
                           min_node_size, n_tree, noise_columns, no_linear, 
                           pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
-    # debugging
-    print("abcranger args")
-    print(match.call())
+    # # debugging
+    # print("abcranger args")
+    # print(match.call())
     
     # executable
     abcranger_bin <- find_bin("abcranger")

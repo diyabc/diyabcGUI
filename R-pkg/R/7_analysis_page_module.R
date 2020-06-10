@@ -147,11 +147,11 @@ analysis_page_server <- function(input, output, session,
         valid_proj = reactive(proj_set$valid_proj)
     )
     
-    # debugging
-    observe({
-        print("training set valid proj")
-        print(training_set$valid_proj)
-    })
+    # # debugging
+    # observe({
+    #     print("training set valid proj")
+    #     print(training_set$valid_proj)
+    # })
     
     ## random forest module
     rf <- callModule(
