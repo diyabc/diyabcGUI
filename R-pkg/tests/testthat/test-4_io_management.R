@@ -10,6 +10,17 @@ test("check_data_file", {
     seq_mode <- "indseq"
     check_data_file(data_file, data_dir, locus_type, seq_mode, 
                     expected_data_file = NULL)
+    
+    
+    data_file <- file.path(example_dir(),
+                           "PoolSeq_SNP_estim_param",
+                           "poolseq_SNP_sim_dataset_4POP_cov100_001.snp")
+    data_dir <- file.path(example_dir(),
+                          "IndSeq_SNP_estim_param")
+    locus_type <- "snp"
+    seq_mode <- "poolseq"
+    check_data_file(data_file, data_dir, locus_type, seq_mode, 
+                    expected_data_file = NULL)
 })
 
 test("check_file_name", {

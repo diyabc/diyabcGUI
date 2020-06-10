@@ -31,7 +31,7 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode,
     if(!file.exists(data_file)) {
         msg <- append(msg, "Input file does not exist")
         valid <- FALSE
-    # snp locus
+    # snp locus / indseq
     } else if((locus_type == "snp") & (seq_mode == "indseq")) {
         # init output
         locus <- NULL
@@ -44,7 +44,7 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode,
             msg <- append(msg, "Only SNP files are managed at the moment")
             valid <- FALSE
         } else {
-            # header
+            # info
             info <- readLines(data_file, n = 1)
             msg <- append(
                 msg,
@@ -85,10 +85,58 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode,
         }
         # output
         spec <- lst(locus, n_indiv, n_loci, n_pop)
-        # mss locus
+    # snp locus / poolseq
     } else if((locus_type == "snp") & (seq_mode == "poolseq")) {
-        warning("Not implemented yet")
-        # FIXME
+        # init output
+        locus <- NULL
+        n_loci <- NULL
+        n_pop <- NULL
+        n_indiv <- NULL
+        # check file type
+        if(tools::file_ext(data_file) != "snp") {
+            # FIXME
+            msg <- append(msg, "Only SNP files are managed at the moment")
+            valid <- FALSE
+        } else {
+            # info
+            info <- readLines(data_file, n = 1)
+            msg <- append(
+                msg,
+                str_extract(info, pattern = "(?<=<)MAF=.*(?=>)")
+                # FIXME
+            )
+            # header
+            header <- read.table(file = data_file, skip = 1, nrows = 1)
+            # content
+            content <- read.table(file = data_file, skip = 2)
+            n_pop <- ncol(content) / 2
+            if(ncol(content) %% 2 != 0) {
+                valid <- FALSE
+            }
+            n_loci <- nrow(content)
+            msg <- append(
+                msg,
+                str_c(n_loci, "loci", "and", n_pop, "populations", sep = " ")
+            )
+            # locus type
+            candidate_locus <- c("A", "H", "X", "Y", "M")
+            locus <- str_c(n_loci, "<A>", sep = " ")
+            msg <- append(
+                msg,
+                str_c("loci:", str_c(locus, collapse =  ", "), sep = " ")
+            )
+            # check header
+            # POOL POP_NAME:HAPLOID_SAMPLE_SIZE POP1:200 POP2:200 POP3:200 POP4:200
+            if(ncol(header) != n_pop + 2) {
+                valid <- FALSE
+            }
+            
+            # fix header
+            header <- str_c(header, collapse = " ")
+        }
+        # output
+        spec <- lst(locus, n_indiv, n_loci, n_pop)
+    # mss locus
     } else if(locus_type == "mss") {
         warning("Not implemented yet")
         # FIXME
