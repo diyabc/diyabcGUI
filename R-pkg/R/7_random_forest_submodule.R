@@ -70,10 +70,13 @@ rf_module_ui <- function(id) {
                 label = "Parameter to estimate"
             ),
             uiOutput(
+                ns("missing_parameter")
+            ),
+            uiOutput(
                 ns("possible_parameters")
             ),
             numericInput(
-                ns("noobs"),
+                ns("noob"),
                 label = "Number of oob testing samples",
                 value = 10,
                 min = 1
@@ -81,6 +84,15 @@ rf_module_ui <- function(id) {
                 helper(type = "markdown", 
                        content = "noob_parameter"),
         ),
+        # textInput(
+        #     ns("group"),
+        #     label = "Model group"
+        # ),
+        # HelpText(
+        #     "You may 'group' your models in several splitted groups.",
+        #     "For example if you have six models, labeled from 1 to 6,", 
+        #     "you can specify '1,2,3;4,5,6'."
+        # ),
         hr(),
         actionBttn(
             inputId = ns("run"),
@@ -100,6 +112,9 @@ rf_module_server <- function(input, output, session,
                              proj_dir = reactive({NULL}),
                              # proj_file_list = reactive({NULL}),
                              valid_proj = reactive({FALSE})) {
+    # namespace
+    ns <- session$ns
+    
     # init local
     local <- reactiveValues(
         locus_type = NULL,
@@ -235,7 +250,9 @@ rf_module_server <- function(input, output, session,
             
             helpText(
                 "You can use one of the following parameter",
-                "or an arithmetic combination of them.",
+                "or an arithmetic combination of them, such",
+                "as division, addition or multiplication of",
+                "two existing parameters. like 't/N' or 'T1+T2'.",
                 tags$div(
                     style = "column-count:2;",
                     do.call(tags$ul, param_list)
@@ -244,16 +261,119 @@ rf_module_server <- function(input, output, session,
         })
     })
     
-    # possible parameters
-    # TODO
+    # check parameter input
+    output$missing_parameter <- renderUI({
+        if(is.null(input$paramter)) {
+            if(str_length(input$parameter) == 0) {
+                helpText(
+                    icon("warning"), "Missing parameter."
+                )
+            } else {
+                NULL
+            }
+        } else {
+            NULL
+        }
+    })
+    
+    # deactivate run if no parameter in param_estim mode
+    observeEvent(input$mode, {
+        req(input$mode)
+        if(input$mode == "param_estim") {
+            if(is.null(input$parameter)) {
+                shinyjs::disable("run")
+            } else if(str_length(input$parameter) == 0) {
+                shinyjs::disable("run")
+            } else {
+                shinyjs::enable("run")
+            }
+        }
+    })
     
     # run
     observeEvent(input$run, {
-        abcranger_run(
-            proj_dir, mode, nref, 
-            min_mode_size, n_tree, noisecolumns, no_linear, 
-            pls_max_var, chosen_scen, noob, parameter, 
+        
+        print("abcranger args")
+        print("proj_dir =")
+        print(local$proj_dir)
+        print("mode =")
+        print(input$mode)
+        
+        print("min_node_size =")
+        print(input$min_node_size)
+        print("noise_columns =")
+        print(input$noise_columns)
+        print("linear =")
+        print(input$linear)
+        print("pls_max_var")
+        print(input$pls_max_var)
+        print("n_tree")
+        print(input$n_tree)
+        
+        if(input$mode == "param_estim") {
+            print("chosen_scen =")
+            print(input$chosen_scenario)
+            print("noob =")
+            print(input$noob)
+            print("parameter =")
+            print(input$parameter)
+        }
+        
+        req(!is.null(local$proj_dir))
+        req(!is.null(input$mode))
+        req(!is.null(input$min_node_size))
+        req(!is.null(input$noise_columns))
+        req(!is.null(input$linear))
+        req(!is.null(input$pls_max_var))
+        req(!is.null(input$n_tree))
+        
+        if(input$mode == "param_estim") {
+            req(!is.null(input$chosen_scenario))
+            req(!is.null(input$noob))
+            req(!is.null(input$parameter))
+            req(str_length(input$parameter) > 0)
+        }
+        
+        logging("running abcranger")
+        
+        n_ref <- 0
+        cmd_out <- abcranger_run(
+            local$proj_dir, input$mode, n_ref, 
+            input$min_node_size, input$n_tree, input$noise_columns, 
+            !input$linear, 
+            input$pls_max_var, input$chosen_scenario, input$noob, 
+            input$parameter, 
             groups = NULL
         )
+        
+        # check run
+        if(cmd_out$check == 0) {
+            showNotification(
+                id = ns("run_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        "abcranger run is done."
+                    )
+                )
+            )
+        } else {
+            showNotification(
+                id = ns("run_not_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "A problem during abcranger run."
+                    )
+                )
+            )
+        }
+        
     })
 }

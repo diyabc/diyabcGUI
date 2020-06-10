@@ -25,10 +25,14 @@
 #'  --parameter arg     name of the parameter of interest (mandatory for
 #'                                                         parameter estimation)
 #'  -g, --groups arg        Groups of models
-abcranger_run <- function(proj_dir, mode, nref, 
-                          min_mode_size, n_tree, noisecolumns, no_linear, 
-                          pls_max_var, chosen_scen, noob, parameter, 
+abcranger_run <- function(proj_dir, mode, n_ref, 
+                          min_node_size, n_tree, noise_columns, no_linear, 
+                          pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
+    # debugging
+    print("abcranger args")
+    print(match.call())
+    
     # executable
     abcranger_bin <- find_bin("abcranger")
     # check project dir
@@ -67,7 +71,7 @@ abcranger_run <- function(proj_dir, mode, nref,
     if(mode == "param_estim") {
         cmd <- str_c(
             cmd,
-            "--chosenscen", chosen_scen,
+            "--chosenscen", chosen_scenario,
             "--noob", noob,
             "--parameter", parameter,
             sep = " "
@@ -88,7 +92,7 @@ abcranger_run <- function(proj_dir, mode, nref,
     )
     logging("abcranger cmd", cmd)
     check <- system(cmd)
-    logging("abcranger run", init_check)
+    logging("abcranger run", check)
     if(check != 0) {
         warning("Issue with seed initialization")
     }
