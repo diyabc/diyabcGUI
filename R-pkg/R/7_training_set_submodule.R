@@ -43,6 +43,9 @@ training_set_server <- function(input, output, session,
         local$proj_dir <- proj_dir()
         local$proj_file_list <- proj_file_list()
         local$valid_proj <- valid_proj()
+        
+        # debugging
+        print(local$data_file)
     })
     
     # # debugging
@@ -53,7 +56,7 @@ training_set_server <- function(input, output, session,
     
     ## enable training set def (if no header file provided)
     output$project_def <- renderUI({
-        req(!is.null(valid_proj))
+        req(!is.null(local$valid_proj))
         if(local$valid_proj & 
            !("header.txt" %in% c("empty", local$proj_file_list))) {
             tagList(
@@ -75,6 +78,12 @@ training_set_server <- function(input, output, session,
         raw_scenario_list = reactive({NULL}),
         valid_proj = reactive(local$valid_proj)
     )
+    
+    # get output
+    observeEvent(training_set_def$valid_def, {
+        req(!is.null(training_set_def$valid_def))
+        local$valid_proj <- local$valid_proj & training_set_def$valid_def
+    })
     
     ## action
     callModule(
@@ -128,6 +137,8 @@ training_set_def_server <- function(input, output, session,
     local <- reactiveValues(
         cond_list = list(),
         param_list = list(),
+        param_count_list = list(),
+        raw_cond_list = list(),
         raw_param_list = list(),
         data_file = NULL,
         data_info = NULL,
@@ -154,7 +165,7 @@ training_set_def_server <- function(input, output, session,
         cond_list = list(),
         param_list = list(),
         raw_param_list = list(),
-        valid_proj = FALSE
+        valid_def = FALSE
     )
     
     ## historic model panel
@@ -231,8 +242,10 @@ training_set_def_server <- function(input, output, session,
     # update param list
     observe({
         req(!is.null(prior_cond_set$raw_prior_list))
+        req(!is.null(prior_cond_set$raw_cond_list))
         # print(prior_cond_set$raw_prior_list)
         local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
+        local$raw_cond_list <- prior_cond_set$raw_cond_list
     })
     
     ## locus setup
@@ -244,50 +257,82 @@ training_set_def_server <- function(input, output, session,
     )
     
     ## write header file (if necessary) and check it
-    observe(input$validate, {
-        req(!is.null(local$project_dir))
-        req(!is.null(local$project_name))
-        req(!is.null(local$param_list))
-        req(!is.null(local$param_count_list))
-        req(!is.null(local$scenario_list))
-        req(!is.null(local$cond_list))
-        req(!is.null(local$data_file))
-        req(!is.null(local$locus_type))
-
-        # print("project_dir =")
-        # print(local$project_dir)
-        # print("project_name =")
-        # print(local$project_name)
-        # print("param_list =")
-        # print(local$param_list)
+    observeEvent(input$validate, {
+        
+        # print("proj_dir =")
+        # print(local$proj_dir)
+        # print("raw_param_list =")
+        # print(local$raw_param_list)
         # print("param_count_list =")
         # print(local$param_count_list)
         # print("scenario_list =")
-        # print(local$scenario_list)
+        # print(local$raw_scenario_list)
         # print("cond_list =")
-        # print(local$cond_list)
+        # print(local$raw_cond_list)
         # print("data_file =")
         # print(local$data_file)
         # print("locus_type =")
         # print(local$locus_type)
-
-        write_header(local$project_name, local$project_dir, local$data_file,
-                     local$scenario_list, local$param_count_list,
-                     local$param_list, local$cond_list,
-                     local$locus_type)
-
-        showNotification(
-            id = ns("headerfile_ok"),
-            duration = 5,
-            closeButton = TRUE,
-            type = "message",
-            tagList(
-                tags$p(
-                    icon("check"),
-                    paste0("Project is ready to run simulations.")
+        # print("seq_mode =")
+        # print(local$seq_mode)
+        # print("locus =")
+        # print(locus_setup$locus)
+        
+        req(!is.null(local$proj_dir))
+        req(!is.null(local$data_file))
+        req(!is.null(local$raw_scenario_list))
+        req(!is.null(local$param_count_list))
+        req(!is.null(local$raw_param_list))
+        req(!is.null(local$raw_cond_list))
+        req(!is.null(local$locus_type))
+        req(!is.null(local$seq_mode))
+        req(!is.null(locus_setup$locus))
+        
+        write_header(local$proj_dir, local$data_file, 
+                     local$raw_scenario_list, local$param_count_list, 
+                     unlist(local$raw_param_list), 
+                     unlist(local$raw_cond_list), 
+                     local$locus_type, local$seq_mode, locus_setup$locus)
+        
+        file_check <- parse_diyabc_header(
+            file_name = file.path(local$proj_dir, "header.txt"),
+            file_type = "text/plain",
+            data_type = local$locus_type
+        )
+        
+        # # debugging
+        # print("is header ok")
+        # print(file_check$valid)
+        
+        out$valid_def <- file_check$valid
+        
+        if(out$valid_def) {
+            showNotification(
+                id = ns("headerfile_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        paste0("Project is ready to run simulations.")
+                    )
                 )
             )
-        )
+        } else {
+            showNotification(
+                id = ns("headerfile_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        paste0("Project is not ready to run simulations.")
+                    )
+                )
+            )
+        }
     })
     
 
@@ -482,7 +527,7 @@ prior_cond_set_server <- function(input, output, session,
     # init output
     out <- reactiveValues(
         raw_prior_list = list(),
-        raw_cond_set = list()
+        raw_cond_list = list()
     )
     # render ui param prior setting
     observeEvent(local$param_list, {
@@ -567,12 +612,12 @@ prior_cond_set_server <- function(input, output, session,
             })
             # output
             if(local$cond_check$valid) {
-                out$raw_cond_set <- input_cond_list
+                out$raw_cond_list <- input_cond_list
             } else {
-                out$raw_cond_set <- list()
+                out$raw_cond_list <- list()
             }
         } else {
-            out$raw_cond_set <- list()
+            out$raw_cond_list <- list()
         }
     })
     
@@ -899,7 +944,7 @@ locus_setup_server <- function(input, output, session,
         req(local$seq_mode)
         req(!is.null(local$data_info$locus))
         
-        if(local$locus_type == "snp" & local$seq_mode == "indseq") {
+        if(local$locus_type == "snp") {
             tag_list <- lapply(
                 local$data_info$locus,
                 function(item) {
@@ -912,11 +957,11 @@ locus_setup_server <- function(input, output, session,
                             column(
                                 width = 4,
                                 numericInput(
-                                    inputId = str_c(
+                                    inputId = ns(str_c(
                                         "num_",
                                         str_extract(item,
                                                     pattern = "(A|H|X|Y|M)")
-                                    ),
+                                    )),
                                     label = "Number of locus",
                                     min = 0,
                                     max = as.numeric(
@@ -932,11 +977,11 @@ locus_setup_server <- function(input, output, session,
                             column(
                                 width = 4,
                                 numericInput(
-                                    inputId = str_c(
+                                    inputId = ns(str_c(
                                         str_extract(item,
                                                     pattern = "(A|H|X|Y|M)"),
                                         "_from"
-                                    ),
+                                    )),
                                     label = "from",
                                     min = 1,
                                     max = as.numeric(
@@ -951,17 +996,37 @@ locus_setup_server <- function(input, output, session,
                 }
             )
             do.call(tagList, tag_list)
-        } else if(local$locus_type == "snp" & local$seq_mode == "poolseq") {
-            # FIXME
-            warning("not supported")
         } else if(local$locus_type == "mss") {
             # FIXME
-            warning("not supported")
+            warning("not supported at the moment")
         }
     })
     
     ## update output
     # FIXME
+    observe({
+        out$locus <- lapply(
+            local$data_info$locus,
+            function(item) {
+                locus <- str_extract(item,
+                                    pattern = "(A|H|X|Y|M)")
+                n_loci <- input[[ str_c("num_", locus) ]]
+                start_loci <- input[[ str_c(locus, "_from") ]]
+                return(str_c(
+                    n_loci,
+                    str_c("<", locus, ">"),
+                    "G1",
+                    "from", start_loci,
+                    sep = " "
+                ))
+            }
+        )
+        # # debugging
+        # print("locus setup")
+        # print(out$locus)
+    })
+    
+    ## output
     return(out)
     
 }
@@ -992,7 +1057,7 @@ training_set_action_ui <- function(id) {
                 tags$li(
                     "1000 to 100000 simulations under the scenario",
                     "of interest are needed for",
-                    tags$p("parameter estimation"), "."
+                    tags$b("parameter estimation"), "."
                 )
             )
         ),

@@ -114,10 +114,7 @@ analysis_page_server <- function(input, output, session,
         }
     })
     
-    
-    ##
-    
-    setting <- proj_set # FIXME
+    # FIXME
     # update local
     observe({
         # FIXME obsolete
@@ -126,7 +123,7 @@ analysis_page_server <- function(input, output, session,
     })
     # # update output
     # observe({
-    #     out$setting <- setting
+    #     out$setting <- proj_set
     # })
     # ## input data
     # input_data <- callModule(input_data_server, "input_data")
@@ -142,6 +139,7 @@ analysis_page_server <- function(input, output, session,
     ## Training set sub-module
     training_set <- callModule(
         training_set_server, "train_set",
+        data_file = reactive(proj_set$data_file),
         data_info = reactive(proj_set$data_info),
         locus_type = reactive(proj_set$locus_type),
         seq_mode = reactive(proj_set$seq_mode),
