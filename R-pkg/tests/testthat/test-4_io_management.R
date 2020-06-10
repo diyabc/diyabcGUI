@@ -92,7 +92,7 @@ test("parse_diyabc_header", {
         parse_diyabc_header(file_name, file_type, data_type),
         list(data_file="indseq_SNP_sim_dataset_4POP_001.snp", 
              loci_description="5000 <A> G1 from 1", 
-             n_loci_des=1, n_param=13, n_sumstat=2, 
+             n_loci_des=1, n_param=8, n_sumstat=2, 
              raw_cond_list=c("t21>t32", "t431<t32"), 
              raw_prior_list=c("N1 N UN[100,10000,0.0,0.0]", 
                               "N2 N UN[100,10000,0.0,0.0]",
