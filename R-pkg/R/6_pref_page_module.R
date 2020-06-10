@@ -13,7 +13,7 @@ pref_page_ui <- function(id) {
             numericInput(
                 ns("ncore"), 
                 label = "Number of cores for multi-threading",
-                value = parallel::detectCores(),
+                value = as.integer(parallel::detectCores()/2),
                 min = 1,
                 max = parallel::detectCores()
             ),
