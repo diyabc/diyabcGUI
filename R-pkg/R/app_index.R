@@ -5,6 +5,7 @@
 app_simplified_sidebar <- function() {
     dashboardSidebar(
         sidebarMenu(
+            id = "app_menu",
             menuItem(
                 "Home", 
                 tabName = "home_tab", 
@@ -37,10 +38,11 @@ app_simplified_sidebar <- function() {
 app_simplified_body <- function() {
     dashboardBody(
         useShinyjs(),
+        add_busy_spinner(spin = "fading-circle"),
         tabItems(
             tabItem(
                 tabName = "home_tab",
-                home_page_ui("home_page")
+                simplified_home_page_ui("home_page")
             ),
             tabItem(
                 tabName = "analysis_tab",
@@ -62,9 +64,33 @@ app_simplified_body <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 simplified_index_server <- function(input, output, session) {
-    callModule(home_page_server, "home_page")
-    callModule(analysis_page_server, "analysis_page")
+    home_page <- callModule(simplified_home_page_server, "home_page")
+    
+    ## new analysis project
+    observeEvent(home_page$new_analysis_project, {
+        req(home_page$new_analysis_project)
+        updateTabItems(session, "app_menu", selected = "analysis_tab")
+    })
+    
+    ## new simu project
+    observeEvent(home_page$new_simu_project, {
+        req(home_page$new_simu_project)
+        updateTabItems(session, "app_menu", selected = "simu_tab")
+    })
+    
+    ## analysis page
+    analysis_page <- callModule(analysis_page_server, "analysis_page")
+    # reset
+    observeEvent(analysis_page$reset, {
+        req(analysis_page$reset)
+        session$reload()
+        updateTabItems(session, "app_menu", selected = "analysis_tab")
+    })
+    
+    ## simu page
     callModule(simu_page_server, "simu_page")
+    
+    ## preferences
     callModule(pref_page_server, "pref_page")
 }
 

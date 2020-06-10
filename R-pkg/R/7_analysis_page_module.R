@@ -4,7 +4,6 @@
 analysis_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        add_busy_spinner(spin = "fading-circle"),
         fluidRow(
             box(
                 title = "Project settings",
@@ -36,11 +35,10 @@ analysis_page_ui <- function(id) {
                 collapsible = TRUE, collapsed = TRUE,
                 rf_module_ui(ns("rf"))
             )
-        )
-        ,
+        ),
         fluidRow(
             box(
-                title = "Project action",
+                title = "Project housekeeping",
                 width = 12,
                 status = "danger", solidHeader = TRUE,
                 collapsible = FALSE, collapsed = FALSE,
@@ -75,7 +73,8 @@ analysis_page_server <- function(input, output, session,
     # init output
     out <- reactiveValues(
         setting = NULL,
-        scenario = NULL
+        scenario = NULL,
+        reset = NULL
     )
     ## project setting
     proj_set <- callModule(analysis_proj_set_server, "proj_set", 
@@ -153,6 +152,13 @@ analysis_page_server <- function(input, output, session,
         proj_dir = reactive(proj_set$proj_dir),
         proj_name = reactive(proj_set$proj_name)
     )
+    
+    ## reset
+    observeEvent(proj_action$reset, {
+        req(proj_action$reset)
+        out$reset <- proj_action$reset
+        # session$reload()
+    })
     
     # output
     return(out)
@@ -690,6 +696,8 @@ proj_action_server <- function(input, output, session,
         local$proj_dir <- proj_dir()
         local$proj_name <- proj_name()
     })
+    # init output
+    out <- reactiveValues(reset = NULL)
     # save
     output$save <- downloadHandler(
         filename = function() {
@@ -702,4 +710,12 @@ proj_action_server <- function(input, output, session,
             zip(file, list.files(local$proj_dir))
         }
     )
+    # reset
+    observeEvent(input$reset, {
+        req(!is.null(input$reset))
+        out$reset <- ifelse(!is.null(out$reset), out$reset, 0) + 1
+    })
+    
+    ## output
+    return(out)
 }
