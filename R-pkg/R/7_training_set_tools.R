@@ -1,32 +1,33 @@
 #' Write training set simulation diyabc header file
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param scenario string, historical scenario.
-#' @param param string, parameter value setting.
-#' @param locus_type list of locus type.
-write_header <- function(project_name, project_dir, data_file, 
+write_header <- function(proj_dir, data_file, 
                          scenario_list, param_count_list, 
                          param_list, cond_list, 
-                         locus_type) {
+                         locus_type, seq_mode, locus) {
     
     # FIXME check input
     
-    # print("project_dir =")
-    # print(project_dir)
-    # print("project_name =")
-    # print(project_name)
-    # print("param_list =")
-    # print(param_list)
-    # print("param_count_list =")
-    # print(param_count_list)
-    # print("scenario_list =")
-    # print(scenario_list)
-    # print("cond_list =")
-    # print(cond_list)
-    # print("data_file =")
-    # print(data_file)
-    # print("locus_type =")
-    # print(locus_type)
+    # debugging
+    print("------ write_header input")
+    print("proj_dir =")
+    print(proj_dir)
+    print("param_list =")
+    print(param_list)
+    print("param_count_list =")
+    print(param_count_list)
+    print("scenario_list =")
+    print(scenario_list)
+    print("cond_list =")
+    print(cond_list)
+    print("data_file =")
+    print(data_file)
+    print("locus_type =")
+    print(locus_type)
+    print("seq_mode =")
+    print(seq_mode)
+    print("locus =")
+    print(locus)
     
     out <- NULL
     
@@ -77,35 +78,31 @@ write_header <- function(project_name, project_dir, data_file,
         str_c("historical parameters priors ",
               "(", length(param_list), ",", length(cond_list), ")"),
         str_c(param_list, collapse = "\n"),
-        str_c(cond_list, collapse = "\n"),
+        sep = "\n"
+    )
+    if(!is.null(cond_list)) {
+        sec3 <- str_c(
+            sec3,
+            str_c(cond_list, collapse = "\n"),
+            sep = "\n"
+        )
+    }
+    sec3 <- str_c(
+        sec3,
         "DRAW UNTIL",
         sep = "\n"
     )
     
+    
     # print("log4")
     ## loci description
-    # FIXME
-    format_locus_type <- lapply(
-        1:length(locus_type),
-        function(ind) {
-            return(
-                str_c(
-                    locus_type[[ind]],
-                    str_c("G", ind),
-                    "from 1", # FIXME
-                    sep = " "
-                )
-            )
-        }
-    )
-    
     sec4 <- str_c(
         str_c(
             "loci description",
             str_c("(", length(locus_type), ")"),
             sep = " "
         ),
-        str_c(format_locus_type, collapse = "\n"),
+        str_c(locus, collapse = "\n"),
         sep = "\n"
     )
     
@@ -138,7 +135,7 @@ write_header <- function(project_name, project_dir, data_file,
     out <- str_c(out, "\n\n")
 
     ## write to file
-    writeLines(out, file.path(project_dir, filename))
+    writeLines(out, file.path(proj_dir, filename))
 }
 
 #' Run training set simulation
