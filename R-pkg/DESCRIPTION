@@ -1,19 +1,52 @@
 Package: diyabcGUI
 Type: Package
-Title: User interface to DYIABC-RF software
+Title: User interface for DYIABC-RF software
 Version: 1.0
 Date: 2020-01-27
 Authors@R: c(
-    person(given="Ghislain", family="Durif", 
-           comment="<https://gdurif.perso.math.cnrs.fr/>", 
-           email="gd.dev@libertymail.net", 
-           role=c("aut", "cre")), 
-    person(given="François-David", family="Collin", 
-           comment="DIYABC-RF developer", 
-           role="aut"))
+    person(
+        "Ghislain", "Durif",
+        comment="diyabcGUI main developer",
+        email="gd.dev@libertymail.net",
+        role=c("aut", "cre")
+    ),
+    person(
+        "François-David", "Collin", comment="DIYABC-RF main developer",
+        role="aut"
+    ),
+    person(
+        "Louis", "Raynal", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ),
+    person(
+        "Mathieu", "Gautier", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ),
+    person(
+        "Renaud", "Vitalis", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ),
+    person(
+        "Eric", "Lombaert", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ),
+    person(
+        "Jean-Michel", "Marin", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ),
+    person(
+        "Arnaud", "Estoup", comment="DIYABC-RF method co-author",
+        role="ctb"
+    ))
 Maintainer: Ghislain Durif <gd.dev@libertymail.net>
-Description: More about what it does (maybe more than one line)
-License: What license is it under?
+Description: Graphical user interface for DIYABC-RF framework, a set of tools
+    implementing Approximate Bayesian Computation (ABC) combined with 
+    supervised machine learning based on Random Forests (RF), for model choice 
+    and parameter inference in the context of population genetics analysis.
+    'diyabcGUI' provides a user-friendly interface  for command-line softwares 
+    'diyabc' (https://github.com/diyabc/diyabc) and 'abcranger' 
+    (https://github.com/diyabc/abcranger).
+License: GPL (>= 3)
 URL: https://github.com/diyabc/diyabcGUI
 BugReports: https://github.com/diyabc/diyabcGUI/issues
 Encoding: UTF-8
@@ -22,12 +55,18 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 VignetteBuilder: knitr
 Imports:
+    fs,
     ggplot2,
     lubridate, 
     magrittr, 
     parallel,
-    shiny, shinybusy, shinydashboard, shinyFiles, shinyhelper, shinyjs, shinyWidgets, 
+    shiny, shinybusy, shinydashboard, shinyFiles, 
+    shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
-    tibble
+    tibble,
+    tools
 Suggests: 
+    knitr,
+    rmarkdown,
+    roxygen2,
     testthat (>= 2.1.0)

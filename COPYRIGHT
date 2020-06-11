@@ -1,0 +1,9 @@
+Copyright (c) 2019-2020 DIYABC-RF Core team
+
+Ghislain Durif, François-David Collin, Louis Raynal, Mathieu Gautier, 
+Renaud Vitalis, Eric Lombaert, Jean-Michel Marin, Arnaud Estoup
+
+All diyabcGUI related files, including R package 'diyabcGUI', are provided 
+under GPL-2.0-or-later license (see './LICENSE.GPL-2.0-or-later' file), 
+except for files in './bin' directory (at project root) which are provided 
+under MIT licence (see './LICENSE.MIT' file).
