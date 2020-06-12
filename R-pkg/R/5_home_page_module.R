@@ -6,7 +6,7 @@ simplified_home_page_ui <- function(id) {
     tagList(
         fluidRow(
             box(
-                title = "Data analysis",
+                title = "DIYABC-RF main pipeline",
                 width = 12, 
                 status = "primary", solidHeader = TRUE,
                 collapsible = TRUE,
@@ -29,12 +29,15 @@ simplified_home_page_ui <- function(id) {
         ),
         fluidRow(
             box(
-                title = "Pseudo-observed dataset simulation",
+                title = "Synthetic data file generation",
                 width = 12, 
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
                 tags$div(
-                    tags$p("Direct use of DIYABC-RF simulation engine.") %>% 
+                    tags$p(
+                        "Direct use of DIYABC-RF simulation engine",
+                        "to generate pseudo-oberved datasets."
+                    ) %>% 
                         helper(type = "markdown", 
                                content = "data_simulation")
                 ),

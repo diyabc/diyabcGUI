@@ -12,12 +12,12 @@ app_simplified_sidebar <- function() {
                 icon = icon("home")
             ),
             menuItem(
-                "Data analysis", 
+                "DIYABC-RF main pipeline", 
                 tabName = "analysis_tab", 
                 icon = icon("flask")
             ),
             menuItem(
-                "Data simulation", 
+                "Synthetic data file generation", 
                 tabName = "simu_tab", 
                 icon = icon("dna")
             ),
