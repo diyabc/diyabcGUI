@@ -13,143 +13,569 @@ check_file_name <- function(file_name) {
 #' Check data file
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param data_file string, path to data file.
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
 #' @param locus_type string, locus type `"mss"` or `"snp"`.
 #' @param seq_mode string, `"indseq"` or `"poolseq"`.
-#' @param expected_data_file string, default is NULL.
+#' @param expected_data_file string, expected data file name for 
+#' existing project, default is NULL.
 #' @importFrom tools file_ext
 check_data_file <- function(data_file, data_dir, locus_type, seq_mode, 
                             expected_data_file = NULL) {
-    header <- NULL
-    info <- NULL
-    msg <- list()
-    spec <- NULL
-    valid <- TRUE
+    # output
+    out <- NULL
     # ## debugging
     # logging("data_file = ", data_file)
-    ## file exists?
-    if(!file.exists(data_file)) {
-        msg <- append(msg, "Input file does not exist")
-        valid <- FALSE
-    # snp locus / indseq
-    } else if((locus_type == "snp") & (seq_mode == "indseq")) {
-        # init output
-        locus <- NULL
-        n_loci <- NULL
-        n_pop <- NULL
-        n_indiv <- NULL
-        # check file type
-        if(tools::file_ext(data_file) != "snp") {
-            # FIXME
-            msg <- append(msg, "Only SNP files are managed at the moment")
-            valid <- FALSE
-        } else {
-            # info
-            info <- readLines(data_file, n = 1)
-            msg <- append(
-                msg,
-                str_extract(info, pattern = "(?<=<)MAF=.*(?=>)")
-            )
-            # header
-            header <- read.table(file = data_file, skip = 1, nrows = 1)
-            # nb of locus
-            n_loci <- length(header) - 3
-            msg <- append(
-                msg,
-                str_c(n_loci, "loci", sep = " ")
-            )
-            # content
-            content <- read.table(file = data_file, skip = 2)
-            n_pop <- length(unique(content[,3]))
-            n_indiv <- nrow(content)
-            msg <- append(
-                msg,
-                str_c(n_indiv, "individuals from", n_pop, "populations", 
-                      sep = " ")
-            )
-            # locus type
-            candidate_locus <- c("A", "H", "X", "Y", "M")
-            locus <- unlist(lapply(candidate_locus, function(type) {
-                count <- str_count(str_c(header[-(1:3)], collapse = " "), 
-                                   pattern = type)
-                if(count > 0)
-                    return(str_c(count,
-                                 " <", type, ">"))
-            }))
-            msg <- append(
-                msg,
-                str_c("loci:", str_c(locus, collapse =  ", "), sep = " ")
-            )
-            # fix header
-            header <- str_c(header, collapse = " ")
-        }
-        # output
-        spec <- lst(locus, n_indiv, n_loci, n_pop)
-    # snp locus / poolseq
+    ## snp locus / indseq
+    if((locus_type == "snp") & (seq_mode == "indseq")) {
+        out <- check_indseq_snp_data_file(data_file, data_dir, 
+                                          expected_data_file)
+    ## snp locus / poolseq
     } else if((locus_type == "snp") & (seq_mode == "poolseq")) {
-        # init output
-        locus <- NULL
-        n_loci <- NULL
-        n_pop <- NULL
-        n_indiv <- NULL
-        # check file type
-        if(tools::file_ext(data_file) != "snp") {
-            # FIXME
-            msg <- append(msg, "Only SNP files are managed at the moment")
-            valid <- FALSE
-        } else {
-            # info
-            info <- readLines(data_file, n = 1)
-            msg <- append(
-                msg,
-                str_extract(info, pattern = "(?<=<)MAF=.*(?=>)")
-                # FIXME
-            )
-            # header
-            header <- read.table(file = data_file, skip = 1, nrows = 1)
-            # content
-            content <- read.table(file = data_file, skip = 2)
-            n_pop <- ncol(content) / 2
-            if(ncol(content) %% 2 != 0) {
-                valid <- FALSE
-            }
-            n_loci <- nrow(content)
-            msg <- append(
-                msg,
-                str_c(n_loci, "loci", "and", n_pop, "populations", sep = " ")
-            )
-            # locus type
-            candidate_locus <- c("A", "H", "X", "Y", "M")
-            locus <- str_c(n_loci, "<A>", sep = " ")
-            msg <- append(
-                msg,
-                str_c("loci:", str_c(locus, collapse =  ", "), sep = " ")
-            )
-            # check header
-            # POOL POP_NAME:HAPLOID_SAMPLE_SIZE POP1:200 POP2:200 POP3:200 POP4:200
-            if(ncol(header) != n_pop + 2) {
-                valid <- FALSE
-            }
-            
-            # fix header
-            header <- str_c(header, collapse = " ")
-        }
-        # output
-        spec <- lst(locus, n_indiv, n_loci, n_pop)
-    # mss locus
+        out <- check_poolseq_snp_data_file(data_file, data_dir, 
+                                           expected_data_file)
+    ## mss locus
     } else if(locus_type == "mss") {
         warning("Not implemented yet")
         # FIXME
     }
-    # expected data file ?
-    if(!is.null(expected_data_file)) {
-        valid <- valid & (data_file == file.path(data_dir, expected_data_file))
-    }
-    ## output    
-    out <- lst(header, info, msg, spec, valid)
+    ## output
     return(out)
 }
 
+#' Check IndSeq SNP data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @param expected_data_file string, expected data file name for 
+#' existing project, default is NULL.
+#' @importFrom tools file_ext
+check_indseq_snp_data_file <- function(data_file, data_dir, 
+                                       expected_data_file = NULL) {
+    # output
+    header <- NULL
+    info <- NULL
+    spec <- NULL
+    valid <- TRUE
+    
+    err <- list()
+    msg <- list()
+    
+    # data path
+    data_path <- file.path(data_dir, data_file)
+    
+    ## file exists?
+    if(!file.exists(data_path)) {
+        err <- append(err, "Input file does not exist")
+        valid <- FALSE
+    } else {
+        ## init output
+        locus <- NULL
+        n_loci <- NULL
+        n_pop <- NULL
+        n_indiv <- NULL
+        ## check file type
+        if(tools::file_ext(data_path) != "snp") {
+            err <- append(
+                err, 
+                "IndSeq SNP files should have an extension '.snp'."
+            )
+            valid <- FALSE
+        } else {
+            ## info
+            info <- readLines(data_path, n = 1)
+            # sex ratio
+            pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c("Sex ratio:", str_extract(info, pttrn), sep = " ")
+                )
+            } else {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with IndSeq SNP file header first line:",
+                        "missing 'sex ratio', see manual", sep = " "
+                    )
+                )
+                valid <- FALSE
+            }
+            # MAF
+            pttrn <- "(?<=<)MAF=[:graph:]+(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c("Minimum allele frequency criterion:", 
+                          str_extract(info, pttrn), sep = " ")
+                )
+            } else {
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Missing 'minimum allele frequency criterion (MAF)'",
+                        "in IndSeq SNP file header first line:",
+                        "Hudson algorithm will be used.", sep = " "
+                    )
+                )
+            }
+            # additional info
+            pttrn <- str_c(
+                "(<NM=[0-9]+\\.?[0-9]*NF>)", 
+                "(<MAF=[:graph:]+>)",
+                sep = "|"
+            )
+            add_info <- str_trim(str_replace_all(info, pttrn, ""))
+            if(str_length(add_info) > 0) {
+                msg <- append(
+                    msg,
+                    str_c("Additional information:", add_info, sep = " ")
+                )
+            }
+            ## header
+            header <- tryCatch(
+                as.vector(read.table(file = data_path, skip = 1, nrows = 1)), 
+                error = function(e) e
+            )
+            if("error" %in% class(header)) {
+                err <- append(
+                    err, 
+                    stR_c(
+                        "Issue with IndSeq SNP file header second line:",
+                        header$message, sep = " "
+                    )
+                )
+                valid <- FALSE
+            } else {
+                # header format
+                if(header[1] != "IND" & header[2] != "SEX" & 
+                   header[3] != "POP" &
+                   !all(header[-(1:3)] %in% c("A", "H", "X", "Y", "M"))) {
+                    err <- append(
+                        err, 
+                        str_c(
+                            "Issue with IndSeq SNP file header second line:",
+                            "required format is 'IND SEX POP' followed by",
+                            "a letter indicator among 'A', 'H', 'X', 'Y', 'M'",
+                            "for each SNP locus in the file (see manual).",
+                            sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                }
+                # nb of locus
+                n_loci <- length(header) - 3
+                msg <- append(
+                    msg,
+                    str_c("Number of loci =", n_loci, sep = " ")
+                )
+                # locus type
+                candidate_locus <- c("A", "H", "X", "Y", "M")
+                locus_encoding <- str_c(header[-(1:3)], collapse = " ")
+                locus <- unlist(lapply(
+                    candidate_locus, 
+                    function(pttrn) {
+                        count <- str_count(locus_encoding, pttrn)
+                        if(count > 0)
+                            return(str_c(count, " <", pttrn, ">"))
+                    }
+                ))
+                msg <- append(
+                    msg,
+                    str_c("loci:", str_c(locus, collapse =  ", "), sep = " ")
+                )
+                # merge header
+                header_length <- length(header)
+                header <- str_c(header[1:min(20,header_length)], 
+                                collapse = " ")
+                if(header_length > 20)
+                    header <- str_c(header, "...", sep = " ")
+                msg <- append(
+                    msg,
+                    str_c("header:", str_c("'", header, "'"), sep = " ")
+                )
+                ## content
+                content <- tryCatch(
+                    read.table(file = data_path, skip = 2), 
+                    error = function(e) e
+                )
+                if("error" %in% class(content)) {
+                    err <- append(
+                        err, 
+                        str_c(
+                            "Issue with IndSeq SNP data file content:",
+                            content$message, sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                } else {
+                    # check number of locus
+                    if(n_loci != (ncol(content) - 3)) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with IndSeq SNP data file content:",
+                                "number of loci not consistent between",
+                                "file header and file content.",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    # check sex content
+                    if(!all(content[,2] %in% c("F", "M"))) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with IndSeq SNP data file content:",
+                                "'SEX' column should contain only",
+                                "'F' for female or 'M' for male (see manual).",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    # number of pop
+                    n_pop <- length(unique(content[,3]))
+                    # number of individuals
+                    n_indiv <- nrow(content)
+                    msg <- append(
+                        msg,
+                        str_c(
+                            "Sample:",
+                            n_indiv, "individuals", 
+                            "from", n_pop, "populations", 
+                            sep = " ")
+                    )
+                    # check SNP encoding
+                    check_snp_encoding <- mclapply(
+                        1:nrow(content[,-(1:3)]), 
+                        function(ind)
+                            !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
+                        mc.cores = getOption("diyabcGUI")$ncore
+                    )
+                    seek_error <- unlist(lapply(
+                        check_snp_encoding, 
+                        function(item) "try-error" %in% class(item)
+                    ))
+                    if(any(seek_error)) {
+                        error_msg <- attributes(
+                            check_snp_encoding[[ which(seek_error[1]) ]]
+                        )$condition$message
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue when checking IndSeq SNP data file",
+                                "content:",
+                                error_msg,
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    } else {
+                        if(any(unlist(check_snp_encoding))) {
+                            err <- append(
+                                err, 
+                                str_c(
+                                    "Issue with IndSeq SNP file data content:",
+                                    "SNP encoding should be '0', '1', '2'",
+                                    "or '9' for missing data (see manual).",
+                                    sep = " "
+                                )
+                            )
+                            valid <- FALSE
+                        }
+                    }
+                }
+            }
+        }
+        # output
+        spec <- lst(locus, n_indiv, n_loci, n_pop)
+    }
+    ## expected data file ?
+    if(!is.null(expected_data_file)) {
+        if(data_file != expected_data_file) {
+            err <- append(
+                err, 
+                str_c(
+                    "Data file expected by provided 'header.txt'",
+                    "or 'headerRF.txt' file(s)",
+                    "and data file provided by user are different.",
+                    sep = " "
+                )
+            )
+            valid <- FALSE
+        }
+    }
+    ## output    
+    out <- lst(header, info, spec, valid, err, msg)
+    return(out)
+}
+
+#' Check PoolSeq SNP data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @param expected_data_file string, expected data file name for 
+#' existing project, default is NULL.
+#' @importFrom tools file_ext
+check_poolseq_snp_data_file <- function(data_file, data_dir, 
+                                        expected_data_file = NULL) {
+    # output
+    header <- NULL
+    info <- NULL
+    spec <- NULL
+    valid <- TRUE
+    
+    err <- list()
+    msg <- list()
+    
+    # data path
+    data_path <- file.path(data_dir, data_file)
+    
+    ## file exists?
+    if(!file.exists(data_path)) {
+        err <- append(err, "Input file does not exist")
+        valid <- FALSE
+    } else {
+        ## init output
+        locus <- NULL
+        n_loci <- NULL
+        n_pop <- NULL
+        n_indiv <- NULL
+        ## check file type
+        if(tools::file_ext(data_path) != "snp") {
+            err <- append(
+                err, 
+                "PoolSeq SNP files should have an extension '.snp'."
+            )
+            valid <- FALSE
+        } else {
+            ## info
+            info <- readLines(data_path, n = 1)
+            # sex ratio
+            pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c("Sex ratio:", str_extract(info, pttrn), sep = " ")
+                )
+            } else {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with PoolSeq SNP file header first line:",
+                        "missing 'sex ratio', see manual", sep = " "
+                    )
+                )
+                valid <- FALSE
+            }
+            # MRC
+            pttrn <- "(?<=<)MRC=[:graph:]+(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Minimum read count:", 
+                        str_extract(info, pttrn), sep = " "
+                    )
+                )
+            } else {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with PoolSeq SNP file header first line:",
+                        "missing 'minimum read count (MRC)', see manual", 
+                        sep = " "
+                    )
+                )
+                valid <- FALSE
+            }
+            # MAF
+            pttrn <- "(?<=<)MAF=[:graph:]+(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c("Minimum allele frequency criterion:", 
+                          str_extract(info, pttrn), sep = " ")
+                )
+            } else {
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Missing 'minimum allele frequency criterion (MAF)'",
+                        "in PoolSeq SNP file header first line:",
+                        "Hudson algorithm will be used.", sep = " "
+                    )
+                )
+            }
+            # additional info
+            pttrn <- str_c(
+                "(<NM=[0-9]+\\.?[0-9]*NF>)", 
+                "(<MAF=[:graph:]+>)", 
+                "(<MRC=[:graph:]+>)",
+                sep = "|"
+            )
+            add_info <- str_trim(str_replace_all(info, pttrn, ""))
+            if(str_length(add_info) > 0) {
+                msg <- append(
+                    msg,
+                    str_c("Additional information:", add_info, sep = " ")
+                )
+            }
+            ## header
+            header <- tryCatch(
+                as.vector(read.table(file = data_path, skip = 1, nrows = 1)), 
+                error = function(e) e
+            )
+            if("error" %in% class(header)) {
+                err <- append(
+                    err, 
+                    stR_c(
+                        "Issue with PoolSeq SNP file header second line:",
+                        header$message, sep = " "
+                    )
+                )
+                valid <- FALSE
+            } else {
+                # header format
+                if(header[1] != "POOL" &
+                   header[2] != "POP_NAME:HAPLOID_SAMPLE_SIZE" & 
+                   !all(str_detect(header[-(1:2)], "POP[0-9]+:[0-9]+"))) {
+                    err <- append(
+                        err, 
+                        str_c(
+                            "Issue with PoolSeq SNP file header second line:",
+                            "required format is", 
+                            "'POOL POP_NAME:HAPLOID_SAMPLE_SIZE' followed by",
+                            "a character string 'POP<pop_id>:<sample_size>'",
+                            "for each population in the file (see manual).",
+                            sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                }
+                # number of population
+                n_pop <- length(header) - 2
+                # merge header
+                header <- str_c(header, collapse = " ")
+                msg <- append(
+                    msg,
+                    str_c("header:", str_c("'", header, "'"), sep = " ")
+                )
+                ## content
+                content <- tryCatch(
+                    read.table(file = data_path, skip = 2), 
+                    error = function(e) e
+                )
+                if("error" %in% class(content)) {
+                    err <- append(
+                        err, 
+                        str_c(
+                            "Issue with PoolSeq SNP data file content:",
+                            content$message, sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                } else {
+                    # check number of population
+                    if(ncol(content) %% 2 != 0) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with PoolSeq SNP data file content:",
+                                "number of column should be even,",
+                                "providing pair of counts for reference",
+                                "and alternate alleles at each locus",
+                                "in each popultation.",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    } 
+                    if((ncol(content) / 2) != n_pop) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with PoolSeq SNP data", 
+                                "file second-line header",
+                                "or content:",
+                                "number of population indicated in",
+                                "file second-line header",
+                                "does not correspond to",
+                                "number of columns in file content.",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    # nb of locus
+                    n_loci <- nrow(content)
+                    msg <- append(
+                        msg,
+                        str_c("Number of loci =", n_loci, sep = " ")
+                    )
+                    # locus type
+                    locus <- str_c(n_loci, "<A>", sep = " ")
+                    msg <- append(
+                        msg,
+                        str_c(
+                            "loci:", str_c(locus, collapse =  ", "), 
+                            sep = " "
+                        )
+                    )
+                    # check data encoding
+                    check_snp_encoding <- apply(content, 2, is.integer)
+                    if(!all(unlist(check_snp_encoding))) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with PoolSeq SNP file data content:",
+                                "SNP encoding should be read counts,",
+                                "i.e. positive integer (see manual).",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    if(any(is.na(content))) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with PoolSeq SNP file data content:",
+                                "no missing values are allowed.",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                }
+            }
+        }
+        # output
+        spec <- lst(locus, n_indiv, n_loci, n_pop)
+    }
+    ## expected data file ?
+    if(!is.null(expected_data_file)) {
+        if(data_file != expected_data_file) {
+            err <- append(
+                err, 
+                str_c(
+                    "Data file expected by provided 'header.txt'",
+                    "or 'headerRF.txt' file(s)",
+                    "and data file provided by user are different.",
+                    sep = " "
+                )
+            )
+            valid <- FALSE
+        }
+    }
+    ## output    
+    out <- lst(header, info, spec, valid, err, msg)
+    return(out)
+}
 
 #' Parse diyabcGUI project file
 #' @keywords internal

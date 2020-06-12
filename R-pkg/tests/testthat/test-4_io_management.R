@@ -1,26 +1,66 @@
 context("io_management")
 
 test("check_data_file", {
-    data_file <- file.path(example_dir(),
-                           "IndSeq_SNP_estim_param",
-                           "indseq_SNP_sim_dataset_4POP_001.snp")
-    data_dir <- file.path(example_dir(),
+    # snp indseq
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
                           "IndSeq_SNP_estim_param")
     locus_type <- "snp"
     seq_mode <- "indseq"
-    check_data_file(data_file, data_dir, locus_type, seq_mode, 
-                    expected_data_file = NULL)
+    out <- check_data_file(data_file, data_dir, locus_type, seq_mode, 
+                           expected_data_file = data_file)
+    expect_true(out$valid)
     
-    
-    data_file <- file.path(example_dir(),
-                           "PoolSeq_SNP_estim_param",
-                           "poolseq_SNP_sim_dataset_4POP_cov100_001.snp")
-    data_dir <- file.path(example_dir(),
-                          "IndSeq_SNP_estim_param")
+    # snp poolseq
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "PoolSeq_SNP_estim_param")
     locus_type <- "snp"
     seq_mode <- "poolseq"
-    check_data_file(data_file, data_dir, locus_type, seq_mode, 
-                    expected_data_file = NULL)
+    out <- check_data_file(data_file, data_dir, locus_type, seq_mode, 
+                           expected_data_file = data_file)
+    expect_true(out$valid)
+    
+    # mss
+    # TODO
+})
+
+test("check_indseq_snp_data_file", {
+    
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "IndSeq_SNP_estim_param")
+    out <- check_indseq_snp_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_true(out$valid)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "PoolSeq_SNP_estim_param")
+    out <- check_indseq_snp_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_false(out$valid)
+})
+
+test("check_poolseq_snp_data_file", {
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "PoolSeq_SNP_estim_param")
+    out <- check_poolseq_snp_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_true(out$valid)
+    
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "IndSeq_SNP_estim_param")
+    out <- check_poolseq_snp_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_false(out$valid)
 })
 
 test("check_file_name", {
