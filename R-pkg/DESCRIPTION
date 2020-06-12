@@ -5,10 +5,8 @@ Version: 1.0
 Date: 2020-01-27
 Authors@R: c(
     person(
-        "Ghislain", "Durif",
-        comment="diyabcGUI main developer",
-        email="gd.dev@libertymail.net",
-        role=c("aut", "cre")
+        "Ghislain", "Durif", comment="diyabcGUI main developer",
+        email="gd.dev@libertymail.net", role=c("aut", "cre")
     ),
     person(
         "François-David", "Collin", comment="DIYABC-RF main developer",
@@ -46,7 +44,7 @@ Description: Graphical user interface for DIYABC-RF framework, a set of tools
     'diyabcGUI' provides a user-friendly interface  for command-line softwares 
     'diyabc' (https://github.com/diyabc/diyabc) and 'abcranger' 
     (https://github.com/diyabc/abcranger).
-License: GPL (>= 3)
+License: GPL-3 | file LICENSE
 URL: https://github.com/diyabc/diyabcGUI
 BugReports: https://github.com/diyabc/diyabcGUI/issues
 Encoding: UTF-8

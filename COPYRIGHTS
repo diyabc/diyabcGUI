@@ -1,0 +1,10 @@
+Files: bin/diyabc* bin/abcranger*
+Copyright: 2019-2020 DIYABC-RF Core team
+License: MIT
+
+Files: *
+Copyright: 2019-2020 DIYABC-RF Core team
+License: GPL-3
+
+DIYABC-RF Core team: François-David Collin, Ghislain Durif, Louis Raynal, 
+Mathieu Gautier, Renaud Vitalis, Eric Lombaert, Jean-Michel Marin, Arnaud Estoup
