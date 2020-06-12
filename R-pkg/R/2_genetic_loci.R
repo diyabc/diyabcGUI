@@ -127,10 +127,10 @@ locus_nb_server <- function(input, output, session,
     return(out)
 }
 
-#' Sequencing locus type module ui
+#' Data type module ui
 #' @keywords internal
 #' @author Ghislain Durif
-locus_type_ui <- function(id) {
+data_type_ui <- function(id) {
     ns <- NS(id)
     tagList(
         splitLayout(
@@ -140,22 +140,26 @@ locus_type_ui <- function(id) {
                 choices = list("MicroSat/Sequence" = "mss", "SNP" = "snp"),
                 selected = "snp"
             ),
-            radioButtons(
-                ns("seq_mode"), 
-                label = "Sequencing mode",
-                choices = list("Individual Seq." = "indseq", 
-                               "PoolSeq" = "poolseq"),
-                selected = "indseq"
+            conditionalPanel(
+                condition = "input.locus_type == 'snp'",
+                ns = ns,
+                radioButtons(
+                    ns("seq_mode"), 
+                    label = "Sequencing mode",
+                    choices = list("Individual Seq." = "indseq", 
+                                   "PoolSeq" = "poolseq"),
+                    selected = "indseq"
+                )
             )
         )
     )
 }
 
-#' Sequencing locus type module server
+#' Data type module server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinyjs disable enable
-locus_type_server <- function(input, output, session) {
+data_type_server <- function(input, output, session) {
     # init output
     out <- reactiveValues(
         locus_type = NULL,

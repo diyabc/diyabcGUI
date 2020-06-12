@@ -4,17 +4,13 @@
 analysis_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        tags$style(HTML(".box-header{text-align: center;}")),
         fluidRow(
             box(
-                title = "Project settings",
+                title = tags$b("Project settings"),
                 width = 12,
-                status = "primary", solidHeader = TRUE,
+                status = "primary", solidHeader = FALSE,
                 collapsible = FALSE,
-                # new_proj_set_ui(ns("proj_set")) %>% 
-                #     helper(type = "markdown", 
-                #            content = "analysis_project"),
-                # hr(),
-                # input_data_ui(ns("input_data"))
                 analysis_proj_set_ui(ns("proj_set"))
             )
         ),
@@ -38,9 +34,9 @@ analysis_page_ui <- function(id) {
         ),
         fluidRow(
             box(
-                title = "Project housekeeping",
+                title = tags$b("Project housekeeping"),
                 width = 12,
-                status = "danger", solidHeader = TRUE,
+                status = "danger", solidHeader = FALSE,
                 collapsible = FALSE, collapsed = FALSE,
                 proj_action_ui(ns("proj_action"))
             )
@@ -186,9 +182,10 @@ analysis_page_server <- function(input, output, session,
 analysis_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h4(tags$b("Project type")),
-        locus_type_ui(ns("locus_type")),
+        h3("Data type"),
+        data_type_ui(ns("data_type")),
         hr(),
+        h3("Project type"),
         helpText(
             "You can either start with a new project", 
             "or open an existing project (one of your own or", 
@@ -197,12 +194,14 @@ analysis_proj_set_ui <- function(id) {
         radioGroupButtons(
             ns("proj_type"),
             label = NULL,
-            choices = c("New", "Existing", "Example"),
-            selected = "New",
+            choices = c("New project" = "new", 
+                        "Existing project" = "existing", 
+                        "Example" = "example"),
+            selected = "new",
             justified = TRUE
         ),
         conditionalPanel(
-            condition = "input.proj_type == 'Existing'",
+            condition = "input.proj_type == 'existing'",
             ns = ns,
             h4(tags$b("Project files")),
             fileInput(
@@ -223,7 +222,7 @@ analysis_proj_set_ui <- function(id) {
             )
         ),
         conditionalPanel(
-            condition = "input.proj_type == 'Example'",
+            condition = "input.proj_type == 'example'",
             ns = ns,
             selectInput(
                 ns("proj_example"),
@@ -234,7 +233,7 @@ analysis_proj_set_ui <- function(id) {
             ),
         ),
         hr(),
-        h4(tags$b("Project name")),
+        h3(tags$b("Project name")),
         fluidRow(
             column(
                 width = 10,
@@ -256,7 +255,7 @@ analysis_proj_set_ui <- function(id) {
         ),
         uiOutput(ns("proj_name_feedback")),
         hr(),
-        h4(tags$b("Data file")),
+        h3("Data file"),
         input_data_ui(ns("data_file")),
         hr(),
         uiOutput(ns("proj_is_ready"))
@@ -310,12 +309,12 @@ analysis_proj_set_server <- function(input, output, session,
     # observeEvent(reset, {
     #     local$proj_dir <- mk_proj_dir(session)
     # })
-    # locus type
-    locus_type <- callModule(locus_type_server, "locus_type")
+    # data type
+    data_type <- callModule(data_type_server, "data_type")
     observe({
-        req(locus_type$locus_type)
-        out$locus_type <- locus_type$locus_type
-        out$seq_mode <- locus_type$seq_mode
+        req(data_type$locus_type)
+        out$locus_type <- data_type$locus_type
+        out$seq_mode <- data_type$seq_mode
     })
     # new or existing project
     observeEvent(input$proj_type, {
