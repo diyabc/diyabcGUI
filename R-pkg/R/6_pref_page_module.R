@@ -13,7 +13,7 @@ pref_page_ui <- function(id) {
             numericInput(
                 ns("ncore"), 
                 label = "Number of cores for multi-threading",
-                value = as.integer(parallel::detectCores()/2),
+                value = getOption("diyabcGUI")$ncore,
                 min = 1,
                 max = parallel::detectCores()
             ),
@@ -39,25 +39,12 @@ pref_page_ui <- function(id) {
 #' Preference page server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom parallel detectCores
 pref_page_server <- function(input, output, session) {
-    
-    # # init diyabcGUI options
-    # diyabcGUI_options <- list(
-    #     ncore = parallel::detectCores()
-    # )
-    # options("diyabcGUI" = diyabcGUI_options)
-    
-    # # init maximum upload size
-    # options(shiny.maxRequestSize = 100 * 1024^2)
     
     ## set ncore
     observeEvent(input$ncore, {
         req(is.numeric(input$ncore))
-        diyabcGUI_options <- list(
-            ncore = as.integer(input$ncore)
-        )
-        options("diyabcGUI" = diyabcGUI_options)
+        set_diyabcGUI_options(ncore = as.integer(input$ncore))
     })
     
     

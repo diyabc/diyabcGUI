@@ -27,19 +27,11 @@ logging <- function(...) {
     print(str_c(..., sep = " "))
 }
 
-#' Extract project name from path
+#' Set up diyabcGUI options
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom stringr str_split
-#' @importFrom tibble lst
-project_path2name <- function(path) {
-    # check input
-    is_path <- dir.exists(path)
-    # project directory
-    project_name <- tail(str_split(path, .Platform$file.sep)[[1]], 1)
-    # timestamp ?
-    timestamp <- str_detect(project_name, 
-                            pattern = "_[0-9]{4}-[0-9]{2}-[0-9]{2}$")
-    # output
-    return(lst(is_path, project_name, timestamp))
+set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2) {
+    # set up package options
+    diyabcGUI_options <- lst(ncore)
+    options("diyabcGUI" = diyabcGUI_options)
 }
