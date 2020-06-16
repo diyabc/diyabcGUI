@@ -577,44 +577,6 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
     return(out)
 }
 
-#' Parse diyabcGUI project file
-#' @keywords internal
-#' @author Ghislain Durif
-#' @description
-#' Standard name: "diyabcGUI_proj.txt"
-#' Content:
-#' ```
-#' project_name: <project_name>
-#' ```
-#' @param file_name string, (server-side) path to a project file.
-#' @param type string, MIME file type.
-parse_diyabc_project <- function(file_name, file_type) {
-    # init output
-    issues <- list()
-    proj_name <- NULL
-    valid <- TRUE
-    # check file name
-    valid <- check_file_name(file_name)
-    # check file type
-    if(file_type != "text/plain")
-        valid <- FALSE
-    ## read file
-    if(valid) {
-        raw_content <- readLines(file_name)
-        ## extract project name
-        strng <- raw_content[1]
-        pttrn <- "(?<=^project_name=).*$"
-        if(!str_detect(strng, pttrn)) {
-            issues <- append(issues, pttrn)
-            valid <- FALSE
-        } else {
-            proj_name <- str_extract(strng, pttrn)
-        }
-    }
-    ## output
-    return(lst(proj_name, valid))
-}
-
 #' Parse diyabc header file
 #' @keywords internal
 #' @author Ghislain Durif
@@ -622,14 +584,15 @@ parse_diyabc_project <- function(file_name, file_type) {
 #' Content: see doc
 #' @param file_name string, (server-side) path to a header file.
 #' @param file_type string, MIME file type.
-#' @param data_type string, `"mss"` for MicroSat/Sequence or `"snp"` for SNP.
-parse_diyabc_header <- function(file_name, file_type, data_type) {
+#' @param locus_type string, `"mss"` for MicroSat/Sequence or `"snp"` for SNP.
+parse_diyabc_header <- function(file_name, file_type, locus_type) {
     # init output
     data_file <- NULL
     issues <- list()
     loci_description <- NULL
     n_loci_des <- NULL
     n_param <- NULL
+    n_prior <- NULL
     n_sumstat <- NULL
     raw_cond_list <- NULL
     raw_prior_list <- NULL
@@ -682,7 +645,8 @@ parse_diyabc_header <- function(file_name, file_type, data_type) {
             line_seq <- cumsum(c(1, lines_per_scenario+1))
             scenario_list <- lapply(
                 split(
-                    raw_content[(min(line_seq):(max(line_seq)-1)) + next_sec_line], 
+                    raw_content[(min(line_seq):(max(line_seq)-1)) 
+                                + next_sec_line], 
                     rep(seq(line_seq), diff(c(line_seq, max(line_seq))))
                 ), 
                 function(content) {
@@ -720,12 +684,14 @@ parse_diyabc_header <- function(file_name, file_type, data_type) {
             pttrn <- "[0-9]+(?=\\)$)"
             n_cond <- as.integer(str_extract(strng, pttrn))
             # extract priors
-            raw_prior_list <- raw_content[next_sec_line:(next_sec_line + n_prior - 1)]
+            raw_prior_list <- raw_content[next_sec_line:(next_sec_line 
+                                                         + n_prior - 1)]
             next_sec_line <- next_sec_line + n_prior
             # check extracted priors
             valid <- all(unlist(lapply(raw_prior_list, check_header_prior)))
             # extract conditions
-            raw_cond_list <- raw_content[next_sec_line:(next_sec_line + n_cond - 1)]
+            raw_cond_list <- raw_content[next_sec_line:(next_sec_line 
+                                                        + n_cond - 1)]
             next_sec_line <- next_sec_line + n_cond
             # check extracted conditions
             valid <- all(unlist(lapply(raw_cond_list, check_header_cond)))
@@ -749,10 +715,12 @@ parse_diyabc_header <- function(file_name, file_type, data_type) {
             pttrn <- "(?<=^loci description \\()[0-9]+"
             n_loci_des <- as.integer(str_extract(strng, pttrn))
             # extract loci description
-            loci_description <- raw_content[next_sec_line:(next_sec_line + n_loci_des - 1)]
+            loci_description <- raw_content[next_sec_line:(next_sec_line 
+                                                           + n_loci_des - 1)]
             next_sec_line <- next_sec_line + n_loci_des
             # check loci description
-            valid <- all(unlist(lapply(loci_description, check_header_loci_des)))
+            valid <- all(unlist(lapply(loci_description, 
+                                       check_header_loci_des)))
         }
         ## group summary statistics
         pttrn <- "^group summary statistics \\([0-9]+\\)$"
@@ -776,7 +744,7 @@ parse_diyabc_header <- function(file_name, file_type, data_type) {
     }
     ## output
     return(lst(data_file, loci_description, 
-               n_loci_des, n_param, n_sumstat, 
+               n_loci_des, n_param, n_prior, n_sumstat, 
                raw_cond_list, raw_prior_list, raw_scenario_list, 
                simu_mode, valid))
 }
