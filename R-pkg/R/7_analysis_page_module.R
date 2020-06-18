@@ -94,20 +94,6 @@ analysis_page_server <- function(input, output, session) {
         local$proj_dir <- proj_set$proj_dir
         local$proj_name <- proj_set$proj_name
     })
-    # # update output
-    # observe({
-    #     out$setting <- proj_set
-    # })
-    # ## input data
-    # input_data <- callModule(input_data_server, "input_data")
-    ## Training set sub-module
-    # training_set <- callModule(training_set_server, "train_set",
-    #                            project_dir = reactive(proj_set$proj_dir),
-    #                            project_name = reactive(proj_set$proj_name),
-    #                            data_file = reactive(proj_set$data_file),
-    #                            valid_data_file = reactive(proj_set$valid),
-    #                            locus_type = reactive(proj_set$locus_type),
-    #                            validation = reactive(setting$validation))
     
     ## Training set sub-module
     training_set <- callModule(
@@ -116,8 +102,9 @@ analysis_page_server <- function(input, output, session) {
         data_info = reactive(proj_set$data_info),
         locus_type = reactive(proj_set$locus_type),
         seq_mode = reactive(proj_set$seq_mode),
+        new_proj = reactive(proj_set$new_proj),
         proj_dir = reactive(proj_set$proj_dir),
-        proj_file_list = reactive(proj_set$proj_file_list), 
+        proj_file_list = reactive({NULL}), 
         valid_proj = reactive(proj_set$valid_proj)
     )
     
