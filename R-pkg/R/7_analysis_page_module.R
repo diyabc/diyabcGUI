@@ -363,7 +363,7 @@ analysis_proj_set_server <- function(input, output, session) {
             tags$p(
                 "Project-related files can be:", 
                 tags$div(
-                    style = "column-count:3;",
+                    style = "column-count:2;",
                     do.call(
                         tags$ul, 
                         lapply(
@@ -451,8 +451,6 @@ analysis_proj_set_server <- function(input, output, session) {
     })
     # copy files if required
     observeEvent(input$proj_example, {
-        
-        print("toto")
         
         req(input$proj_type == "example")
         req(input$proj_example)
@@ -545,9 +543,9 @@ analysis_proj_set_server <- function(input, output, session) {
         ## project file list
         out$proj_file_list <- local$file_input$name[local$file_input$valid]
 
-        # debugging
-        print("file_input")
-        print(local$file_input)
+        # # debugging
+        # print("file_input")
+        # print(local$file_input)
     })
 
     ## Data file file
