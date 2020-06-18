@@ -4,8 +4,8 @@
 training_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        uiOutput(ns("project_def")),
-        training_set_action_ui(ns("action"))
+        uiOutput(ns("enable_def")),
+        uiOutput(ns("enable_control"))
     )
 }
 
@@ -17,6 +17,7 @@ training_set_server <- function(input, output, session,
                                 data_info = reactive({NULL}),
                                 locus_type = reactive({NULL}),
                                 seq_mode = reactive({NULL}),
+                                new_proj = reactive({TRUE}),
                                 proj_dir = reactive({NULL}), 
                                 proj_file_list = reactive({NULL}), 
                                 valid_proj = reactive({TRUE})) {
@@ -26,10 +27,13 @@ training_set_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        proj_header_content = NULL,
+        # input
         data_file = NULL,
         data_info = NULL,
         locus_type = NULL,
         seq_mode = NULL,
+        new_proj = NULL,
         proj_dir = NULL,
         proj_file_list = NULL,
         valid_proj = NULL
@@ -40,6 +44,7 @@ training_set_server <- function(input, output, session,
         local$data_info <- data_info()
         local$locus_type <- locus_type()
         local$seq_mode <- seq_mode()
+        local$new_proj <- new_proj()
         local$proj_dir <- proj_dir()
         local$proj_file_list <- proj_file_list()
         local$valid_proj <- valid_proj()
@@ -59,16 +64,83 @@ training_set_server <- function(input, output, session,
     #     print(local$data_info)
     # })
     
-    ## enable training set def (if no header file provided)
-    output$project_def <- renderUI({
+    # check project directory
+    observe({
+        proj_file_list <- reactivePoll(
+            1000, session,
+            checkFunc = function() {
+                if(!is.null(local$proj_dir)) {
+                    if(dir.exists(local$proj_dir))
+                        list.files(local$proj_dir)
+                    else
+                        list()
+                } else {
+                    list()
+                }
+            },
+            valueFunc = function() {
+                if(!is.null(local$proj_dir)) {
+                    if(dir.exists(local$proj_dir))
+                        list.files(local$proj_dir)
+                    else
+                        list()
+                } else {
+                    list()
+                }
+            }
+        )
+        
+        local$proj_file_list <- proj_file_list()
+    })
+    
+    ## check headerRF.txt file (if present)
+    observe({
+        req(!is.null(local$locus_type))
+        req(local$valid_proj)
+        req(!is.null(local$proj_dir))
+        
+        proj_header_content <- reactiveFileReader(
+            1000, session,
+            file.path(local$proj_dir, "headerRF.txt"),
+            function(file) {
+                if(file.exists(file))
+                    parse_diyabc_header(
+                        file_name = file, 
+                        file_type = "text/plain",
+                        locus_type = local$locus_type
+                    )
+                else
+                    list()
+            }
+        )
+        
+        local$proj_header_content <- proj_header_content()
+    })
+    
+    # ## debugging
+    # observeEvent(local$proj_header_content, {
+    #     print("project header content")
+    #     print(local$proj_header_content)
+    # })
+    
+    ## training set def (if no header file provided)
+    output$enable_def <- renderUI({
+        req(!is.null(local$new_proj))
         req(!is.null(local$valid_proj))
-        if(local$valid_proj & 
-           !("header.txt" %in% c("empty", local$proj_file_list))) {
+        
+        if(!local$valid_proj) {
+            helpText(
+                icon("warning"), "Project set up is not valid."
+            )
+        } else if(local$new_proj | 
+                  !("headerRF.txt" %in% local$proj_file_list)) {
             tagList(
                 training_set_def_ui(ns("def"))
             )
         } else {
-            NULL
+            tagList(
+                show_existing_proj_ui(ns("show"))
+            )
         }
     })
     
@@ -84,6 +156,13 @@ training_set_server <- function(input, output, session,
         valid_proj = reactive(local$valid_proj)
     )
     
+    ## training set show (if existing)
+    show_existing_proj <- callModule(
+        show_existing_proj_server, "show",
+        proj_header_content = reactive(local$proj_header_content),
+        valid_proj = reactive(local$valid_proj)
+    )
+    
     # get output
     observeEvent(training_set_def$trigger, {
         req(!is.null(training_set_def$trigger))
@@ -93,6 +172,17 @@ training_set_server <- function(input, output, session,
         # debugging
         print("training set valid def")
         print(training_set_def$valid_def)
+    })
+    
+    ## enable control
+    output$enable_control <- renderUI({
+        req(!is.null(local$valid_proj))
+        
+        if(local$valid_proj) {
+            training_set_action_ui(ns("action"))
+        } else {
+            NULL
+        }
     })
     
     ## action
@@ -109,6 +199,146 @@ training_set_server <- function(input, output, session,
     
     # output
     return(out)
+}
+
+#' Show existing project set up module ui
+#' @keywords internal
+#' @author Ghislain Durif
+show_existing_proj_ui <- function(id) {
+    ns <- NS(id)
+    
+    tagList(
+        h3(icon("history"), "Historical models"),
+        helpText(
+            "Historical scenarii defined in the provided header file."
+        ),
+        uiOutput(ns("show_scenarii")),
+        hr(),
+        h3(icon("chart-bar"), "Priors and conditions"),
+        helpText(
+            "Priors defined in the provided header file."
+        ),
+        uiOutput(ns("show_priors")),
+        hr(),
+        h4("Condition setting"),
+        helpText(
+            "Conditions defined in the provided header file."
+        ),
+        uiOutput(ns("show_conditions")),
+        hr(),
+        h3(icon("dna"), "Locus description"),
+        helpText(
+            "Locus settings defined in the provided header file."
+        ),
+        uiOutput(ns("show_loci")),
+        hr()
+    )
+}
+
+#' Show existing project set up module server
+#' @keywords internal
+#' @author Ghislain Durif
+show_existing_proj_server <- function(input, output, session,
+                                      proj_header_content = reactive({NULL}),
+                                      valid_proj = reactive({FALSE})) {
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        # input
+        proj_header_content = NULL,
+        valid_proj = NULL
+    )
+    # get input
+    observe({
+        local$proj_header_content <- proj_header_content()
+        local$valid_proj <- valid_proj()
+    })
+    
+    # show historical model
+    output$show_scenarii <- renderUI({
+        req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_header_content$raw_scenario_list))
+        
+        if(local$valid_proj & 
+           length(local$proj_header_content$raw_scenario_list) > 0) {
+            tagList(
+                do.call(
+                    flowLayout,
+                    lapply(
+                        local$proj_header_content$raw_scenario_list, 
+                        function(item) tags$pre(item)
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    # show priors
+    output$show_priors <- renderUI({
+        req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_header_content$raw_prior_list))
+        
+        if(local$valid_proj & 
+           length(local$proj_header_content$raw_prior_list) > 0) {
+            tagList(
+                do.call(
+                    tags$ul,
+                    lapply(
+                        local$proj_header_content$raw_prior_list,
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    # show conditions
+    output$show_conditions <- renderUI({
+        req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_header_content$raw_cond_list))
+        
+        if(local$valid_proj & 
+           length(local$proj_header_content$raw_cond_list) > 0) {
+            tagList(
+                do.call(
+                    tags$ul,
+                    lapply(
+                        local$proj_header_content$raw_cond_list, 
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    # show locus description
+    output$show_loci <- renderUI({
+        req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_header_content$loci_description))
+        
+        if(local$valid_proj & 
+           length(local$proj_header_content$loci_description) > 0) {
+            tagList(
+                do.call(
+                    tags$ul,
+                    lapply(
+                        local$proj_header_content$loci_description, 
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+    
 }
 
 #' Training set sub-module ui
