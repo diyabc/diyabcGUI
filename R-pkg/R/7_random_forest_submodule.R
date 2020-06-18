@@ -3,104 +3,7 @@
 #' @author Ghislain Durif
 rf_module_ui <- function(id) {
     ns <- NS(id)
-    tagList(
-        h4("Settings"),
-        radioButtons(
-            ns("mode"), 
-            label = "Mode",
-            choices = list("Model choice" = "mod_choice", 
-                           "Parameter estimation" = "param_estim"), 
-            selected = "mod_choice"
-        ),
-        hr(),
-        numericInput(
-            ns("min_node_size"),
-            label = "Minimal node size",
-            min = 0,
-            value = 0
-        ),
-        helpText(
-            "0 means 1 for classification or 5 for regression."
-        ),
-        numericInput(
-            ns("n_tree"),
-            label = "Number of trees",
-            min = 1,
-            value = 500
-        ),
-        numericInput(
-            ns("noise_columns"),
-            label = "Number of noise columns",
-            min = 0,
-            value = 5
-        ),
-        h5(tags$b("Linear framework")),
-        checkboxInput(
-            ns("linear"),
-            label = tags$span(
-                "Enable/Disable LDA for model choice or PLS for", 
-                "parameter estimation"
-            ),
-            value = TRUE
-        ),
-        # if parameter estimation
-        conditionalPanel(
-            condition = "input.mode == 'param_estim'",
-            ns = ns,
-            numericInput(
-                ns("pls_max_var"),
-                label = "PLS explained variance threshold",
-                min = 0.001,
-                max = 0.999,
-                value = 0.9,
-                step = 0.001
-            ),
-            helpText(
-                "Percentage of maximum explained Y-variance", 
-                "for retaining pls axis"
-            ),
-            numericInput(
-                ns("chosen_scenario"),
-                label = "Chosen scenario",
-                value = 1,
-                min = 1
-            ),
-            textInput(
-                ns("parameter"),
-                label = "Parameter to estimate"
-            ),
-            uiOutput(
-                ns("missing_parameter")
-            ),
-            uiOutput(
-                ns("possible_parameters")
-            ),
-            numericInput(
-                ns("noob"),
-                label = "Number of oob testing samples",
-                value = 10,
-                min = 1
-            ) %>% 
-                helper(type = "markdown", 
-                       content = "noob_parameter"),
-        ),
-        # textInput(
-        #     ns("group"),
-        #     label = "Model group"
-        # ),
-        # HelpText(
-        #     "You may 'group' your models in several splitted groups.",
-        #     "For example if you have six models, labeled from 1 to 6,", 
-        #     "you can specify '1,2,3;4,5,6'."
-        # ),
-        hr(),
-        actionBttn(
-            inputId = ns("run"),
-            label = "Run",
-            style = "fill",
-            block = TRUE
-        )
-    )
+    uiOutput(ns("enable_control"))
 }
 
 
@@ -131,6 +34,116 @@ rf_module_server <- function(input, output, session,
         local$proj_dir <- proj_dir()
         # local$proj_file_list <- proj_file_list()
         local$valid_proj <- valid_proj()
+    })
+    
+    # enable control
+    output$enable_control <- renderUI({
+        req(!is.null(local$valid_proj))
+        
+        if(local$valid_proj) {
+            tagList(
+                h4("Settings"),
+                radioButtons(
+                    ns("mode"), 
+                    label = "Mode",
+                    choices = list("Model choice" = "mod_choice", 
+                                   "Parameter estimation" = "param_estim"), 
+                    selected = "mod_choice"
+                ),
+                hr(),
+                numericInput(
+                    ns("min_node_size"),
+                    label = "Minimal node size",
+                    min = 0,
+                    value = 0
+                ),
+                helpText(
+                    "0 means 1 for classification or 5 for regression."
+                ),
+                numericInput(
+                    ns("n_tree"),
+                    label = "Number of trees",
+                    min = 1,
+                    value = 500
+                ),
+                numericInput(
+                    ns("noise_columns"),
+                    label = "Number of noise columns",
+                    min = 0,
+                    value = 5
+                ),
+                h5(tags$b("Linear framework")),
+                checkboxInput(
+                    ns("linear"),
+                    label = tags$span(
+                        "Enable/Disable LDA for model choice or PLS for", 
+                        "parameter estimation"
+                    ),
+                    value = TRUE
+                ),
+                # if parameter estimation
+                conditionalPanel(
+                    condition = "input.mode == 'param_estim'",
+                    ns = ns,
+                    numericInput(
+                        ns("pls_max_var"),
+                        label = "PLS explained variance threshold",
+                        min = 0.001,
+                        max = 0.999,
+                        value = 0.9,
+                        step = 0.001
+                    ),
+                    helpText(
+                        "Percentage of maximum explained Y-variance", 
+                        "for retaining pls axis"
+                    ),
+                    numericInput(
+                        ns("chosen_scenario"),
+                        label = "Chosen scenario",
+                        value = 1,
+                        min = 1
+                    ),
+                    textInput(
+                        ns("parameter"),
+                        label = "Parameter to estimate"
+                    ),
+                    uiOutput(
+                        ns("missing_parameter")
+                    ),
+                    uiOutput(
+                        ns("possible_parameters")
+                    ),
+                    numericInput(
+                        ns("noob"),
+                        label = "Number of oob testing samples",
+                        value = 10,
+                        min = 1
+                    ) %>% 
+                        helper(type = "markdown", 
+                               content = "noob_parameter"),
+                ),
+                # textInput(
+                #     ns("group"),
+                #     label = "Model group"
+                # ),
+                # HelpText(
+                #     "You may 'group' your models in several splitted groups.",
+                #     "For example if you have six models, labeled from 1 to 6,", 
+                #     "you can specify '1,2,3;4,5,6'."
+                # ),
+                hr(),
+                actionBttn(
+                    inputId = ns("run"),
+                    label = "Run",
+                    style = "fill",
+                    block = TRUE
+                )
+            )
+        } else {
+            helpText(
+                icon("warning"), "Project set up is not valid."
+            )
+        }
     })
     
     # check project directory
