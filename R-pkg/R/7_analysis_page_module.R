@@ -220,7 +220,11 @@ analysis_proj_set_ui <- function(id) {
         ),
         hr(),
         h3("Data file"),
-        input_data_ui(ns("input_data_file")),
+        conditionalPanel(
+            condition = "input.proj_type !== 'example'",
+            ns = ns,
+            input_data_ui(ns("input_data_file"))
+        ),
         check_data_ui(ns("check_data_file")),
         hr(),
         uiOutput(ns("proj_is_ready"))
@@ -237,6 +241,7 @@ analysis_proj_set_server <- function(input, output, session) {
     ns <- session$ns
     # init local
     local <- reactiveValues(
+        data_file = NULL,
         file_input = NULL,
         # data.frame with 4 columns:
         # name (chr), size (int), type (chr), datapath (chr)
@@ -256,16 +261,19 @@ analysis_proj_set_server <- function(input, output, session) {
         valid_data_file = FALSE,
         valid_proj = FALSE
     )
+    
     # clean on exit
     session$onSessionEnded(function() {
         isolate(tryCatch(fs::dir_delete(out$proj_dir)))
     })
-    # project name
+    
+    ## project name
     observeEvent(input$proj_name, {
         req(input$proj_name)
         out$proj_name <- input$proj_name
     })
-    # data type
+    
+    ## data type
     data_type <- callModule(data_type_server, "data_type")
     observe({
         req(data_type$locus_type)
@@ -273,7 +281,8 @@ analysis_proj_set_server <- function(input, output, session) {
         out$locus_type <- data_type$locus_type
         out$seq_mode <- data_type$seq_mode
     })
-    # new or existing project
+    
+    ## new or existing project
     observeEvent(input$proj_type, {
         req(input$proj_type)
         if(input$proj_type == "new") {
@@ -282,6 +291,7 @@ analysis_proj_set_server <- function(input, output, session) {
             out$new_proj <- FALSE
         }
     })
+    
     ## Manage existing project
     possible_files <- c("headerRF.txt", "reftableRF.bin", "statobsRF.txt")
     # copy uploaded files to project working directory (server-side)
@@ -389,11 +399,116 @@ analysis_proj_set_server <- function(input, output, session) {
     # })
     
     ## Manage example project
-    # TODO
+    # update possible input
+    observe({
+        req(!is.null(data_type$locus_type))
+        req(!is.null(data_type$seq_mode))
+        
+        if(data_type$locus_type == "mss") {
+            updateSelectInput(
+                session, 
+                "proj_example", 
+                choices = c("", "Not available at the moment"),
+                selected = NULL
+            )
+        } else if(data_type$locus_type == "snp" & 
+                  data_type$seq_mode == "indseq") {
+            possible_choices <- basename(
+                list.dirs(
+                    file.path(
+                        example_dir(), 
+                        "diyabc_rf_pipeline"
+                    )
+                )
+            )
+            possible_choices <- possible_choices[str_detect(possible_choices,
+                                                            "IndSeq")]
+            updateSelectInput(
+                session, 
+                "proj_example", 
+                choices = c("", possible_choices),
+                selected = NULL
+            )
+        } else if(data_type$locus_type == "snp" & 
+                 data_type$seq_mode == "poolseq") {
+            possible_choices <- basename(
+                list.dirs(
+                    file.path(
+                        example_dir(), 
+                        "diyabc_rf_pipeline"
+                    )
+                )
+            )
+            possible_choices <- possible_choices[str_detect(possible_choices,
+                                                            "PoolSeq")]
+            updateSelectInput(
+                session, 
+                "proj_example", 
+                choices = c("", possible_choices),
+                selected = NULL
+            )
+        }
+    })
+    # copy files if required
+    observeEvent(input$proj_example, {
+        
+        print("toto")
+        
+        req(input$proj_type == "example")
+        req(input$proj_example)
+        
+        # copy files
+        proj_files <- list.files(
+            file.path(
+                example_dir(), 
+                "diyabc_rf_pipeline",
+                input$proj_example
+            )
+        )
+        fs::file_copy(
+            path = file.path(
+                example_dir(), 
+                "diyabc_rf_pipeline",
+                input$proj_example,
+                proj_files
+            ),
+            new_path = file.path(
+                out$proj_dir,
+                proj_files
+            ),
+            overwrite = TRUE
+        )
+        
+        # update file input
+        # data.frame with 4 columns:
+        # name (chr), size (int), type (chr), datapath (chr)
+        local$file_input <- data.frame(
+            name = proj_files,
+            size = rep(NA, length(proj_files)),
+            type = rep(NA, length(proj_files)),
+            datapath = file.path(
+                out$proj_dir,
+                proj_files
+            ),
+            valid = rep(TRUE, length(proj_files))
+        )
+        
+        ## file type
+        ind <- which(local$file_input$name == "headerRF.txt")
+        local$file_input$type[ind] <- "text/plain"
+        ind <- which(local$file_input$name == "reftableRF.bin")
+        local$file_input$type[ind] <- "application/octet-stream"
+        ind <- which(local$file_input$name == "statObsRF.txt")
+        local$file_input$type[ind] <- "text/plain"
+    })
     
     ## check current project header file
     observeEvent(local$file_input, {
-
+        
+        req(is.data.frame(local$file_input))
+        req(nrow(local$file_input) > 0)
+        req(!is.null(input$proj_type))
+        
         ## header check
         if("headerRF.txt" %in% local$file_input$name) {
             ind <- which(local$file_input$name == "headerRF.txt")
@@ -408,6 +523,10 @@ analysis_proj_set_server <- function(input, output, session) {
             local$header_data_file <- header_file_content$data_file
             # header data file content
             out$proj_header_content <- header_file_content
+            # data from example ?
+            if(input$proj_type == "example") {
+                local$data_file <- header_file_content$data_file
+            }
         }
 
         ## delete non valid files
@@ -426,19 +545,25 @@ analysis_proj_set_server <- function(input, output, session) {
         ## project file list
         out$proj_file_list <- local$file_input$name[local$file_input$valid]
 
-        # # debugging
-        # print("file_input")
-        # print(local$file_input)
+        # debugging
+        print("file_input")
+        print(local$file_input)
     })
 
     ## Data file file
     data_file <- callModule(input_data_server, "input_data_file",
                             proj_dir = reactive(out$proj_dir))
     
+    # update local
+    observe({
+        req(!is.null(data_file$name))
+        local$data_file <- data_file$name
+    })
+    
     ## Data file check
     check_data <- callModule(
         check_data_server, "check_data_file",
-        data_file = reactive(data_file$name),
+        data_file = reactive(local$data_file),
         expected_data_file = reactive(local$header_data_file),
         locus_type = reactive(out$locus_type),
         seq_mode = reactive(out$seq_mode),
