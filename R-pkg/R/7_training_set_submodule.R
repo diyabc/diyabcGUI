@@ -456,8 +456,11 @@ training_set_def_server <- function(input, output, session,
                     ))
                 }
             ))
+            
+            # print("--- param list")
+            # print(local$param_list)
+            
             # param count list
-            # print("--- param")
             local$param_count_list <- lapply(
                 local$scenario_list,
                 function(item) {
@@ -467,6 +470,10 @@ training_set_def_server <- function(input, output, session,
                                length(item$param$rate))
                 }
             )
+            
+            # print("--- param count list")
+            # print(local$param_count_list)
+            
             # print("----")
             # condition
             local$cond_list <- Reduce("c", lapply(
@@ -773,13 +780,20 @@ prior_cond_set_server <- function(input, output, session,
     # get input
     observe({
         local$cond_list <- cond_list()
-        local$param_list <- param_list()
+        local$param_list <- unique(param_list())
     })
     # init output
     out <- reactiveValues(
         raw_prior_list = list(),
         raw_cond_list = list()
     )
+    
+    # # debugging
+    # observe({
+    #     print("param list")
+    #     print(unique(local$param_list))
+    # })
+    
     # render ui param prior setting
     observeEvent(local$param_list, {
         output$param_prior_def <- renderUI({
