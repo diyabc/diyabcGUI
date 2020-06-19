@@ -120,7 +120,8 @@ hist_model_server <- function(input, output, session,
 
 #' Check timeline
 #' @description 
-#' Check for scenario validity, regarding time consistency, possible conditions, 
+#' Check for scenario validity, regarding time consistency, 
+#' possible conditions, 
 #' etc.
 #' @keywords internal
 #' @author Ghislain Durif
@@ -134,7 +135,7 @@ check_timeline <- function(raw_scenario, parsed_scenario) {
         time_cond <- lapply(
             1:(length(time_param)-1), 
             function(ind) {
-                return(str_c(time_param[ind], ">=", time_param[ind+1]))
+                return(str_c(time_param[ind+1], ">=", time_param[ind]))
             })
         condition <- c(condition, time_cond)
     }
