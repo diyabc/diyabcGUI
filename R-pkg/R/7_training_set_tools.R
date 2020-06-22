@@ -186,7 +186,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     
     # exit check
     init_check <- init_proc$get_exit_status()
-    logging("diyabc init", init_check)
+    # logging("diyabc init", init_check)
     if(init_check != 0) {
         warning("Issue with seed initialization")
     }
