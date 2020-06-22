@@ -35,67 +35,71 @@ abcranger_run <- function(proj_dir, mode, n_ref,
     
     # executable
     abcranger_bin <- find_bin("abcranger")
+    
     # check project dir
     if(!dir.exists(proj_dir)) {
         stop("Input directory does not exist")
     }
     
-    # go to project directory
-    wd <- getwd()
-    on.exit(setwd(wd))
-    setwd(proj_dir)
+    # check for required files
+    required_files <- c("headerRF.txt", "statobsRF.txt", "reftableRF.bin")
+    if(!all(required_files %in% list.files(proj_dir))) {
+        stop("missing required input file(s)")
+    }
     
-    # run cmd
-    cmd <- str_c(
-        abcranger_bin, 
+    ### run
+    logging("abcranger run")
+    arguments <- c(
         "-n", n_ref,
         "-m", min_node_size,
         "-t", n_tree,
         "-j", getOption("diyabcGUI")$ncore,
-        "-c", noise_columns,
-        sep = " "
+        "-c", noise_columns
     )
     if(no_linear) {
-        cmd <- str_c(
-            cmd,
-            "--no_linear",
-            sep = " "
-        )
+        arguments <- c(arguments, "--no_linear")
     } else {
-        cmd <- str_c(
-            cmd,
-            "--plsmaxvar", pls_max_var,
-            sep = " "
-        )
+        arguments <- c(arguments, "--plsmaxvar", pls_max_var)
     }
     if(mode == "param_estim") {
-        cmd <- str_c(
-            cmd,
+        arguments <- c(
+            arguments,
             "--chosenscen", chosen_scenario,
             "--noob", noob,
-            "--parameter", parameter,
-            sep = " "
+            "--parameter", parameter
         )
     }
     if(!is.null(groups)) {
-        cmd <- str_c(
-            cmd,
-            "-g", groups,
-            sep = " "
-        )
+        arguments <- c(arguments, "-g", groups)
     }
-    # logging
-    cmd <- str_c(
-        cmd,
-        ">", file.path(proj_dir, str_c("abcranger_", mode, "_call.log")),
-        sep = " "
+    
+    run_proc <- processx::process$new(
+        command = abcranger_bin, 
+        args = arguments,
+        stdout = file.path(proj_dir, str_c("abcranger_", mode, "_call.log")), 
+        stderr = file.path(proj_dir, str_c("abcranger_", mode, "_call.log")),
+        echo_cmd = TRUE,
+        wd = proj_dir
     )
-    logging("abcranger cmd", cmd)
-    check <- system(cmd)
-    logging("abcranger run", check)
-    if(check != 0) {
-        warning("Issue with seed initialization")
-    }
-    # output
-    return(lst(check))
+    
+    ## output process
+    return(run_proc)
+}
+
+#' Clean up after abcranger
+#' @keywords internal
+#' @author Ghislain Durif
+cleanup_abcranger_run <- function(project_dir) {
+    ## file list
+    files <- file.path(
+        project_dir,
+        c("abcranger_param_estim_call.log", 
+          "abcranger_mod_choice_call.log")
+    )
+    # remove files
+    lapply(files, function(filename) {
+        if(file.exists(filename)) {
+            fs::file_delete(filename)
+        }
+    })
 }
