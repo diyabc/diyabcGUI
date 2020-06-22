@@ -1537,10 +1537,14 @@ training_set_action_server <- function(input, output, session,
                            list.files(local$proj_dir))) {
                 local$feedback <- helpText(
                     icon("warning"), 
-                    "Upload header file from existing project,",
-                    "or configure your own project", 
+                    "You must configure your own project", 
                     "(historical scenario, parameter priors,", 
-                    "conditions, etc.)."
+                    "conditions, etc.),",
+                    "or upload a header file",
+                    "(", 
+                    tags$code("headerRF.txt"),
+                    ")",
+                    "from existing project."
                 )
                 showNotification(
                     id = ns("run_in_progress"),
