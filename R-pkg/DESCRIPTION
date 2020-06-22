@@ -53,11 +53,12 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.0
 VignetteBuilder: knitr
 Imports:
+    dplyr,
     fs,
     ggplot2,
     lubridate, 
     magrittr, 
-    parallel,
+    parallel, processx,
     shiny, shinybusy, shinydashboard, shinyFiles, 
     shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
