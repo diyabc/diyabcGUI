@@ -314,33 +314,39 @@ analysis_proj_set_server <- function(input, output, session) {
         )
         new_file_input <- new_file_input[new_file_input$valid,]
         
-        ## copy files to project directory
-        lapply(
-            split(new_file_input, seq(nrow(new_file_input))),
-            function(item) {
-                fs::file_copy(item$datapath,
-                              file.path(out$proj_dir, item$name),
-                              overwrite = TRUE)
-                if(file.exists(item$datapath)) {
-                    # logging("deleting:", item$datapath)
-                    fs::file_delete(item$datapath)
-                }
-            }
-        )
-        new_file_input$datapath <- file.path(
-            out$proj_dir, 
-            new_file_input$name
-        )
+        # # debugging
+        # print("new file input")
+        # print(new_file_input)
         
-        ## update file input list
-        if(is.null(local$file_input)) {
-            local$file_input <- new_file_input
-        } else {
-            local$file_input <- rbind(
-                local$file_input[!local$file_input$name 
-                                 %in% new_file_input$name,],
-                new_file_input
+        ## copy files to project directory
+        if(nrow(new_file_input) > 0) {
+            lapply(
+                split(new_file_input, seq(nrow(new_file_input))),
+                function(item) {
+                    fs::file_copy(item$datapath,
+                                  file.path(out$proj_dir, item$name),
+                                  overwrite = TRUE)
+                    if(file.exists(item$datapath)) {
+                        # logging("deleting:", item$datapath)
+                        fs::file_delete(item$datapath)
+                    }
+                }
             )
+            new_file_input$datapath <- file.path(
+                out$proj_dir, 
+                new_file_input$name
+            )
+            
+            ## update file input list
+            if(is.null(local$file_input)) {
+                local$file_input <- new_file_input
+            } else {
+                local$file_input <- rbind(
+                    local$file_input[!local$file_input$name 
+                                     %in% new_file_input$name,],
+                    new_file_input
+                )
+            }
         }
     })
     
@@ -380,10 +386,10 @@ analysis_proj_set_server <- function(input, output, session) {
         )
     })
     
-    # # debugging
-    # observe({
-    #     print(local$file_input)
-    # })
+    # debugging
+    observe({
+        logging("project directory:", out$proj_dir)
+    })
     
     ## Manage example project
     # update possible input
@@ -605,8 +611,7 @@ input_data_ui <- function(id) {
             label = NULL, 
             buttonLabel = "Select file",
             multiple = FALSE
-        ),
-        uiOutput(ns("missing_file"))
+        )
     )
 }
 
@@ -631,21 +636,6 @@ input_data_server <- function(input, output, session,
     out <- reactiveValues(
         name = NULL
     )
-    ## message if missing file
-    output$missing_file <- renderUI({
-        help_text <- helpText(
-            icon("warning"), "Missing data file"
-        )
-        if(is.null(input$data_file)) {
-            help_text
-        } else if(!is.data.frame(input$data_file)) {
-            help_text
-        } else if(nrow(input$data_file) == 0) {
-            help_text
-        } else {
-            NULL
-        }
-    })
     ## get data file
     observeEvent(input$data_file, {
         # input$data_file = data.frame with 4 columns:
@@ -681,6 +671,7 @@ input_data_server <- function(input, output, session,
 check_data_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        uiOutput(ns("missing_file")),
         uiOutput(ns("data_info"))
     )
 }
@@ -736,6 +727,17 @@ check_data_server <- function(input, output, session,
     # observe({
     #     logging("data file = ", out$file)
     # })
+    
+    ## message if missing file
+    output$missing_file <- renderUI({
+        if(is.null(local$data_file)) {
+            helpText(
+                icon("warning"), "Missing data file"
+            )
+        } else {
+            NULL
+        }
+    })
     
     # data check
     observe({
@@ -849,6 +851,7 @@ proj_action_server <- function(input, output, session,
             wd <- getwd()
             on.exit(setwd(wd))
             setwd(local$proj_dir)
+            cleanup_diyabc_run(local$proj_dir)
             zip(file, list.files(local$proj_dir))
         }
     )
