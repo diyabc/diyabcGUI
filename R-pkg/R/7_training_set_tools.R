@@ -8,26 +8,26 @@ write_header <- function(proj_dir, data_file,
     
     # FIXME check input
     
-    # debugging
-    print("------ write_header input")
-    print("proj_dir =")
-    print(proj_dir)
-    print("param_list =")
-    print(param_list)
-    print("param_count_list =")
-    print(param_count_list)
-    print("scenario_list =")
-    print(scenario_list)
-    print("cond_list =")
-    print(cond_list)
-    print("data_file =")
-    print(data_file)
-    print("locus_type =")
-    print(locus_type)
-    print("seq_mode =")
-    print(seq_mode)
-    print("locus =")
-    print(locus)
+    # # debugging
+    # print("------ write_header input")
+    # print("proj_dir =")
+    # print(proj_dir)
+    # print("param_list =")
+    # print(param_list)
+    # print("param_count_list =")
+    # print(param_count_list)
+    # print("scenario_list =")
+    # print(scenario_list)
+    # print("cond_list =")
+    # print(cond_list)
+    # print("data_file =")
+    # print(data_file)
+    # print("locus_type =")
+    # print(locus_type)
+    # print("seq_mode =")
+    # print(seq_mode)
+    # print("locus =")
+    # print(locus)
     
     out <- NULL
     
@@ -93,7 +93,6 @@ write_header <- function(proj_dir, data_file,
         sep = "\n"
     )
     
-    
     # print("log4")
     ## loci description
     sec4 <- str_c(
@@ -145,6 +144,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 1,
                                      run_prior_check = FALSE) {
     # executable
     diyabc_bin <- find_bin("diyabc")
+    
     # check project dir
     if(!dir.exists(proj_dir)) {
         stop("Input directory does not exist")
@@ -154,6 +154,22 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 1,
                    pattern = str_c(.Platform$file.sep, "$"))) {
         safe_proj_dir <- str_c(proj_dir, .Platform$file.sep)
     }
+    
+    # check for header file (headerRF.txt copied to header.txt)
+    if(!any(c("header.txt", "headerRF.txt") %in% list.files(proj_dir))) {
+        stop("missing header input file")
+    } else if(! "header.txt" %in% list.files(proj_dir)) {
+        fs::file_copy(path = file.path(proj_dir, "headerRF.txt"),
+                      new_path = file.path(proj_dir, "header.txt"),
+                      overwrite = TRUE)
+    }
+    # remove header.txt file on exit
+    on.exit({
+        if(file.exists(file.path(proj_dir, "header.txt"))) {
+            fs::file_delete(file.path(proj_dir, "header.txt"))
+        }
+    })
+    
     # init seeds
     cmd <- str_c(
         diyabc_bin, 
