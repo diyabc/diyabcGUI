@@ -13,18 +13,20 @@ rf_module_ui <- function(id) {
 rf_module_server <- function(input, output, session, 
                              locus_type = reactive({NULL}),
                              proj_dir = reactive({NULL}),
-                             # proj_file_list = reactive({NULL}),
+                             proj_name = reactive({NULL}),
                              valid_proj = reactive({FALSE})) {
     # namespace
     ns <- session$ns
     
     # init local
     local <- reactiveValues(
-        locus_type = NULL,
-        proj_dir = NULL,
         proj_header_file = NULL,
         proj_file_list = NULL,
         proj_header = NULL,
+        # input
+        locus_type = NULL,
+        proj_dir = NULL,
+        proj_name = NULL,
         valid_proj = NULL
     )
     
@@ -32,15 +34,71 @@ rf_module_server <- function(input, output, session,
     observe({
         local$locus_type <- locus_type()
         local$proj_dir <- proj_dir()
-        # local$proj_file_list <- proj_file_list()
+        local$proj_name <- proj_name()
         local$valid_proj <- valid_proj()
     })
+    
+    # required files
+    required_files <- c("headerRF.txt", "reftableRF.bin", "statobsRF.txt")
+    
+    # check project directory
+    observe({
+        req(!is.null(local$proj_dir))
+        
+        proj_file_list <- reactivePoll(
+            1000, session,
+            checkFunc = function() {
+                if(dir.exists(local$proj_dir)) {
+                    list.files(local$proj_dir)
+                } else {
+                    list()
+                }
+            },
+            valueFunc = function() {
+                if(!is.null(local$proj_dir)) {
+                    if(dir.exists(local$proj_dir))
+                        list.files(local$proj_dir)
+                    else
+                        list()
+                } else {
+                    list()
+                }
+            }
+        )
+        
+        local$proj_file_list <- proj_file_list()
+    })
+    
+    # # debugging
+    # observe({
+    #     print("proj_file_list")
+    #     print(local$proj_file_list)
+    # })
     
     # enable control
     output$enable_control <- renderUI({
         req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_file_list))
         
-        if(local$valid_proj) {
+        if(!local$valid_proj) {
+            helpText(
+                icon("warning"), "Project set up is not valid."
+            )
+        } else if(!all(required_files %in% local$proj_file_list)) {
+            helpText(
+                icon("warning"), 
+                "You must generate a training data set with the", 
+                "'Training set simulations' sub-module,",
+                "or upload training set simulations-related files",
+                "(",
+                do.call(
+                    tagList,
+                    lapply(required_files, tags$code)
+                ),
+                ")",
+                "from an existing project."
+            )
+        } else {
             tagList(
                 h4("Settings"),
                 radioButtons(
@@ -122,15 +180,15 @@ rf_module_server <- function(input, output, session,
                         helper(type = "markdown", 
                                content = "noob_parameter"),
                 ),
-                # textInput(
-                #     ns("group"),
-                #     label = "Model group"
-                # ),
-                # HelpText(
-                #     "You may 'group' your models in several splitted groups.",
-                #     "For example if you have six models, labeled from 1 to 6,", 
-                #     "you can specify '1,2,3;4,5,6'."
-                # ),
+                textInput(
+                    ns("group"),
+                    label = "Model group"
+                ),
+                HelpText(
+                    "You may 'group' your models in several splitted groups.",
+                    "For example if you have six models, labeled from 1 to 6,",
+                    "you can specify '1,2,3;4,5,6' to make 2 groups of 3."
+                ),
                 hr(),
                 actionBttn(
                     inputId = ns("run"),
@@ -139,67 +197,28 @@ rf_module_server <- function(input, output, session,
                     block = TRUE
                 )
             )
-        } else {
-            helpText(
-                icon("warning"), "Project set up is not valid."
-            )
         }
     })
     
-    # check project directory
-    observe({
-        proj_file_list <- reactivePoll(
-            1000, session,
-            checkFunc = function() {
-                if(!is.null(local$proj_dir)) {
-                    if(dir.exists(local$proj_dir))
-                        list.files(local$proj_dir)
-                    else
-                        list()
-                } else {
-                    list()
-                }
-            },
-            valueFunc = function() {
-                if(!is.null(local$proj_dir)) {
-                    if(dir.exists(local$proj_dir))
-                        list.files(local$proj_dir)
-                    else
-                        list()
-                } else {
-                    list()
-                }
-            }
-        )
-        
-        local$proj_file_list <- proj_file_list()
-    })
-    
-    # # debugging
-    # observe({
-    #     print("proj_file_list")
-    #     print(local$proj_file_list)
+    # # enable run
+    # observeEvent(local$proj_file_list, {
+    #     # FIXME (for click-button training set def)
+    #     req(!is.null(local$proj_dir))
+    #     req(dir.exists(local$proj_dir))
+    #     req(!is.null(local$proj_file_list))
+    # 
+    #     # # debugging
+    #     # print("project files")
+    #     # print(local$proj_file_list)
+    # 
+    #     mandatory_files <- c("headerRF.txt", "statobsRF.txt", "reftableRF.bin")
+    #     if(!local$valid_proj & 
+    #        !all(mandatory_files %in% local$proj_file_list)) {
+    #         shinyjs::disable("run")
+    #     } else {
+    #         shinyjs::enable("run")
+    #     }
     # })
-    
-    # enable run
-    observeEvent(local$proj_file_list, {
-        # FIXME (for click-button training set def)
-        req(!is.null(local$proj_dir))
-        req(dir.exists(local$proj_dir))
-        req(!is.null(local$proj_file_list))
-
-        # # debugging
-        # print("project files")
-        # print(local$proj_file_list)
-
-        mandatory_files <- c("headerRF.txt", "statobsRF.txt", "reftableRF.bin")
-        if(!local$valid_proj & 
-           !all(mandatory_files %in% local$proj_file_list)) {
-            shinyjs::disable("run")
-        } else {
-            shinyjs::enable("run")
-        }
-    })
 
     # check headerRF.txt file
     observe({
