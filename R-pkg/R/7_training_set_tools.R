@@ -140,7 +140,7 @@ write_header <- function(proj_dir, data_file,
 #' Run training set simulation
 #' @keywords internal
 #' @author Ghislain Durif
-diyabc_run_trainset_simu <- function(proj_dir, n_run = 1, 
+diyabc_run_trainset_simu <- function(proj_dir, n_run = 100, 
                                      run_prior_check = FALSE) {
     # executable
     diyabc_bin <- find_bin("diyabc")
@@ -163,50 +163,75 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 1,
                       new_path = file.path(proj_dir, "header.txt"),
                       overwrite = TRUE)
     }
-    # remove header.txt file on exit
-    on.exit({
-        if(file.exists(file.path(proj_dir, "header.txt"))) {
-            fs::file_delete(file.path(proj_dir, "header.txt"))
-        }
-    })
     
-    # init seeds
-    cmd <- str_c(
-        diyabc_bin, 
-        "-p", safe_proj_dir, 
-        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'"),
-        ">", file.path(proj_dir, "diyabc_seed_init_call.log"),
-        sep = " "
+    # remove seed file if existing
+    if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
+        fs::file_delete(file.path(proj_dir, "RNG_state_0000.bin"))
+    }
+    
+    ### init seeds
+    logging("diyabc init")
+    arguments <- c(
+        "-p", safe_proj_dir,
+        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'")
     )
-    logging("diyabc seed init cmd", cmd)
-    init_check <- system(cmd)
+    init_proc <- processx::process$new(
+        command = diyabc_bin, 
+        args = arguments,
+        stdout = file.path(proj_dir, "diyabc_seed_init_call.log"), 
+        stderr = file.path(proj_dir, "diyabc_seed_init_call.log"),
+        echo_cmd = TRUE
+    )
+    init_proc$wait()
+    
+    # exit check
+    init_check <- init_proc$get_exit_status()
     logging("diyabc init", init_check)
     if(init_check != 0) {
         warning("Issue with seed initialization")
     }
-    # run
-    cmd <- str_c(
-        diyabc_bin, 
+    
+    ### run
+    logging("diyabc run")
+    arguments <- c(
         "-p", safe_proj_dir, 
         "-R \"\"", "-m", 
         "-r", n_run,
-        "-t", getOption("diyabcGUI")$ncore, 
-        sep = " "
+        "-t", as.character(getOption("diyabcGUI")$ncore)
     )
     if(run_prior_check) {
-        cmd <- str_c(cmd, "-d a:pl", sep = " ")
+        arguments <- c(
+            arguments,
+            "-d a:pl"
+        )
     }
-    cmd <- str_c(
-        cmd,
-        ">", file.path(proj_dir, "diyabc_run_call.log"),
-        sep = " "
+    
+    run_proc <- processx::process$new(
+        command = diyabc_bin, 
+        args = arguments,
+        stdout = file.path(proj_dir, "diyabc_run_call.log"), 
+        stderr = file.path(proj_dir, "diyabc_run_call.log"),
+        echo_cmd = TRUE
     )
-    logging("diyabc run cmd", cmd)
-    run_check <- system(cmd)
-    logging("diyabc run", run_check)
-    if(run_check != 0) {
-        warning("Issue with simulation run")
-    }
-    # output
-    return(lst(init_check, run_check))
+    
+    ## output process
+    return(run_proc)
+}
+
+#' Clean up after diyabc
+#' @keywords internal
+#' @author Ghislain Durif
+cleanup_diyabc_run <- function(project_dir) {
+    ## file list
+    files <- file.path(
+        project_dir,
+        c("diyabc_seed_init_call.log", "diyabc_run_call.log",
+          "header.txt", "RNG_state_0000.bin")
+    )
+    # remove files
+    lapply(files, function(filename) {
+        if(file.exists(filename)) {
+            fs::file_delete(filename)
+        }
+    })
 }
