@@ -50,7 +50,8 @@ training_set_server <- function(input, output, session,
         local$valid_proj <- valid_proj()
         
         # # debugging
-        # print(local$data_file)
+        # print("=== training set: project directory")
+        # print(local$proj_dir)
     })
     
     # init output
@@ -66,24 +67,20 @@ training_set_server <- function(input, output, session,
     
     # check project directory
     observe({
+        req(!is.null(local$proj_dir))
+        
         proj_file_list <- reactivePoll(
-            1000, session,
+            2000, session,
             checkFunc = function() {
-                if(!is.null(local$proj_dir)) {
-                    if(dir.exists(local$proj_dir))
-                        list.files(local$proj_dir)
-                    else
-                        list()
+                if(dir.exists(local$proj_dir)) {
+                    list.files(local$proj_dir)
                 } else {
                     list()
                 }
             },
             valueFunc = function() {
-                if(!is.null(local$proj_dir)) {
-                    if(dir.exists(local$proj_dir))
-                        list.files(local$proj_dir)
-                    else
-                        list()
+                if(dir.exists(local$proj_dir)) {
+                    list.files(local$proj_dir)
                 } else {
                     list()
                 }
@@ -96,7 +93,6 @@ training_set_server <- function(input, output, session,
     ## check headerRF.txt file (if present)
     observe({
         req(!is.null(local$locus_type))
-        req(local$valid_proj)
         req(!is.null(local$proj_dir))
         
         proj_header_content <- reactiveFileReader(
@@ -126,6 +122,7 @@ training_set_server <- function(input, output, session,
     ## training set def (if no header file provided)
     output$enable_def <- renderUI({
         req(!is.null(local$new_proj))
+        req(!is.null(local$proj_file_list))
         req(!is.null(local$valid_proj))
         
         if(!local$valid_proj) {
@@ -169,9 +166,9 @@ training_set_server <- function(input, output, session,
         req(!is.null(training_set_def$valid_def))
         local$valid_proj <- local$valid_proj & training_set_def$valid_def
         
-        # debugging
-        print("training set valid def")
-        print(training_set_def$valid_def)
+        # # debugging
+        # print("training set valid def")
+        # print(training_set_def$valid_def)
     })
     
     ## enable control
@@ -181,7 +178,10 @@ training_set_server <- function(input, output, session,
         if(local$valid_proj) {
             training_set_action_ui(ns("action"))
         } else {
-            NULL
+            tagList(
+                h3(icon("gear"), "Run"),
+                helpText("Project is not ready")
+            )
         }
     })
     
@@ -189,7 +189,8 @@ training_set_server <- function(input, output, session,
     callModule(
         training_set_action_server, "action", 
         proj_dir = reactive(local$proj_dir),
-        valid = reactive(local$valid_proj)
+        proj_file_list = reactive(local$proj_file_list),
+        valid_proj = reactive(local$valid_proj)
     )
     
     # update output
@@ -1314,7 +1315,7 @@ training_set_action_ui <- function(id) {
             ns("nrun"),
             label = "Number of simulation",
             value = 100,
-            min = 0
+            min = 100
         ),
         helpText(
             tags$div(
@@ -1344,7 +1345,35 @@ training_set_action_ui <- function(id) {
             inputId = ns("simulate"),
             label = "Simulate",
             style = "fill",
-            block = TRUE
+            block = TRUE,
+            col = "primary"
+        ),
+        progressBar(
+            id = ns("simu_progress"),
+            value = 0,
+            total = 100,
+            title = "",
+            display_pct = TRUE
+        ),
+        uiOutput(ns("feedback")),
+        uiOutput(ns("feedback_nrun")),
+        br(),
+        actionButton(
+            ns("show_log"),
+            label = "Show/hide logs",
+            icon = icon("comment")
+        ),
+        shinyjs::hidden(
+            uiOutput(ns("run_log"))
+        ),
+        br(),
+        br(),
+        actionBttn(
+            inputId = ns("stop"),
+            label = "Stop",
+            style = "fill",
+            block = TRUE,
+            color = "danger"
         )
     )
 }
@@ -1352,33 +1381,33 @@ training_set_action_ui <- function(id) {
 #' Training set simulation action module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_dir project directory as a `reactive`.
-#' @param project_name project name as a `reactive`.
-#' @param validation boolean indicating if the project setting are validated, 
-#' as a `reactive`.
-#' @param raw_param scenario parameter raw setting as a `reactive`. 
-#' @param raw_scenario list of raw scenario as a `reactive`.
 training_set_action_server <- function(input, output, session,
                                        proj_dir = reactive({NULL}),
-                                       valid = reactive({FALSE})) {
+                                       proj_file_list = reactive({NULL}),
+                                       valid_proj = reactive({FALSE})) {
     # namespace
     ns <- session$ns
+    
+    # max number of rows in log
+    nlog <- 100
+    show_nlog <- 10
+    
     # init local
     local <- reactiveValues(
+        diyabc_run_process = NULL,
+        diyabc_run_result = NULL,
+        feedback = NULL,
+        log_file_content = rep("", show_nlog),
+        # input
+        proj_dir = NULL,
         proj_file_list = NULL,
-        valid = NULL,
-        proj_dir = NULL
+        valid_proj = NULL
     )
     # get input
     observe({
         local$proj_dir <- proj_dir()
-        local$valid <- valid()
-    })
-    
-    # project file list
-    observeEvent(local$proj_dir, {
-        req(!is.null(local$proj_dir))
-        local$proj_file_list <- list.files(local$proj_dir)
+        local$proj_file_list <- proj_file_list()
+        local$valid_proj <- valid_proj()
     })
     
     # # debugging
@@ -1388,40 +1417,214 @@ training_set_action_server <- function(input, output, session,
     #     print(local$valid)
     # })
     
+    # # debugging
+    # observe({
+    #     print("=== training set simu run: project directory")
+    #     print(local$proj_dir)
+    # })
+    
     # init output
     out <- reactiveValues()
     
-    # deactivate simulate if not valid
-    observeEvent(local$valid, {
-        req(!is.null(local$valid))
-        if(local$valid) {
-            shinyjs::enable("simulate")
-        } else {
-            shinyjs::disable("simulate")
+    ## show/hide logs
+    observeEvent(input$show_log, {
+        req(!is.null(input$show_log))
+        if(input$show_log %% 2 == 0) {
+            shinyjs::hide(id = "run_log")
+        } else{
+            shinyjs::show(id = "run_log")
         }
+    })
+    
+    ## read log file
+    log_file_content <- function() return(NULL)
+    observeEvent(local$proj_dir, {
+        req(local$proj_dir)
+        log_file_content <<- reactiveFileReader(
+            500, session,
+            file.path(local$proj_dir, "diyabc_run_call.log"),
+            function(file) {
+                if(file.exists(file)) {
+                    readLines(file, warn=FALSE)
+                } else {
+                    character(0)
+                }
+            }
+        )
+    })
+    
+    observe({
+        local$log_file_content <- log_file_content()
+    })
+    
+    ## show log messages
+    observeEvent(local$log_file_content, {
+        
+        if(length(local$log_file_content) < show_nlog) {
+            local$log_file_content <- c(
+                local$log_file_content,
+                rep("", show_nlog - length(local$log_file_content))
+            )
+        }
+        
+        output$run_log <- renderUI({
+            tagList(
+                tags$pre(
+                    str_c(
+                        tail(local$log_file_content, show_nlog),
+                        collapse = "\n"
+                    ),
+                    style = "width:60vw; overflow:scroll;"
+                )
+            )
+        })
     })
     
     ## run simulation
     observeEvent(input$simulate, {
         
+        req(!is.null(local$valid_proj))
+        req(!is.null(local$proj_file_list))
+        req(length(local$proj_file_list) > 0)
+        
+        # # debugging
+        # print("simulate")
+        # print("valid proj ?")
+        # print(local$valid_proj)
+        # print("proj file list")
+        # print(local$proj_file_list)
+        
         req(input$nrun)
         req(local$proj_dir)
         req(!is.null(input$prior_mod_check))
         
-        # # debugging
-        # print("check options")
-        # print(getOption("diyabcGUI"))
-        # print(getOption("shiny.maxRequestSize"))
+        ## run in progress
+        if(!is.null(local$diyabc_run_process)) {
+            showNotification(
+                id = ns("run_in_progress"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "warning",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Run in progress."
+                    )
+                )
+            )
+        } else {
+            ## prepre run
+            req(is.null(local$diyabc_run_process))
+            
+            ## init progress bar
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = 0, total = 100,
+                title = str_c(
+                    "Running simulation ", "0/", 
+                    input$nrun, sep = ""
+                )
+            )
+            
+            ## check if possible to run
+            if(!local$valid_proj) {
+                local$feedback <- helpText(
+                    icon("warning"), "Project is not ready.",
+                    "Check project settings."
+                )
+            } else if(!any(c("header.txt", "headerRF.txt") %in% 
+                           list.files(local$proj_dir))) {
+                local$feedback <- helpText(
+                    icon("warning"), 
+                    "Upload header file from existing project,",
+                    "or configure your own project", 
+                    "(historical scenario, parameter priors,", 
+                    "conditions, etc.)."
+                )
+                showNotification(
+                    id = ns("run_in_progress"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "warning",
+                    tagList(
+                        tags$p(
+                            icon("warning"), 
+                            "Upload header file from existing project,",
+                            "or configure your own project", 
+                            "(historical scenario, parameter priors,", 
+                            "conditions, etc.)."
+                        )
+                    )
+                )
+            } else {
+                ## ready to run
+                
+                # debugging
+                # print("check options")
+                # print(getOption("diyabcGUI"))
+                # print(getOption("shiny.maxRequestSize"))
+                
+                local$feedback <- helpText(
+                    icon("refresh"), "Simulations are running."
+                )
+                
+                logging("Running simulation")
+                local$diyabc_run_process <- diyabc_run_trainset_simu(
+                    local$proj_dir, 
+                    as.integer(input$nrun),
+                    input$prior_mod_check
+                )
+            }
+        }
+    })
+    
+    ## monitor simulation run
+    observeEvent(local$diyabc_run_process, {
+        req(!is.null(local$diyabc_run_process))
         
-        # logging("Running simulation")
-        cmd_out <- diyabc_run_trainset_simu(
-            local$proj_dir, 
-            as.integer(input$nrun),
-            input$prior_mod_check
-        )
+        print("diyabc run process")
+        print(local$diyabc_run_process)
         
-        # check run
-        if(cmd_out$run_check == 0) {
+        observe({
+            req(!is.null(local$diyabc_run_process))
+            proc <- local$diyabc_run_process
+            req(!is.null(proc$is_alive()))
+            if(proc$is_alive()) {
+                invalidateLater(2000, session)
+            } else {
+                local$diyabc_run_result <- proc$get_exit_status()
+            }
+        })
+    })
+    
+    ## clean up after run
+    observeEvent(local$diyabc_run_result, {
+        
+        req(!is.null(local$diyabc_run_result))
+        
+        logging("diyabc simu run exit status:",
+                local$diyabc_run_result)
+        
+        ## log
+        output$run_log <- renderUI({
+            tagList(
+                tags$pre(
+                    str_c(
+                        local$log_file_content,
+                        collapse = "\n"
+                    ),
+                    style = "width:60vw; overflow:scroll; overflow-y:scroll; min-height:100px; max-height:100px;"
+                )
+            )
+        })
+        
+        ## check run
+        # run ok
+        if(local$diyabc_run_result == 0) {
+            local$feedback <- helpText(
+                icon("check"), "Run succeeded."
+            )
             showNotification(
                 id = ns("run_ok"),
                 duration = 5,
@@ -1434,7 +1637,28 @@ training_set_action_server <- function(input, output, session,
                     )
                 )
             )
+        } else if(local$diyabc_run_result == -1000) {
+            ## stopped run
+            local$feedback <- helpText(
+                icon("warning"), "Simulation run was stopped."
+            )
+            showNotification(
+                id = ns("stop_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Simulation run was stopped."
+                    )
+                )
+            )
         } else {
+            ## error during run
+            local$feedback <- helpText(
+                icon("warning"), "Issues with run (see log panel)."
+            )
             showNotification(
                 id = ns("run_not_ok"),
                 duration = 5,
@@ -1443,10 +1667,102 @@ training_set_action_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"),
-                        "A problem during simulations."
+                        "A problem happened during simulations."
                     )
                 )
             )
         }
+        
+        # reset
+        local$diyabc_run_result <- NULL
+        local$diyabc_run_process <- NULL
+    })
+    
+    ## stop run
+    observeEvent(input$stop, {
+        ## if no current run
+        if(is.null(local$diyabc_run_process)) {
+            local$feedback <- helpText(
+                icon("warning"), "No current run to stop."
+            )
+            showNotification(
+                id = ns("no_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"), "No current run to stop."
+                    )
+                )
+            )
+        } else {
+            ## stop current run
+            proc <- local$diyabc_run_process
+            proc$kill()
+            local$diyabc_run_result <- -1000
+        }
+    })
+    
+    ## progress bar
+    observeEvent(local$log_file_content, {
+        
+        req(input$nrun)
+        
+        req(!is.null(local$log_file_content))
+        req(length(local$log_file_content) > 0)
+        
+        last_message <- tail(local$log_file_content, nlog)
+        find_adv <- str_detect(last_message, "^[0-9]+$")
+        
+        if(any(find_adv)) {
+            final_adv <- tail(last_message[find_adv], 1)
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = 100 * as.numeric(final_adv)/input$nrun, 
+                total = 100,
+                title = str_c(
+                    "Running simulation ", 
+                    final_adv, "/", input$nrun, sep = "")
+            )
+        }
+    })
+    
+    ## feedback
+    observeEvent(local$feedback, {
+        output$feedback <- renderUI({
+            local$feedback
+        })
+    })
+    
+    ## feedback nrun
+    output$feedback_nrun <- renderUI({
+        req(!is.null(input$nrun))
+        
+        req(!is.null(local$log_file_content))
+        req(length(local$log_file_content) > 0)
+        
+        tmp_text <- NULL
+        
+        # simu nrun
+        if(any(str_detect(local$log_file_content, "^nrec = [0-9]+$"))) {
+            nrun0 <- str_extract(
+                local$log_file_content, 
+                "(?<=^nrec = )[0-9]+$"
+            )
+            nrun0 <- tail(nrun0[!is.na(nrun0)], 1)
+            if(nrun0 >= input$nrun) {
+                tmp_text <- helpText(
+                    icon("warning"), 
+                    "Number of available simulations before was",
+                    tags$b(nrun0), ".",
+                    "To generate additional training data, you must set",
+                    "the number of simulations to be higher than",
+                    tags$b(nrun0), "."
+                )
+            }
+        }
+        tmp_text
     })
 }
