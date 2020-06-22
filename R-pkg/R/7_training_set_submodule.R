@@ -180,7 +180,7 @@ training_set_server <- function(input, output, session,
         } else {
             tagList(
                 h3(icon("gear"), "Run"),
-                helpText("Project is not ready")
+                helpText(icon("warning"), "Project is not ready.")
             )
         }
     })
@@ -1313,7 +1313,7 @@ training_set_action_ui <- function(id) {
         h3(icon("gear"), "Run"),
         numericInput(
             ns("nrun"),
-            label = "Number of simulation",
+            label = "Number of simulations",
             value = 100,
             min = 100
         ),
@@ -1566,7 +1566,8 @@ training_set_action_server <- function(input, output, session,
                 # print(getOption("shiny.maxRequestSize"))
                 
                 local$feedback <- helpText(
-                    icon("refresh"), "Simulations are running."
+                    icon("spinner", class = "fa-spin"),
+                    "Simulations are running."
                 )
                 
                 logging("Running simulation")
@@ -1755,7 +1756,7 @@ training_set_action_server <- function(input, output, session,
             if(nrun0 >= input$nrun) {
                 tmp_text <- helpText(
                     icon("warning"), 
-                    "Number of available simulations before was",
+                    "Number of already available simulations",
                     tags$b(nrun0), ".",
                     "To generate additional training data, you must set",
                     "the number of simulations to be higher than",
