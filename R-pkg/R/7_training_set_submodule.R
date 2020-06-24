@@ -227,7 +227,7 @@ show_existing_proj_ui <- function(id) {
         ),
         uiOutput(ns("show_conditions")),
         hr(),
-        h3(icon("dna"), "Locus description"),
+        h3(icon("dna"), "Number of SNP loci to simulate"),
         helpText(
             "Locus settings defined in the provided header file."
         ),
@@ -1165,7 +1165,7 @@ prior_server <- function(input, output, session,
 locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("dna"), "Locus description"),
+        h3(icon("dna"), "Number of SNP loci to simulate"),
         uiOutput(ns("setup"))
     )
 }
@@ -1226,8 +1226,12 @@ locus_setup_server <- function(input, output, session,
                     return(
                         fluidRow(
                             column(
-                                width = 2,
-                                item
+                                width = 4,
+                                shinyjs::disabled(textInput(
+                                    ns(str_c("type_", item)),
+                                    label = "SNP loci available",
+                                    value = item
+                                ))
                             ),
                             column(
                                 width = 4,
