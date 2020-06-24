@@ -1,6 +1,6 @@
 context("training_set_tools")
 
-test("write_header", {
+test_that("write_header", {
     
     proj_dir = mk_proj_dir()
     on.exit(tryCatch(fs::dir_detete(proj_dir)))
@@ -60,7 +60,7 @@ test("write_header", {
     )
 })
 
-test("diyabc_run_trainset_simu", {
+test_that("diyabc_run_trainset_simu", {
     
     # proj dir
     proj_dir = mk_proj_dir()
