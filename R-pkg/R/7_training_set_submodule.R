@@ -1122,8 +1122,10 @@ prior_server <- function(input, output, session,
     observeEvent(local$param_type, {
         req(local$param_type)
         if(local$param_type == "A") {
-            updateNumericInput(session, "min", value = 0.001, min = 0, max = 1)
-            updateNumericInput(session, "max", value = 0.999, min = 0, max = 1)
+            updateNumericInput(session, "min", value = 0.05, 
+                               min = 0, max = 1)
+            updateNumericInput(session, "max", value = 0.95, 
+                               min = 0, max = 1)
         } else {
             updateNumericInput(session, "min", value = 10, 
                                min = NULL, max = NULL)
