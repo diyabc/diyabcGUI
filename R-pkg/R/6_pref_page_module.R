@@ -11,6 +11,18 @@ pref_page_ui <- function(id) {
             status = "primary", solidHeader = TRUE,
             collapsible = FALSE,
             numericInput(
+                ns("upload_file_size"), 
+                label = "Maximum upload file size (in Mb)",
+                value = 100,
+                min = 10,
+                max = 10000
+            ),
+            helpText(
+                "By default, data files larger than 100 Mb",
+                "will not be accepted."
+            ),
+            hr(),
+            numericInput(
                 ns("ncore"), 
                 label = "Number of cores for multi-threading",
                 value = getOption("diyabcGUI")$ncore,
@@ -22,15 +34,17 @@ pref_page_ui <- function(id) {
             ),
             hr(),
             numericInput(
-                ns("upload_file_size"), 
-                label = "Maximum upload file size (in Mb)",
+                ns("simu_loop_size"), 
+                label = "Number of particles simulated in a single batch.",
                 value = 100,
                 min = 10,
                 max = 10000
             ),
             helpText(
-                "By default, data files larger than 100 Mb",
-                "will not be accepted."
+                "DIYABC simulation engine generates data by batch.",
+                "Here you can set up the batch size, by default it is 100,",
+                "meaning that simulating 1000 individuals will be done in",
+                "10 batches of 100 individuals."
             )
         )
     )
@@ -41,12 +55,15 @@ pref_page_ui <- function(id) {
 #' @author Ghislain Durif
 pref_page_server <- function(input, output, session) {
     
-    ## set ncore
-    observeEvent(input$ncore, {
+    ## set diyabcGUI options
+    observe({
         req(is.numeric(input$ncore))
-        set_diyabcGUI_options(ncore = as.integer(input$ncore))
+        req(is.numeric(input$simu_loop_size))
+        set_diyabcGUI_options(
+            ncore = as.integer(input$ncore),
+            simu_loop_size = as.integer(input$simu_loop_size)
+        )
     })
-    
     
     ## set maximum upload size
     observeEvent(input$upload_file_size, {

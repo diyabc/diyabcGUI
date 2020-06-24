@@ -173,7 +173,8 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     logging("diyabc init")
     arguments <- c(
         "-p", safe_proj_dir,
-        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'")
+        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'"),
+        "-g", as.character(getOption("diyabcGUI")$simu_loop_size)
     )
     init_proc <- processx::process$new(
         command = diyabc_bin, 

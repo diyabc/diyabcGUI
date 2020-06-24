@@ -30,8 +30,9 @@ logging <- function(...) {
 #' Set up diyabcGUI options
 #' @keywords internal
 #' @author Ghislain Durif
-set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2) {
+set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
+                                  simu_loop_size = 100) {
     # set up package options
-    diyabcGUI_options <- lst(ncore)
+    diyabcGUI_options <- lst(ncore, simu_loop_size)
     options("diyabcGUI" = diyabcGUI_options)
 }
