@@ -172,18 +172,21 @@ rf_parameter_ui <- function(id) {
         ),
         numericInput(
             ns("noise_columns"),
-            label = "Number of noise columns",
+            label = "Number of noise variables to add",
             min = 0,
             value = 5
         ),
-        h5(tags$b("Linear framework")),
+        h5(tags$b("Linear combinations of summary statistics")),
         checkboxInput(
             ns("linear"),
             label = tags$span(
-                "Enable/Disable LDA for model choice or PLS for", 
-                "parameter estimation"
+                "Enable/Disable the addition of linear combination axes",
             ),
             value = TRUE
+        ),
+        helpText(
+            "Linear combinations of summary statistics are computed with",
+            "LDA for model choice or PLS for parameter estimation."
         ),
         # if parameter estimation
         conditionalPanel(
