@@ -194,7 +194,7 @@ rf_parameter_ui <- function(id) {
                 label = "PLS explained variance threshold",
                 min = 0.001,
                 max = 0.999,
-                value = 0.9,
+                value = 0.95,
                 step = 0.001
             ),
             helpText(
