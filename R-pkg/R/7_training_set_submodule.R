@@ -554,7 +554,7 @@ training_set_def_server <- function(input, output, session,
         file_check <- parse_diyabc_header(
             file_name = file.path(local$proj_dir, "header.txt"),
             file_type = "text/plain",
-            data_type = local$locus_type
+            locus_type = local$locus_type
         )
         
         # # debugging
