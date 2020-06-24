@@ -10,8 +10,14 @@ find_bin <- function(bin_name = "diyabc") {
     path <- bin_dir()
     # platform
     os <- str_extract(string = R.version$os, pattern = "windows|darwin|linux")
+    os_id <- switch(
+        os,
+        "linux"  = "linux",
+        "darwin" = "macos",
+        "windows" = "windows.exe"
+    )
     # binary file
-    bin_file <- str_c(bin_name, os, sep = "-")
+    bin_file <- str_c(bin_name, os_id, sep = "-")
     # check if bin file exists
     if(!bin_file %in% list.files(path)) {
         stop(str_c("Missing", bin_file, "binary file", sep = " "))
