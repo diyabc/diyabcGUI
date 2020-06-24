@@ -845,17 +845,25 @@ proj_action_server <- function(input, output, session,
     # save
     output$save <- downloadHandler(
         filename = function() {
-            str_c(local$proj_name, ".zip")
+            file_name <- "project_name.zip"
+            if(!is.null(local$proj_name)) {
+                if(str_length(local$proj_name) > 0) {
+                    file_name <- str_c(local$proj_name, ".zip")
+                }
+            }
+            return(file_name)
         },
         content = function(file) {
             wd <- getwd()
             on.exit(setwd(wd))
             setwd(local$proj_dir)
             cleanup_diyabc_run(local$proj_dir)
+            cleanup_abcranger_run(local$proj_dir)
             zip(file, list.files(local$proj_dir))
         }
     )
-    # reset
+    
+    ## reset
     observeEvent(input$reset, {
         req(!is.null(input$reset))
         out$reset <- ifelse(!is.null(out$reset), out$reset, 0) + 1
