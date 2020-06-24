@@ -1397,7 +1397,7 @@ training_set_action_server <- function(input, output, session,
         diyabc_run_process = NULL,
         diyabc_run_result = NULL,
         feedback = NULL,
-        log_file_content = rep("", show_nlog),
+        log_file_content = NULL,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
@@ -1437,7 +1437,7 @@ training_set_action_server <- function(input, output, session,
     })
     
     ## read log file
-    log_file_content <- function() return(NULL)
+    log_file_content <- function() return(rep("", show_nlog))
     observeEvent(local$proj_dir, {
         req(local$proj_dir)
         log_file_content <<- reactiveFileReader(
@@ -1466,19 +1466,8 @@ training_set_action_server <- function(input, output, session,
                 rep("", show_nlog - length(local$log_file_content))
             )
         }
-        
-        output$run_log <- renderUI({
-            tagList(
-                tags$pre(
-                    str_c(
-                        tail(local$log_file_content, show_nlog),
-                        collapse = "\n"
-                    ),
-                    style = "width:60vw; overflow:scroll;"
-                )
-            )
-        })
     })
+    
     
     ## run simulation
     observeEvent(input$simulate, {
@@ -1547,7 +1536,7 @@ training_set_action_server <- function(input, output, session,
                     "from existing project."
                 )
                 showNotification(
-                    id = ns("run_in_progress"),
+                    id = ns("missing_files"),
                     duration = 5,
                     closeButton = TRUE,
                     type = "warning",
@@ -1582,6 +1571,18 @@ training_set_action_server <- function(input, output, session,
                 )
             }
         }
+    })
+    
+    output$run_log <- renderUI({
+        tagList(
+            tags$pre(
+                str_c(
+                    tail(local$log_file_content, show_nlog),
+                    collapse = "\n"
+                ),
+                style = "width:60vw; overflow:scroll;"
+            )
+        )
     })
     
     ## monitor simulation run
