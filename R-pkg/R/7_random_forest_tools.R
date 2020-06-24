@@ -25,7 +25,7 @@
 #'  --parameter arg     name of the parameter of interest (mandatory for
 #'                                                         parameter estimation)
 #'  -g, --groups arg        Groups of models
-abcranger_run <- function(proj_dir, mode, n_ref, 
+abcranger_run <- function(proj_dir, run_mode, n_ref, 
                           min_node_size, n_tree, noise_columns, no_linear, 
                           pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
@@ -61,23 +61,28 @@ abcranger_run <- function(proj_dir, mode, n_ref,
     } else {
         arguments <- c(arguments, "--plsmaxvar", pls_max_var)
     }
-    if(mode == "param_estim") {
+    if(run_mode == "param_estim") {
         arguments <- c(
             arguments,
             "--chosenscen", chosen_scenario,
             "--noob", noob,
             "--parameter", parameter
         )
-    }
-    if(!is.null(groups)) {
-        arguments <- c(arguments, "-g", groups)
+    } else if(run_mode == "model_choice") {
+        if(!is.null(groups)) {
+            if(is.character(groups) & str_length(groups) > 0) {
+                arguments <- c(arguments, "-g", groups)
+            }
+        }
     }
     
     run_proc <- processx::process$new(
         command = abcranger_bin, 
         args = arguments,
-        stdout = file.path(proj_dir, str_c("abcranger_", mode, "_call.log")), 
-        stderr = file.path(proj_dir, str_c("abcranger_", mode, "_call.log")),
+        stdout = file.path(proj_dir, 
+                           "abcranger_call.log"), 
+        stderr = file.path(proj_dir, 
+                           "abcranger_call.log"),
         echo_cmd = TRUE,
         wd = proj_dir
     )
@@ -102,4 +107,84 @@ cleanup_abcranger_run <- function(project_dir) {
             fs::file_delete(filename)
         }
     })
+}
+
+
+#' Parse abcranger group arg
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' For example, with six models, labeled from 1 to 6,",
+#' `'1,2,3;4,5,6'` to make 2 groups of 3.
+parse_abcranger_group <- function(txt, n_scenario) {
+    valid <- TRUE
+    msg <- list()
+    # check input
+    if(!is.null(txt) | !is.character(txt)) {
+        # strip "|'
+        tmp <- str_replace_all(txt, pattern = "\"|'", replacement = "")
+        # check format
+        pttrn <- "^([0-9]+(,[0-9]+)*)(;([0-9]+(,[0-9]+)*))*$"
+        if(!str_detect(tmp, pttrn)) {
+            valid <- FALSE
+            msg <- append(
+                msg,
+                str_c(
+                    "Issue with group formating. Use only",
+                    "numbers, commas (,) and semi-colons (;).", sep = " "
+                )
+            )
+        } else {
+            # at least 2 groups
+            if(!str_detect(tmp, ";")) {
+                valid <- FALSE
+                msg <- append(
+                    msg,
+                    str_c(
+                        "You should specify at least two groups,",
+                        "separated by semi-colons (;).",
+                        "If you do not want to group scenarii",
+                        "(or equivalently assign each scenario",
+                        "to its own group), leave blank.",
+                        sep = " "
+                    )
+                )
+            }
+            # extract information
+            pttrn <- "[0-9]+"
+            scenario_list <- as.numeric(
+                str_extract_all(tmp, pttrn, simplify = TRUE)
+            )
+            if(!all((1:n_scenario) %in% scenario_list)) {
+                valid <- FALSE
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Some scenarii are missing in scenario grouping:", 
+                        str_c(
+                            (1:n_scenario)[!(1:n_scenario) %in% scenario_list],
+                            collapse = ", "
+                        ),
+                        sep = " "
+                    )
+                )
+            }
+            if(!all(scenario_list %in% (1:n_scenario))) {
+                valid <- FALSE
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Some scenarii listed in scenario grouping",
+                        "does not exist:",
+                        str_c(
+                            scenario_list[!scenario_list %in% (1:n_scenario)],
+                            collapse = ", "
+                        ),
+                        sep = " "
+                    )
+                )
+            }
+        }
+    }
+    return(lst(msg, valid))
 }

@@ -1,6 +1,6 @@
 context("random_forest_tools")
 
-test("abcranger_run", {
+test_that("abcranger_run", {
     
     # proj dir
     proj_dir = mk_proj_dir()
@@ -47,4 +47,23 @@ test("abcranger_run", {
     ## clean up
     cleanup_abcranger_run(proj_dir)
     
+})
+
+test_that("parse_abcranger_group", {
+    
+    txt <- '1,2,3;4,5,6'
+    n_scenario <- 6
+    expect_true(parse_abcranger_group(txt, n_scenario)$valid)
+    
+    txt <- '1,2,3;4,5'
+    n_scenario <- 6
+    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
+    
+    txt <- '1,2,3;4,5,6,7'
+    n_scenario <- 6
+    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
+    
+    txt <- 'test'
+    n_scenario <- 6
+    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
 })
