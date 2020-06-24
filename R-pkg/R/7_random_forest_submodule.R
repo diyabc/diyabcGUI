@@ -155,6 +155,7 @@ rf_parameter_ui <- function(id) {
             selected = "model_choice"
         ),
         hr(),
+        ## removed
         # numericInput(
         #     ns("min_node_size"),
         #     label = "Minimal node size",
@@ -164,46 +165,8 @@ rf_parameter_ui <- function(id) {
         # helpText(
         #     "0 means 1 for classification or 5 for regression."
         # ),
-        numericInput(
-            ns("n_tree"),
-            label = "Number of trees",
-            min = 1,
-            value = 500
-        ),
-        numericInput(
-            ns("noise_columns"),
-            label = "Number of noise variables to add",
-            min = 0,
-            value = 5
-        ),
-        h5(tags$b("Linear combinations of summary statistics")),
-        checkboxInput(
-            ns("linear"),
-            label = tags$span(
-                "Enable/Disable the addition of linear combination axes",
-            ),
-            value = TRUE
-        ),
-        helpText(
-            "Linear combinations of summary statistics are computed with",
-            "LDA for model choice or PLS for parameter estimation."
-        ),
-        # if parameter estimation
         conditionalPanel(
-            condition = "input.run_mode == 'param_estim'",
-            ns = ns,
-            numericInput(
-                ns("pls_max_var"),
-                label = "PLS explained variance threshold",
-                min = 0.001,
-                max = 0.999,
-                value = 0.95,
-                step = 0.001
-            ),
-            helpText(
-                "Percentage of maximum explained Y-variance", 
-                "for retaining pls axis"
-            ),
+            condition = "input.run_mode == 'param_estim'", ns = ns,
             numericInput(
                 ns("chosen_scenario"),
                 label = "Chosen scenario",
@@ -219,26 +182,70 @@ rf_parameter_ui <- function(id) {
             ),
             uiOutput(
                 ns("possible_parameters")
+            )
+        ),
+        shinyjs::disabled(numericInput(
+            ns("n_ref"),
+            label = "Number of samples to consider (FIXME)",
+            value = 100, min = 1, max = 10000
+        )),
+        numericInput(
+            ns("noise_columns"),
+            label = "Number of noise variables to add",
+            min = 0,
+            value = 5
+        ),
+        h5(tags$b("Linear combinations of summary statistics")),
+        checkboxInput(
+            ns("linear"),
+            label = tags$span(
+                "Enable/Disable the addition of linear", 
+                "combination axes",
             ),
+            value = TRUE
+        ),
+        helpText(
+            "Linear combinations of summary statistics",
+            "are computed with",
+            "LDA for model choice or PLS for parameter estimation."
+        ),
+        numericInput(
+            ns("pls_max_var"),
+            label = "PLS explained variance threshold",
+            min = 0.001,
+            max = 0.999,
+            value = 0.95,
+            step = 0.001
+        ),
+        helpText(
+            "Percentage of maximum explained Y-variance", 
+            "for retaining pls axis"
+        ),
+        conditionalPanel(
+            condition = "input.run_mode == 'param_estim'", ns = ns,
             numericInput(
                 ns("noob"),
-                label = "Number of oob testing samples",
+                label = "Number of oob testing samples (FIXME)",
                 value = 10,
                 min = 1
             ) %>% 
                 helper(type = "markdown", 
-                       content = "noob_parameter"),
+                       content = "noob_parameter")
         ),
-        # if model choice
         conditionalPanel(
-            condition = "input.run_mode == 'model_choice'",
-            ns = ns,
+            condition = "input.run_mode == 'model_choice'", ns = ns,
             textInput(
                 ns("group"),
                 label = "Model group"
             ),
             uiOutput(ns("help_group")),
             uiOutput(ns("feedback_group"))
+        ),
+        numericInput(
+            ns("n_tree"),
+            label = "Number of trees",
+            min = 1,
+            value = 500
         )
     )
 }
@@ -250,7 +257,10 @@ rf_parameter_server <- function(input, output, session,
                                 proj_dir = reactive({NULL}),
                                 proj_header_file = reactive({NULL}),
                                 locus_type = reactive({NULL})) {
-    # local
+    # namespace
+    ns <- session$ns
+    
+    # init local
     local <- reactiveValues(
         proj_header_content = NULL,
         # input
@@ -279,7 +289,7 @@ rf_parameter_server <- function(input, output, session,
         pls_max_var = NULL,
         run_mode = NULL
     )
-    
+        
     ## monitor change in headerRF.txt file
     proj_header_content <- function() return(list())
     observe({
@@ -852,7 +862,7 @@ rf_control_server <- function(input, output, session,
         # run ok
         if(local$abcranger_run_result == 0) {
             local$feedback <- helpText(
-                icon("check"), "Run succeeded."
+                icon("check"), "RF run succeeded."
             )
             showNotification(
                 id = ns("run_ok"),
@@ -862,14 +872,14 @@ rf_control_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("check"),
-                        "Simulations are done."
+                        "RF run succeeded."
                     )
                 )
             )
         } else if(local$abcranger_run_result == -1000) {
             ## stopped run
             local$feedback <- helpText(
-                icon("warning"), "Run was stopped."
+                icon("warning"), "RF run was stopped."
             )
             showNotification(
                 id = ns("stop_run"),
@@ -879,14 +889,14 @@ rf_control_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"),
-                        "Run was stopped."
+                        "RF run was stopped."
                     )
                 )
             )
         } else {
             ## error during run
             local$feedback <- helpText(
-                icon("warning"), "Issues with run (see log panel)."
+                icon("warning"), "Issues with RF run (see log panel)."
             )
             showNotification(
                 id = ns("run_not_ok"),
@@ -896,7 +906,7 @@ rf_control_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"),
-                        "A problem happened during run."
+                        "A problem happened during RF run."
                     )
                 )
             )
