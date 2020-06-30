@@ -89,7 +89,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
             valid <- FALSE
         } else {
             ## info
-            info <- readLines(data_path, n = 1)
+            info <- readLines(data_path, n = 1, warn = FALSE)
             # sex ratio
             pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
             if(str_detect(info, pttrn)) {
@@ -362,7 +362,7 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
             valid <- FALSE
         } else {
             ## info
-            info <- readLines(data_path, n = 1)
+            info <- readLines(data_path, n = 1, warn = FALSE)
             # sex ratio
             pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
             if(str_detect(info, pttrn)) {
@@ -633,7 +633,7 @@ check_mss_data_file <- function(data_file, data_dir,
             valid <- FALSE
         } else {
             ## info
-            info <- readLines(data_path, n = 1)
+            info <- readLines(data_path, n = 1, warn = FALSE)
             # sex ratio
             pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
             if(str_detect(info, pttrn)) {
@@ -662,8 +662,10 @@ check_mss_data_file <- function(data_file, data_dir,
             }
             
             ## file content
-            file_content <- str_replace_all(str_trim(readLines(data_path)), 
-                                            " +", " ")
+            file_content <- str_replace_all(
+                str_trim(readLines(data_path, warn = FALSE)),
+                " +", " "
+            )
             
             ## locus description
             pttrn <- "(?<=<)(A|H|X|Y|M)(?=>)"
@@ -1108,7 +1110,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
         # local variable
         next_sec_line <- 3
         # file content
-        raw_content <- readLines(file_name)
+        raw_content <- readLines(file_name, warn = FALSE)
         raw_content <- raw_content[raw_content != ""]
         ## data file
         data_file <- raw_content[1]
@@ -1240,7 +1242,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
                 next_sec_line <- next_sec_line + 1
                 # check next section
                 pttrn <- "^group summary statistics \\([0-9]+\\)$"
-                tmp_next <- which(str_detect(raw_content, pttrn))
+                tmp_next <- head(which(str_detect(raw_content, pttrn)), 1)
                 if(tmp_next <= next_sec_line) {
                     issues <- append(issues, pttrn)
                     valid <- FALSE
@@ -1259,15 +1261,17 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
         if(!any(str_detect(raw_content, pttrn))) {
             issues <- append(issues, pttrn)
             valid <- FALSE
-        } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
+        } else if(!(head(which(str_detect(raw_content, pttrn)), 1) 
+                    == next_sec_line)) {
             issues <- append(issues, pttrn)
             valid <- FALSE
         } else {
-            strng <- raw_content[next_sec_line]
+            strng <- raw_content[next_sec_line:length(raw_content)]
             next_sec_line <- next_sec_line + 1
             # number of summary stats
             pttrn <- "(?<=^group summary statistics \\()[0-9]+"
-            tmp_n_sumstat <- as.integer(str_extract(strng, pttrn))
+            tmp_n_sumstat <- sum(as.integer(str_extract(strng, pttrn)), 
+                                 na.rm = TRUE)
             # check
             valid <- (n_sumstat == tmp_n_sumstat)
             # TODO: parse end of file
