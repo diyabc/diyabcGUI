@@ -66,10 +66,11 @@ training_set_server <- function(input, output, session,
     # })
     
     # check project directory
+    proj_file_list <- function() return(list())
     observe({
         req(!is.null(local$proj_dir))
         
-        proj_file_list <- reactivePoll(
+        proj_file_list <<- reactivePoll(
             2000, session,
             checkFunc = function() {
                 if(dir.exists(local$proj_dir)) {
@@ -86,16 +87,19 @@ training_set_server <- function(input, output, session,
                 }
             }
         )
+    })
         
+    observe({
         local$proj_file_list <- proj_file_list()
     })
     
     ## check headerRF.txt file (if present)
+    proj_header_content <- function() return(list())
     observe({
         req(!is.null(local$locus_type))
         req(!is.null(local$proj_dir))
         
-        proj_header_content <- reactiveFileReader(
+        proj_header_content <<- reactiveFileReader(
             1000, session,
             file.path(local$proj_dir, "headerRF.txt"),
             function(file) {
@@ -109,7 +113,9 @@ training_set_server <- function(input, output, session,
                     list()
             }
         )
-        
+    })
+    
+    observe({
         local$proj_header_content <- proj_header_content()
     })
     
@@ -121,6 +127,13 @@ training_set_server <- function(input, output, session,
     
     ## training set def (if no header file provided)
     output$enable_def <- renderUI({
+        
+        # print("###### debug enable def")
+        # logging("new proj =", local$new_proj)
+        # logging("valid proj =", local$valid_proj)
+        # print("proj file list")
+        # print(local$proj_file_list)
+        
         req(!is.null(local$new_proj))
         req(!is.null(local$proj_file_list))
         req(!is.null(local$valid_proj))
@@ -1277,32 +1290,38 @@ locus_setup_server <- function(input, output, session,
             do.call(tagList, tag_list)
         } else if(local$locus_type == "mss") {
             # FIXME
+            print("data info")
+            print(local$data_info)
             warning("not supported at the moment")
+        } else {
+            NULL
         }
     })
     
     ## update output
     # FIXME
     observe({
-        out$locus <- lapply(
-            local$data_info$locus,
-            function(item) {
-                locus <- str_extract(item,
-                                    pattern = "(A|H|X|Y|M)")
-                n_loci <- input[[ str_c("num_", locus) ]]
-                start_loci <- input[[ str_c(locus, "_from") ]]
-                return(str_c(
-                    n_loci,
-                    str_c("<", locus, ">"),
-                    "G1",
-                    "from", start_loci,
-                    sep = " "
-                ))
-            }
-        )
-        # # debugging
-        # print("locus setup")
-        # print(out$locus)
+        if(local$locus_type == "snp") {
+            out$locus <- lapply(
+                local$data_info$locus,
+                function(item) {
+                    locus <- str_extract(item,
+                                        pattern = "(A|H|X|Y|M)")
+                    n_loci <- input[[ str_c("num_", locus) ]]
+                    start_loci <- input[[ str_c(locus, "_from") ]]
+                    return(str_c(
+                        n_loci,
+                        str_c("<", locus, ">"),
+                        "G1",
+                        "from", start_loci,
+                        sep = " "
+                    ))
+                }
+            )
+            # # debugging
+            # print("locus setup")
+            # print(out$locus)
+        }
     })
     
     ## output
