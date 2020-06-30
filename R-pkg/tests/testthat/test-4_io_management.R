@@ -63,6 +63,24 @@ test_that("check_poolseq_snp_data_file", {
     expect_false(out$valid)
 })
 
+test_that("check_mss_data_file", {
+    
+    data_file <- "mss_example_001.mss"
+    data_dir <- data_dir("mss")
+    out <- check_mss_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_true(out$valid)
+    
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+                          "IndSeq_SNP_estim_param")
+    out <- check_mss_data_file(
+        data_file, data_dir, expected_data_file = NULL
+    )
+    expect_false(out$valid)
+})
+
 test_that("check_file_name", {
     expect_true(check_file_name(system.file("DESCRIPTION", 
                                             package = "diyabcGUI")))

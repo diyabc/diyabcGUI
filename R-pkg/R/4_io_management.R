@@ -65,9 +65,12 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
     # data path
     data_path <- file.path(data_dir, data_file)
     
-    ## file exists?
+    ## file exists and is not empty?
     if(!file.exists(data_path)) {
-        err <- append(err, "Input file does not exist")
+        err <- append(err, "Input data file does not exist")
+        valid <- FALSE
+    } else if(file.info(data_path)$size == 0) {
+        err <- append(err, "Input data file is empty")
         valid <- FALSE
     } else {
         ## init output
@@ -335,9 +338,12 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
     # data path
     data_path <- file.path(data_dir, data_file)
     
-    ## file exists?
+    ## file exists and is not empty?
     if(!file.exists(data_path)) {
-        err <- append(err, "Input file does not exist")
+        err <- append(err, "Input data file does not exist")
+        valid <- FALSE
+    } else if(file.info(data_path)$size == 0) {
+        err <- append(err, "Input data file is empty")
         valid <- FALSE
     } else {
         ## init output
@@ -556,6 +562,496 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
         }
         # output
         spec <- lst(locus, n_indiv, n_loci, n_pop)
+    }
+    ## expected data file ?
+    if(!is.null(expected_data_file)) {
+        if(data_file != expected_data_file) {
+            err <- append(
+                err, 
+                str_c(
+                    "Data file expected by provided 'header.txt'",
+                    "or 'headerRF.txt' file(s)",
+                    "and data file provided by user are different.",
+                    sep = " "
+                )
+            )
+            valid <- FALSE
+        }
+    }
+    ## output    
+    out <- lst(header, info, spec, valid, err, msg)
+    return(out)
+}
+
+#' Check Microsat/Sequence (GenePop) data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @param expected_data_file string, expected data file name for 
+#' existing project, default is NULL.
+#' @importFrom tools file_ext
+check_mss_data_file <- function(data_file, data_dir, 
+                                expected_data_file = NULL) {
+    # output
+    header <- NULL
+    info <- NULL
+    spec <- NULL
+    valid <- TRUE
+    
+    err <- list()
+    msg <- list()
+    
+    # data path
+    data_path <- file.path(data_dir, data_file)
+    
+    ## file exists and is not empty?
+    if(!file.exists(data_path)) {
+        err <- append(err, "Input data file does not exist")
+        valid <- FALSE
+    } else if(file.info(data_path)$size == 0) {
+        err <- append(err, "Input data file is empty")
+        valid <- FALSE
+    } else {
+        ## init output
+        locus <- NULL
+        locus_mode <- NULL
+        locus_name <- NULL
+        seq_length <- NULL
+        n_loci <- NULL
+        n_pop <- NULL
+        n_indiv <- NULL
+        pop_size <- NULL
+        ## check file type
+        if(tools::file_ext(data_path) != "mss") {
+            err <- append(
+                err, 
+                "Microsat/Sequence files should have an extension '.mss'"
+            )
+            valid <- FALSE
+        } else {
+            ## info
+            info <- readLines(data_path, n = 1)
+            # sex ratio
+            pttrn <- "(?<=<)NM=[0-9]+\\.?[0-9]*NF(?=>)"
+            if(str_detect(info, pttrn)) {
+                msg <- append(
+                    msg,
+                    str_c("Sex ratio:", str_extract(info, pttrn), sep = " ")
+                )
+            } else {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with Microsat/Sequence file header first line:",
+                        "missing 'sex ratio', see manual", sep = " "
+                    )
+                )
+                valid <- FALSE
+            }
+            # additional info
+            pttrn <- "<NM=[0-9]+\\.?[0-9]*NF>"
+            add_info <- str_trim(str_replace_all(info, pttrn, ""))
+            if(str_length(add_info) > 0) {
+                msg <- append(
+                    msg,
+                    str_c("Additional information:", add_info, sep = " ")
+                )
+            }
+            
+            ## file content
+            file_content <- str_replace_all(str_trim(readLines(data_path)), 
+                                            " +", " ")
+            
+            ## locus description
+            pttrn <- "(?<=<)(A|H|X|Y|M)(?=>)"
+            locus_pttrn_match <- str_extract(file_content, pttrn)
+            # check if present
+            if(all(is.na(locus_pttrn_match))) {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with Microsat/Sequence file locus description:",
+                        "missing locus description, see manual", sep = " "
+                    )
+                )
+                valid <- FALSE
+            } else {
+                # check if description follows title line
+                locus_match_ind <- which(!is.na(locus_pttrn_match))
+                if(!all(locus_match_ind == 2:tail(locus_match_ind, 1))) {
+                    err <- append(
+                        err,
+                        str_c(
+                            "Issue with Microsat/Sequence file locus",
+                            "description:",
+                            "locus description should be located",
+                            "at beginning of data file, after title line,", 
+                            "with a single locus per line, see manual", 
+                            sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                }
+                
+                # check locus format
+                pttrn <- "^(Locus )?[A-Za-z0-9_-]+ <(A|H|X|Y|M)>$"
+                locus_spec_match_ind <- which(str_detect(file_content, pttrn))
+                if(!all(locus_spec_match_ind %in% locus_match_ind) 
+                   & !all(locus_match_ind %in% locus_spec_match_ind)) {
+                    err <- append(
+                        err,
+                        str_c(
+                            "Issue with Microsat/Sequence file locus",
+                            "description format at rows:",
+                            str_c(
+                                locus_spec_match_ind[!locus_spec_match_ind %in% locus_match_ind],
+                                collapse = ", "
+                            ), 
+                            sep = " "
+                        ),
+                        str_c(
+                            "You can use the following character to specify",
+                            "locus names:",
+                            "'A-Z', 'a-z', '0-9', '_', '-'",
+                            sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                }
+                
+                ## number of locus
+                n_loci <- length(locus_match_ind)
+                msg <- append(
+                    msg,
+                    str_c("Number of loci =", n_loci, sep = " ")
+                )
+                
+                ## locus info
+                pttrn <- "(?<=<)(A|H|X|Y|M)(?=>$)"
+                locus <- str_extract(file_content[locus_match_ind], pttrn)
+                
+                ## locus name
+                pttrn <- "[A-Za-z0-9_-]+(?= <)"
+                locus_name <- str_extract(file_content[locus_match_ind], pttrn)
+            }
+            
+            ## population
+            pttrn <- "^POP$"
+            pop_match_ind <- which(str_detect(file_content, pttrn))
+            # check
+            if(length(pop_match_ind) == 0) {
+                err <- append(
+                    err,
+                    str_c(
+                        "Issue with Microsat/Sequence file locus",
+                        "data description:",
+                        "keyword 'POP' is missing, see manual", 
+                        sep = " "
+                    )
+                )
+                valid <- FALSE
+            } else {
+                # number of pop
+                n_pop <- length(pop_match_ind)
+                # pop size
+                pop_size <- diff(c(pop_match_ind, length(file_content))) - 
+                                c(rep(1, n_pop - 1), 0)
+                # number of individuals
+                n_indiv <- sum(pop_size)
+                # msg
+                msg <- append(
+                    msg,
+                    str_c(
+                        "Sample:",
+                        n_indiv, "individuals", 
+                        "from", n_pop, "populations", 
+                        sep = " ")
+                )
+                
+                ## DATA content
+                data_ind <- head(pop_match_ind, 1):length(file_content)
+                data_content <- file_content[data_ind]
+                data_content <- data_content[data_content != "POP"]
+                
+                # write data content to a temporary file
+                data_content <- str_replace_all(
+                    str_replace_all(data_content, ",", " "),
+                    " +",  ";"
+                )
+                tmpFile <- file.path(data_dir, "tmp_data_file.csv")
+                tmp <- writeLines(data_content, tmpFile)
+                on.exit({
+                    if(file.exists(tmpFile))
+                        fs::file_delete(tmpFile)
+                })
+                
+                # read data as data.frame
+                data_content <- tryCatch(
+                    read.table(tmpFile, sep = ";", stringsAsFactors = FALSE,
+                               colClasses = "character"), 
+                    error = function(e) e
+                )
+                if("error" %in% class(data_content)) {
+                    err <- append(
+                        err, 
+                        str_c(
+                            "Issue with Microsat/Sequences data file content:",
+                            content$message, sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                } else {
+                    ##### check data
+                    ## check number of loci
+                    if(ncol(data_content) != n_loci + 1) {
+                        err <- append(
+                            err, 
+                            str_c(
+                                "Issue with Microsat/Sequences data file",
+                                "content:",
+                                "number of declared loci at beginning of file", 
+                                "does not correspond to number of actual loci", 
+                                "in the data", sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    
+                    # format data.frame
+                    colnames(data_content) <- c("indiv", 
+                                                str_c("locus", 1:n_loci))
+                    data_content$pop <- as.character(rep(1:n_pop, pop_size))
+                    
+                    ## indiv name first column
+                    if(!all(str_detect(data_content$indiv, "[A-Za-z0-9_-]+"))) {
+                        err <- append(
+                            err,
+                            str_c(
+                                "Issue with Microsat/Sequences data file",
+                                "content:",
+                                "First column should provide individual names,",
+                                "you can use the following character to specify",
+                                "such names:",
+                                "'A-Z', 'a-z', '0-9', '_', '-'",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                    
+                    ## check locus encoding
+                    microsat_hap_encoding <- "^[0-9]{3}$"
+                    microsat_dip_encoding <- "^[0-9]{6}$"
+                    microsat_x_encoding <- "^[0-9]{3}|[0-9]{6}$"
+                    nucleotid_encoding <- "[ATCG]*"
+                    seq_hap_encoding <- str_c("^<\\[", 
+                                              nucleotid_encoding, 
+                                              "\\]>")
+                    seq_dip_encoding <- str_c("^<\\[", 
+                                              nucleotid_encoding, 
+                                              "\\]\\[",
+                                              nucleotid_encoding,
+                                              "\\]>")
+                    seq_x_encoding <- str_c("^<\\[", 
+                                            nucleotid_encoding, 
+                                            "\\](\\[",
+                                            nucleotid_encoding,
+                                            "\\])?>")
+                    
+                    # locus data
+                    locus_data <- data_content[,2:(ncol(data_content) - 1)]
+                    
+                    # microsat locus
+                    microsat_hap_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      microsat_hap_encoding)))
+                            }
+                        ) & (! locus == "X")
+                    )
+                    microsat_dip_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      microsat_dip_encoding)))
+                            }
+                        ) & (! locus == "X")
+                    )
+                    microsat_x_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      microsat_x_encoding)))
+                            }
+                        ) & (locus == "X")
+                    )
+                    
+                    # seq locus
+                    seq_hap_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      seq_hap_encoding)))
+                            }
+                        ) & (! locus == "X")
+                    )
+                    seq_dip_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      seq_dip_encoding)))
+                            }
+                        ) & (! locus == "X")
+                    )
+                    seq_x_locus <- which(
+                        apply(
+                            locus_data, 2, function(loc) {
+                                return(all(str_detect(loc, 
+                                                      seq_x_encoding)))
+                            }
+                        ) & (locus == "X")
+                    )
+                    
+                    # check if issue with formating
+                    if(!all(sort(c(microsat_hap_locus, microsat_dip_locus,
+                                   microsat_x_locus,
+                                   seq_hap_locus, seq_dip_locus,
+                                   seq_x_locus)) == 
+                            1:n_loci)) {
+                        err <- append(
+                            err,
+                            str_c(
+                                "Issue with Microsat/Sequences data file",
+                                "content in columns:",
+                                str_c(
+                                    (1:n_loci)[!(1:n_loci) %in% 
+                                                   c(microsat_hap_locus, 
+                                                     microsat_dip_locus,
+                                                     microsat_x_locus,
+                                                     seq_hap_locus, 
+                                                     seq_dip_locus,
+                                                     seq_x_locus)],
+                                    collapse = ", "
+                                ),
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    } else {
+                        ## locus mode (microsat or sequence, hap or dip)
+                        tmp_locus_mode <- data.frame(
+                            mode = c(rep("microsat_hap", 
+                                         length(microsat_hap_locus)), 
+                                     rep("microsat_dip", 
+                                         length(microsat_dip_locus)), 
+                                     rep("microsat_xy", 
+                                         length(microsat_x_locus)),
+                                     rep("seq_hap", 
+                                         length(seq_hap_locus)), 
+                                     rep("seq_dip", 
+                                         length(seq_dip_locus)), 
+                                     rep("seq_xy", 
+                                         length(seq_x_locus))),
+                            index = c(microsat_hap_locus, microsat_dip_locus,
+                                      microsat_x_locus,
+                                      seq_hap_locus, seq_dip_locus,
+                                      seq_x_locus)
+                        )
+                        locus_mode <- 
+                            tmp_locus_mode$mode[order(tmp_locus_mode$index)]
+                        
+                        ## check that A are diploid locus
+                        if(!all(which(locus == "A") %in% 
+                                c(microsat_dip_locus, seq_dip_locus))) {
+                            err <- append(
+                                err,
+                                str_c(
+                                    "Issue with Microsat/Sequences data file",
+                                    "content:",
+                                    "Autosomal diploid (A)",
+                                    "should all be diploid loci.",
+                                    sep = " "
+                                )
+                            )
+                            valid <- FALSE
+                        }
+                        
+                        ## check that H, M and Y are haploid locus
+                        if(!all(which(locus %in% c("H", "M", "Y")) %in% 
+                                c(microsat_hap_locus, seq_hap_locus))) {
+                            err <- append(
+                                err,
+                                str_c(
+                                    "Issue with Microsat/Sequences data file",
+                                    "content:",
+                                    "Autosomal haploid (H), Y-linked (Y)",
+                                    "and Mitochondrial (M) loci",
+                                    "should all be haploid loci.",
+                                    sep = " "
+                                )
+                            )
+                            valid <- FALSE
+                        }
+                    }
+                    
+                    ## check seq locus length
+                    seq_length <- unlist(lapply(
+                        1:n_loci,
+                        function(col_ind) {
+                            if(col_ind %in% c(seq_hap_locus, seq_dip_locus,
+                                          seq_x_locus)) {
+                                
+                                tmp <- unlist(lapply(
+                                    1:n_indiv,
+                                    function(row_ind) {
+                                        return(
+                                            str_length(str_extract_all(
+                                                locus_data[row_ind,col_ind],
+                                                "\\[[ATCG]*\\]", 
+                                                simplify = TRUE
+                                            )) - 2
+                                        )
+                                    }
+                                ))
+                                
+                                out <- max(tmp)
+                                if(!all(unique(tmp) %in% c(0, out))) {
+                                    return(-100)
+                                } else {
+                                    return(out)
+                                }
+                            } else {
+                                return(NA)
+                            }
+                        }
+                    ))
+                    
+                    if(any(seq_length[!is.na(seq_length)] == -100)) {
+                        err <- append(
+                            err,
+                            str_c(
+                                "Issue with Microsat/Sequences data file",
+                                "content:",
+                                "non-missing sequence data attached to",
+                                "following loci",
+                                str_c(which(seq_length == -100), 
+                                      collapse = ", "),
+                                "do not have the same length in all",
+                                "individuals",
+                                sep = " "
+                            )
+                        )
+                        valid <- FALSE
+                    }
+                }
+            }
+        }
+        
+        # output
+        spec <- lst(locus, locus_mode, locus_name, seq_length, 
+                    n_indiv, n_loci, n_pop, pop_size)
     }
     ## expected data file ?
     if(!is.null(expected_data_file)) {
