@@ -100,7 +100,7 @@ test_that("parse_diyabc_header", {
     # model choice
     file_name <- file.path(example_dir(), "diyabc_rf_pipeline",
                            "IndSeq_SNP_model_choice",
-                           "header.txt")
+                           "headerRF.txt")
     file_type = "text/plain"
     locus_type = "snp"
     expect_equal(
@@ -124,6 +124,7 @@ test_that("parse_diyabc_header", {
                              "t41 T UN[10,1000,0.0,0.0]",
                              "t42 T UN[10,1000,0.0,0.0]",
                              "t43 T UN[10,1000,0.0,0.0]"), 
+            raw_group_prior_list = NULL,
             raw_scenario_list=c(
                 "N1 N2 N3 N4\n0 sample 1\n0 sample 2\n0 sample 3\n0 sample 4\nt423 split 4 2 3 ra\nt32 merge 2 3\nt21 merge 1 2",
                 "N1 N2 N3 N4\n0 sample 1\n0 sample 2\n0 sample 3\n0 sample 4\nt421 split 4 2 1 ra\nt32 merge 2 3\nt21 merge 1 2",
@@ -139,7 +140,7 @@ test_that("parse_diyabc_header", {
     # parameter estimation
     file_name <- file.path(example_dir(), "diyabc_rf_pipeline",
                            "IndSeq_SNP_estim_param",
-                           "header.txt")
+                           "headerRF.txt")
     file_type = "text/plain"
     locus_type = "snp"
     expect_equal(
@@ -157,6 +158,7 @@ test_that("parse_diyabc_header", {
                              "t32 T UN[10,1000,0.0,0.0]",
                              "t21 T UN[10,1000,0.0,0.0]",
                              "t431 T UN[10,1000,0.0,0.0]"), 
+            raw_group_prior_list = NULL,
             raw_scenario_list="N1 N2 N3 N4\n0 sample 1\n0 sample 2\n0 sample 3\n0 sample 4\nt431 split 4 1 3 ra\nt32 merge 2 3\nt21 merge 1 2", 
             simu_mode="DRAW UNTIL", 
             valid=TRUE
@@ -175,6 +177,7 @@ test_that("parse_diyabc_header", {
              n_loci_des=NULL, n_param=13, n_prior=NULL, n_sumstat=2, 
              raw_cond_list=NULL,
              raw_prior_list=NULL, 
+             raw_group_prior_list = NULL,
              raw_scenario_list=NULL, 
              simu_mode=NULL, valid=FALSE)
     )
@@ -187,6 +190,7 @@ test_that("parse_diyabc_header", {
              n_loci_des=NULL, n_param=NULL, n_prior=NULL, n_sumstat=NULL, 
              raw_cond_list=NULL,
              raw_prior_list=NULL, 
+             raw_group_prior_list = NULL,
              raw_scenario_list=NULL, 
              simu_mode=NULL, valid=FALSE)
     )

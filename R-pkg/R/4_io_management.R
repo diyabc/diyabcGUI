@@ -1094,6 +1094,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
     n_sumstat <- NULL
     raw_cond_list <- NULL
     raw_prior_list <- NULL
+    raw_group_prior_list <- NULL
     raw_scenario_list <- NULL
     simu_mode <- NULL
     valid <- TRUE
@@ -1123,6 +1124,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
             pttrn <- "[0-9]+(?= summary statistics)"
             n_sumstat <- as.integer(str_extract(strng, pttrn))
         }
+        
         ## scenarios
         pttrn <- "^[0-9]+ scenarios:( [0-9]+)+ ?$"
         # find section
@@ -1163,6 +1165,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
             # next section
             next_sec_line <- next_sec_line + max(line_seq)
         }
+        
         ## historical parameters
         pttrn <- "^historical parameters priors \\([0-9]+,[0-9]+\\)$"
         # find section
@@ -1197,6 +1200,7 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
             simu_mode <- raw_content[next_sec_line]
             next_sec_line <- next_sec_line + 1
         }
+        
         ## loci description
         pttrn <- "^loci description \\([0-9]+\\)$"
         # find section
@@ -1220,6 +1224,35 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
             valid <- all(unlist(lapply(loci_description, 
                                        check_header_loci_des)))
         }
+        
+        ## group prior (for microsat/sequence)
+        if(locus_type == "mss") {
+            pttrn <- "^group priors \\([0-9]+\\)$"
+            # find section
+            if(!any(str_detect(raw_content, pttrn))) {
+                issues <- append(issues, pttrn)
+                valid <- FALSE
+            } else if(!(which(str_detect(raw_content, pttrn)) == next_sec_line)) {
+                issues <- append(issues, pttrn)
+                valid <- FALSE
+            } else {
+                strng <- raw_content[next_sec_line]
+                next_sec_line <- next_sec_line + 1
+                # check next section
+                pttrn <- "^group summary statistics \\([0-9]+\\)$"
+                tmp_next <- which(str_detect(raw_content, pttrn))
+                if(tmp_next <= next_sec_line) {
+                    issues <- append(issues, pttrn)
+                    valid <- FALSE
+                }
+                # extract info
+                raw_group_prior_list <- raw_content[next_sec_line:(tmp_next-1)]
+                
+                # next section
+                next_sec_line <- tmp_next
+            }
+        }
+        
         ## group summary statistics
         pttrn <- "^group summary statistics \\([0-9]+\\)$"
         # find section
@@ -1243,8 +1276,8 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
     ## output
     return(lst(data_file, loci_description, 
                n_loci_des, n_param, n_prior, n_sumstat, 
-               raw_cond_list, raw_prior_list, raw_scenario_list, 
-               simu_mode, valid))
+               raw_cond_list, raw_prior_list, raw_group_prior_list, 
+               raw_scenario_list, simu_mode, valid))
 }
 
 #' Parse diyabc header file scenarii
