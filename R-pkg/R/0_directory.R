@@ -9,6 +9,28 @@ bin_dir <- function() {
     return(bindir)
 }
 
+#' find data directory
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_type string, `"indseq_snp"`, `"poolseq_snp"` or `"mss"`. Default 
+#' is NULL and parent data directory is returned.
+data_dir <- function(data_type = NULL) {
+    datadir <- system.file("data4test", package = "diyabcGUI")
+    if(str_length(datadir) == 0) {
+        stop("data directory not found")
+    }
+    if(!is.null(data_type)) {
+        subdir <- switch(
+            data_type,
+            "indseq_snp" = "IndSeq_SNP",
+            "poolseq_snp" = "PoolSeq_SNP",
+            "mss" = "Microsat_Sequences"
+        )
+        datadir <- file.path(datadir, subdir)
+    }
+    return(datadir)
+}
+
 #' find example directory
 #' @keywords internal
 #' @author Ghislain Durif
