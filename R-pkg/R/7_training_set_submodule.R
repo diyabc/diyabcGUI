@@ -1179,7 +1179,8 @@ locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("dna"), "Number of SNP loci to simulate"),
-        uiOutput(ns("setup"))
+        uiOutput(ns("setup")),
+        uiOutput(ns("mss_setup"))
     )
 }
 
@@ -1290,13 +1291,50 @@ locus_setup_server <- function(input, output, session,
             do.call(tagList, tag_list)
         } else if(local$locus_type == "mss") {
             # FIXME
-            print("data info")
-            print(local$data_info)
-            warning("not supported at the moment")
+            
+            # print("data info")
+            # print(local$data_info)
+            # warning("not supported at the moment")
+            
+            # microsat locus
+            microsat_locus <- str_detect(local$data_info$locus_mode, "microsat")
+            microsat_locus_type <- table(local$data_info$locus[microsat_locus])
+            
+            # seq locus
+            seq_locus <- str_detect(local$data_info$locus_mode, "seq")
+            seq_locus_type <- table(local$data_info$locus[seq_locus])
+            
+            tagList(
+                tags$ul(
+                    tags$li(
+                        "Number of Microsat loci:", 
+                        as.character(sum(microsat_locus))
+                    ),
+                    tags$li(
+                        "Number of Sequence loci:", 
+                        as.character(sum(seq_locus))
+                    )
+                )
+            )
         } else {
             NULL
         }
     })
+    
+    ## MSS setup
+    output$mss_setup <- renderUI({
+        if(local$locus_type == "mss") {
+            mss_group_setup_ui(ns("mss_group"))
+        } else {
+            NULL
+        }
+    })
+    
+    mss_group <- callModule(
+        mss_group_setup_server,
+        "mss_group",
+        data_info = reactive(local$data_info)
+    )
     
     ## update output
     # FIXME
@@ -1324,8 +1362,247 @@ locus_setup_server <- function(input, output, session,
         }
     })
     
+    
+    
     ## output
     return(out)
+    
+}
+
+#' MSS locus group setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_group_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        hr(),
+        h3(icon("object-group"), "Microsat/Sequence locus grouping"),
+        helpText(
+            "By default, all Microsat loci are grouped together,",
+            "same for all Sequence loci."
+        ),
+        br(),
+        h4("Microsat Loci"),
+        actionButton(
+            ns("enable_microsat_setup"),
+            label = "Configure Microsat locus grouping",
+            width = '100%'
+        ),
+        shinyjs::hidden(uiOutput(ns("microsat_setup"))),
+        br(),
+        h4("Sequence Loci"),
+        actionButton(
+            ns("enable_seq_setup"),
+            label = "Configure Sequence locus grouping",
+            width = '100%'
+        ),
+        shinyjs::hidden(uiOutput(ns("seq_setup")))
+    )
+}
+
+#' MSS locus group setup server
+#' @keywords internal
+#' @author Ghislain Durif
+mss_group_setup_server <- function(input, output, session, 
+                                   data_info = reactive({NULL})) {
+    
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        microsat_locus = list(),
+        seq_locus = list(),
+        seq_length = NULL,
+        # input
+        data_info = NULL
+    )
+    # get input
+    observe({
+        local$data_info <- data_info()
+        # # debugging
+        # print("data info")
+        # print(local$data_info)
+    })
+    
+    ## show/hide microsat grouping
+    observeEvent(input$enable_microsat_setup, {
+        req(!is.null(input$enable_microsat_setup))
+        if(input$enable_microsat_setup %% 2 == 0) {
+            shinyjs::hide(id = "microsat_setup")
+        } else{
+            shinyjs::show(id = "microsat_setup")
+        }
+    })
+    
+    ## show/hide seq grouping
+    observeEvent(input$enable_seq_setup, {
+        req(!is.null(input$enable_seq_setup))
+        if(input$enable_seq_setup %% 2 == 0) {
+            shinyjs::hide(id = "seq_setup")
+        } else{
+            shinyjs::show(id = "seq_setup")
+        }
+    })
+    
+    # microsat
+    observe({
+        req(!is.null(local$data_info))
+        req(!is.null(local$data_info$locus_mode))
+        req(!is.null(local$data_info$locus_name))
+        
+        microsat_locus <- str_detect(local$data_info$locus_mode, "microsat")
+        if(sum(microsat_locus) > 0) {
+            local$microsat_locus <- local$data_info$locus_name[microsat_locus]
+        } else {
+            list()
+        }
+        
+        seq_locus <- str_detect(local$data_info$locus_mode, "seq")
+        if(sum(seq_locus) > 0) {
+            local$seq_locus <- local$data_info$locus_name[seq_locus]
+        } else {
+            list()
+        }
+    })
+    
+    observe({
+        print("microsat locus")
+        print(local$microsat_locus)
+        print("seq locus")
+        print(local$seq_locus)
+    })
+    
+    # setup microsat
+    output$microsat_setup <- renderUI({
+        if(length(local$microsat_locus) > 0) {
+            locus_group_setup_ui(ns("microsat_grouping"))
+        } else {
+            helpText(
+                icon("warning"), "No Microsat locus in data."
+            )
+        }
+    })
+    
+    microsat_group <- callModule(
+        locus_group_setup_server,
+        "microsat_grouping",
+        locus_name = reactive(local$microsat_locus)
+    )
+    
+    # setup seq
+    output$seq_setup <- renderUI({
+        if(length(local$seq_locus) > 0) {
+            locus_group_setup_ui(ns("seq_grouping"))
+        } else {
+            helpText(
+                icon("warning"), "No Sequence locus in data."
+            )
+        }
+    })
+    
+    seq_group <- callModule(
+        locus_group_setup_server,
+        "seq_grouping",
+        locus_name = reactive(local$seq_locus)
+    )
+    
+}
+
+#' locus group setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+locus_group_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("n_group")),
+        actionGroupButtons(
+            inputIds = c(ns("add_group"), ns("rm_group")),
+            labels = list(
+                tags$span(icon("plus"), "Add group"),
+                tags$span(icon("minus"), "Remove group")
+            ),
+            fullwidth = TRUE
+        ),
+        helpText(
+            icon("warning"), 
+            "Configure the number of groups before assigning loci to them."
+        ),
+        uiOutput(ns("locus_group"))
+    )
+}
+
+#' locus group setup server
+#' @keywords internal
+#' @author Ghislain Durif
+locus_group_setup_server <- function(input, output, session, 
+                                     locus_name = reactive({NULL})) {
+    
+    # namespace
+    ns <- session$ns
+    # init local
+    local <- reactiveValues(
+        n_group = 1,
+        # input
+        locus_name = NULL
+    )
+    # get input
+    observe({
+        local$locus_name <- locus_name()
+    })
+    
+    # group making
+    output$locus_group <- renderUI({
+        req(!is.null(local$locus_name))
+        req(length(local$locus_name) > 0)
+        
+        tag_list <- lapply(
+            local$locus_name,
+            function(item) {
+                fluidRow(
+                    column(
+                        width = 6,
+                        shinyjs::disabled(
+                            textInput(
+                                ns(str_c(item, "_name")),
+                                label = "Locus",
+                                value = item
+                            )
+                        )
+                    ),
+                    column(
+                        width = 6,
+                        selectInput(
+                            ns(str_c(item, "_group")),
+                            label = "Group",
+                            choices = as.character(1:local$n_group),
+                            selected = 1
+                        )
+                    )
+                )
+            }
+        )
+        do.call(flowLayout, tag_list)
+    })
+    
+    # number of group
+    output$n_group <- renderUI({
+        req(!is.null(local$n_group))
+        helpText(
+            "Number of groups = ", as.character(local$n_group)
+        )
+    })
+    
+    # add group
+    observeEvent(input$add_group, {
+        req(local$n_group <= length(local$locus_name))
+        local$n_group <- local$n_group + 1
+    })
+    
+    # remove group
+    observeEvent(input$rm_group, {
+        req(local$n_group > 1)
+        local$n_group <- local$n_group - 1
+    })
     
 }
 
