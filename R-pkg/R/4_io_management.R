@@ -26,19 +26,21 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode,
     out <- NULL
     # ## debugging
     # logging("data_file = ", data_file)
+    ## mss locus
+    if(locus_type == "mss") {
+        out <- check_mss_data_file(data_file, data_dir, expected_data_file)
     ## snp locus / indseq
-    if((locus_type == "snp") & (seq_mode == "indseq")) {
+    } else if((locus_type == "snp") & (seq_mode == "indseq")) {
         out <- check_indseq_snp_data_file(data_file, data_dir, 
                                           expected_data_file)
     ## snp locus / poolseq
     } else if((locus_type == "snp") & (seq_mode == "poolseq")) {
         out <- check_poolseq_snp_data_file(data_file, data_dir, 
                                            expected_data_file)
-    ## mss locus
-    } else if(locus_type == "mss") {
-        warning("Not implemented yet")
-        # FIXME
+    } else {
+        stop("Issue with input arguments")
     }
+    
     ## output
     return(out)
 }

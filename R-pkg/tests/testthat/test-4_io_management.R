@@ -22,7 +22,13 @@ test_that("check_data_file", {
     expect_true(out$valid)
     
     # mss
-    # TODO
+    data_file <- "mss_example_001.mss"
+    data_dir <- data_dir("mss")
+    locus_type <- "mss"
+    seq_mode <- NULL
+    out <- check_data_file(data_file, data_dir, locus_type, seq_mode, 
+                           expected_data_file = data_file)
+    expect_true(out$valid)
 })
 
 test_that("check_indseq_snp_data_file", {
