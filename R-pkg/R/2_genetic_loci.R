@@ -15,7 +15,7 @@ locus_nb_ui <- function(id, title = NULL) {
                          value = 0, min = 0),
             numericInput(ns("x_linked"), label = "X-linked (X)", 
                          value = 0, min = 0),
-            numericInput(ns("y_linked"), label = "X-linked (Y)", 
+            numericInput(ns("y_linked"), label = "Y-linked (Y)", 
                          value = 0, min = 0),
             numericInput(ns("mito"), label = "Mitochondrial (M)", 
                          value = 0, min = 0)
