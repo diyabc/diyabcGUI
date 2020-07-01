@@ -740,6 +740,19 @@ check_mss_data_file <- function(data_file, data_dir,
                 pttrn <- "^[A-Za-z0-9\\s_\\-]+(?= <)"
                 locus_name <- str_extract(file_content[locus_match_ind], pttrn)
                 locus_name <- str_replace_all(locus_name, " +", "_")
+                
+                if(length(unique(locus_name)) != length(locus_name)) {
+                    err <- append(
+                        err,
+                        str_c(
+                            "Issue with Microsat/Sequence file locus",
+                            "description:",
+                            "each locus should have a unique name", 
+                            sep = " "
+                        )
+                    )
+                    valid <- FALSE
+                }
             }
             
             ## population
