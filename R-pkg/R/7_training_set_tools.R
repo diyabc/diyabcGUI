@@ -4,7 +4,8 @@
 write_header <- function(proj_dir, data_file, 
                          scenario_list, param_count_list, 
                          param_list, cond_list, 
-                         locus_type, seq_mode, locus) {
+                         locus_type, seq_mode, locus, 
+                         mss_locus, mss_group_prior) {
     
     # FIXME check input
     
@@ -28,6 +29,10 @@ write_header <- function(proj_dir, data_file,
     # print(seq_mode)
     # print("locus =")
     # print(locus)
+    print("mss_locus =")
+    print(mss_locus)
+    print("mss_group_prior =")
+    print(mss_group_prior)
     
     out <- NULL
     
@@ -95,42 +100,145 @@ write_header <- function(proj_dir, data_file,
     
     # print("log4")
     ## loci description
-    sec4 <- str_c(
-        str_c(
-            "loci description",
-            str_c("(", length(locus_type), ")"),
-            sep = " "
-        ),
-        str_c(locus, collapse = "\n"),
-        sep = "\n"
-    )
+    sec4 <- NULL
+    if(locus_type == "snp") {
+        sec4 <- str_c(
+            str_c(
+                "loci description",
+                str_c("(", length(locus), ")"),
+                sep = " "
+            ),
+            str_c(locus, collapse = "\n"),
+            sep = "\n"
+        )
+    } else if(locus_type == "mss") {
+        if(is.null(mss_locus)) {
+            stop("missing 'mss_locus' input argument")
+        }
+        sec4 <- str_c(
+            str_c(
+                "loci description",
+                str_c("(", length(mss_locus), ")"),
+                sep = " "
+            ),
+            str_c(mss_locus, collapse = "\n"),
+            sep = "\n"
+        )
+    } else {
+        stop("wrong 'locus_type' input argument")
+    }
+    
+    ## group prior
+    sec4b <- NULL
+    if(locus_type == "mss") {
+        if(is.null(mss_group_prior)) {
+            stop("missing 'mss_group_prior' input argument")
+        }
+        sec4 <- str_c(
+            str_c(
+                "group priors",
+                str_c("(", 
+                      sum(str_detect(mss_group_prior, "group G")), 
+                      ")"),
+                sep = " "
+            ),
+            str_c(mss_group_prior, collapse = "\n"),
+            sep = "\n"
+        )
+    }
     
     # print("log5")
     ## group summary statistics
-    sec5 <- str_c(
-        "group summary statistics (2)",
-        "group G1 (2)",
-        "HP0 1 2",
-        sep = "\n"
-    )
+    sec5 <- NULL
+    if(locus_type == "snp") {
+        sec5 <- str_c(
+            "group summary statistics (2)",
+            "group G1 (2)",
+            "HP0 1 2",
+            sep = "\n"
+        )
+    } else if(locus_type == "mss") {
+        
+        sec5 <- str_c(
+            "group summary statistics",
+            str_c("(", 
+                  sum(str_detect(mss_group_prior, "group G")), 
+                  ")"),
+            sep = " "
+        )
+        
+        microsat_group <- str_extract(
+            mss_group_prior,
+            "^group G[0-9]+ \\[M\\]"
+        )
+        if(sum(!is.na(microsat_group)) > 0) {
+            sec5 <- str_c(
+                sec5,
+                str_c(
+                    unlist(lapply(
+                        microsat_group[!is.na(microsat_group)],
+                        function(item) return(
+                            str_c(
+                                str_c(item, "(1)", sep = " "),
+                                "NAL 1", sep =  "\n"
+                            )
+                        )
+                    )),
+                    collapse = "\n"
+                ),
+                sep = "\n"
+            )
+        }
+        
+        seq_group <- str_extract(
+            mss_group_prior,
+            "^group G[0-9]+ \\[S\\]"
+        )
+        if(sum(!is.na(seq_group)) > 0) {
+            sec5 <- str_c(
+                sec5,
+                str_c(
+                    unlist(lapply(
+                        seq_group[!is.na(seq_group)],
+                        function(item) return(
+                            str_c(
+                                str_c(item, "(1)", sep = " "),
+                                "NHA 1", sep =  "\n"
+                            )
+                        )
+                    )),
+                    collapse = "\n"
+                ),
+                sep = "\n"
+            )
+        }
+    }
     
     # print("log6")
     ## final summary
     sec6 <- str_c(
         "scenario",
         str_c(
-            str_extract(
-                string = param_list, 
-                pattern = str_c("^", single_param_regex(), "(?= )")
+            str_pad(
+                str_extract(
+                    string = param_list, 
+                    pattern = str_c("^", single_param_regex(), "(?= )")
+                ),
+                width = 14,
+                side = "left"
             ),
-            collapse = "    "
-        ), 
-        "HP0_1_1", "HP0_1_2",
-        sep = "    "
+            collapse = " "
+        ),
+        sep = " "
     )
     ## merge
-    # out <- str_split(str_c(sec1, sec2, sec3, sec4, sep = "\n\n"), "\n")
-    out <- str_c(sec1, sec2, sec3, sec4, sec5, sec6, sep = "\n\n")
+    out <- NULL
+    if(locus_type == "snp") {
+        out <- str_c(sec1, sec2, sec3, sec4, sec5, sec6, sep = "\n\n")
+    } else if(locus_type == "mss") {
+        out <- str_c(sec1, sec2, sec3, sec4, sec4b, sec5, sec6, sep = "\n\n")
+    }
+    
     out <- str_c(out, "\n\n")
 
     ## write to file
