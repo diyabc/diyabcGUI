@@ -699,7 +699,8 @@ check_mss_data_file <- function(data_file, data_dir,
                 }
                 
                 # check locus format
-                pttrn <- "^(Locus )?[A-Za-z0-9_-]+ <(A|H|X|Y|M)>$"
+                # pttrn <- "^(Locus )?[A-Za-z0-9_-]+ <(A|H|X|Y|M)>$"
+                pttrn <- "^[A-Za-z0-9\\s_\\-]+ <(A|H|X|Y|M)>$"
                 locus_spec_match_ind <- which(str_detect(file_content, pttrn))
                 if(!all(locus_spec_match_ind %in% locus_match_ind) 
                    & !all(locus_match_ind %in% locus_spec_match_ind)) {
@@ -717,7 +718,7 @@ check_mss_data_file <- function(data_file, data_dir,
                         str_c(
                             "You can use the following character to specify",
                             "locus names:",
-                            "'A-Z', 'a-z', '0-9', '_', '-'",
+                            "'A-Z', 'a-z', '0-9', '_', '-' and ' '",
                             sep = " "
                         )
                     )
@@ -736,8 +737,9 @@ check_mss_data_file <- function(data_file, data_dir,
                 locus <- str_extract(file_content[locus_match_ind], pttrn)
                 
                 ## locus name
-                pttrn <- "[A-Za-z0-9_-]+(?= <)"
+                pttrn <- "^[A-Za-z0-9\\s_\\-]+(?= <)"
                 locus_name <- str_extract(file_content[locus_match_ind], pttrn)
+                locus_name <- str_replace_all(locus_name, " +", "_")
             }
             
             ## population
