@@ -376,6 +376,7 @@ training_set_def_ui <- function(id) {
             style = "fill",
             block = TRUE
         ),
+        uiOutput(ns("feedback")),
         br(),
         hr()
     )
@@ -548,63 +549,110 @@ training_set_def_server <- function(input, output, session,
         # print("locus =")
         # print(locus_setup$locus)
         
-        req(!is.null(local$proj_dir))
-        req(!is.null(local$data_file))
-        req(!is.null(local$raw_scenario_list))
-        req(!is.null(local$param_count_list))
-        req(!is.null(local$raw_param_list))
-        req(!is.null(local$raw_cond_list))
-        req(!is.null(local$locus_type))
-        req(!is.null(local$seq_mode))
-        req(!is.null(locus_setup$locus))
+        ready <- TRUE
+        msg <- list()
         
-        write_header(local$proj_dir, local$data_file, 
-                     local$raw_scenario_list, local$param_count_list, 
-                     unlist(local$raw_param_list), 
-                     unlist(local$raw_cond_list), 
-                     local$locus_type, local$seq_mode, locus_setup$locus)
-        
-        file_check <- parse_diyabc_header(
-            file_name = file.path(local$proj_dir, "header.txt"),
-            file_type = "text/plain",
-            locus_type = local$locus_type
-        )
-        
-        # # debugging
-        # print("is header ok")
-        # print(file_check$valid)
-        
-        out$valid_def <- file_check$valid
-        
-        if(out$valid_def) {
-            showNotification(
-                id = ns("headerfile_ok"),
-                duration = 5,
-                closeButton = TRUE,
-                type = "message",
-                tagList(
-                    tags$p(
-                        icon("check"),
-                        paste0("Project is ready to run simulations.")
-                    )
-                )
-            )
-        } else {
-            showNotification(
-                id = ns("headerfile_ok"),
-                duration = 5,
-                closeButton = TRUE,
-                type = "error",
-                tagList(
-                    tags$p(
-                        icon("warning"),
-                        paste0("Project is not ready to run simulations.")
-                    )
-                )
+        if(length(local$raw_scenario_list) == 0) {
+            ready <- FALSE
+            msg <- append(
+                msg,
+                "Missing historical scenario."
             )
         }
         
-        out$trigger <- ifelse(!is.null(out$trigger), out$trigger, 0) + 1
+        if(length(local$raw_param_list) == 0) {
+            ready <- FALSE
+            msg <- append(
+                msg,
+                "Missing priors."
+            )
+        }
+        
+        if(length(local$raw_cond_list) == 0) {
+            ready <- FALSE
+            msg <- append(
+                msg,
+                "Missing conditions."
+            )
+        }
+        
+        output$feedback <- renderUI({
+            if(length(msg) > 0) {
+                tag_list <- lapply(
+                    msg,
+                    function(item) return(tags$li(item))
+                )
+                helpText(
+                    icon("warning"), "Settings are not ready.",
+                    do.call(
+                        tags$ul,
+                        tag_list
+                    )
+                )
+            } else {
+                NULL
+            }
+        })
+        
+        if(ready) {
+            req(!is.null(local$proj_dir))
+            req(!is.null(local$data_file))
+            req(!is.null(local$raw_scenario_list))
+            req(!is.null(local$param_count_list))
+            req(!is.null(local$raw_param_list))
+            req(!is.null(local$raw_cond_list))
+            req(!is.null(local$locus_type))
+            req(!is.null(local$seq_mode))
+            req(!is.null(locus_setup$locus))
+            
+            write_header(local$proj_dir, local$data_file, 
+                         local$raw_scenario_list, local$param_count_list, 
+                         unlist(local$raw_param_list), 
+                         unlist(local$raw_cond_list), 
+                         local$locus_type, local$seq_mode, locus_setup$locus)
+            
+            file_check <- parse_diyabc_header(
+                file_name = file.path(local$proj_dir, "header.txt"),
+                file_type = "text/plain",
+                locus_type = local$locus_type
+            )
+            
+            # # debugging
+            # print("is header ok")
+            # print(file_check$valid)
+            
+            out$valid_def <- file_check$valid
+            
+            if(out$valid_def) {
+                showNotification(
+                    id = ns("headerfile_ok"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "message",
+                    tagList(
+                        tags$p(
+                            icon("check"),
+                            paste0("Project is ready to run simulations.")
+                        )
+                    )
+                )
+            } else {
+                showNotification(
+                    id = ns("headerfile_ok"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "error",
+                    tagList(
+                        tags$p(
+                            icon("warning"),
+                            paste0("Project is not ready to run simulations.")
+                        )
+                    )
+                )
+            }
+            
+            out$trigger <- ifelse(!is.null(out$trigger), out$trigger, 0) + 1
+        }
     })
     
 
@@ -962,9 +1010,9 @@ prior_ui <- function(id) {
         fluidRow(
             column(
                 width = 1,
-                textOutput(
+                tags$h4(textOutput(
                     ns("param_name")
-                )
+                ))
             ),
             column(
                 width = 4,
@@ -983,7 +1031,7 @@ prior_ui <- function(id) {
                     column(
                         width = 3,
                         splitLayout(
-                            tags$p(
+                            tags$h5(
                                 "Min.", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
@@ -997,7 +1045,7 @@ prior_ui <- function(id) {
                     column(
                         width = 3,
                         splitLayout(
-                            tags$p(
+                            tags$h5(
                                 "Max.", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
@@ -1011,7 +1059,7 @@ prior_ui <- function(id) {
                     column(
                         width = 3,
                         splitLayout(
-                            tags$p(
+                            tags$h5(
                                 "Mean", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
@@ -1025,7 +1073,7 @@ prior_ui <- function(id) {
                     column(
                         width = 3,
                         splitLayout(
-                            tags$p(
+                            tags$h5(
                                 "Std. dev.", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
@@ -1390,13 +1438,27 @@ mss_group_setup_ui <- function(id) {
         ),
         shinyjs::hidden(uiOutput(ns("microsat_setup"))),
         br(),
+        br(),
+        actionButton(
+            ns("enable_microsat_setup_motif"),
+            label = "Configure Microsat locus motif and range",
+            width = '100%'
+        ),
+        helpText(
+            "By default, all Microsat loci are supposed to be dinucleid",
+            "(motif = 2) with a range of 40."
+        ),
+        shinyjs::hidden(uiOutput(ns("microsat_setup_motif"))),
+        br(),
+        hr(),
         h4("Sequence Loci"),
         actionButton(
             ns("enable_seq_setup"),
             label = "Configure Sequence locus grouping",
             width = '100%'
         ),
-        shinyjs::hidden(uiOutput(ns("seq_setup")))
+        shinyjs::hidden(uiOutput(ns("seq_setup"))),
+        hr()
     )
 }
 
@@ -1474,6 +1536,7 @@ mss_group_setup_server <- function(input, output, session,
     
     # setup microsat
     output$microsat_setup <- renderUI({
+        req(!is.null(length(local$microsat_locus)))
         if(length(local$microsat_locus) > 0) {
             locus_group_setup_ui(ns("microsat_grouping"))
         } else {
@@ -1491,6 +1554,7 @@ mss_group_setup_server <- function(input, output, session,
     
     # setup seq
     output$seq_setup <- renderUI({
+        req(!is.null(length(local$seq_locus)))
         if(length(local$seq_locus) > 0) {
             locus_group_setup_ui(ns("seq_grouping"))
         } else {
@@ -1506,6 +1570,64 @@ mss_group_setup_server <- function(input, output, session,
         locus_name = reactive(local$seq_locus)
     )
     
+    ## show/hide microsat motif/range set up
+    observeEvent(input$enable_microsat_setup_motif, {
+        req(!is.null(input$enable_microsat_setup_motif))
+        if(input$enable_microsat_setup_motif %% 2 == 0) {
+            shinyjs::hide(id = "microsat_setup_motif")
+        } else {
+            shinyjs::show(id = "microsat_setup_motif")
+        }
+    })
+    
+    # microsat motif/range/setup
+    output$microsat_setup_motif <- renderUI({
+        req(!is.null(local$microsat_locus))
+        req(length(local$microsat_locus) > 0)
+        tag_list <- lapply(
+            local$microsat_locus,
+            function(item) {
+                fluidRow(
+                    column(
+                        width = 4,
+                        shinyjs::disabled(
+                            textInput(
+                                ns(str_c(item, "_name2")),
+                                label = "Locus",
+                                value = item
+                            )
+                        )
+                    ),
+                    column(
+                        width = 4,
+                        numericInput(
+                            ns(str_c(item, "_motif")),
+                            label = "Motif",
+                            value = 2,
+                            min = 0,
+                            max = 10
+                        )
+                    ),
+                    column(
+                        width = 4,
+                        numericInput(
+                            ns(str_c(item, "_range")),
+                            label = "Range",
+                            value = 40,
+                            min = 10,
+                            max = 100
+                        )
+                    )
+                )
+            }
+        )
+        do.call(
+            tagList,
+            tag_list
+        )
+    })
+    
+    
 }
 
 #' locus group setup ui
@@ -1514,6 +1636,7 @@ mss_group_setup_server <- function(input, output, session,
 locus_group_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        hr(),
         uiOutput(ns("n_group")),
         actionGroupButtons(
             inputIds = c(ns("add_group"), ns("rm_group")),
@@ -1527,7 +1650,8 @@ locus_group_setup_ui <- function(id) {
             icon("warning"), 
             "Configure the number of groups before assigning loci to them."
         ),
-        uiOutput(ns("locus_group"))
+        uiOutput(ns("locus_group")),
+        hr()
     )
 }
 
@@ -1587,8 +1711,12 @@ locus_group_setup_server <- function(input, output, session,
     # number of group
     output$n_group <- renderUI({
         req(!is.null(local$n_group))
-        helpText(
-            "Number of groups = ", as.character(local$n_group)
+        tags$h5(
+            tags$b(
+                "Number of groups = ", 
+                as.character(local$n_group)
+            ),
+            style = "text-align: center;"
         )
     })
     
