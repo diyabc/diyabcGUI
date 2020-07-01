@@ -1433,31 +1433,31 @@ mss_group_setup_ui <- function(id) {
         h4("Microsat Loci"),
         actionButton(
             ns("enable_microsat_setup"),
-            label = "Configure Microsat locus grouping",
+            label = "Show/hide Microsat locus grouping configuration",
             width = '100%'
         ),
-        shinyjs::hidden(uiOutput(ns("microsat_setup"))),
+        uiOutput(ns("microsat_setup")),
         br(),
         br(),
         actionButton(
             ns("enable_microsat_setup_motif"),
-            label = "Configure Microsat locus motif and range",
+            label = "Show/hide Microsat locus motif and range configuration",
             width = '100%'
         ),
         helpText(
             "By default, all Microsat loci are supposed to be dinucleid",
             "(motif = 2) with a range of 40."
         ),
-        shinyjs::hidden(uiOutput(ns("microsat_setup_motif"))),
+        uiOutput(ns("microsat_setup_motif")),
         br(),
         hr(),
         h4("Sequence Loci"),
         actionButton(
             ns("enable_seq_setup"),
-            label = "Configure Sequence locus grouping",
+            label = "Show/hide Sequence locus grouping configuration",
             width = '100%'
         ),
-        shinyjs::hidden(uiOutput(ns("seq_setup"))),
+        uiOutput(ns("seq_setup")),
         hr()
     )
 }
@@ -1465,6 +1465,7 @@ mss_group_setup_ui <- function(id) {
 #' MSS locus group setup server
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom dplyr left_join
 mss_group_setup_server <- function(input, output, session, 
                                    data_info = reactive({NULL})) {
     
@@ -1473,8 +1474,13 @@ mss_group_setup_server <- function(input, output, session,
     # init local
     local <- reactiveValues(
         microsat_locus = list(),
+        microsat_locus_type = list(),
+        microsat_locus_motif_range = list(),
         seq_locus = list(),
+        seq_locus_type = list(),
         seq_length = NULL,
+        raw_microsat_locus = list(),
+        raw_seq_locus = list(),
         # input
         data_info = NULL
     )
@@ -1485,6 +1491,11 @@ mss_group_setup_server <- function(input, output, session,
         # print("data info")
         # print(local$data_info)
     })
+    
+    # init output
+    out <- reactiveValues(
+        raw_locus = list()
+    )
     
     ## show/hide microsat grouping
     observeEvent(input$enable_microsat_setup, {
@@ -1511,28 +1522,35 @@ mss_group_setup_server <- function(input, output, session,
         req(!is.null(local$data_info))
         req(!is.null(local$data_info$locus_mode))
         req(!is.null(local$data_info$locus_name))
+        req(!is.null(local$data_info$locus))
         
         microsat_locus <- str_detect(local$data_info$locus_mode, "microsat")
         if(sum(microsat_locus) > 0) {
             local$microsat_locus <- local$data_info$locus_name[microsat_locus]
+            local$microsat_locus_type <- local$data_info$locus[microsat_locus]
         } else {
-            list()
+            local$microsat_locus <- list()
+            local$microsat_locus_type <- list()
         }
         
         seq_locus <- str_detect(local$data_info$locus_mode, "seq")
         if(sum(seq_locus) > 0) {
             local$seq_locus <- local$data_info$locus_name[seq_locus]
+            local$seq_locus_type <- local$data_info$locus[seq_locus]
+            local$seq_length <- local$data_info$seq_length[seq_locus]
         } else {
-            list()
+            local$seq_locus <- list()
+            local$seq_locus_type <- list()
+            local$seq_length <- list()
         }
     })
     
-    observe({
-        print("microsat locus")
-        print(local$microsat_locus)
-        print("seq locus")
-        print(local$seq_locus)
-    })
+    # observe({
+    #     print("microsat locus")
+    #     print(local$microsat_locus)
+    #     print("seq locus")
+    #     print(local$seq_locus)
+    # })
     
     # setup microsat
     output$microsat_setup <- renderUI({
@@ -1567,7 +1585,8 @@ mss_group_setup_server <- function(input, output, session,
     seq_group <- callModule(
         locus_group_setup_server,
         "seq_grouping",
-        locus_name = reactive(local$seq_locus)
+        locus_name = reactive(local$seq_locus),
+        n_existing_group = reactive(microsat_group$n_group)
     )
     
     ## show/hide microsat motif/range set up
@@ -1580,9 +1599,8 @@ mss_group_setup_server <- function(input, output, session,
         }
     })
     
-    # microsat motif/range/setup
+    # microsat motif/range setup
     output$microsat_setup_motif <- renderUI({
-        req(!is.null(local$microsat_locus))
         req(length(local$microsat_locus) > 0)
         tag_list <- lapply(
             local$microsat_locus,
@@ -1627,6 +1645,124 @@ mss_group_setup_server <- function(input, output, session,
         )
     })
     
+    ## format microsat motif/range setup
+    observe({
+        req(length(local$microsat_locus) > 0)
+        
+        local$microsat_locus_motif_range <- Reduce(
+            "rbind",
+            lapply(
+                local$microsat_locus, 
+                function(item) {
+                    if(!is.null(input[[ str_c(item, "_motif") ]]) &
+                       !is.null(input[[ str_c(item, "_range") ]])) {
+                        return(
+                            data.frame(
+                                name = item,
+                                motif = input[[ str_c(item, "_motif") ]],
+                                range = input[[ str_c(item, "_range") ]],
+                                stringsAsFactors = FALSE
+                            )
+                        )
+                    } else {
+                        return(NULL)
+                    }
+                    
+                }
+            )
+        )
+        
+        # print("microsat_locus_motif_range")
+        # print(local$microsat_locus_motif_range)
+    })
+    
+    ## format microsat locus
+    observe({
+        req(length(local$microsat_locus) > 0)
+        req(length(microsat_group$locus_group) > 0)
+        req(is.data.frame(local$microsat_locus_motif_range))
+        req(nrow(local$microsat_locus_motif_range) > 0)
+        
+        tmp_microsat_group <- data.frame(
+            name = local$microsat_locus,
+            type = str_c("<", local$microsat_locus_type, ">"),
+            mode = rep("[M]", length(local$microsat_locus)),
+            group = str_c("G", microsat_group$locus_group),
+            stringsAsFactors = FALSE
+        )
+        
+        tmp_microsat <- dplyr::left_join(tmp_microsat_group, 
+                                         local$microsat_locus_motif_range,
+                                         by = "name")
+        
+        # print("microsat locus")
+        # print(tmp_microsat)
+        
+        local$raw_microsat_locus <- apply(
+            tmp_microsat,
+            1,
+            str_c, collapse = " "
+        )
+        
+        # print("raw microsat locus")
+        # print(local$raw_microsat_locus)
+        
+    })
+    
+    ## format seq locus
+    observe({
+        req(length(local$seq_locus) > 0)
+        req(length(seq_group$locus_group) > 0)
+        req(length(local$seq_length) > 0)
+        
+        tmp_seq_group <- data.frame(
+            name = local$seq_locus,
+            type = str_c("<", local$seq_locus_type, ">"),
+            mode = rep("[M]", length(local$seq_locus)),
+            group = str_c("G", seq_group$locus_group),
+            length = local$seq_length,
+            stringsAsFactors = FALSE
+        )
+        
+        # print("seq locus group")
+        # print(tmp_seq_group)
+        
+        local$raw_seq_locus <- apply(
+            tmp_seq_group,
+            1,
+            str_c, collapse = " "
+        )
+        
+        # print("raw seq locus")
+        # print(local$raw_seq_locus)
+    })
+    
+    ## output
+    observe({
+        req(length(local$raw_microsat_locus) > 0)
+        req(length(local$raw_seq_locus) > 0)
+        req(!is.null(local$data_info$locus_name))
+        
+        tmp_raw_locus <- c(local$raw_microsat_locus, local$raw_seq_locus)
+        
+        out$raw_locus <- left_join(
+            data.frame(
+                name = local$data_info$locus_name, 
+                stringsAsFactors = FALSE
+            ),
+            data.frame(
+                name = str_extract(tmp_raw_locus, "^[A-Za-z0-9_\\-]+(?= )"),
+                info = tmp_raw_locus, 
+                stringsAsFactors = FALSE
+            ),
+            by = "name"
+        )$info
+        
+        print("raw locus")
+        print(out$raw_locus)
+    })
+    
+    return(out)
     
 }
 
@@ -1659,19 +1795,37 @@ locus_group_setup_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 locus_group_setup_server <- function(input, output, session, 
-                                     locus_name = reactive({NULL})) {
+                                     locus_name = reactive({NULL}),
+                                     n_existing_group = reactive({0})) {
     
     # namespace
     ns <- session$ns
     # init local
     local <- reactiveValues(
         n_group = 1,
+        possible_groups = list(),
         # input
-        locus_name = NULL
+        locus_name = NULL,
+        n_existing_group = 0
     )
     # get input
     observe({
         local$locus_name <- locus_name()
+        local$n_existing_group <- n_existing_group()
+    })
+    
+    # init output
+    out <- reactiveValues(
+        n_group = NULL,
+        locus_group = list()
+    )
+    
+    # possible groups
+    observe({
+        req(!is.null(local$n_existing_group))
+        req(!is.null(local$n_group))
+        
+        local$possible_groups <- (1:local$n_group) + local$n_existing_group
     })
     
     # group making
@@ -1698,7 +1852,7 @@ locus_group_setup_server <- function(input, output, session,
                         selectInput(
                             ns(str_c(item, "_group")),
                             label = "Group",
-                            choices = as.character(1:local$n_group),
+                            choices = as.character(local$possible_groups),
                             selected = 1
                         )
                     )
@@ -1732,6 +1886,24 @@ locus_group_setup_server <- function(input, output, session,
         local$n_group <- local$n_group - 1
     })
     
+    ## output
+    observe({
+        req(!is.null(local$locus_name))
+        out$locus_group <- unlist(lapply(
+            local$locus_name,
+            function(item) return(input[[ str_c(item, "_group") ]])
+        ))
+        
+        # print("locus group")
+        # print(out$locus_group)
+    })
+    
+    observe({
+        req(length(out$locus_group) > 0)
+        out$n_group <- max(as.integer(out$locus_group))
+    })
+    
+    return(out)
 }
 
 #' Training set simulation action module ui
