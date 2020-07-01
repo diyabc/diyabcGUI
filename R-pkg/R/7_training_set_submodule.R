@@ -548,6 +548,10 @@ training_set_def_server <- function(input, output, session,
         # print(local$seq_mode)
         # print("locus =")
         # print(locus_setup$locus)
+        # print("mss_locus =")
+        # print(locus_setup$mss_locus)
+        # print("mss_group_prior =")
+        # print(locus_setup$mss_group_prior)
         
         ready <- TRUE
         msg <- list()
@@ -605,11 +609,17 @@ training_set_def_server <- function(input, output, session,
             req(!is.null(local$seq_mode))
             req(!is.null(locus_setup$locus))
             
+            if(local$locus_type == "mss") {
+                req(!is.null(locus_setup$mss_locus))
+                req(!is.null(locus_setup$mss_group_prior))
+            }
+            
             write_header(local$proj_dir, local$data_file, 
                          local$raw_scenario_list, local$param_count_list, 
                          unlist(local$raw_param_list), 
                          unlist(local$raw_cond_list), 
-                         local$locus_type, local$seq_mode, locus_setup$locus)
+                         local$locus_type, local$seq_mode, locus_setup$locus,
+                         locus_setup$mss_locus, locus_setup$mss_group_prior)
             
             file_check <- parse_diyabc_header(
                 file_name = file.path(local$proj_dir, "header.txt"),
@@ -1266,7 +1276,9 @@ locus_setup_server <- function(input, output, session,
     
     # init out
     out <- reactiveValues(
-        locus = NULL
+        locus = NULL,
+        mss_locus = NULL,
+        mss_group_prior = NULL
     )
     # render ui
     output$setup <- renderUI({
@@ -1395,7 +1407,6 @@ locus_setup_server <- function(input, output, session,
     )
     
     ## update output
-    # FIXME
     observe({
         if(local$locus_type == "snp") {
             out$locus <- lapply(
@@ -1416,14 +1427,16 @@ locus_setup_server <- function(input, output, session,
             # # debugging
             # print("locus setup")
             # print(out$locus)
+        } else if(local$locus_type == "mss") {
+            req(!is.null(mss_group$raw_locus))
+            req(!is.null(mss_prior$raw_group_prior_list))
+            out$mss_locus <- mss_group$raw_locus
+            out$mss_group_prior <- mss_prior$raw_group_prior_list
         }
     })
     
-    
-    
     ## output
     return(out)
-    
 }
 
 #' MSS locus group setup ui
@@ -2042,6 +2055,7 @@ group_prior_ui <- function(id) {
 #' @author Ghislain Durif
 group_prior_server <- function(input, output, session,
                                gamma = reactive({FALSE}), 
+                               group_name = reactive({NULL}),
                                locus_mode = reactive({NULL}),
                                mean_value = reactive({NULL}),
                                param_name = reactive({NULL}),
@@ -2069,9 +2083,15 @@ group_prior_server <- function(input, output, session,
     
     # init output
     out <- reactiveValues(
+        group = NULL,
         raw = NULL, 
         valid = TRUE
     )
+    
+    # update group name
+    observe({
+        out$group <- group_name()
+    })
     
     # update param name output
     output$param_name <- renderText({
@@ -2198,29 +2218,27 @@ group_prior_server <- function(input, output, session,
         }
     })
     
-    observe({
-        logging("parameter: ", local$param_name)
-        logging("min = ", input$min)
-        logging("max = ", input$max)
-        logging("mean = ", input$mean)
-        logging("shape = ", input$shape)
-    })
+    # observe({
+    #     logging("parameter: ", local$param_name)
+    #     logging("min = ", input$min)
+    #     logging("max = ", input$max)
+    #     logging("mean = ", input$mean)
+    #     logging("shape = ", input$shape)
+    # })
     
     ## encode output
     observe({
         req(local$param_name)
-        req(local$param_type)
         req(input$prior_type)
         req(is.numeric(input$min))
         req(is.numeric(input$max))
         req(!is.null(input$mean))
         req(is.numeric(input$shape))
         out$raw <- str_c(local$param_name, " ",
-                         local$param_type, " ",
                          input$prior_type, "[",
                          input$min, ",", input$max, ",",
                          input$mean, ",", input$shape, "]")
-        logging("raw prior def = ", out$raw)
+        # logging("raw prior def = ", out$raw)
     })
     ## output
     return(out)
@@ -2238,6 +2256,7 @@ mss_group_prior_ui <- function(id) {
         br(),
         h4("Microsat loci"),
         uiOutput(ns("microsat_group_prior")),
+        br(),
         h4("Sequence loci"),
         uiOutput(ns("seq_group_prior"))
     )
@@ -2254,10 +2273,17 @@ mss_group_prior_server <- function(input, output, session,
     # init local
     local <- reactiveValues(
         microsat_group = list(),
+        n_microsat_group = 0,
+        microsat_param = list(),
+        microsat_param_group = list(),
         microsat_prior_list = list(),
         raw_microsat_prior_list = list(),
         seq_group = list(),
+        n_seq_group = 0,
+        seq_param = list(),
+        seq_param_group = list(),
         seq_prior_list = list(),
+        seq_model_list = list(),
         raw_seq_prior_list = list(),
         # input
         group_info = NULL
@@ -2276,8 +2302,8 @@ mss_group_prior_server <- function(input, output, session,
     # parse input
     observe({
         
-        print("group info")
-        print(local$group_info)
+        # print("group info")
+        # print(local$group_info)
         
         req(is.data.frame(local$group_info))
         req(nrow(local$group_info) > 0)
@@ -2288,45 +2314,67 @@ mss_group_prior_server <- function(input, output, session,
         if(any(local$group_info$mode == "[M]")) {
             local$microsat_group <- 
                 local$group_info$group[local$group_info$mode == "[M]"]
+            local$n_microsat_group <- sum(local$group_info$mode == "[M]")
         }
         
         if(any(local$group_info$mode == "[S]")) {
             local$seq_group <- 
                 local$group_info$group[local$group_info$mode == "[S]"]
+            local$n_seq_group <- sum(local$group_info$mode == "[S]")
         }
     })
     
     # microsat parameter
-    microsat_param <- data.frame(
-        param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
-        meaning = c(
-            "Mean mutation rate (per site, per generation)",
-            "Individual locus mutation rate",
-            "Mean coefficient P",
-            "Individual locus coefficient P",
-            "Mean SNI rate",
-            "Individual locus SNI rate"
-        ),
-        gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
-        mean_value = c(NA, "Mean_u", NA, "Mean_P", NA, "Mean_u_SNI"),
-        stringsAsFactors = FALSE
-    )
+    observe({
+        req(local$n_microsat_group > 0)
+        local$microsat_param <- data.frame(
+            param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
+            meaning = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient P",
+                "Individual locus coefficient P",
+                "Mean SNI rate",
+                "Individual locus SNI rate"
+            ),
+            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
+            mean_value = c(NA, "Mean_u", NA, "Mean_P", NA, "Mean_u_SNI"),
+            stringsAsFactors = FALSE
+        )
+        
+        microsat_param_group <- local$microsat_param[
+            rep(seq(nrow(local$microsat_param)), 
+                each = local$n_microsat_group),
+            ]
+        microsat_param_group$group <- local$microsat_group
+        local$microsat_param_group <- microsat_param_group
+    })
     
     # seq parameter
-    seq_param <- data.frame(
-        param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
-        meaning = c(
-            "Mean mutation rate (per site, per generation)",
-            "Individual locus mutation rate",
-            "Mean coefficient k_C/T",
-            "Individual locus coefficient k_C/T",
-            "Mean coefficient k_A/G",
-            "Individual locus coefficient k_A/G"
-        ),
-        gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
-        mean_value = c(NA, "Mean_u", NA, "Mean_k1", NA, "Mean_k2"),
-        stringsAsFactors = FALSE
-    )
+    observe({
+        req(local$n_seq_group > 0)
+        local$seq_param <- data.frame(
+            param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
+            meaning = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient k_C/T",
+                "Individual locus coefficient k_C/T",
+                "Mean coefficient k_A/G",
+                "Individual locus coefficient k_A/G"
+            ),
+            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
+            mean_value = c(NA, "Mean_u", NA, "Mean_k1", NA, "Mean_k2"),
+            stringsAsFactors = FALSE
+        )
+        
+        seq_param_group <- local$seq_param[
+            rep(seq(nrow(local$seq_param)), 
+                each = local$n_seq_group),
+            ]
+        seq_param_group$group <- local$seq_group
+        local$seq_param_group <- seq_param_group
+    })
     
     ## set up microsat group prior
     output$microsat_group_prior <- renderUI({
@@ -2339,7 +2387,7 @@ mss_group_prior_server <- function(input, output, session,
                 local$microsat_group,
                 function(item) {
                     tag_list1 <- lapply(
-                        split(microsat_param, seq(nrow(microsat_param))),
+                        split(local$microsat_param, seq(nrow(local$microsat_param))),
                         function(item1) {
                             group_prior_ui(
                                 ns(str_c("group_", item, "_", 
@@ -2360,24 +2408,48 @@ mss_group_prior_server <- function(input, output, session,
     observe({
         req(length(local$microsat_group) > 0)
         local$microsat_prior_list <<- lapply(
-            local$microsat_group,
+            split(local$microsat_param_group, 
+                  seq(nrow(local$microsat_param_group))),
             function(item) {
-                tag_list1 <- lapply(
-                    split(microsat_param, seq(nrow(microsat_param))),
-                    function(item1) {
-                        callModule(group_prior_server, 
-                                   str_c("group_", item, "_", 
-                                         item1$param, "_prior"),
-                                   gamma = reactive(item1$gamma), 
-                                   locus_mode = reactive({"[M]"}),
-                                   mean_value = reactive(item1$mean_value),
-                                   param_name = reactive(item1$param),
-                                   param_desc = reactive(item1$meaning))
-                    }
+                callModule(
+                    group_prior_server, 
+                    str_c("group_", item$group, "_", item$param, "_prior"),
+                    gamma = reactive(item$gamma), 
+                    group_name = reactive(item$group),
+                    locus_mode = reactive({"[M]"}),
+                    mean_value = reactive(item$mean_value),
+                    param_name = reactive(item$param),
+                    param_desc = reactive(item$meaning)
                 )
             }
         )
     })
+    
+    # observe({
+    #     print("microsat prior list")
+    #     print(local$microsat_prior_list)
+    # })
+    
+    ## get output
+    observe({
+        local$raw_microsat_prior_list <- Reduce("rbind", lapply(
+            local$microsat_prior_list,
+            function(item) {
+                req(!is.null(item$valid))
+                req(!is.null(item$raw))
+                req(!is.null(item$group))
+                if(item$valid) {
+                    return(data.frame(group = item$group, prior=item$raw,
+                                      stringsAsFactors = FALSE))
+                }
+            }
+        ))
+    })
+
+    # observe({
+    #     print("raw microsat prior list")
+    #     print(local$raw_microsat_prior_list)
+    # })
     
     ## set up seq group prior
     output$seq_group_prior <- renderUI({
@@ -2390,7 +2462,7 @@ mss_group_prior_server <- function(input, output, session,
                 local$seq_group,
                 function(item) {
                     tag_list1 <- lapply(
-                        split(seq_param, seq(nrow(seq_param))),
+                        split(local$seq_param, seq(nrow(local$seq_param))),
                         function(item1) {
                             group_prior_ui(
                                 ns(str_c("group_", item, "_", 
@@ -2402,7 +2474,7 @@ mss_group_prior_server <- function(input, output, session,
                         tags$ul(tags$li(tags$h5("Group", tags$b(item)))),
                         tagList(
                             selectInput(
-                                ns("mutation_model"),
+                                ns(str_c("group_", item, "_mutation_model")),
                                 label = "Mutation model",
                                 choices = list(
                                     "Jukes Kantor (1969)" = "JK",
@@ -2412,12 +2484,13 @@ mss_group_prior_server <- function(input, output, session,
                                 )
                             ),
                             numericInput(
-                                ns("perc_invariant_site"),
+                                ns(str_c("group_", item, 
+                                         "_perc_invariant_site")),
                                 label = "Percentage of invariant site",
                                 min = 0, max = 100, value = 10, step = 0.5
                             ),
                             numericInput(
-                                ns("gamma_shape"),
+                                ns(str_c("group_", item, "_gamma_shape")),
                                 label = "Shape of the gamma",
                                 min = 0, value = 2, step = 0.001
                             ),
@@ -2434,37 +2507,170 @@ mss_group_prior_server <- function(input, output, session,
     observe({
         req(length(local$seq_group) > 0)
         local$seq_prior_list <<- lapply(
-            local$seq_group,
+            split(local$seq_param_group, 
+                  seq(nrow(local$seq_param_group))),
             function(item) {
-                tag_list1 <- lapply(
-                    split(seq_param, seq(nrow(seq_param))),
-                    function(item1) {
-                        
-                        callModule(group_prior_server, 
-                                   str_c("group_", item, "_", 
-                                         item1$param, "_prior"),
-                                   gamma = reactive(item1$gamma), 
-                                   locus_mode = reactive({"[M]"}),
-                                   mean_value = reactive(item1$mean_value),
-                                   param_name = reactive(item1$param),
-                                   param_desc = reactive(item1$meaning))
-                    }
+                callModule(
+                    group_prior_server, 
+                    str_c("group_", item$group, "_", item$param, "_prior"),
+                    gamma = reactive(item$gamma), 
+                    group_name = reactive(item$group),
+                    locus_mode = reactive({"[M]"}),
+                    mean_value = reactive(item$mean_value),
+                    param_name = reactive(item$param),
+                    param_desc = reactive(item$meaning)
                 )
             }
         )
     })
     
+    # observe({
+    #     print("seq prior list")
+    #     print(local$seq_prior_list)
+    # })
+    
+    ## get output
+    observe({
+        local$raw_seq_prior_list <- Reduce("rbind", lapply(
+            local$seq_prior_list,
+            function(item) {
+                req(!is.null(item$valid))
+                req(!is.null(item$raw))
+                req(!is.null(item$group))
+                if(item$valid) {
+                    return(data.frame(group = item$group, prior=item$raw,
+                                      stringsAsFactors = FALSE))
+                }
+            }
+        ))
+    })
+    
+    # observe({
+    #     print("raw seq prior list")
+    #     print(local$raw_seq_prior_list)
+    # })
+    
+    ## get mutation model for sequence
+    observe({
+        req(length(local$seq_group) > 0)
+        local$seq_model_list <- Reduce("rbind", lapply(
+            local$seq_group,
+            function(item) {
+                req(!is.null(input[[
+                    str_c("group_", item, "_mutation_model")
+                    ]]))
+                req(!is.null(input[[
+                    str_c("group_", item,
+                          "_perc_invariant_site")
+                    ]]))
+                req(!is.null(input[[
+                    str_c("group_", item, "_gamma_shape")
+                    ]]))
+
+                tmp_model <- str_c(
+                    "MODEL",
+                    input[[
+                        str_c("group_", item, "_mutation_model")
+                        ]],
+                    input[[
+                        str_c("group_", item,
+                              "_perc_invariant_site")
+                        ]],
+                    input[[
+                        str_c("group_", item, "_gamma_shape")
+                        ]],
+                    sep = " "
+                )
+
+                return(data.frame(group = item, model = tmp_model,
+                                  stringsAsFactors = FALSE))
+            }
+        ))
+    })
+    
+    # observe({
+    #     print("seq model list")
+    #     print(local$seq_model_list)
+    # })
+    
     
     ### output
     observe({
-        out$raw_prior_list <- unlist(lapply(
-            local$prior_list,
-            function(item) return(item$raw)
-        ))
-        # print(out$raw_prior_list)
+        
+        # print("raw microsat prior list")
+        # print(local$raw_microsat_prior_list)
+        # 
+        # print("raw seq prior list")
+        # print(local$raw_seq_prior_list)
+        # 
+        # print("seq model list")
+        # print(local$seq_model_list)
+        
+        tmp_microsat_prior <- NULL
+        if(local$n_microsat_group > 0) {
+            req(is.data.frame(local$raw_microsat_prior_list))
+            req(nrow(local$raw_microsat_prior_list) > 0)
+            
+            tmp_microsat_prior <- lapply(
+                local$microsat_group,
+                function(item) {
+                    if(any(local$raw_microsat_prior_list$group == item)) {
+                        tmp <- c(
+                            str_c("group", item, "[M]", sep = " "),
+                            local$raw_microsat_prior_list$prior[
+                                local$raw_microsat_prior_list$group == item
+                                ]
+                        )
+                        return(tmp)
+                    } else {
+                        return(NULL)
+                    }
+                }
+            )
+        }
+        # print(tmp_microsat_prior)
+        
+        tmp_seq_prior <- NULL
+        if(local$n_seq_group > 0) {
+            req(is.data.frame(local$raw_seq_prior_list))
+            req(nrow(local$raw_seq_prior_list) > 0)
+            
+            req(is.data.frame(local$seq_model_list))
+            req(nrow(local$seq_model_list) > 0)
+            
+            tmp_seq_prior <- lapply(
+                local$seq_group,
+                function(item) {
+                    if(any(local$raw_seq_prior_list$group == item) &
+                       any(local$seq_model_list$group == item)) {
+                        tmp <- c(
+                            str_c("group", item, "[S]", sep = " "),
+                            local$raw_seq_prior_list$prior[
+                                local$raw_seq_prior_list$group == item
+                                ],
+                            head(
+                                local$seq_model_list$model[
+                                    local$seq_model_list$group == item
+                                    ],
+                                1
+                            )
+                        )
+                        return(tmp)
+                    } else {
+                        return(NULL)
+                    }
+                }
+            )
+        }
+        # print(tmp_seq_prior)
+        
+        out$raw_group_prior_list <- unlist(c(tmp_microsat_prior, tmp_seq_prior))
+        
+        # print("raw_group_prior_list")
+        # print(out$raw_group_prior_list)
     })
     
-    
+    return(out)
 }
 
 #' Training set simulation action module ui
