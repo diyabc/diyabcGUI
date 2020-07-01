@@ -1921,7 +1921,7 @@ locus_group_setup_server <- function(input, output, session,
                 )
             }
         )
-        do.call(flowLayout, tag_list)
+        do.call(tagList, tag_list)
     })
     
     # number of group
