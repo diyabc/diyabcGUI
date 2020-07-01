@@ -29,10 +29,10 @@ write_header <- function(proj_dir, data_file,
     # print(seq_mode)
     # print("locus =")
     # print(locus)
-    print("mss_locus =")
-    print(mss_locus)
-    print("mss_group_prior =")
-    print(mss_group_prior)
+    # print("mss_locus =")
+    # print(mss_locus)
+    # print("mss_group_prior =")
+    # print(mss_group_prior)
     
     out <- NULL
     
@@ -134,7 +134,7 @@ write_header <- function(proj_dir, data_file,
         if(is.null(mss_group_prior)) {
             stop("missing 'mss_group_prior' input argument")
         }
-        sec4 <- str_c(
+        sec4b <- str_c(
             str_c(
                 "group priors",
                 str_c("(", 
@@ -150,6 +150,8 @@ write_header <- function(proj_dir, data_file,
     # print("log5")
     ## group summary statistics
     sec5 <- NULL
+    microsat_group <- NULL
+    seq_group <- NULL
     if(locus_type == "snp") {
         sec5 <- str_c(
             "group summary statistics (2)",
@@ -158,7 +160,6 @@ write_header <- function(proj_dir, data_file,
             sep = "\n"
         )
     } else if(locus_type == "mss") {
-        
         sec5 <- str_c(
             "group summary statistics",
             str_c("(", 
@@ -216,20 +217,42 @@ write_header <- function(proj_dir, data_file,
     
     # print("log6")
     ## final summary
+    microsat_summary <- NULL
+    seq_summary <- NULL
+    
+    if(sum(!is.na(microsat_group)) > 0) {
+        tmp_microsat_group <- str_extract(
+            microsat_group[!is.na(microsat_group)],
+            "(?<=^group G)[0-9]+(?= \\[M\\])"
+        )
+        microsat_summary <- str_c("NAL_", tmp_microsat_group, "_1")
+    }
+    if(sum(!is.na(seq_group)) > 0) {
+        tmp_seq_group <- str_extract(
+            seq_group[!is.na(seq_group)],
+            "(?<=^group G)[0-9]+(?= \\[S\\])"
+        )
+        seq_summary <- str_c("NHA_", tmp_seq_group, "_1")
+    }
+    
     sec6 <- str_c(
-        "scenario",
         str_c(
             str_pad(
-                str_extract(
-                    string = param_list, 
-                    pattern = str_c("^", single_param_regex(), "(?= )")
+                c(
+                    "scenario",
+                    str_extract(
+                        string = param_list, 
+                        pattern = str_c("^", single_param_regex(), "(?= )")
+                    ),
+                    microsat_summary,
+                    seq_summary
                 ),
                 width = 14,
-                side = "left"
+                side = "right"
             ),
-            collapse = " "
+            collapse = ""
         ),
-        sep = " "
+        sep = ""
     )
     ## merge
     out <- NULL
@@ -281,8 +304,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     logging("diyabc init")
     arguments <- c(
         "-p", safe_proj_dir,
-        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'"),
-        "-g", as.character(getOption("diyabcGUI")$simu_loop_size)
+        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'")
     )
     init_proc <- processx::process$new(
         command = diyabc_bin, 
@@ -304,7 +326,8 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     logging("diyabc run")
     arguments <- c(
         "-p", safe_proj_dir, 
-        "-R \"\"", "-m", 
+        "-R \"\"", "-m",
+        "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
         "-r", n_run,
         "-t", as.character(getOption("diyabcGUI")$ncore)
     )
