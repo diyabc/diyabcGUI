@@ -1258,15 +1258,19 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
                 # check next section
                 pttrn <- "^group summary statistics \\([0-9]+\\)$"
                 tmp_next <- head(which(str_detect(raw_content, pttrn)), 1)
-                if(tmp_next <= next_sec_line) {
+                if(length(tmp_next) == 0) {
                     issues <- append(issues, pttrn)
                     valid <- FALSE
+                } else if(tmp_next <= next_sec_line) {
+                    issues <- append(issues, pttrn)
+                    valid <- FALSE
+                } else {
+                    # extract info
+                    raw_group_prior_list <- raw_content[next_sec_line:(tmp_next-1)]
+                    
+                    # next section
+                    next_sec_line <- tmp_next
                 }
-                # extract info
-                raw_group_prior_list <- raw_content[next_sec_line:(tmp_next-1)]
-                
-                # next section
-                next_sec_line <- tmp_next
             }
         }
         
