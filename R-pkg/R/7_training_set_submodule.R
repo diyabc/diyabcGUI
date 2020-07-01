@@ -817,7 +817,7 @@ prior_cond_set_ui <- function(id) {
         textAreaInput(
             ns("cond_set"), 
             label = NULL, 
-            rows = 12,
+            rows = 8,
             resize = "none"
         ),
         helpText(
@@ -2767,6 +2767,10 @@ training_set_action_server <- function(input, output, session,
         diyabc_run_result = NULL,
         feedback = NULL,
         log_file_content = NULL,
+        log_start_line = NULL,
+        n_rec_initial = 0,
+        n_rec_final = 0,
+        n_stat = 0,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
@@ -2793,7 +2797,7 @@ training_set_action_server <- function(input, output, session,
     # })
     
     # init output
-    out <- reactiveValues()
+    out <- reactiveValues(n_rec = 0, n_stat = 0)
     
     ## show/hide logs
     observeEvent(input$show_log, {
@@ -2994,6 +2998,9 @@ training_set_action_server <- function(input, output, session,
             )
         })
         
+        ## reset log
+        local$log_start_line = NULL
+        
         ## check run
         # run ok
         if(local$diyabc_run_result == 0) {
@@ -3087,20 +3094,52 @@ training_set_action_server <- function(input, output, session,
         req(!is.null(local$log_file_content))
         req(length(local$log_file_content) > 0)
         
-        last_message <- tail(local$log_file_content, nlog)
-        find_adv <- str_detect(last_message, "^[0-9]+$")
         
-        if(any(find_adv)) {
-            final_adv <- tail(last_message[find_adv], 1)
-            updateProgressBar(
-                session = session,
-                id = "simu_progress",
-                value = 100 * as.numeric(final_adv)/input$nrun, 
-                total = 100,
-                title = str_c(
-                    "Running simulation ", 
-                    final_adv, "/", input$nrun, sep = "")
+        ## parse log
+        if(is.null(local$log_start_line)) {
+            pttrn <- str_c(
+                "DEBUT +",
+                "nrecneeded=[0-9]+ +",
+                "rt.nrec=[0-9]+ +", 
+                "rt.nstat=[0-9]+ +", 
+                "nscenarios=[0-9]+ +"
             )
+            
+            find_pttrn <- str_detect(local$log_file_content, pttrn)
+            
+            if(any(find_pttrn)) {
+                local$log_start_line <- head(which(find_pttrn), 1)
+                local$n_rec_initial <- str_extract(
+                    local$log_file_content[local$log_file_start],
+                    "(?<=rt.nrec=)[0-9]+"
+                )
+                local$n_rec_final <- str_extract(
+                    local$log_file_content[local$log_file_start],
+                    "(?<=nrecneeded=)[0-9]+"
+                )
+                local$n_stat <- str_extract(
+                    local$log_file_content[local$log_file_start],
+                    "(?<=rt.nstat=)[0-9]+"
+                )
+            }
+        } else {
+            last_message <- local$log_file_content[
+                local$log_start_line:length(local$log_file_content)
+            ]
+            find_iter <- str_detect(last_message, "^[0-9]+$")
+            
+            if(any(find_iter)) {
+                current_iter <- tail(last_message[find_iter], 1)
+                updateProgressBar(
+                    session = session,
+                    id = "simu_progress",
+                    value = 100 * as.numeric(current_iter)/local$n_rec_final, 
+                    total = 100,
+                    title = str_c(
+                        "Running simulation ", 
+                        current_iter, "/", local$n_rec_final, sep = "")
+                )
+            }
         }
     })
     
@@ -3114,30 +3153,26 @@ training_set_action_server <- function(input, output, session,
     ## feedback nrun
     output$feedback_nrun <- renderUI({
         req(!is.null(input$nrun))
+        req(!is.null(local$n_rec_final))
         
-        req(!is.null(local$log_file_content))
-        req(length(local$log_file_content) > 0)
-        
-        tmp_text <- NULL
-        
-        # simu nrun
-        if(any(str_detect(local$log_file_content, "^nrec = [0-9]+$"))) {
-            nrun0 <- str_extract(
-                local$log_file_content, 
-                "(?<=^nrec = )[0-9]+$"
+        if(local$n_rec_final >= input$nrun) {
+            tmp_text <- helpText(
+                icon("warning"), 
+                "Number of already available simulations = ",
+                tags$b(local$n_rec_final), ".",
+                br(),
+                "To generate additional training data, you must set",
+                "the number of simulations to be higher than",
+                tags$b(local$n_rec_final), "."
             )
-            nrun0 <- tail(nrun0[!is.na(nrun0)], 1)
-            if(nrun0 >= input$nrun) {
-                tmp_text <- helpText(
-                    icon("warning"), 
-                    "Number of already available simulations",
-                    tags$b(nrun0), ".",
-                    "To generate additional training data, you must set",
-                    "the number of simulations to be higher than",
-                    tags$b(nrun0), "."
-                )
-            }
         }
-        tmp_text
     })
+    
+    ## output
+    observe({
+        out$n_rec <- local$n_rec_final
+        out$n_stat <- local$n_stat
+    })
+    
+    return(out)
 }
