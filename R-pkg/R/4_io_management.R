@@ -662,10 +662,7 @@ check_mss_data_file <- function(data_file, data_dir,
             }
             
             ## file content
-            file_content <- str_replace_all(
-                str_trim(readLines(data_path, warn = FALSE)),
-                " +", " "
-            )
+            file_content <- readLines(data_path, warn = FALSE)
             
             ## locus description
             pttrn <- "(?<=<)(A|H|X|Y|M)(?=>)"
@@ -754,6 +751,12 @@ check_mss_data_file <- function(data_file, data_dir,
                     valid <- FALSE
                 }
             }
+            
+            ## remove unnecessary space
+            file_content <- str_replace_all(
+                str_trim(file_content),
+                " +", " "
+            )
             
             ## population
             pttrn <- "^POP$"
