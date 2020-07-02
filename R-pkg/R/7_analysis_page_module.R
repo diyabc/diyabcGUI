@@ -274,13 +274,16 @@ analysis_proj_set_server <- function(input, output, session) {
         req(input$proj_type)
         if(input$proj_type == "new") {
             out$new_proj <- TRUE
-        } else if(input$proj_type %in% c("existing", "example")) {
+        } else if(input$proj_type == "existing") {
+            out$new_proj <- FALSE
             req(!is.null(local$local$proj_file_list))
             if("headerRF.txt" %in% local$proj_file_list) {
                 out$new_proj <- FALSE
             } else {
                 out$new_proj <- TRUE
             }
+        } else if(input$proj_type == "example") {
+            out$new_proj <- FALSE
         }
     })
     
