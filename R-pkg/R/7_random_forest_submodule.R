@@ -146,6 +146,17 @@ rf_module_server <- function(input, output, session,
 rf_parameter_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        br(),
+        actionBttn(
+            inputId = ns("check"),
+            label = "Check input",
+            style = "fill",
+            block = TRUE,
+            col = "success"
+        ),
+        br(),
+        uiOutput(ns("feedback_context")),
+        hr(),
         h4("Settings"),
         radioButtons(
             ns("run_mode"), 
@@ -184,11 +195,12 @@ rf_parameter_ui <- function(id) {
                 ns("possible_parameters")
             )
         ),
-        shinyjs::disabled(numericInput(
-            ns("n_ref"),
-            label = "Number of samples to consider (FIXME)",
-            value = 100, min = 1, max = 10000
-        )),
+        numericInput(
+            ns("n_rec"),
+            label = "Number of samples in the training set to consider",
+            value = 0, min = 0
+        ),
+        uiOutput(ns("feedback_nrec")),
         numericInput(
             ns("noise_columns"),
             label = "Number of noise variables to add",
@@ -263,6 +275,11 @@ rf_parameter_server <- function(input, output, session,
     # init local
     local <- reactiveValues(
         proj_header_content = NULL,
+        ref_table_size = 0,
+        n_rec_per_scenario = list(),
+        n_param = list(),
+        n_stat = 0,
+        n_scenario = 0,
         # input
         proj_dir = NULL,
         locus_type = NULL
@@ -282,6 +299,7 @@ rf_parameter_server <- function(input, output, session,
         group = NULL,
         linear = NULL,
         min_node_size = 0,
+        n_rec = 0,
         n_tree = NULL,
         noise_columns = NULL,
         noob = NULL,
@@ -321,6 +339,122 @@ rf_parameter_server <- function(input, output, session,
     #     print("proj_header_file")
     #     print(local$proj_header_file)
     # })
+    
+    ## context
+    output$feedback_context <- renderUI({
+        req(!is.null(local$ref_table_size))
+        req(!is.null(local$n_param))
+        req(!is.null(local$n_stat))
+        req(!is.null(local$n_scenario))
+        req(!is.null(local$n_rec_per_scenario))
+        # ref_table_size = 0
+        # n_param = 0
+        # n_stat = 0
+        # n_scenario = 0
+        
+        tmp_n_rec_per_scenario <- ""
+        if(length(local$n_rec_per_scenario)) {
+            if(local$n_scenario == length(local$n_rec_per_scenario)) {
+                tmp_n_rec_per_scenario <- do.call(
+                    tags$ul,
+                    lapply(
+                        1:local$n_scenario,
+                        function(ind) {
+                            return(
+                                tags$li(
+                                    tags$b(local$n_rec_per_scenario[ind]), 
+                                    "for scenario",
+                                    tags$b(as.character(ind))
+                                )
+                            )
+                        }
+                    )
+                )
+            }
+        }
+        
+        tmp_ref_table_size <- tags$i("unknown")
+        if(local$ref_table_size > 0) {
+            tmp_ref_table_size <- tags$b(local$ref_table_size)
+        }
+        
+        tmp_n_scenario <- tags$i("unknown")
+        if(local$n_scenario > 0) {
+            tmp_n_scenario <- tags$b(local$n_scenario)
+        }
+        
+        tmp_n_param <- tags$i("unknown")
+        if(length(local$n_param) > 0) {
+            tmp_n_param <- do.call(
+                tags$ul,
+                lapply(
+                    1:length(local$n_param),
+                    function(ind) {
+                        return(
+                            tags$li(
+                                tags$b(local$n_param[ind]), 
+                                "for scenario",
+                                tags$b(as.character(ind))
+                            )
+                        )
+                    }
+                )
+            )
+        }
+        
+        tmp_n_stat <- tags$i("unknown")
+        if(local$n_stat > 0) {
+            tmp_n_stat <- tags$b(local$n_stat)
+        }
+        
+        tag_list <- list(
+            tags$div(
+                "Number of scenario:",
+                tmp_n_scenario
+            ),
+            tags$div(
+                "Total number simulated datasets:",
+                tmp_ref_table_size,
+                tmp_n_rec_per_scenario
+            ),
+            tags$div(
+                "Number of parameters:",
+                tmp_n_param
+            ),
+            tags$div(
+                "Number of summary statistics:",
+                tmp_n_stat
+            )
+        )
+        
+        tagList(
+            do.call(
+                tags$ul,
+                lapply(
+                    tag_list,
+                    tags$li
+                )
+            )
+        )
+    })
+    
+    ## feedback regarding n_rec
+    output$feedback_nrec <- renderUI({
+        req(!is.null(local$ref_table_size))
+        if(local$ref_table_size > 0) {
+            helpText(
+                "0 means using the full training data set,",
+                "i.e. 0 is equivalent to the total number",
+                "simulated datasets:", tags$b(local$ref_table_size)
+            )
+        } else {
+            helpText(
+                "0 means using the full training data set,",
+                "i.e. 0 is equivalent to the total number",
+                "simulated datasets."
+            )
+        }
+    })
     
     # possible scenario and possible parameters
     observeEvent(local$proj_header_content, {
@@ -379,6 +513,100 @@ rf_parameter_server <- function(input, output, session,
                 "Leave blank to not group scenarii."
             )
         })
+    })
+    
+    # check context
+    observeEvent(input$check, {
+        req(!is.null(local$proj_dir))
+        
+        # run diyabc to parse ref table
+        tmp_diyabc_run <- diyabc_run_trainset_simu(
+            local$proj_dir, n_run = 0, run_prior_check = FALSE
+        )
+        tmp_diyabc_run$wait()
+        tmp_diyabc_result <- tmp_diyabc_run$get_exit_status()
+        
+        # check result
+        if(tmp_diyabc_result == 0) {
+            tmp_diyabc_log <- readLines(
+                file.path(local$proj_dir, "diyabc_run_call.log"),
+                warn = FALSE
+            )
+            
+            # extract info
+            pttrn <- str_c(
+                "DEBUT +",
+                "nrecneeded=[0-9]+ +",
+                "rt\\.nrec=[0-9]+ +", 
+                "rt\\.nstat=[0-9]+ +", 
+                "nscenarios=[0-9]+ *"
+            )
+            find_pttrn <- str_detect(tmp_diyabc_log, pttrn)
+            if(any(find_pttrn)) {
+                pttrn_match <- tmp_diyabc_log[find_pttrn]
+                
+                local$ref_table_size <- as.integer(str_extract(
+                    pttrn_match,
+                    "(?<=rt\\.nrec=)[0-9]+"
+                ))
+                
+                local$n_scenario <- as.integer(str_extract(
+                    pttrn_match,
+                    "(?<=nscenarios=)[0-9]+"
+                ))
+                
+                local$n_stat <- as.integer(str_extract(
+                    pttrn_match,
+                    "(?<=rt\\.nstat=)[0-9]+"
+                ))
+            } else {
+                local$ref_table_size <- 0
+                local$n_stat <- 0
+                local$n_scenario <- 0
+            }
+            
+            # number of parameters
+            pttrn <- "scenario\\[i\\].nparam=[0-9]+"
+            find_pttrn <- str_detect(tmp_diyabc_log, pttrn)
+            if(any(find_pttrn)) {
+                pttrn_match <- tmp_diyabc_log[find_pttrn]
+                pttrn <- "(?<=nparam=)[0-9]+"
+                local$n_param <- str_extract(pttrn_match, pttrn)
+            } else {
+                local$n_param <- list()
+            }
+            
+            # sample size per scenario
+            pttrn <- "nrecscen\\[[0-9]+\\] = [0-9]+"
+            find_pttrn <- str_detect(tmp_diyabc_log, pttrn)
+            if(any(find_pttrn)) {
+                pttrn_match <- tmp_diyabc_log[find_pttrn]
+                pttrn <- "(?<= = )[0-9]+"
+                local$n_rec_per_scenario <- str_extract(pttrn_match, pttrn)
+            } else {
+                local$n_rec_per_scenario <- list()
+            }
+        } else {
+            local$ref_table_size <- 0
+            local$n_param <- list()
+            local$n_stat <- 0
+            local$n_scenario <- 0
+            local$n_rec_per_scenario <- list()
+        }
+        
+        # clean up
+        cleanup_diyabc_run(local$proj_dir)
+    })
+    
+    ## update max n_rec
+    observeEvent(local$ref_table_size, {
+        req(!is.null(local$ref_table_size))
+        req(local$ref_table_size > 0)
+        updateNumericInput(
+            session,
+            "n_rec",
+            max = local$ref_table_size
+        )
     })
     
     # check and feedback groups
@@ -453,6 +681,7 @@ rf_parameter_server <- function(input, output, session,
         out$chosen_scenario <- input$chosen_scenario
         out$run_mode <- input$run_mode
         out$min_node_size <- 0
+        out$n_rec <- input$n_rec
         out$n_tree <- input$n_tree
         out$noise_columns <- input$noise_columns
         out$noob <- input$noob
@@ -482,21 +711,10 @@ rf_control_ui <- function(id) {
             id = ns("rf_progress"),
             value = 0,
             total = 100,
-            # title = "",
             title = "Not working at the moment.",
             display_pct = TRUE
         ),
         uiOutput(ns("feedback")),
-        br(),
-        actionButton(
-            ns("show_log"),
-            label = "Show/hide logs",
-            icon = icon("comment")
-        ),
-        shinyjs::hidden(
-            uiOutput(ns("run_log"))
-        ),
-        br(),
         br(),
         actionBttn(
             inputId = ns("stop"),
@@ -504,6 +722,12 @@ rf_control_ui <- function(id) {
             style = "fill",
             block = TRUE,
             color = "danger"
+        ),
+        br(),
+        h5(icon("comment"), "Run logs"),
+        tags$pre(
+            uiOutput(ns("run_log")),
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
         )
     )
 }
@@ -521,6 +745,7 @@ rf_control_server <- function(input, output, session,
                               chosen_scenario = reactive({NULL}),
                               linear = reactive({NULL}),
                               min_node_size = 0,
+                              n_rec = reactive({NULL}),
                               n_tree = reactive({NULL}),
                               noise_columns = reactive({NULL}),
                               noob = reactive({NULL}),
@@ -551,6 +776,7 @@ rf_control_server <- function(input, output, session,
         chosen_scenario = NULL,
         linear = NULL,
         min_node_size = 0,
+        n_rec = 0,
         n_tree = NULL,
         noise_columns = NULL,
         noob = NULL,
@@ -571,6 +797,7 @@ rf_control_server <- function(input, output, session,
         local$noise_columns <- noise_columns()
         local$linear <- linear()
         local$pls_max_var <- pls_max_var()
+        local$n_rec <- n_rec()
         local$n_tree <- n_tree()
         local$chosen_scenario <- chosen_scenario()
         local$noob <- noob()
@@ -790,6 +1017,7 @@ rf_control_server <- function(input, output, session,
                 
                 req(!is.null(local$proj_dir))
                 req(!is.null(local$run_mode))
+                req(!is.null(local$n_rec))
                 req(!is.null(local$min_node_size))
                 req(!is.null(local$noise_columns))
                 req(!is.null(local$linear))
@@ -804,10 +1032,8 @@ rf_control_server <- function(input, output, session,
                 }
                 
                 logging("running abcranger")
-                
-                n_ref <- 0
                 local$abcranger_run_process <- abcranger_run(
-                    local$proj_dir, local$run_mode, n_ref, 
+                    local$proj_dir, local$run_mode, local$n_rec, 
                     local$min_node_size, local$n_tree, local$noise_columns, 
                     !local$linear, 
                     local$pls_max_var, local$chosen_scenario, local$noob, 
