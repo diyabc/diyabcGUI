@@ -98,6 +98,7 @@ training_set_server <- function(input, output, session,
     observe({
         req(!is.null(local$locus_type))
         req(!is.null(local$proj_dir))
+        req(!local$new_proj)
         
         proj_header_content <<- reactiveFileReader(
             1000, session,
@@ -2758,8 +2759,7 @@ training_set_action_server <- function(input, output, session,
     ns <- session$ns
     
     # max number of rows in log
-    nlog <- 100
-    show_nlog <- 10
+    nlog <- 10
     
     # init local
     local <- reactiveValues(
@@ -2770,6 +2770,7 @@ training_set_action_server <- function(input, output, session,
         log_start_line = NULL,
         n_rec_initial = 0,
         n_rec_final = 0,
+        n_scenario = 0,
         n_stat = 0,
         # input
         proj_dir = NULL,
@@ -2797,7 +2798,7 @@ training_set_action_server <- function(input, output, session,
     # })
     
     # init output
-    out <- reactiveValues(n_rec = 0, n_stat = 0)
+    out <- reactiveValues(n_rec = 0, n_stat = 0, n_scenario = 0)
     
     ## show/hide logs
     observeEvent(input$show_log, {
@@ -2810,11 +2811,11 @@ training_set_action_server <- function(input, output, session,
     })
     
     ## read log file
-    log_file_content <- function() return(rep("", show_nlog))
+    log_file_content <- function() return(rep("", nlog))
     observeEvent(local$proj_dir, {
         req(local$proj_dir)
         log_file_content <<- reactiveFileReader(
-            500, session,
+            2000, session,
             file.path(local$proj_dir, "diyabc_run_call.log"),
             function(file) {
                 if(file.exists(file)) {
@@ -2833,10 +2834,10 @@ training_set_action_server <- function(input, output, session,
     ## show log messages
     observeEvent(local$log_file_content, {
         
-        if(length(local$log_file_content) < show_nlog) {
+        if(length(local$log_file_content) < nlog) {
             local$log_file_content <- c(
                 local$log_file_content,
-                rep("", show_nlog - length(local$log_file_content))
+                rep("", nlog - length(local$log_file_content))
             )
         }
     })
@@ -2931,6 +2932,10 @@ training_set_action_server <- function(input, output, session,
                 # print(getOption("diyabcGUI"))
                 # print(getOption("shiny.maxRequestSize"))
                 
+                ## reset log
+                local$log_start_line = NULL
+                local$log_file_content = rep("", nlog)
+                
                 local$feedback <- helpText(
                     icon("spinner", class = "fa-spin"),
                     "Simulations are running."
@@ -2950,10 +2955,10 @@ training_set_action_server <- function(input, output, session,
         tagList(
             tags$pre(
                 str_c(
-                    tail(local$log_file_content, show_nlog),
+                    tail(local$log_file_content, nlog),
                     collapse = "\n"
                 ),
-                style = "width:60vw; overflow:scroll;"
+                style = "width:60vw; overflow:scroll; resize: both;"
             )
         )
     })
@@ -2993,13 +2998,10 @@ training_set_action_server <- function(input, output, session,
                         local$log_file_content,
                         collapse = "\n"
                     ),
-                    style = "width:60vw; overflow:scroll; overflow-y:scroll; min-height:100px; max-height:100px;"
+                    style = "width:60vw; overflow:scroll; overflow-y:scroll; min-height:100px; max-height:100px; resize: both;"
                 )
             )
         })
-        
-        ## reset log
-        local$log_start_line = NULL
         
         ## check run
         # run ok
@@ -3089,38 +3091,69 @@ training_set_action_server <- function(input, output, session,
     ## progress bar
     observeEvent(local$log_file_content, {
         
+        print("----------- monitor progress -----------")
+        logging("objective nrun =", input$nrun)
+        logging("current log length =", length(local$log_file_content))
+        
         req(input$nrun)
         
         req(!is.null(local$log_file_content))
         req(length(local$log_file_content) > 0)
-        
         
         ## parse log
         if(is.null(local$log_start_line)) {
             pttrn <- str_c(
                 "DEBUT +",
                 "nrecneeded=[0-9]+ +",
-                "rt.nrec=[0-9]+ +", 
-                "rt.nstat=[0-9]+ +", 
-                "nscenarios=[0-9]+ +"
+                "rt\\.nrec=[0-9]+ +", 
+                "rt\\.nstat=[0-9]+ +", 
+                "nscenarios=[0-9]+ *"
             )
             
             find_pttrn <- str_detect(local$log_file_content, pttrn)
             
+            logging("found pattern =", sum(find_pttrn))
+            
             if(any(find_pttrn)) {
+                
+                print(local$log_file_content[local$log_file_start])
+                
                 local$log_start_line <- head(which(find_pttrn), 1)
-                local$n_rec_initial <- str_extract(
+                
+                print("log_start_line")
+                print(local$log_start_line)
+                
+                local$n_rec_initial <- as.integer(str_extract(
                     local$log_file_content[local$log_file_start],
-                    "(?<=rt.nrec=)[0-9]+"
-                )
-                local$n_rec_final <- str_extract(
+                    "(?<=rt\\.nrec=)[0-9]+"
+                ))
+                
+                print("n_rec_initial")
+                print(local$n_rec_initial)
+                
+                local$n_rec_final <- as.integer(str_extract(
                     local$log_file_content[local$log_file_start],
                     "(?<=nrecneeded=)[0-9]+"
-                )
-                local$n_stat <- str_extract(
+                ))
+                
+                print("n_rec_final")
+                print(local$n_rec_final)
+                
+                local$n_scenario <- as.integer(str_extract(
                     local$log_file_content[local$log_file_start],
-                    "(?<=rt.nstat=)[0-9]+"
-                )
+                    "(?<=nscenarios=)[0-9]+"
+                ))
+                
+                print("n_scenario")
+                print(local$n_scenario)
+                
+                local$n_stat <- as.integer(str_extract(
+                    local$log_file_content[local$log_file_start],
+                    "(?<=rt\\.nstat=)[0-9]+"
+                ))
+                
+                print("n_stat")
+                print(local$n_stat)
             }
         } else {
             last_message <- local$log_file_content[
@@ -3143,6 +3176,15 @@ training_set_action_server <- function(input, output, session,
         }
     })
     
+    # ## debugging
+    # observe({
+    #     logging("log_start_line =", local$log_start_line)
+    #     logging("n_rec_initial =", local$n_rec_initial)
+    #     logging("n_rec_final =", local$n_rec_final)
+    #     logging("n_scenario =", local$n_scenario)
+    #     logging("n_stat =", local$n_stat)
+    # })
+    
     ## feedback
     observeEvent(local$feedback, {
         output$feedback <- renderUI({
@@ -3154,6 +3196,9 @@ training_set_action_server <- function(input, output, session,
     output$feedback_nrun <- renderUI({
         req(!is.null(input$nrun))
         req(!is.null(local$n_rec_final))
+        
+        print("n_rec_final =")
+        print(local$n_rec_final)
         
         if(local$n_rec_final >= input$nrun) {
             tmp_text <- helpText(
