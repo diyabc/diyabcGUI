@@ -128,9 +128,9 @@ training_set_server <- function(input, output, session,
     ## training set def or show
     output$enable_def <- renderUI({
         
-        print("###### debug enable def")
-        logging("new proj =", local$new_proj)
-        logging("valid proj =", local$valid_proj)
+        # print("###### debug enable def")
+        # logging("new proj =", local$new_proj)
+        # logging("valid proj =", local$valid_proj)
         
         req(!is.null(local$new_proj))
         req(!is.null(local$valid_proj))
@@ -184,8 +184,8 @@ training_set_server <- function(input, output, session,
     ## enable control
     output$enable_control <- renderUI({
         
-        print("###### debug enable control")
-        logging("valid proj =", local$valid_proj)
+        # print("###### debug enable control")
+        # logging("valid proj =", local$valid_proj)
         
         req(!is.null(local$valid_proj))
         
@@ -2730,22 +2730,18 @@ training_set_action_ui <- function(id) {
         uiOutput(ns("feedback")),
         uiOutput(ns("feedback_nrun")),
         br(),
-        actionButton(
-            ns("show_log"),
-            label = "Show/hide logs",
-            icon = icon("comment")
-        ),
-        shinyjs::hidden(
-            uiOutput(ns("run_log"))
-        ),
-        br(),
-        br(),
         actionBttn(
             inputId = ns("stop"),
             label = "Stop",
             style = "fill",
             block = TRUE,
             color = "danger"
+        ),
+        br(),
+        h5(icon("comment"), "Run logs"),
+        tags$pre(
+            uiOutput(ns("run_log")),
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
         )
     )
 }
@@ -2762,7 +2758,7 @@ training_set_action_server <- function(input, output, session,
     ns <- session$ns
     
     # max number of rows in log
-    nlog <- 10
+    nlog <- 5
     
     # init local
     local <- reactiveValues(
@@ -2806,16 +2802,6 @@ training_set_action_server <- function(input, output, session,
     # init output
     out <- reactiveValues(n_rec = 0, n_stat = 0, n_scenario = 0)
     
-    ## show/hide logs
-    observeEvent(input$show_log, {
-        req(!is.null(input$show_log))
-        if(input$show_log %% 2 == 0) {
-            shinyjs::hide(id = "run_log")
-        } else{
-            shinyjs::show(id = "run_log")
-        }
-    })
-    
     ## read log file
     log_file_content <- function() return(rep("", nlog))
     observeEvent(local$proj_dir, {
@@ -2836,18 +2822,6 @@ training_set_action_server <- function(input, output, session,
     observe({
         local$log_file_content <- log_file_content()
     })
-    
-    ## show log messages
-    observeEvent(local$log_file_content, {
-        
-        if(length(local$log_file_content) < nlog) {
-            local$log_file_content <- c(
-                local$log_file_content,
-                rep("", nlog - length(local$log_file_content))
-            )
-        }
-    })
-    
     
     ## run simulation
     observeEvent(input$simulate, {
@@ -2963,14 +2937,9 @@ training_set_action_server <- function(input, output, session,
     })
     
     output$run_log <- renderUI({
-        tagList(
-            tags$pre(
-                str_c(
-                    tail(local$log_file_content, nlog),
-                    collapse = "\n"
-                ),
-                style = "width:60vw; overflow:scroll; resize: both;"
-            )
+        do.call(
+            tagList,
+            as.list(tail(local$log_file_content, nlog))
         )
     })
     
@@ -3003,14 +2972,9 @@ training_set_action_server <- function(input, output, session,
         
         ## log
         output$run_log <- renderUI({
-            tagList(
-                tags$pre(
-                    str_c(
-                        local$log_file_content,
-                        collapse = "\n"
-                    ),
-                    style = "width:60vw; overflow:scroll; overflow-y:scroll; min-height:100px; max-height:100px; resize: both;"
-                )
+            do.call(
+                tagList,
+                as.list(local$log_file_content)
             )
         })
         
@@ -3197,7 +3161,7 @@ training_set_action_server <- function(input, output, session,
     #     logging("n_scenario =", local$n_scenario)
     #     logging("n_stat =", local$n_stat)
     # })
-    
+
     ## feedback
     observeEvent(local$feedback, {
         output$feedback <- renderUI({
@@ -3208,28 +3172,32 @@ training_set_action_server <- function(input, output, session,
     ## feedback nrun
     output$feedback_nrun <- renderUI({
         req(!is.null(input$nrun))
+        req(!is.null(local$n_rec_initial))
         req(!is.null(local$n_rec_final))
         
         # print("n_rec_final =")
         # print(local$n_rec_final)
         
-        if(local$n_rec_final >= input$nrun) {
+        reftable_size <- max(local$n_rec_initial, local$n_rec_final)
+        
+        if(reftable_size >= input$nrun) {
             tmp_text <- helpText(
                 icon("warning"), 
                 "Number of already available simulations = ",
-                tags$b(local$n_rec_final), ".",
+                tags$b(reftable_size), ".",
                 br(),
                 "To generate additional training data, you must set",
                 "the number of simulations to be higher than",
-                tags$b(local$n_rec_final), "."
+                tags$b(reftable_size), "."
             )
         }
     })
     
     ## output
     observe({
-        out$n_rec <- local$n_rec_final
+        out$n_rec <- max(local$n_rec_initial, local$n_rec_final)
         out$n_stat <- local$n_stat
+        out$n_scenario <- local$n_scenario
     })
     
     return(out)
