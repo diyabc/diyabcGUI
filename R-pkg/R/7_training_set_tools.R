@@ -40,9 +40,20 @@ write_header <- function(proj_dir, data_file,
     
     # print("log1")
     ## data filename and summary
+    n_stat <- NULL
+    if(locus_type == "snp") {
+        n_stat <- 1
+    } else if(locus_type == "mss") {
+        n_stat <- sum(str_detect(
+            mss_group_prior,
+            "^group G[0-9]+ \\[[MS]\\]"
+        ))
+    } else {
+        stop("Issue with 'locus_type' input argument")
+    }
     sec1 <- str_c(basename(data_file),
-                  str_c(length(param_list), 
-                        "parameters and 2 summary statistics", 
+                  str_c(length(param_list), "parameters and", 
+                        n_stat, "summary statistics", 
                         sep = " "),
                   sep = "\n")
     
@@ -124,8 +135,6 @@ write_header <- function(proj_dir, data_file,
             str_c(mss_locus, collapse = "\n"),
             sep = "\n"
         )
-    } else {
-        stop("wrong 'locus_type' input argument")
     }
     
     ## group prior
@@ -152,11 +161,18 @@ write_header <- function(proj_dir, data_file,
     sec5 <- NULL
     microsat_group <- NULL
     seq_group <- NULL
-    if(locus_type == "snp") {
+    if(locus_type == "snp" & seq_mode == "indseq") {
         sec5 <- str_c(
-            "group summary statistics (2)",
-            "group G1 (2)",
-            "HP0 1 2",
+            "group summary statistics (1)",
+            "group G1 (1)",
+            "HWm 1",
+            sep = "\n"
+        )
+    } else if(locus_type == "snp" & seq_mode == "poolseq") {
+        sec5 <- str_c(
+            "group summary statistics (1)",
+            "group G1 (1)",
+            "HWm 1",
             sep = "\n"
         )
     } else if(locus_type == "mss") {
@@ -217,22 +233,32 @@ write_header <- function(proj_dir, data_file,
     
     # print("log6")
     ## final summary
-    microsat_summary <- NULL
-    seq_summary <- NULL
+    summary_stat <- NULL
     
-    if(sum(!is.na(microsat_group)) > 0) {
-        tmp_microsat_group <- str_extract(
-            microsat_group[!is.na(microsat_group)],
-            "(?<=^group G)[0-9]+(?= \\[M\\])"
-        )
-        microsat_summary <- str_c("NAL_", tmp_microsat_group, "_1")
-    }
-    if(sum(!is.na(seq_group)) > 0) {
-        tmp_seq_group <- str_extract(
-            seq_group[!is.na(seq_group)],
-            "(?<=^group G)[0-9]+(?= \\[S\\])"
-        )
-        seq_summary <- str_c("NHA_", tmp_seq_group, "_1")
+    if(locus_type == "snp" & seq_mode == "indseq") {
+        summary_stat <- "HWm_1"
+    } else if(locus_type == "snp" & seq_mode == "poolseq") {
+        summary_stat <- "HWm_1"
+    } else if(locus_type == "mss") {
+        microsat_summary <- NULL
+        seq_summary <- NULL
+        
+        if(sum(!is.na(microsat_group)) > 0) {
+            tmp_microsat_group <- str_extract(
+                microsat_group[!is.na(microsat_group)],
+                "(?<=^group G)[0-9]+(?= \\[M\\])"
+            )
+            microsat_summary <- str_c("NAL_", tmp_microsat_group, "_1")
+        }
+        if(sum(!is.na(seq_group)) > 0) {
+            tmp_seq_group <- str_extract(
+                seq_group[!is.na(seq_group)],
+                "(?<=^group G)[0-9]+(?= \\[S\\])"
+            )
+            seq_summary <- str_c("NHA_", tmp_seq_group, "_1")
+        }
+        
+        summary_stat <- c(microsat_summary, seq_summary)
     }
     
     sec6 <- str_c(
@@ -244,8 +270,7 @@ write_header <- function(proj_dir, data_file,
                         string = param_list, 
                         pattern = str_c("^", single_param_regex(), "(?= )")
                     ),
-                    microsat_summary,
-                    seq_summary
+                    summary_stat
                 ),
                 width = 14,
                 side = "right"
@@ -254,6 +279,7 @@ write_header <- function(proj_dir, data_file,
         ),
         sep = ""
     )
+    
     ## merge
     out <- NULL
     if(locus_type == "snp") {
