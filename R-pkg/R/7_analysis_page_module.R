@@ -240,7 +240,7 @@ analysis_proj_set_server <- function(input, output, session) {
         data_info = NULL,
         locus_type = NULL,
         seq_mode = NULL,
-        new_proj = NULL,
+        new_proj = TRUE,
         proj_dir = mk_proj_dir(),
         proj_file_list = character(0),
         proj_header_content = list(),
@@ -270,12 +270,17 @@ analysis_proj_set_server <- function(input, output, session) {
     })
     
     ## new or existing project
-    observeEvent(input$proj_type, {
+    observe({
         req(input$proj_type)
         if(input$proj_type == "new") {
             out$new_proj <- TRUE
         } else if(input$proj_type %in% c("existing", "example")) {
-            out$new_proj <- FALSE
+            req(!is.null(local$local$proj_file_list))
+            if("headerRF.txt" %in% local$proj_file_list) {
+                out$new_proj <- FALSE
+            } else {
+                out$new_proj <- TRUE
+            }
         }
     })
     

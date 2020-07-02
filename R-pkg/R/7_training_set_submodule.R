@@ -56,7 +56,7 @@ training_set_server <- function(input, output, session,
     
     # init output
     out <- reactiveValues(
-        valid_proj = TRUE
+        valid_def = FALSE
     )
     
     # # debugging
@@ -98,7 +98,6 @@ training_set_server <- function(input, output, session,
     observe({
         req(!is.null(local$locus_type))
         req(!is.null(local$proj_dir))
-        req(!local$new_proj)
         
         proj_header_content <<- reactiveFileReader(
             1000, session,
@@ -126,32 +125,24 @@ training_set_server <- function(input, output, session,
     #     print(local$proj_header_content)
     # })
     
-    ## training set def (if no header file provided)
+    ## training set def or show
     output$enable_def <- renderUI({
         
-        # print("###### debug enable def")
-        # logging("new proj =", local$new_proj)
-        # logging("valid proj =", local$valid_proj)
-        # print("proj file list")
-        # print(local$proj_file_list)
+        print("###### debug enable def")
+        logging("new proj =", local$new_proj)
+        logging("valid proj =", local$valid_proj)
         
         req(!is.null(local$new_proj))
-        req(!is.null(local$proj_file_list))
         req(!is.null(local$valid_proj))
         
         if(!local$valid_proj) {
             helpText(
                 icon("warning"), "Project set up is not valid."
             )
-        } else if(local$new_proj | 
-                  !("headerRF.txt" %in% local$proj_file_list)) {
-            tagList(
-                training_set_def_ui(ns("def"))
-            )
+        } else if(local$new_proj) {
+            training_set_def_ui(ns("def"))
         } else {
-            tagList(
-                show_existing_proj_ui(ns("show"))
-            )
+            show_existing_proj_ui(ns("show"))
         }
     })
     
@@ -174,43 +165,53 @@ training_set_server <- function(input, output, session,
         valid_proj = reactive(local$valid_proj)
     )
     
-    # get output
-    observeEvent(training_set_def$trigger, {
-        req(!is.null(training_set_def$trigger))
-        req(!is.null(training_set_def$valid_def))
-        local$valid_proj <- local$valid_proj & training_set_def$valid_def
+    ## valid def ?
+    observe({
+        req(!is.null(local$new_proj))
+        req(!is.null(local$proj_header_content))
         
-        # # debugging
-        # print("training set valid def")
-        # print(training_set_def$valid_def)
+        if(local$new_proj) {
+            out$valid_def <- training_set_def$valid_def
+        } else {
+            if(!is.null(local$proj_header_content$valid)) {
+                out$valid_def <- local$proj_header_content$valid
+            } else {
+                out$valid_def <- FALSE
+            }
+        }
     })
     
     ## enable control
     output$enable_control <- renderUI({
+        
+        print("###### debug enable control")
+        logging("valid proj =", local$valid_proj)
+        
         req(!is.null(local$valid_proj))
         
-        if(local$valid_proj) {
-            training_set_action_ui(ns("action"))
-        } else {
+        if(!local$valid_proj) {
             tagList(
                 h3(icon("gear"), "Run"),
                 helpText(icon("warning"), "Project is not ready.")
             )
+        } else {
+            training_set_action_ui(ns("control"))
         }
     })
     
     ## action
     callModule(
-        training_set_action_server, "action", 
+        training_set_action_server, "control", 
         proj_dir = reactive(local$proj_dir),
         proj_file_list = reactive(local$proj_file_list),
+        valid_def = reactive(out$valid_def),
         valid_proj = reactive(local$valid_proj)
     )
     
-    # update output
-    observe({
-        out$valid_proj <- local$valid_proj
-    })
+    # # update output
+    # observe({
+    #     out$valid_proj <- local$valid_proj
+    # })
     
     # output
     return(out)
@@ -404,13 +405,14 @@ training_set_def_server <- function(input, output, session,
         param_count_list = list(),
         raw_cond_list = list(),
         raw_param_list = list(),
+        scenario_list = NULL,
+        # input
         data_file = NULL,
         data_info = NULL,
         locus_type = NULL,
         seq_mode = NULL,
         proj_dir = NULL,
         raw_scenario_list = NULL,
-        scenario_list = NULL,
         valid_proj = NULL
     )
     # get input
@@ -420,7 +422,7 @@ training_set_def_server <- function(input, output, session,
         local$locus_type <- locus_type()
         local$seq_mode <- seq_mode()
         local$proj_dir <- proj_dir()
-        local$raw_scenario_list <- raw_scenario_list()
+        # local$raw_scenario_list <- raw_scenario_list()
         local$valid_proj <- valid_proj()
     })
     
@@ -662,7 +664,7 @@ training_set_def_server <- function(input, output, session,
                 )
             }
             
-            out$trigger <- ifelse(!is.null(out$trigger), out$trigger, 0) + 1
+            # out$trigger <- ifelse(!is.null(out$trigger), out$trigger, 0) + 1
         }
     })
     
@@ -2754,6 +2756,7 @@ training_set_action_ui <- function(id) {
 training_set_action_server <- function(input, output, session,
                                        proj_dir = reactive({NULL}),
                                        proj_file_list = reactive({NULL}),
+                                       valid_def = reactive({FALSE}),
                                        valid_proj = reactive({FALSE})) {
     # namespace
     ns <- session$ns
@@ -2775,12 +2778,14 @@ training_set_action_server <- function(input, output, session,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
+        valid_def = NULL,
         valid_proj = NULL
     )
     # get input
     observe({
         local$proj_dir <- proj_dir()
         local$proj_file_list <- proj_file_list()
+        local$valid_def <- valid_def()
         local$valid_proj <- valid_proj()
     })
     
@@ -2788,7 +2793,8 @@ training_set_action_server <- function(input, output, session,
     # observe({
     #     print("Training set action input")
     #     print(local$proj_dir)
-    #     print(local$valid)
+    #     print(local$valid_proj)
+    #     print(local$valid_def)
     # })
     
     # # debugging
@@ -2847,6 +2853,7 @@ training_set_action_server <- function(input, output, session,
     observeEvent(input$simulate, {
         
         req(!is.null(local$valid_proj))
+        req(!is.null(local$valid_def))
         req(!is.null(local$proj_file_list))
         req(length(local$proj_file_list) > 0)
         
@@ -2854,6 +2861,8 @@ training_set_action_server <- function(input, output, session,
         # print("simulate")
         # print("valid proj ?")
         # print(local$valid_proj)
+        # print("valid def ?")
+        # print(local$valid_def)
         # print("proj file list")
         # print(local$proj_file_list)
         
@@ -2883,11 +2892,8 @@ training_set_action_server <- function(input, output, session,
             updateProgressBar(
                 session = session,
                 id = "simu_progress",
-                value = 0, total = 100,
-                title = str_c(
-                    "Running simulation ", "0/", 
-                    input$nrun, sep = ""
-                )
+                value = 0, total = input$nrun,
+                title = "Running simulation:"
             )
             
             ## check if possible to run
@@ -2895,6 +2901,11 @@ training_set_action_server <- function(input, output, session,
                 local$feedback <- helpText(
                     icon("warning"), "Project is not ready.",
                     "Check project settings."
+                )
+            } else if(!local$valid_def) {
+                local$feedback <- helpText(
+                    icon("warning"), "Simulation configuration is not ready.",
+                    "Check training simulation settings."
                 )
             } else if(!any(c("header.txt", "headerRF.txt") %in% 
                            list.files(local$proj_dir))) {
@@ -3009,6 +3020,12 @@ training_set_action_server <- function(input, output, session,
             local$feedback <- helpText(
                 icon("check"), "Run succeeded."
             )
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = input$nrun, total = input$nrun,
+                title = "Running simulation:"
+            )
             showNotification(
                 id = ns("run_ok"),
                 duration = 5,
@@ -3091,9 +3108,9 @@ training_set_action_server <- function(input, output, session,
     ## progress bar
     observeEvent(local$log_file_content, {
         
-        print("----------- monitor progress -----------")
-        logging("objective nrun =", input$nrun)
-        logging("current log length =", length(local$log_file_content))
+        # print("----------- monitor progress -----------")
+        # logging("objective nrun =", input$nrun)
+        # logging("current log length =", length(local$log_file_content))
         
         req(input$nrun)
         
@@ -3111,66 +3128,62 @@ training_set_action_server <- function(input, output, session,
             )
             
             find_pttrn <- str_detect(local$log_file_content, pttrn)
-            
-            logging("found pattern =", sum(find_pttrn))
+            # logging("found pattern =", sum(find_pttrn))
             
             if(any(find_pttrn)) {
                 
-                print(local$log_file_content[local$log_file_start])
-                
                 local$log_start_line <- head(which(find_pttrn), 1)
-                
-                print("log_start_line")
-                print(local$log_start_line)
+                pttrn_match <- local$log_file_content[local$log_start_line]
+                # print("pattern match")
+                # print(pttrn_match)
+                # print("log_start_line")
+                # print(local$log_start_line)
                 
                 local$n_rec_initial <- as.integer(str_extract(
-                    local$log_file_content[local$log_file_start],
+                    pttrn_match,
                     "(?<=rt\\.nrec=)[0-9]+"
                 ))
-                
-                print("n_rec_initial")
-                print(local$n_rec_initial)
+                # print("n_rec_initial")
+                # print(local$n_rec_initial)
                 
                 local$n_rec_final <- as.integer(str_extract(
-                    local$log_file_content[local$log_file_start],
+                    pttrn_match,
                     "(?<=nrecneeded=)[0-9]+"
                 ))
-                
-                print("n_rec_final")
-                print(local$n_rec_final)
+                # print("n_rec_final")
+                # print(local$n_rec_final)
                 
                 local$n_scenario <- as.integer(str_extract(
-                    local$log_file_content[local$log_file_start],
+                    pttrn_match,
                     "(?<=nscenarios=)[0-9]+"
                 ))
-                
-                print("n_scenario")
-                print(local$n_scenario)
+                # print("n_scenario")
+                # print(local$n_scenario)
                 
                 local$n_stat <- as.integer(str_extract(
-                    local$log_file_content[local$log_file_start],
+                    pttrn_match,
                     "(?<=rt\\.nstat=)[0-9]+"
                 ))
-                
-                print("n_stat")
-                print(local$n_stat)
+                # print("n_stat")
+                # print(local$n_stat)
             }
         } else {
-            last_message <- local$log_file_content[
-                local$log_start_line:length(local$log_file_content)
-            ]
+            last_message <- tail(
+                local$log_file_content,
+                length(local$log_file_content) - local$log_start_line
+            )
             find_iter <- str_detect(last_message, "^[0-9]+$")
             
             if(any(find_iter)) {
                 current_iter <- tail(last_message[find_iter], 1)
+                logging("Iteration:", str(current_iter, "/", local$n_rec_final))
+                
                 updateProgressBar(
                     session = session,
                     id = "simu_progress",
-                    value = 100 * as.numeric(current_iter)/local$n_rec_final, 
-                    total = 100,
-                    title = str_c(
-                        "Running simulation ", 
-                        current_iter, "/", local$n_rec_final, sep = "")
+                    value = as.numeric(current_iter), 
+                    total = input$nrun,
+                    title = "Running simulation:"
                 )
             }
         }
@@ -3197,8 +3210,8 @@ training_set_action_server <- function(input, output, session,
         req(!is.null(input$nrun))
         req(!is.null(local$n_rec_final))
         
-        print("n_rec_final =")
-        print(local$n_rec_final)
+        # print("n_rec_final =")
+        # print(local$n_rec_final)
         
         if(local$n_rec_final >= input$nrun) {
             tmp_text <- helpText(
