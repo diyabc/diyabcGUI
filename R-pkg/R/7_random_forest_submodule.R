@@ -274,6 +274,7 @@ rf_parameter_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        param_list = list(),
         proj_header_content = NULL,
         ref_table_size = 0,
         n_rec_per_scenario = list(),
@@ -472,34 +473,17 @@ rf_parameter_server <- function(input, output, session,
             max = length(file_check$raw_scenario_list)
         )
         
-        # possible parameters
-        output$possible_parameters <- renderUI({
-            
-            param_list <- lapply(
-                file_check$raw_prior_list,
-                function(item) {
-                    return(
-                        tags$li(
-                            str_extract(
-                                item,
-                                single_param_regex()
-                            )
-                        )
+        local$param_list <- lapply(
+            file_check$raw_prior_list,
+            function(item) {
+                return(
+                    str_extract(
+                        item,
+                        single_param_regex()
                     )
-                }
-            )
-            
-            helpText(
-                "You can use one of the following parameter",
-                "or an arithmetic combination of them, such",
-                "as division, addition or multiplication of",
-                "two existing parameters. like 't/N' or 'T1+T2'.",
-                tags$div(
-                    style = "column-count:2;",
-                    do.call(tags$ul, param_list)
                 )
-            )
-        })
+            }
+        )
         
         # possible groups
         output$help_group <- renderUI({
@@ -513,6 +497,26 @@ rf_parameter_server <- function(input, output, session,
                 "Leave blank to not group scenarii."
             )
         })
+    })
+    
+    # possible parameters
+    output$possible_parameters <- renderUI({
+        helpText(
+            "You can use one of the following parameter",
+            "or an arithmetic combination of them, such",
+            "as division, addition or multiplication of",
+            "two existing parameters. like 't/N' or 'T1+T2'.",
+            tags$div(
+                style = "column-count:2;",
+                do.call(
+                    tags$ul,
+                    lapply(
+                        local$param_list,
+                        tags$li
+                    )
+                )
+            )
+        )
     })
     
     # check context
@@ -653,7 +657,36 @@ rf_parameter_server <- function(input, output, session,
                     icon("warning"), "Missing parameter."
                 )
             } else {
-                NULL
+                if(length(local$param_list) > 0) {
+                    possible_param <- str_c(
+                        "(",
+                        str_c(
+                            unlist(local$param_list), 
+                            collapse = "|"
+                        ),
+                        ")"
+                    )
+                        
+                    pttrn <- str_c(
+                        "^", possible_param, 
+                        "([\\+\\-\\*/]", possible_param, ")?$"
+                    )
+                    
+                    if(!str_detect(input$parameter, pttrn)) {
+                        helpText(
+                            icon("warning"),
+                            "Issue with provided parameter",
+                            "or combination of parameters."
+                        )
+                    } else {
+                        helpText(
+                            icon("check"),
+                            "Parameter to estimate is ok."
+                        )
+                    }
+                } else {
+                    NULL
+                }
             }
         }
     })
