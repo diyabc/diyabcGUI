@@ -699,8 +699,8 @@ check_mss_data_file <- function(data_file, data_dir,
                 # pttrn <- "^(Locus )?[A-Za-z0-9_-]+ <(A|H|X|Y|M)>$"
                 pttrn <- "^[A-Za-z0-9\\s_\\-]+ <(A|H|X|Y|M)>$"
                 locus_spec_match_ind <- which(str_detect(file_content, pttrn))
-                if(!all(locus_spec_match_ind %in% locus_match_ind) 
-                   & !all(locus_match_ind %in% locus_spec_match_ind)) {
+                if(!all(locus_spec_match_ind %in% locus_match_ind) & 
+                   !all(locus_match_ind %in% locus_spec_match_ind)) {
                     err <- append(
                         err,
                         str_c(
@@ -846,7 +846,8 @@ check_mss_data_file <- function(data_file, data_dir,
                     data_content$pop <- as.character(rep(1:n_pop, pop_size))
                     
                     ## indiv name first column
-                    if(!all(str_detect(data_content$indiv, "[A-Za-z0-9_-]+"))) {
+                    if(!all(str_detect(data_content$indiv, 
+                                       "[A-Za-z0-9_-]+"))) {
                         err <- append(
                             err,
                             str_c(
@@ -883,6 +884,10 @@ check_mss_data_file <- function(data_file, data_dir,
                     
                     # locus data
                     locus_data <- data_content[,2:(ncol(data_content) - 1)]
+                    
+                    if(ncol(data_content) == 3) {
+                        locus_data <- data.frame(locus1 = locus_data)
+                    }
                     
                     # microsat locus
                     microsat_hap_locus <- which(
@@ -1023,7 +1028,7 @@ check_mss_data_file <- function(data_file, data_dir,
                         1:n_loci,
                         function(col_ind) {
                             if(col_ind %in% c(seq_hap_locus, seq_dip_locus,
-                                          seq_x_locus)) {
+                                              seq_x_locus)) {
                                 
                                 tmp <- unlist(lapply(
                                     1:n_indiv,
