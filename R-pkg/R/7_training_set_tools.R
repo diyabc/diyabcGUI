@@ -5,7 +5,8 @@ write_header <- function(proj_dir, data_file,
                          scenario_list, param_count_list, 
                          param_list, cond_list, 
                          locus_type, seq_mode, locus, 
-                         mss_locus, mss_group_prior) {
+                         mss_locus, mss_group_prior,
+                         mss_rf_col_name) {
     
     # FIXME check input
     
@@ -33,6 +34,8 @@ write_header <- function(proj_dir, data_file,
     # print(mss_locus)
     # print("mss_group_prior =")
     # print(mss_group_prior)
+    # print("mss_rf_col_name")
+    # print(mss_rf_col_name)
     
     out <- NULL
     
@@ -258,7 +261,7 @@ write_header <- function(proj_dir, data_file,
             seq_summary <- str_c("NHA_", tmp_seq_group, "_1")
         }
         
-        summary_stat <- c(microsat_summary, seq_summary)
+        summary_stat <- c(mss_rf_col_name, microsat_summary, seq_summary)
     }
     
     sec6 <- str_c(

@@ -555,6 +555,8 @@ training_set_def_server <- function(input, output, session,
         # print(locus_setup$mss_locus)
         # print("mss_group_prior =")
         # print(locus_setup$mss_group_prior)
+        # print("mss_rf_col_name")
+        # print(locus_setup$mss_rf_col_name)
         
         ready <- TRUE
         msg <- list()
@@ -615,6 +617,7 @@ training_set_def_server <- function(input, output, session,
             if(local$locus_type == "mss") {
                 req(!is.null(locus_setup$mss_locus))
                 req(!is.null(locus_setup$mss_group_prior))
+                req(!is.null(locus_setup$mss_rf_col_name))
             }
             
             write_header(local$proj_dir, local$data_file, 
@@ -622,7 +625,8 @@ training_set_def_server <- function(input, output, session,
                          unlist(local$raw_param_list), 
                          unlist(local$raw_cond_list), 
                          local$locus_type, local$seq_mode, locus_setup$locus,
-                         locus_setup$mss_locus, locus_setup$mss_group_prior)
+                         locus_setup$mss_locus, locus_setup$mss_group_prior,
+                         locus_setup$mss_rf_col_name)
             
             file_check <- parse_diyabc_header(
                 file_name = file.path(local$proj_dir, "header.txt"),
@@ -1281,7 +1285,8 @@ locus_setup_server <- function(input, output, session,
     out <- reactiveValues(
         locus = NULL,
         mss_locus = NULL,
-        mss_group_prior = NULL
+        mss_group_prior = NULL,
+        mss_rf_col_name = NULL
     )
     # render ui
     output$setup <- renderUI({
@@ -1435,6 +1440,10 @@ locus_setup_server <- function(input, output, session,
             req(!is.null(mss_prior$raw_group_prior_list))
             out$mss_locus <- mss_group$raw_locus
             out$mss_group_prior <- mss_prior$raw_group_prior_list
+            
+            print(mss_prior$rf_col_name)
+            
+            out$mss_rf_col_name <- mss_prior$rf_col_name
         }
     })
     
@@ -1458,18 +1467,16 @@ mss_group_setup_ui <- function(id) {
         h4("Microsat Loci"),
         actionButton(
             ns("enable_microsat_setup"),
-            label = "Show/hide Microsat locus grouping configuration",
-            width = '100%',
-            icon = icon("minus-square")
+            label = tags$b("Show/hide Microsat locus grouping configuration"),
+            width = '100%'
         ),
         uiOutput(ns("microsat_setup")),
         br(),
         br(),
         actionButton(
             ns("enable_microsat_setup_motif"),
-            label = "Show/hide Microsat locus motif and range configuration",
-            width = '100%',
-            icon = icon("minus-square")
+            label = tags$b("Show/hide Microsat locus motif and range configuration"),
+            width = '100%'
         ),
         helpText(
             "By default, all Microsat loci are supposed to be dinucleid",
@@ -1481,9 +1488,8 @@ mss_group_setup_ui <- function(id) {
         h4("Sequence Loci"),
         actionButton(
             ns("enable_seq_setup"),
-            label = "Show/hide Sequence locus grouping configuration",
-            width = '100%',
-            icon = icon("minus-square")
+            label = tags$b("Show/hide Sequence locus grouping configuration"),
+            width = '100%'
         ),
         uiOutput(ns("seq_setup")),
         hr()
@@ -1622,6 +1628,12 @@ mss_group_setup_server <- function(input, output, session,
         locus_name = reactive(local$seq_locus),
         n_existing_group = reactive(microsat_group$n_group)
     )
+    
+    # observe({
+    #     print("nb of seq group")
+    #     print(seq_group$n_group)
+    #     print(reactiveValuesToList(seq_group))
+    # })
     
     ## show/hide microsat motif/range set up
     observeEvent(input$enable_microsat_setup_motif, {
@@ -1882,17 +1894,21 @@ locus_group_setup_server <- function(input, output, session,
         possible_groups = list(),
         # input
         locus_name = NULL,
-        n_existing_group = 1
+        n_existing_group = 0
     )
     # get input
     observe({
         local$locus_name <- locus_name()
         local$n_existing_group <- n_existing_group()
+        
+        # print("input locus group setup")
+        # print(local$locus_name)
+        # print(local$n_existing_group)
     })
     
     # init output
     out <- reactiveValues(
-        n_group = NULL,
+        n_group = 0,
         locus_group = list()
     )
     
@@ -1908,6 +1924,7 @@ locus_group_setup_server <- function(input, output, session,
     output$locus_group <- renderUI({
         req(!is.null(local$locus_name))
         req(length(local$locus_name) > 0)
+        req(length(local$possible_groups) > 0)
         
         tag_list <- lapply(
             local$locus_name,
@@ -1981,6 +1998,9 @@ locus_group_setup_server <- function(input, output, session,
         req(length(out$locus_group) > 0)
         req(all(str_length(out$locus_group) > 0))
         out$n_group <- max(as.integer(out$locus_group))
+        
+        # print("nb locus group")
+        # print(out$n_group)
     })
     
     return(out)
@@ -2299,6 +2319,9 @@ mss_group_prior_server <- function(input, output, session,
         seq_prior_list = list(),
         seq_model_list = list(),
         raw_seq_prior_list = list(),
+        # rf col name
+        microsat_col_name = NULL,
+        seq_col_name = NULL,
         # input
         group_info = NULL
     )
@@ -2312,12 +2335,12 @@ mss_group_prior_server <- function(input, output, session,
     
     # init output
     out <- reactiveValues(
-        raw_group_prior_list = list()
+        raw_group_prior_list = list(),
+        rf_col_name = NULL
     )
     
     # parse input
     observe({
-        
         # print("group info")
         # print(local$group_info)
         
@@ -2403,7 +2426,8 @@ mss_group_prior_server <- function(input, output, session,
                 local$microsat_group,
                 function(item) {
                     tag_list1 <- lapply(
-                        split(local$microsat_param, seq(nrow(local$microsat_param))),
+                        split(local$microsat_param, 
+                              seq(nrow(local$microsat_param))),
                         function(item1) {
                             group_prior_ui(
                                 ns(str_c("group_", item, "_", 
@@ -2582,6 +2606,10 @@ mss_group_prior_server <- function(input, output, session,
                 req(!is.null(input[[
                     str_c("group_", item, "_gamma_shape")
                     ]]))
+                
+                tmp_model_id <- input[[
+                    str_c("group_", item, "_mutation_model")
+                    ]]
 
                 tmp_model <- str_c(
                     "MODEL",
@@ -2598,7 +2626,9 @@ mss_group_prior_server <- function(input, output, session,
                     sep = " "
                 )
 
-                return(data.frame(group = item, model = tmp_model,
+                return(data.frame(group = item, 
+                                  model_id = tmp_model_id, 
+                                  model = tmp_model,
                                   stringsAsFactors = FALSE))
             }
         ))
@@ -2608,6 +2638,69 @@ mss_group_prior_server <- function(input, output, session,
     #     print("seq model list")
     #     print(local$seq_model_list)
     # })
+    
+    ### reftable column names
+    # microsat
+    observe({
+        local$microsat_col_name <- NULL
+        req(length(local$microsat_group) > 0)
+        rf_col <- c("µmic", "pmic", "snimic")
+        group_id <- str_extract(local$microsat_group, "[0-9]+")
+        if(length(group_id) > 0) {
+            local$microsat_col_name <- apply(
+                expand.grid(
+                    rf_col, group_id, 
+                    stringsAsFactors = FALSE, 
+                    KEEP.OUT.ATTRS = FALSE
+                ),
+                1,
+                str_c, collapse = "_"
+            )
+        }
+        
+        # print("microsat rf col name")
+        # print(local$microsat_col_name)
+    })
+    
+    # seq
+    observe({
+        local$seq_col_name <- NULL
+        req(length(local$seq_group) > 0)
+        req(is.data.frame(local$seq_model_list))
+        req(nrow(local$seq_model_list) > 0)
+        
+        # "Jukes Kantor (1969)" = "JK" (MU)
+        # "Kimura-2-parameters (1980)" = "K2P" (MU, K1)
+        # "Hasegawa-Kishino-Yano (1985)" = "HKY" (MU, K1)
+        # "Tamura Nei (1993)" = "TN" (MU, K1, K2)
+        rf_col <- c("µseq", "k1seq", "k2seq")
+
+        local$seq_col_name <- unname(unlist(
+            lapply(
+                split(local$seq_model_list, seq(nrow(local$seq_model_list))),
+                function(item) {
+                    tmp_rf_col <- switch(
+                        item$model_id,
+                        "JK" = rf_col[1],
+                        "K2P" = rf_col[1:2],
+                        "HKY" = rf_col[1:2],
+                        "TN" = rf_col[1:3]
+                    )
+                    tmp_group_id <- str_extract(
+                        item$group, "[0-9]+"
+                    )
+                    return(
+                        str_c(
+                            tmp_rf_col, tmp_group_id, sep = "_"
+                        )
+                    )
+                }
+            )
+        ))
+        
+        # print("seq rf col name")
+        # print(local$seq_col_name)
+    })
     
     
     ### output
@@ -2680,10 +2773,26 @@ mss_group_prior_server <- function(input, output, session,
         }
         # print(tmp_seq_prior)
         
-        out$raw_group_prior_list <- unlist(c(tmp_microsat_prior, tmp_seq_prior))
+        out$raw_group_prior_list <- unlist(
+            c(tmp_microsat_prior, tmp_seq_prior)
+        )
         
         # print("raw_group_prior_list")
         # print(out$raw_group_prior_list)
+    })
+    
+    # rf col name
+    observe({
+        local$rf_col_name <- NULL
+        req(length(local$microsat_col_name) + length(local$seq_col_name) > 0)
+        
+        out$rf_col_name <- c(
+            local$microsat_col_name, 
+            local$seq_col_name
+        )
+        
+        # print("rf col name")
+        # print(out$rf_col_name)
     })
     
     return(out)
@@ -3079,6 +3188,8 @@ training_set_action_server <- function(input, output, session,
             proc <- local$diyabc_run_process
             proc$kill()
             local$diyabc_run_result <- -1000
+            
+            local$n_ref_final <- local$n_rec_initial
         }
     })
     
