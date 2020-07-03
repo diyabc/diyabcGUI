@@ -2926,7 +2926,7 @@ training_set_action_server <- function(input, output, session,
     observeEvent(local$proj_dir, {
         req(local$proj_dir)
         log_file_content <<- reactiveFileReader(
-            2000, session,
+            1000, session,
             file.path(local$proj_dir, "diyabc_run_call.log"),
             function(file) {
                 if(file.exists(file)) {
@@ -2978,7 +2978,7 @@ training_set_action_server <- function(input, output, session,
                 )
             )
         } else {
-            ## prepre run
+            ## prepare run
             req(is.null(local$diyabc_run_process))
             
             ## init progress bar
