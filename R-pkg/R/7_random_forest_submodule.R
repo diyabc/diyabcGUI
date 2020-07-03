@@ -24,6 +24,7 @@ rf_module_server <- function(input, output, session,
         proj_file_list = NULL,
         proj_header = NULL,
         proj_ready = FALSE,
+        file_ready = FALSE,
         # input
         locus_type = NULL,
         proj_dir = NULL,
@@ -76,16 +77,22 @@ rf_module_server <- function(input, output, session,
     #     print(local$proj_file_list)
     # })
     
+    # check required files
+    observe({
+        req(!is.null(local$proj_file_list))
+        local$file_ready <- all(required_files %in% local$proj_file_list)
+    })
+    
     # enable control
     output$enable_control <- renderUI({
         req(!is.null(local$valid_proj))
-        req(!is.null(local$proj_file_list))
+        req(!is.null(local$file_ready))
         
         if(!local$valid_proj) {
             helpText(
                 icon("warning"), "Project set up is not valid."
             )
-        } else if(!all(required_files %in% local$proj_file_list)) {
+        } else if(!local$file_ready) {
             helpText(
                 icon("warning"), 
                 "You must generate a training data set with the", 
@@ -133,6 +140,7 @@ rf_module_server <- function(input, output, session,
         linear = reactive(rf_param$linear),
         pls_max_var = reactive(rf_param$pls_max_var),
         n_tree = reactive(rf_param$n_tree),
+        n_rec = reactive(rf_param$n_rec),
         chosen_scenario = reactive(rf_param$chosen_scenario),
         noob = reactive(rf_param$noob),
         parameter = reactive(rf_param$parameter),
@@ -722,6 +730,11 @@ rf_parameter_server <- function(input, output, session,
         out$pls_max_var <- input$pls_max_var
     })
     
+    # observe({
+    #     print("------- run mode = ")
+    #     print(out$run_mode)
+    # })
+    
     ## output
     return(out)
 }
@@ -760,7 +773,7 @@ rf_control_ui <- function(id) {
         h5(icon("comment"), "Run logs"),
         tags$pre(
             uiOutput(ns("run_log")),
-            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
         )
     )
 }
@@ -790,8 +803,7 @@ rf_control_server <- function(input, output, session,
     ns <- session$ns
     
     # max number of rows in log
-    nlog <- 100
-    show_nlog <- 10
+    nlog <- 5
     
     # init local
     local <- reactiveValues(
@@ -799,6 +811,9 @@ rf_control_server <- function(input, output, session,
         abcranger_run_result = NULL,
         feedback = NULL,
         log_file_content = NULL,
+        log_start_line = NULL,
+        current_iter = 0,
+        total_iter = 0,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
@@ -841,27 +856,12 @@ rf_control_server <- function(input, output, session,
     ## required files
     required_files <- c("headerRF.txt", "reftableRF.bin", "statobsRF.txt")
     
-    ## show/hide logs
-    observeEvent(input$show_log, {
-        
-        # print("click on show_log")
-        # print(input$show_log)
-        
-        req(!is.null(input$show_log))
-        
-        if(input$show_log %% 2 == 0) {
-            shinyjs::hide(id = "run_log")
-        } else{
-            shinyjs::show(id = "run_log")
-        }
-    })
-    
     ## read log file
-    log_file_content <- function() return(rep("", show_nlog))
+    log_file_content <- function() return(rep("", nlog))
     observeEvent(local$proj_dir, {
         req(local$proj_dir)
         log_file_content <<- reactiveFileReader(
-            500, session,
+            1000, session,
             file.path(local$proj_dir, "abcranger_call.log"),
             function(file) {
                 if(file.exists(file)) {
@@ -883,29 +883,6 @@ rf_control_server <- function(input, output, session,
     #     print(tail(local$log_file_content, 5))
     # })
     
-    ## show log messages
-    observeEvent(local$log_file_content, {
-        
-        if(length(local$log_file_content) < show_nlog) {
-            local$log_file_content <- c(
-                local$log_file_content,
-                rep("", show_nlog - length(local$log_file_content))
-            )
-        }
-    })
-    
-    output$run_log <- renderUI({
-        tagList(
-            tags$pre(
-                str_c(
-                    tail(local$log_file_content, show_nlog),
-                    collapse = "\n"
-                ),
-                style = "width:60vw; overflow:scroll;"
-            )
-        )
-    })
-    
     ## run
     observeEvent(input$run, {
         
@@ -922,6 +899,7 @@ rf_control_server <- function(input, output, session,
         req(!is.null(local$valid_proj))
         req(!is.null(local$proj_file_list))
         req(length(local$proj_file_list) > 0)
+        req(local$n_tree)
         
         ## run in progress
         if(!is.null(local$abcranger_run_process)) {
@@ -938,20 +916,15 @@ rf_control_server <- function(input, output, session,
                 )
             )
         } else {
-            ## prepre run
+            ## prepare run
             req(is.null(local$abcranger_run_process))
             
             ## init progress bar
             updateProgressBar(
                 session = session,
                 id = "rf_progress",
-                value = 0, total = 100,
-                # FIXME
-                # title = str_c(
-                #     "RF run: tree building ", "0/", 
-                #     local$n_tree, sep = ""
-                # )
-                title = "Not working at the moment."
+                value = 0, total = local$n_tree,
+                title = "Running RF:"
             )
             
             ## check if possible to run
@@ -1008,6 +981,12 @@ rf_control_server <- function(input, output, session,
                 # print(getOption("diyabcGUI"))
                 # print(getOption("shiny.maxRequestSize"))
                 
+                ## reset log
+                local$log_start_line = NULL
+                local$current_iter = 0
+                local$total_iter = local$n_tree
+                local$log_file_content = rep("", nlog)
+                
                 local$feedback <- helpText(
                     icon("spinner", class = "fa-spin"),
                     "Run in progress."
@@ -1021,12 +1000,15 @@ rf_control_server <- function(input, output, session,
                 # print(local$proj_ready)
                 # print("proj file list")
                 # print(local$proj_file_list)
-                
+                # 
                 # print("abcranger args")
                 # print("proj_dir =")
                 # print(local$proj_dir)
-                # print("mode =")
+                # print("run mode =")
                 # print(local$run_mode)
+                # 
+                # print("n_rec =")
+                # print(local$n_rec)
                 # 
                 # print("min_node_size =")
                 # print(local$min_node_size)
@@ -1077,6 +1059,13 @@ rf_control_server <- function(input, output, session,
         }
     })
     
+    output$run_log <- renderUI({
+        do.call(
+            tagList,
+            as.list(tail(local$log_file_content, nlog))
+        )
+    })
+    
     ## monitor simulation run
     observeEvent(local$abcranger_run_process, {
         req(!is.null(local$abcranger_run_process))
@@ -1104,16 +1093,13 @@ rf_control_server <- function(input, output, session,
         logging("abcranger run exit status:",
                 local$abcranger_run_result)
         
+        req(local$n_tree)
+        
         ## log
         output$run_log <- renderUI({
-            tagList(
-                tags$pre(
-                    str_c(
-                        local$log_file_content,
-                        collapse = "\n"
-                    ),
-                    style = "width:60vw; overflow:scroll; overflow-y:scroll; min-height:100px; max-height:100px;"
-                )
+            do.call(
+                tagList,
+                as.list(local$log_file_content)
             )
         })
         
@@ -1122,6 +1108,12 @@ rf_control_server <- function(input, output, session,
         if(local$abcranger_run_result == 0) {
             local$feedback <- helpText(
                 icon("check"), "RF run succeeded."
+            )
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = local$n_tree, total = local$n_tree,
+                title = "Running RF:"
             )
             showNotification(
                 id = ns("run_ok"),
@@ -1205,31 +1197,92 @@ rf_control_server <- function(input, output, session,
     ## progress bar
     observeEvent(local$log_file_content, {
         
-        ## FIXME
+        req(local$n_tree)
+        req(local$run_mode)
         
-        # req(local$n_tree)
-        # 
-        # req(!is.null(local$log_file_content))
-        # req(length(local$log_file_content) > 0)
-        # 
-        # last_message <- tail(local$log_file_content, nlog)
-        # find_adv <- str_detect(last_message, "^[0-9]+$")
-        # 
-        # "computed: <nb d'arbres calculés>"
-        # "read: <nb de lignes lues>"
-        # 
-        # if(any(find_adv)) {
-        #     final_adv <- tail(last_message[find_adv], 1)
-        #     updateProgressBar(
-        #         session = session,
-        #         id = "rf_progress",
-        #         value = 100 * as.numeric(final_adv)/local$n_tree, 
-        #         total = 100,
-        #         title = str_c(
-        #             "Running RF analysis: tree building ", 
-        #             final_adv, "/", local$n_tree, sep = "")
-        #     )
-        # }
+        tmp_computed_0 <- switch(
+            local$run_mode,
+            "param_estim" = "growing random forest",
+            "model_choice" = "growing first random forest"
+        )
+        
+        req(!is.null(local$log_file_content))
+        req(length(local$log_file_content) > 0)
+        
+        ## FIXME
+        step <- c("read", "computed_0", "computed_1")
+        
+        ## parse log
+        if(is.null(local$log_start_line)) {
+            pttrn <- str_c(
+                "^(",
+                str_c(step, collapse = "|"),
+                ")"
+            )
+            
+            find_pttrn <- str_detect(local$log_file_content, pttrn)
+            # logging("found pattern =", sum(find_pttrn))
+            if(any(find_pttrn)) {
+                local$log_start_line <- tail(which(find_pttrn), 1)
+            }
+        } else {
+            last_message <- tail(
+                local$log_file_content,
+                length(local$log_file_content) - local$log_start_line
+            )
+            
+            pttrn <- str_c(
+                "^(",
+                str_c(step, collapse = "|"),
+                ")"
+            )
+            find_iter <- str_detect(last_message, pttrn)
+            
+            if(any(find_iter)) {
+                current_msg <- tail(last_message[find_iter], 1)
+                
+                tmp_step <- str_extract(current_msg, pttrn)
+                tmp_log <- switch(
+                    tmp_step,
+                    "read" = "Reading training set",
+                    "computed_0" = tmp_computed_0,
+                    "computed_1" = "growing second random forest"
+                )
+                
+                # current iteration
+                pttrn <- "[0-9]+(?=/)"
+                if(str_detect(current_msg, pttrn)) {
+                    local$current_iter <- as.integer(
+                        str_extract(current_msg, pttrn)
+                    )
+                }
+                
+                # total iteration
+                pttrn <- "(?<=/)[0-9]+"
+                if(str_detect(current_msg, pttrn)) {
+                    local$total_iter <- as.integer(
+                        str_extract(current_msg, pttrn)
+                    )
+                }
+                
+                # logging(
+                #     "Iteration:", 
+                #     str_c(
+                #         tmp_log,
+                #         str_c(local$current_iter, "/", local$total_iter),
+                #         sep = " "
+                #     )
+                # )
+                
+                updateProgressBar(
+                    session = session,
+                    id = "rf_progress",
+                    value = local$current_iter, 
+                    total = local$total_iter,
+                    title = str_c("Running RF:", tmp_log, sep = " ")
+                )
+            }
+        }
     })
     
     ## feedback

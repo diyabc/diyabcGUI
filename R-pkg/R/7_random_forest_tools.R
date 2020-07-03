@@ -25,7 +25,7 @@
 #'  --parameter arg     name of the parameter of interest (mandatory for
 #'                                                         parameter estimation)
 #'  -g, --groups arg        Groups of models
-abcranger_run <- function(proj_dir, run_mode, n_ref, 
+abcranger_run <- function(proj_dir, run_mode, n_rec, 
                           min_node_size, n_tree, noise_columns, no_linear, 
                           pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
@@ -50,7 +50,7 @@ abcranger_run <- function(proj_dir, run_mode, n_ref,
     ### run
     logging("abcranger run")
     arguments <- c(
-        "-n", n_ref,
+        "-n", n_rec,
         "-m", min_node_size,
         "-t", n_tree,
         "-j", getOption("diyabcGUI")$ncore,
