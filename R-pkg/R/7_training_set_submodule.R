@@ -1782,12 +1782,14 @@ mss_group_setup_server <- function(input, output, session,
         # print(local$raw_microsat_locus)
         # print("raw seq locus")
         # print(local$raw_seq_locus)
+        # print("locus name")
+        # print(local$data_info$locus_name)
         
-        req(length(local$raw_microsat_locus) > 0)
-        req(length(local$raw_seq_locus) > 0)
+        req(length(local$raw_microsat_locus) + length(local$raw_seq_locus) > 0)
         req(!is.null(local$data_info$locus_name))
         
-        tmp_raw_locus <- c(local$raw_microsat_locus, local$raw_seq_locus)
+        tmp_raw_locus <- unlist(c(local$raw_microsat_locus, 
+                                  local$raw_seq_locus))
         
         out$raw_locus <- left_join(
             data.frame(
@@ -1810,15 +1812,24 @@ mss_group_setup_server <- function(input, output, session,
     observe({
         req(length(out$raw_locus) > 0)
         
-        tmp_group_info <- as.data.frame(
-            Reduce(
-                "rbind",
-                unique(str_extract_all(
+        tmp_group_info <- Reduce(
+            "rbind",
+            unique(
+                str_extract_all(
                     out$raw_locus,
                     "(\\[[MS]\\])|(G[0-9]+)"
-                ))
+                )
             )
         )
+        
+        # issue when a single group
+        if(length(tmp_group_info) == 2) {
+            tmp_group_info <- data.frame(c1 = tmp_group_info[1],
+                                         c2 = tmp_group_info[2])
+        } else {
+            tmp_group_info <- as.data.frame(tmp_group_info)
+        }
+        
         row.names(tmp_group_info) <- NULL
         colnames(tmp_group_info) <- c("mode", "group")
         out$group_info <- tmp_group_info
@@ -2295,6 +2306,8 @@ mss_group_prior_server <- function(input, output, session,
     # get input
     observe({
         local$group_info <- group_info()
+        # print("MSS group info")
+        # print(local$group_info)
     })
     
     # init output
