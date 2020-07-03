@@ -72,7 +72,7 @@ test_that("diyabc_run_trainset_simu", {
         c("headerRF.txt", "indseq_SNP_sim_dataset_4POP_001.snp"),
         function(filename) {
             fs::file_copy(
-                path = file.path(example_dir(), "diyabc_rf_pipeline", 
+                path = file.path(example_dir(), 
                                  "IndSeq_SNP_estim_param", filename),
                 new_path = file.path(proj_dir, filename)
             )

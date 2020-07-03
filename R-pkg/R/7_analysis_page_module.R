@@ -416,10 +416,7 @@ analysis_proj_set_server <- function(input, output, session) {
                   data_type$seq_mode == "indseq") {
             possible_choices <- basename(
                 list.dirs(
-                    file.path(
-                        example_dir(), 
-                        "diyabc_rf_pipeline"
-                    )
+                    example_dir()
                 )
             )
             possible_choices <- possible_choices[str_detect(possible_choices,
@@ -434,10 +431,7 @@ analysis_proj_set_server <- function(input, output, session) {
                  data_type$seq_mode == "poolseq") {
             possible_choices <- basename(
                 list.dirs(
-                    file.path(
-                        example_dir(), 
-                        "diyabc_rf_pipeline"
-                    )
+                    example_dir()
                 )
             )
             possible_choices <- possible_choices[str_detect(possible_choices,
@@ -459,15 +453,13 @@ analysis_proj_set_server <- function(input, output, session) {
         # copy files
         proj_files <- list.files(
             file.path(
-                example_dir(), 
-                "diyabc_rf_pipeline",
+                example_dir(),
                 input$proj_example
             )
         )
         fs::file_copy(
             path = file.path(
-                example_dir(), 
-                "diyabc_rf_pipeline",
+                example_dir(),
                 input$proj_example,
                 proj_files
             ),

@@ -3,7 +3,7 @@ context("io_management")
 test_that("check_data_file", {
     # snp indseq
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "IndSeq_SNP_estim_param")
     locus_type <- "snp"
     seq_mode <- "indseq"
@@ -13,7 +13,7 @@ test_that("check_data_file", {
     
     # snp poolseq
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "PoolSeq_SNP_estim_param")
     locus_type <- "snp"
     seq_mode <- "poolseq"
@@ -34,7 +34,7 @@ test_that("check_data_file", {
 test_that("check_indseq_snp_data_file", {
     
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "IndSeq_SNP_estim_param")
     out <- check_indseq_snp_data_file(
         data_file, data_dir, expected_data_file = NULL
@@ -42,7 +42,7 @@ test_that("check_indseq_snp_data_file", {
     expect_true(out$valid)
     
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "PoolSeq_SNP_estim_param")
     out <- check_indseq_snp_data_file(
         data_file, data_dir, expected_data_file = NULL
@@ -53,7 +53,7 @@ test_that("check_indseq_snp_data_file", {
 test_that("check_poolseq_snp_data_file", {
     
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "PoolSeq_SNP_estim_param")
     out <- check_poolseq_snp_data_file(
         data_file, data_dir, expected_data_file = NULL
@@ -61,7 +61,7 @@ test_that("check_poolseq_snp_data_file", {
     expect_true(out$valid)
     
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "IndSeq_SNP_estim_param")
     out <- check_poolseq_snp_data_file(
         data_file, data_dir, expected_data_file = NULL
@@ -79,7 +79,7 @@ test_that("check_mss_data_file", {
     expect_true(out$valid)
     
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(example_dir(), "diyabc_rf_pipeline", 
+    data_dir <- file.path(example_dir(), 
                           "IndSeq_SNP_estim_param")
     out <- check_mss_data_file(
         data_file, data_dir, expected_data_file = NULL
@@ -98,7 +98,7 @@ test_that("check_file_name", {
 
 test_that("parse_diyabc_header", {
     # model choice
-    file_name <- file.path(example_dir(), "diyabc_rf_pipeline",
+    file_name <- file.path(example_dir(), 
                            "IndSeq_SNP_model_choice",
                            "headerRF.txt")
     file_type = "text/plain"
@@ -138,7 +138,7 @@ test_that("parse_diyabc_header", {
     )
     
     # parameter estimation
-    file_name <- file.path(example_dir(), "diyabc_rf_pipeline",
+    file_name <- file.path(example_dir(), 
                            "IndSeq_SNP_estim_param",
                            "headerRF.txt")
     file_type = "text/plain"
@@ -198,7 +198,7 @@ test_that("parse_diyabc_header", {
 
 test_that("parse_diyabc_header_scenarii", {
     # model choice
-    file_name <- file.path(example_dir(), "diyabc_rf_pipeline",
+    file_name <- file.path(example_dir(), 
                            "IndSeq_SNP_model_choice",
                            "header.txt")
     raw_content <- readLines(file_name)
