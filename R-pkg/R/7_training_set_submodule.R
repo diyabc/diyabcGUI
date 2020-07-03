@@ -1440,9 +1440,6 @@ locus_setup_server <- function(input, output, session,
             req(!is.null(mss_prior$raw_group_prior_list))
             out$mss_locus <- mss_group$raw_locus
             out$mss_group_prior <- mss_prior$raw_group_prior_list
-            
-            print(mss_prior$rf_col_name)
-            
             out$mss_rf_col_name <- mss_prior$rf_col_name
         }
     })
