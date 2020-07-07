@@ -759,9 +759,8 @@ check_mss_data_file <- function(data_file, data_dir,
             )
             
             ## population
-            pttrn <- "^pop$"
-            pop_match_ind <- which(str_detect(str_to_lower(file_content), 
-                                              pttrn))
+            pttrn <- "^(?i)pop(?-i)$"
+            pop_match_ind <- which(str_detect(file_content, pttrn))
             # check
             if(length(pop_match_ind) == 0) {
                 err <- append(
