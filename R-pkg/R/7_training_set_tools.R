@@ -355,15 +355,15 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     logging("diyabc run")
     arguments <- c(
         "-p", safe_proj_dir, 
-        "-R \"\"", "-m",
+        "-R", "", "-m",
         "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
-        "-r", n_run,
+        "-r", as.character(n_run),
         "-t", as.character(getOption("diyabcGUI")$ncore)
     )
     if(run_prior_check) {
         arguments <- c(
             arguments,
-            "-d a:pl"
+            "-d", "a:pl"
         )
     }
     

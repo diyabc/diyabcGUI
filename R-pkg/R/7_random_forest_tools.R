@@ -50,23 +50,23 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
     ### run
     logging("abcranger run")
     arguments <- c(
-        "-n", n_rec,
-        "-m", min_node_size,
-        "-t", n_tree,
-        "-j", getOption("diyabcGUI")$ncore,
-        "-c", noise_columns
+        "-n", as.character(n_rec),
+        "-m", as.character(min_node_size),
+        "-t", as.character(n_tree),
+        "-j", as.character(getOption("diyabcGUI")$ncore),
+        "-c", as.character(noise_columns)
     )
     if(no_linear) {
         arguments <- c(arguments, "--no_linear")
     } else {
-        arguments <- c(arguments, "--plsmaxvar", pls_max_var)
+        arguments <- c(arguments, "--plsmaxvar", as.character(pls_max_var))
     }
     if(run_mode == "param_estim") {
         arguments <- c(
             arguments,
-            "--chosenscen", chosen_scenario,
-            "--noob", noob,
-            "--parameter", parameter
+            "--chosenscen", as.character(chosen_scenario),
+            "--noob", as.character(noob),
+            "--parameter", as.character(parameter)
         )
     } else if(run_mode == "model_choice") {
         if(!is.null(groups)) {
