@@ -160,7 +160,7 @@ parse_scenario <- function(text) {
     event_param <- NULL
     valid <- TRUE
     Ne_param <- NULL
-    Ne_list_t0 <- NULL
+    Ne_list_0 <- NULL
     rate_param <- NULL
     time_param <- NULL 
     msg_list <- list()
@@ -175,21 +175,21 @@ parse_scenario <- function(text) {
         # extract scenario rows
         scenario <- unlist(str_split(text, pattern = "\n"))
         ## first line
-        # population effective size at time 0
-        Ne_list_t0 <- unlist(
+        # initial population effective size
+        Ne_list_0 <- unlist(
             str_extract_all(
                 unlist(str_split(scenario[1], pattern = " ")), 
                 pattern = param_regex()
             )
         )
-        if(length(Ne_list_t0) == 0) {
+        if(length(Ne_list_0) == 0) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("First row with initial population effective ",
                                 "sizes is not well formatted."))
         }
         # number of populations
-        npop <- length(Ne_list_t0)
+        npop <- length(Ne_list_0)
         ## events
         # no event on 1st line
         events <- str_extract_all(scenario, pattern = event_regex)
@@ -237,7 +237,7 @@ parse_scenario <- function(text) {
         
         ## parameters
         Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
-                             Ne_list_t0))
+                             Ne_list_0))
         Ne_param <- Ne_param[!str_detect(string = Ne_param, 
                                          pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
         
@@ -252,7 +252,7 @@ parse_scenario <- function(text) {
     ## output
     return(lst(npop, nevent, 
                event_type, event_time, event_pop, event_param, 
-               valid, Ne_param, Ne_list_t0, rate_param, time_param, 
+               valid, Ne_param, Ne_list_0, rate_param, time_param, 
                msg_list))
 }
 
