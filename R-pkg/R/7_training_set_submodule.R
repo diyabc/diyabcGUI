@@ -2808,9 +2808,10 @@ training_set_action_ui <- function(id) {
             value = 100,
             min = 100
         ),
+        uiOutput(ns("feedback_nrun")),
         helpText(
             tags$div(
-                icon("warning"),
+                tags$b("Note:"), br(),
                 "The number of simulations depends on your analysis:"
             ),
             tags$ul(
@@ -2847,7 +2848,6 @@ training_set_action_ui <- function(id) {
             display_pct = TRUE
         ),
         uiOutput(ns("feedback")),
-        uiOutput(ns("feedback_nrun")),
         br(),
         actionBttn(
             inputId = ns("stop"),
@@ -3261,7 +3261,8 @@ training_set_action_server <- function(input, output, session,
             
             if(any(find_iter)) {
                 current_iter <- tail(last_message[find_iter], 1)
-                logging("Iteration:", str(current_iter, "/", local$n_rec_final))
+                # logging("Iteration:", 
+                #         str(current_iter, "/", local$n_rec_final))
                 
                 updateProgressBar(
                     session = session,
@@ -3305,8 +3306,26 @@ training_set_action_server <- function(input, output, session,
             tmp_text <- helpText(
                 icon("warning"), 
                 "Number of already available simulations = ",
-                tags$b(reftable_size), ".",
-                br(),
+                tags$b(reftable_size),
+                br(), br(),
+                "To generate additional training data, you must set",
+                "the number of simulations to be higher than",
+                tags$b(reftable_size), "."
+            )
+        } else if(local$n_rec_initial == 0 & local$n_rec_initial == 0) {
+            tmp_text <- helpText(
+                "Number of already available simulations = ",
+                tags$i("unknown"),
+                br(), br(),
+                "To generate additional training data, you must set",
+                "the number of simulations to be higher than",
+                tags$i("unknown"), "."
+            )
+        } else {
+            tmp_text <- helpText(
+                "Number of already available simulations = ",
+                tags$b(reftable_size),
+                br(), br(),
                 "To generate additional training data, you must set",
                 "the number of simulations to be higher than",
                 tags$b(reftable_size), "."
