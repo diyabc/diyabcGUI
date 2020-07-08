@@ -35,8 +35,8 @@ pref_page_ui <- function(id) {
             hr(),
             numericInput(
                 ns("simu_loop_size"), 
-                label = "Number of particles simulated in a single batch.",
-                value = 100,
+                label = "Number of particles simulated in a single batch (loop-size).",
+                value = 50,
                 min = 10,
                 max = 10000
             ),
