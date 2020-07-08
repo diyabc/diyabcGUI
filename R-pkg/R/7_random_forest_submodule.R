@@ -229,20 +229,20 @@ rf_parameter_ui <- function(id) {
             "are computed with",
             "LDA for model choice or PLS for parameter estimation."
         ),
-        numericInput(
-            ns("pls_max_var"),
-            label = "PLS explained variance threshold",
-            min = 0.001,
-            max = 0.999,
-            value = 0.95,
-            step = 0.001
-        ),
-        helpText(
-            "Percentage of maximum explained Y-variance", 
-            "for retaining pls axis"
-        ),
         conditionalPanel(
             condition = "input.run_mode == 'param_estim'", ns = ns,
+            numericInput(
+                ns("pls_max_var"),
+                label = "PLS explained variance threshold",
+                min = 0.001,
+                max = 0.999,
+                value = 0.95,
+                step = 0.001
+            ),
+            helpText(
+                "Percentage of maximum explained Y-variance", 
+                "for retaining pls axis"
+            ),
             numericInput(
                 ns("noob"),
                 label = "Number of oob testing samples (FIXME)",
@@ -1015,14 +1015,14 @@ rf_control_server <- function(input, output, session,
                 # print(local$noise_columns)
                 # print("linear =")
                 # print(local$linear)
-                # print("pls_max_var")
-                # print(local$pls_max_var)
                 # print("n_tree")
                 # print(local$n_tree)
                 # 
                 # if(local$run_mode == "param_estim") {
                 #     print("chosen_scen =")
                 #     print(local$chosen_scenario)
+                #     print("pls_max_var")
+                #     print(local$pls_max_var)
                 #     print("noob =")
                 #     print(local$noob)
                 #     print("parameter =")
@@ -1035,11 +1035,11 @@ rf_control_server <- function(input, output, session,
                 req(!is.null(local$min_node_size))
                 req(!is.null(local$noise_columns))
                 req(!is.null(local$linear))
-                req(!is.null(local$pls_max_var))
                 req(!is.null(local$n_tree))
                 
                 if(local$run_mode == "param_estim") {
                     req(!is.null(local$chosen_scenario))
+                    req(!is.null(local$pls_max_var))
                     req(!is.null(local$noob))
                     req(!is.null(local$parameter))
                     req(str_length(local$parameter) > 0)
