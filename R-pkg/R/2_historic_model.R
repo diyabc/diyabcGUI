@@ -166,12 +166,25 @@ parse_scenario <- function(text) {
     msg_list <- list()
     # possible events
     possible_events <- c("sample", "varNe", "merge", "split")
-    event_regex <- str_c(possible_events, collapse = "|")
+    event_regex <- str_c(
+        "(?i)",
+        str_c(possible_events, collapse = "|"),
+        "(?-i)"
+    )
     ## check if input is not empty
     if(is.null(text) | str_length(text) == 0) {
         valid <- FALSE
         msg_list <- append(msg_list, "Empty input")
     } else {
+        # rewrite event if any
+        text <- str_replace_all(text, pattern = "(?i)sample(?-i)", 
+                                replacement = "sample")
+        text <- str_replace_all(text, pattern = "(?i)varNe(?-i)", 
+                                replacement = "varNe")
+        text <- str_replace_all(text, pattern = "(?i)merge(?-i)", 
+                                replacement = "merge")
+        text <- str_replace_all(text, pattern = "(?i)split(?-i)", 
+                                replacement = "split")
         # extract scenario rows
         scenario <- unlist(str_split(text, pattern = "\n"))
         ## first line
@@ -192,7 +205,9 @@ parse_scenario <- function(text) {
         npop <- length(Ne_list_0)
         ## events
         # no event on 1st line
-        events <- str_extract_all(scenario, pattern = event_regex)
+        events <- str_extract_all(
+            scenario, pattern = event_regex
+        )
         if(length(events[0]) > 0) {
             valid <- FALSE
             msg_list <- append(
@@ -200,7 +215,8 @@ parse_scenario <- function(text) {
                                 "effective sizes and not define an event."))
         } 
         # one event per remaining line
-        if(any(unlist(lapply(events[-1], function(event) length(event) != 1)))) {
+        if(any(unlist(lapply(events[-1], 
+                             function(event) length(event) != 1)))) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("All rows (except first one) should define a ",
@@ -272,7 +288,8 @@ parse_event <- function(event) {
     event_pop <- NULL
     event_valid <- TRUE
     # event type
-    event_type <- str_extract(string = event, pattern = event_regex)
+    event_type <- str_extract(string = event, 
+                              pattern = event_regex)
     if(is.na(event_type)) {
         event_type <- NULL
         event_valid <- FALSE
