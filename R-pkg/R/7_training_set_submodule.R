@@ -242,7 +242,7 @@ show_existing_proj_ui <- function(id) {
         ),
         uiOutput(ns("show_conditions")),
         hr(),
-        h3(icon("dna"), "Number of SNP loci to simulate"),
+        h3(icon("dna"), "Number of loci to simulate"),
         helpText(
             "Locus settings defined in the provided header file."
         ),
@@ -318,17 +318,20 @@ show_existing_proj_server <- function(input, output, session,
         req(!is.null(local$valid_proj))
         req(!is.null(local$proj_header_content$raw_cond_list))
         
-        if(local$valid_proj & 
-           length(local$proj_header_content$raw_cond_list) > 0) {
-            tagList(
-                do.call(
-                    tags$ul,
-                    lapply(
-                        local$proj_header_content$raw_cond_list, 
-                        function(item) tags$li(tags$code(item))
+        if(local$valid_proj) { 
+            if(length(local$proj_header_content$raw_cond_list) > 0) {
+                tagList(
+                    do.call(
+                        tags$ul,
+                        lapply(
+                            local$proj_header_content$raw_cond_list, 
+                            function(item) tags$li(tags$code(item))
+                        )
                     )
                 )
-            )
+            } else {
+                helpText("No condition in header file.")
+            }
         } else {
             NULL
         }
@@ -577,13 +580,13 @@ training_set_def_server <- function(input, output, session,
             )
         }
         
-        if(length(local$raw_cond_list) == 0) {
-            ready <- FALSE
-            msg <- append(
-                msg,
-                "Missing conditions."
-            )
-        }
+        # if(length(local$raw_cond_list) == 0) {
+        #     ready <- FALSE
+        #     msg <- append(
+        #         msg,
+        #         "Missing conditions."
+        #     )
+        # }
         
         output$feedback <- renderUI({
             if(length(msg) > 0) {
@@ -824,16 +827,31 @@ prior_cond_set_ui <- function(id) {
         textAreaInput(
             ns("cond_set"), 
             label = NULL, 
-            rows = 8,
+            rows = 4,
             resize = "none"
         ),
         helpText(
+            icon("warning"),
+            "You might need to impose some conditions on historical parameters",
+            "(e.g. to avoid genealogical problems)",
+            "or to constraint simulation settings.",
+            br(), br(),
+            "For instance, there can be two time parameters with overlapping",
+            "prior distributions. However, you might want",
+            "the first one, say t1, to always be larger than",
+            "the second one, say t2.",
+            br(), br(),
+            "To do so, you just need to set 't1 > t2' in the 'Condition",
+            "setting' panel above. Such a condition should concern",
+            "two parameters of the same type",
+            "(i.e. two effective sizes, two times or two admixture rates).",
+            br(), br(),
             "Enter a single condition per line.",
-            "Conditions should have the following format: XX<YY.", 
+            "Conditions should have the following format: 'XX<YY'", 
+            "(without the quotes),", 
             "where 'XX' and 'YY' are parameters of the same type.",
             "You can use the standard comparison signs: '>', '>=', '<', '=<'."
         ),
-        uiOutput(ns("cond_help")),
         uiOutput(ns("cond_format"))
     )
 }
@@ -902,19 +920,6 @@ prior_cond_set_server <- function(input, output, session,
             function(item) return(item$raw)
         ))
         # print(out$raw_prior_list)
-    })
-    # condition help
-    output$cond_help <- renderUI({
-        req(!is.null(local$cond_list))
-        helpText(
-            "We recommend that you enter the following conditions:",
-            do.call(
-                tags$ul,
-                lapply(unique(local$cond_list), function(item) {
-                    return(tags$li(item))
-                })
-            )
-        )
     })
     # get input condition
     observeEvent(input$cond_set, {
@@ -1242,7 +1247,7 @@ prior_server <- function(input, output, session,
 locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("dna"), "Number of SNP loci to simulate"),
+        h3(icon("dna"), "Number of loci to simulate"),
         uiOutput(ns("setup")),
         uiOutput(ns("mss_setup"))
     )
@@ -3048,7 +3053,6 @@ training_set_action_server <- function(input, output, session,
                 
                 ## reset log
                 local$log_start_line = NULL
-                local$log_file_content = rep("", nlog)
                 
                 local$feedback <- helpText(
                     icon("spinner", class = "fa-spin"),
@@ -3068,7 +3072,7 @@ training_set_action_server <- function(input, output, session,
     output$run_log <- renderUI({
         do.call(
             tagList,
-            as.list(tail(local$log_file_content, nlog))
+            as.list(local$log_file_content)
         )
     })
     
@@ -3098,14 +3102,6 @@ training_set_action_server <- function(input, output, session,
         
         logging("diyabc simu run exit status:",
                 local$diyabc_run_result)
-        
-        ## log
-        output$run_log <- renderUI({
-            do.call(
-                tagList,
-                as.list(local$log_file_content)
-            )
-        })
         
         ## check run
         # run ok
