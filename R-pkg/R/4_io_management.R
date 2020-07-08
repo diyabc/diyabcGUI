@@ -1216,11 +1216,13 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
             # check extracted priors
             valid <- all(unlist(lapply(raw_prior_list, check_header_prior)))
             # extract conditions
-            raw_cond_list <- raw_content[next_sec_line:(next_sec_line 
-                                                        + n_cond - 1)]
-            next_sec_line <- next_sec_line + n_cond
-            # check extracted conditions
-            valid <- all(unlist(lapply(raw_cond_list, check_header_cond)))
+            if(n_cond > 0) {
+                raw_cond_list <- raw_content[next_sec_line:(next_sec_line 
+                                                            + n_cond - 1)]
+                next_sec_line <- next_sec_line + n_cond
+                # check extracted conditions
+                valid <- all(unlist(lapply(raw_cond_list, check_header_cond)))
+            }
             # generation mode
             simu_mode <- raw_content[next_sec_line]
             next_sec_line <- next_sec_line + 1

@@ -100,11 +100,13 @@ write_header <- function(proj_dir, data_file,
         sep = "\n"
     )
     if(!is.null(cond_list)) {
-        sec3 <- str_c(
-            sec3,
-            str_c(cond_list, collapse = "\n"),
-            sep = "\n"
-        )
+        if(length(cond_list) > 0) {
+            sec3 <- str_c(
+                sec3,
+                str_c(cond_list, collapse = "\n"),
+                sep = "\n"
+            )
+        }
     }
     sec3 <- str_c(
         sec3,
