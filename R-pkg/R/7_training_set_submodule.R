@@ -1024,15 +1024,12 @@ check_cond <- function(input_cond_list, param_list) {
 prior_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        tags$h4(textOutput(
+            ns("param_name")
+        )),
         fluidRow(
             column(
-                width = 1,
-                tags$h4(textOutput(
-                    ns("param_name")
-                ))
-            ),
-            column(
-                width = 4,
+                width = 6,
                 radioGroupButtons(
                     ns("prior_type"),
                     label = NULL,
@@ -1040,13 +1037,13 @@ prior_ui <- function(id) {
                                    "Normal" = "NO", "Log-Norm." = "LN"),
                     selected = "UN",
                     justified = TRUE
-                )
+                ),
             ),
             column(
-                width = 7,
+                width = 6,
                 fluidRow(
                     column(
-                        width = 3,
+                        width = 6,
                         splitLayout(
                             tags$h5(
                                 "Min.", 
@@ -1060,7 +1057,7 @@ prior_ui <- function(id) {
                         )
                     ),
                     column(
-                        width = 3,
+                        width = 6,
                         splitLayout(
                             tags$h5(
                                 "Max.", 
@@ -1072,9 +1069,11 @@ prior_ui <- function(id) {
                             ),
                             cellWidths = c("40%", "60%")
                         )
-                    ),
+                    )
+                ),
+                fluidRow(
                     column(
-                        width = 3,
+                        width = 6,
                         splitLayout(
                             tags$h5(
                                 "Mean", 
@@ -1088,7 +1087,7 @@ prior_ui <- function(id) {
                         )
                     ),
                     column(
-                        width = 3,
+                        width = 6,
                         splitLayout(
                             tags$h5(
                                 "Std. dev.", 
