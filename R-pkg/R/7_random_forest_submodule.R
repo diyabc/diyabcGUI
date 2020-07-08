@@ -985,7 +985,6 @@ rf_control_server <- function(input, output, session,
                 local$log_start_line = NULL
                 local$current_iter = 0
                 local$total_iter = local$n_tree
-                local$log_file_content = rep("", nlog)
                 
                 local$feedback <- helpText(
                     icon("spinner", class = "fa-spin"),
@@ -1062,7 +1061,7 @@ rf_control_server <- function(input, output, session,
     output$run_log <- renderUI({
         do.call(
             tagList,
-            as.list(tail(local$log_file_content, nlog))
+            as.list(local$log_file_content)
         )
     })
     
@@ -1094,14 +1093,6 @@ rf_control_server <- function(input, output, session,
                 local$abcranger_run_result)
         
         req(local$n_tree)
-        
-        ## log
-        output$run_log <- renderUI({
-            do.call(
-                tagList,
-                as.list(local$log_file_content)
-            )
-        })
         
         ## check run
         # run ok
