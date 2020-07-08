@@ -32,7 +32,7 @@ single_param_regex <- function() {
 #' @importFrom stringr str_c
 alphanum_param_regex <- function() {
     return(str_c("(", single_param_regex(), 
-                 "((\\+|-)", single_param_regex(), ")?", ")"))
+                 "([\\+\\-]", single_param_regex(), ")?", ")"))
 }
 
 #' return event param regex
@@ -58,9 +58,10 @@ time_regex <- function() {
     return(param_regex())
 }
 
-#' return event time regex
+#' return event single time regex
 #' @keywords internal
 #' @author Ghislain Durif
 single_time_regex <- function() {
-    return(alphanum_param_regex())
+    return(str_c("(", single_param_regex(), "|", 
+                 int_regex(), ")"))
 }

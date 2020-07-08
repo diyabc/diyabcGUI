@@ -135,16 +135,16 @@ check_timeline <- function(raw_scenario, parsed_scenario) {
     # FIXME
     condition <- list()
     # condition <- c("Example of condition...", "Time should be positive.")
-    # time related condtion
-    time_param <- parsed_scenario$time_param
-    if(!is.null(time_param) & length(time_param > 1)) {
-        time_cond <- lapply(
-            1:(length(time_param)-1), 
-            function(ind) {
-                return(str_c(time_param[ind+1], ">=", time_param[ind]))
-            })
-        condition <- c(condition, time_cond)
-    }
+    # # time related condtion
+    # time_param <- parsed_scenario$time_param
+    # if(!is.null(time_param) & length(time_param > 1)) {
+    #     time_cond <- lapply(
+    #         1:(length(time_param)-1), 
+    #         function(ind) {
+    #             return(str_c(time_param[ind+1], ">=", time_param[ind]))
+    #         })
+    #     condition <- c(condition, time_cond)
+    # }
     # output
     return(list(cond = condition))
 }
@@ -260,6 +260,10 @@ parse_scenario <- function(text) {
         ## parameters
         Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
                              Ne_list_0))
+        Ne_param <- unique(unlist(
+            str_extract_all(string = Ne_param, 
+                            pattern = single_param_regex())
+        ))
         Ne_param <- Ne_param[!str_detect(string = Ne_param, 
                                          pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
         
@@ -267,7 +271,10 @@ parse_scenario <- function(text) {
         rate_param <- rate_param[!str_detect(string = rate_param, 
                                              pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
         
-        time_param <- unique(unlist(event_time))
+        time_param <- unique(unlist(
+            str_extract_all(string = event_time, 
+                            pattern = single_time_regex())
+        ))
         time_param <- time_param[!str_detect(string = time_param, 
                                              pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
     }
