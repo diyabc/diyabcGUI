@@ -16,6 +16,12 @@ hist_model_ui <- function(id) {
                     rows = 12,
                     resize = "none"
                 ),
+                actionButton(
+                    ns("validate"),
+                    label = "Validate",
+                    icon = icon("check"),
+                    width = '100%'
+                ),
                 uiOutput(ns("parser_msg"))
             )
         ),
@@ -60,7 +66,7 @@ hist_model_server <- function(input, output, session,
         updateTextAreaInput(session, "scenario", value = local$raw_scenario)
     })
     # parse and check input scenario
-    observeEvent(input$scenario, {
+    observeEvent(input$validate, {
         # input (remove empty final line)
         out$raw <- str_replace(string = input$scenario, 
                                pattern = "\\n$", 
