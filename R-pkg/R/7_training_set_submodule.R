@@ -2827,12 +2827,6 @@ training_set_action_ui <- function(id) {
             )
         ),
         hr(),
-        checkboxInput(
-            ns("prior_mod_check"),
-            label = "Run prior and scenario checking",
-            value = FALSE
-        ),
-        hr(),
         actionBttn(
             inputId = ns("simulate"),
             label = "Simulate",
@@ -2861,7 +2855,23 @@ training_set_action_ui <- function(id) {
         tags$pre(
             uiOutput(ns("run_log")),
             style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
-        )
+        ),
+        hr(),
+        h4("Prior and scenario checking"),
+        helpText(
+            "This action requires a training set file (`reftableRF.bin`)",
+            "either generated when clicking on 'Simulate'",
+            "or uploaded with an existing project."
+        ),
+        actionGroupButtons(
+            inputIds = c(ns("run_prior_mod_check"), ns("stop_prior_mod_check")),
+            labels = list(
+                tags$span(icon("play"), "Run"),
+                tags$span(icon("stop"), "Stop")
+            ),
+            fullwidth = TRUE
+        ),
+        uiOutput(ns("feedback_prior_mod_check"))
     )
 }
 
@@ -2890,6 +2900,8 @@ training_set_action_server <- function(input, output, session,
         n_rec_final = 0,
         n_scenario = 0,
         n_stat = 0,
+        prior_check_process = NULL,
+        prior_check_result = NULL,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
@@ -2961,7 +2973,6 @@ training_set_action_server <- function(input, output, session,
         
         req(input$nrun)
         req(local$proj_dir)
-        req(!is.null(input$prior_mod_check))
         
         ## run in progress
         if(!is.null(local$diyabc_run_process)) {
@@ -3049,7 +3060,7 @@ training_set_action_server <- function(input, output, session,
                 local$diyabc_run_process <- diyabc_run_trainset_simu(
                     local$proj_dir, 
                     as.integer(input$nrun),
-                    input$prior_mod_check
+                    run_prior_check = FALSE
                 )
             }
         }
@@ -3141,7 +3152,7 @@ training_set_action_server <- function(input, output, session,
         } else {
             ## error during run
             local$feedback <- helpText(
-                icon("warning"), "Issues with run (see log panel)."
+                icon("warning"), "Issues with run (see log panel below)."
             )
             showNotification(
                 id = ns("run_not_ok"),
@@ -3330,6 +3341,169 @@ training_set_action_server <- function(input, output, session,
                 "the number of simulations to be higher than",
                 tags$b(reftable_size), "."
             )
+        }
+    })
+    
+    ## prior/model checking
+    # run
+    observeEvent(input$run_prior_mod_check, {
+        req(!is.null(local$proj_dir))
+        req(!is.null(local$proj_file_list))
+        req("reftableRF.bin" %in% local$proj_file_list)
+
+        if(!is.null(local$prior_check_process)) {
+            showNotification(
+                id = ns("prior_mod_check_in_progress"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "warning",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Prior and scenario checking in progress."
+                    )
+                )
+            )
+        } else {
+            local$prior_check_result <- NULL
+            logging("Running prior and scenario checking")
+            local$prior_check_process <- diyabc_run_trainset_simu(
+                local$proj_dir,
+                n_run = 0,
+                run_prior_check = TRUE
+            )
+        }
+    })
+
+    # monitor run
+    observeEvent(local$prior_check_process, {
+        req(!is.null(local$prior_check_process))
+
+        print("diyabc prior/model check process")
+        print(local$prior_check_process)
+
+        observe({
+            req(!is.null(local$prior_check_process))
+            proc <- local$prior_check_process
+            req(!is.null(proc$is_alive()))
+            if(proc$is_alive()) {
+                invalidateLater(1000, session)
+            } else {
+                local$prior_check_result <- proc$get_exit_status()
+            }
+        })
+    })
+
+    # stop
+    observeEvent(input$stop_prior_mod_check, {
+        ## if no current run
+        if(is.null(local$prior_check_process)) {
+            showNotification(
+                id = ns("prior_mod_no_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"), "No current run to stop."
+                    )
+                )
+            )
+        } else {
+            ## stop current run
+            proc <- local$prior_check_process
+            proc$kill()
+            local$prior_check_result <- -1000
+
+            # reset
+            local$prior_check_process <- NULL
+        }
+    })
+
+    # result and clean up after run
+    observeEvent(local$prior_check_result, {
+
+        req(!is.null(local$prior_check_result))
+
+        logging("diyabc prior/model check run exit status:",
+                local$prior_check_result)
+
+        ## check run
+        # run ok
+        if(local$prior_check_result == 0) {
+            showNotification(
+                id = ns("prior_mod_check_run_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        "Prior and scenario checking is done."
+                    )
+                )
+            )
+        } else if(local$prior_check_result == -1000) {
+            showNotification(
+                id = ns("prior_mod_check_stop_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Prior and scenario checking was stopped."
+                    )
+                )
+            )
+        } else {
+            showNotification(
+                id = ns("prior_mod_check_run_not_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "A problem happened during prior and scenario checking."
+                    )
+                )
+            )
+        }
+
+        # reset
+        local$prior_check_process <- NULL
+    })
+
+
+    # feedback
+    output$feedback_prior_mod_check <- renderUI({
+        req(length(local$proj_file_list) > 0)
+        
+        if(!"reftableRF.bin" %in% local$proj_file_list) {
+            helpText(
+                icon("warning"), "No training set available."
+            )
+        } else if(!is.null(local$prior_check_process)) {
+            helpText(
+                icon("spinner", class = "fa-spin"),
+                "Prior and scenario checking is running."
+            )
+        } else if(!is.null(local$prior_check_result)) {
+            if(local$prior_check_result == -1000) {
+                helpText(
+                    icon("warning"), "Prior and scenario checking was stopped."
+                )
+            } else if(local$prior_check_result == 0) {
+                helpText(
+                    icon("check"), "Prior and scenario checking succeeded."
+                )
+            } else {
+                helpText(
+                    icon("warning"), "Prior and scenario checking failed",
+                    "(see log panel above)."
+                )
+            }
         }
     })
     
