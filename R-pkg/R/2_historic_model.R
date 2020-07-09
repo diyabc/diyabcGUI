@@ -73,7 +73,7 @@ hist_model_server <- function(input, output, session,
                                replacement = "")
         out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
         # parse
-        out$param <- parse_scenario(input$scenario)
+        out$param <- parse_scenario(out$raw)
         # parser message list
         local$parser_msg <- out$param$msg_list
         # if valid
