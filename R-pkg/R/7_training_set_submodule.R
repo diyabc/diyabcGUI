@@ -3241,6 +3241,7 @@ training_set_action_server <- function(input, output, session,
         
         ## log
         output$run_log <- renderUI({
+            req(!is.null(local$log_file_content))
             do.call(
                 tagList,
                 as.list(local$log_file_content)
@@ -3289,6 +3290,26 @@ training_set_action_server <- function(input, output, session,
                     )
                 )
             )
+        } else if(local$diyabc_run_result == -2000) {
+            ## stopped run
+            local$feedback <- helpText(
+                icon("warning"), 
+                "Error in simulation process:", 
+                "check your scenarios, priors and conditions."
+            )
+            showNotification(
+                id = ns("stop_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Error in simulation process:", 
+                        "check your scenarios, priors and conditions."
+                    )
+                )
+            )
         } else {
             ## error during run
             local$feedback <- helpText(
@@ -3334,7 +3355,9 @@ training_set_action_server <- function(input, output, session,
         } else {
             ## stop current run
             proc <- local$diyabc_run_process
-            proc$kill()
+            if(proc$is_alive()) {
+                proc$kill()
+            }
             local$diyabc_run_result <- -1000
             
             local$n_ref_final <- local$n_rec_initial
@@ -3422,6 +3445,20 @@ training_set_action_server <- function(input, output, session,
                     total = input$nrun,
                     title = "Running simulation:"
                 )
+            }
+            
+            ## check for infinite loop
+            if(!is.null(local$diyabc_run_process)) {
+                if(sum(str_detect(last_message, "^locus=0")) > 2) {
+                    ## stop current run
+                    proc <- local$diyabc_run_process
+                    if(proc$is_alive()) {
+                        proc$kill()
+                    }
+                    local$diyabc_run_result <- -2000
+                    
+                    local$n_ref_final <- local$n_rec_initial
+                }
             }
         }
     })
