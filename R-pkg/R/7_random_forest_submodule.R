@@ -245,8 +245,8 @@ rf_parameter_ui <- function(id) {
             ),
             numericInput(
                 ns("noob"),
-                label = "Number of oob testing samples (FIXME)",
-                value = 10,
+                label = "Number of oob testing samples",
+                value = 1000,
                 min = 1
             ) %>% 
                 helper(type = "markdown", 
