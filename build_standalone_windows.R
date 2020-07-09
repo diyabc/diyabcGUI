@@ -35,7 +35,7 @@ create_app(
     app_name = "diyabcGUI", 
     app_dir = "R-pkg/inst/application",
     app_icon = "coccicon.png",
-    pkgs = gtools::getDependencies("diyabcGUI"),
+    pkgs = c(gtools::getDependencies("diyabcGUI"),  "diyabcGUI"),
     dir_out = "build/windows",
     include_R = TRUE
 )
