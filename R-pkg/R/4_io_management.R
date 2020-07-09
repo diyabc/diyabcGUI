@@ -1222,10 +1222,20 @@ parse_diyabc_header <- function(file_name, file_type, locus_type) {
                 next_sec_line <- next_sec_line + n_cond
                 # check extracted conditions
                 valid <- all(unlist(lapply(raw_cond_list, check_header_cond)))
+                
+                # generation mode
+                simu_mode <- raw_content[next_sec_line]
+                next_sec_line <- next_sec_line + 1
+                if(simu_mode != "DRAW UNTIL") {
+                    issues <- append(issues, "missing 'DRAW UNTIL'")
+                    valid <- FALSE
+                }
+            } else {
+                if(str_detect(raw_content[next_sec_line], "DRAW UNTIL")) {
+                    issues <- append(issues, "unnecessary 'DRAW UNTIL'")
+                    valid <- FALSE
+                }
             }
-            # generation mode
-            simu_mode <- raw_content[next_sec_line]
-            next_sec_line <- next_sec_line + 1
         }
         
         ## loci description

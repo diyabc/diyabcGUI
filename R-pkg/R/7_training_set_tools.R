@@ -104,15 +104,11 @@ write_header <- function(proj_dir, data_file,
             sec3 <- str_c(
                 sec3,
                 str_c(cond_list, collapse = "\n"),
+                "DRAW UNTIL",
                 sep = "\n"
             )
         }
     }
-    sec3 <- str_c(
-        sec3,
-        "DRAW UNTIL",
-        sep = "\n"
-    )
     
     # print("log4")
     ## loci description
