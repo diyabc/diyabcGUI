@@ -3069,13 +3069,6 @@ training_set_action_server <- function(input, output, session,
         }
     })
     
-    output$run_log <- renderUI({
-        do.call(
-            tagList,
-            as.list(local$log_file_content)
-        )
-    })
-    
     ## monitor simulation run
     observeEvent(local$diyabc_run_process, {
         req(!is.null(local$diyabc_run_process))
@@ -3102,6 +3095,14 @@ training_set_action_server <- function(input, output, session,
         
         logging("diyabc simu run exit status:",
                 local$diyabc_run_result)
+        
+        ## log
+        output$run_log <- renderUI({
+            do.call(
+                tagList,
+                as.list(local$log_file_content)
+            )
+        })
         
         ## check run
         # run ok

@@ -1058,13 +1058,6 @@ rf_control_server <- function(input, output, session,
         }
     })
     
-    output$run_log <- renderUI({
-        do.call(
-            tagList,
-            as.list(local$log_file_content)
-        )
-    })
-    
     ## monitor simulation run
     observeEvent(local$abcranger_run_process, {
         req(!is.null(local$abcranger_run_process))
@@ -1093,6 +1086,14 @@ rf_control_server <- function(input, output, session,
                 local$abcranger_run_result)
         
         req(local$n_tree)
+        
+        ## log
+        output$run_log <- renderUI({
+            do.call(
+                tagList,
+                as.list(local$log_file_content)
+            )
+        })
         
         ## check run
         # run ok
