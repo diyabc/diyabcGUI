@@ -2032,9 +2032,8 @@ group_prior_ui <- function(id) {
                                 "Min.", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
-                            numericInput(
-                                ns("min"), label = NULL,
-                                value = 0.0001, step = 0.0001, min = 0
+                            textInput(
+                                ns("min"), label = NULL, value = "1e-05"
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -2046,9 +2045,8 @@ group_prior_ui <- function(id) {
                                 "Max.", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
-                            numericInput(
-                                ns("max"), label = NULL,
-                                value = 0.01, step = 0.0001, min = 0
+                            textInput(
+                                ns("max"), label = NULL, value = "1e-03"
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -2060,7 +2058,9 @@ group_prior_ui <- function(id) {
                                 "Mean", 
                                 style="text-align:right;margin-right:1em;vertical-align:middle;"
                             ),
-                            uiOutput(ns("mean_input")),
+                            textInput(
+                                ns("mean"), label = NULL, value = "1e-04"
+                            ),
                             cellWidths = c("40%", "60%")
                         )
                     ),
@@ -2093,6 +2093,10 @@ group_prior_server <- function(input, output, session,
                                group_name = reactive({NULL}),
                                locus_mode = reactive({NULL}),
                                mean_value = reactive({NULL}),
+                               min_def_value = reactive({NULL}),
+                               max_def_value = reactive({NULL}),
+                               mean_def_value = reactive({NULL}),
+                               note = reactive({NULL}),
                                param_name = reactive({NULL}),
                                param_desc = reactive({NULL}))  {
     
@@ -2101,20 +2105,47 @@ group_prior_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        # input
         gamma = FALSE,
+        group_name = NULL,
         locus_mode = NULL,
         mean_value = NA,
+        min_def_value = NULL,
+        max_def_value = NULL,
+        mean_def_value = NULL,
+        note = NULL,
         param_name = NULL,
         param_desc = NULL
     )
     # get input
     observe({
         local$gamma <- gamma()
+        local$group_name <- group_name()
         local$locus_mode <- locus_mode()
         local$mean_value <- mean_value()
+        local$min_def_value <- min_def_value()
+        local$max_def_value <- max_def_value()
+        local$mean_def_value <- mean_def_value()
+        local$note <- note()
         local$param_name <- param_name()
         local$param_desc <- param_desc()
     })
+    
+    # debugging
+    # observe({
+    #     print("---- param :")
+    #     print(local$param_name)
+    #     print("gamma :")
+    #     print(local$gamma)
+    #     print("mean value =")
+    #     print(local$mean_value)
+    #     print("mean def value =")
+    #     print(local$mean_def_value)
+    #     print("min def value =")
+    #     print(local$min_def_value)
+    #     print("max def value =")
+    #     print(local$max_def_value)
+    # })
     
     # init output
     out <- reactiveValues(
@@ -2125,7 +2156,7 @@ group_prior_server <- function(input, output, session,
     
     # update group name
     observe({
-        out$group <- group_name()
+        out$group <- local$group_name
     })
     
     # update param name output
@@ -2157,28 +2188,115 @@ group_prior_server <- function(input, output, session,
         }
     })
     
+    # update min input
+    observe({
+        # print("test update min")
+        # print(local$min_def_value)
+        req(!is.null(local$min_def_value))
+        updateTextInput(
+            session, "min", 
+            value = local$min_def_value
+        )
+    })
+    
+    # update max input
+    observe({
+        # print("test update max")
+        # print(local$max_def_value)
+        req(!is.null(local$max_def_value))
+        updateTextInput(
+            session, "max", 
+            value = local$max_def_value
+        )
+    })
+    
     # update mean input
-    output$mean_input <- renderUI({
+    observe({
+        # print("test update mean")
+        # print(local$mean_value)
+        # print(local$mean_def_value)
         req(!is.null(local$mean_value))
         if(is.na(local$mean_value)) {
-            numericInput(
-                ns("mean"), label = NULL,
-                value = 0.001, step = 0.0001, min = 0
+            shinyjs::enable("mean")
+            req(!is.null(local$mean_def_value))
+            req(!is.na(local$mean_def_value))
+            updateTextInput(
+                session, "mean", 
+                value = local$mean_def_value
             )
         } else {
-            shinyjs::disabled(textInput(
-                ns("mean"), label = NULL,
+            req(!is.null(local$mean_value))
+            req(!is.na(local$mean_value))
+            updateTextInput(
+                session, "mean", 
                 value = local$mean_value
-            ))
+            )
+            shinyjs::disable("mean")
         }
     })
     
+    ## check for min
+    observe({
+        req(local$param_name)
+        req(!is.null(input$min))
+        # print("input min")
+        # print(input$min)
+        tmp_min <- as.numeric(input$min)
+        if(is.na(tmp_min)) {
+            out$valid <- FALSE
+            showNotification(
+                id = ns("issue_min"),
+                type = "warning",
+                closeButton = TRUE,
+                duration = 10,
+                tags$p(
+                    icon("warning"),
+                    str_c(
+                        "For parameter `", local$param_name, "`: ",
+                        "min should be a numeric value."
+                    )
+                )
+            )
+        } else {
+            out$valid <- TRUE
+        }
+    })
+
+    ## check for max
+    observe({
+        req(local$param_name)
+        req(!is.null(input$max))
+        tmp_max <- as.numeric(input$max)
+        if(is.na(tmp_max)) {
+            out$valid <- FALSE
+            showNotification(
+                id = ns("issue_max"),
+                type = "warning",
+                closeButton = TRUE,
+                duration = 10,
+                tags$p(
+                    icon("warning"),
+                    str_c(
+                        "For parameter `", local$param_name, "`: ",
+                        "max should be a numeric value."
+                    )
+                )
+            )
+        } else {
+            out$valid <- TRUE
+        }
+    })
+
     ## check for min/max
     observe({
         req(local$param_name)
-        req(input$min)
-        req(input$max)
-        if(input$min >= input$max) {
+        req(!is.null(input$min))
+        tmp_min <- as.numeric(input$min)
+        req(!is.na(tmp_min))
+        req(!is.null(input$max))
+        tmp_max <- as.numeric(input$max)
+        req(!is.na(tmp_max))
+        if(tmp_min >= tmp_max) {
             out$valid <- FALSE
             showNotification(
                 id = ns("issue_min_max"),
@@ -2197,7 +2315,7 @@ group_prior_server <- function(input, output, session,
             out$valid <- TRUE
         }
     })
-    
+
     ## disable mean if gamma
     observeEvent(local$gamma, {
         req(!is.null(local$gamma))
@@ -2207,7 +2325,7 @@ group_prior_server <- function(input, output, session,
             shinyjs::enable("mean")
         }
     })
-    
+
     ## disable mean and shape if uniform or log-uniform
     observeEvent(input$prior_type, {
         req(!is.null(local$gamma))
@@ -2222,17 +2340,27 @@ group_prior_server <- function(input, output, session,
             shinyjs::enable("shape")
         }
     })
-    
+
     ## check for gamma parameter setting
     observe({
         req(!local$gamma)
         req(local$param_name)
         req(input$prior_type)
-        req(is.numeric(input$min))
-        req(is.numeric(input$max))
+
+        req(is.na(local$mean_value))
+
+        req(!is.null(input$min))
+        tmp_min <- as.numeric(input$min)
+        req(!is.na(tmp_min))
+        req(!is.null(input$max))
+        tmp_max <- as.numeric(input$max)
+        req(!is.na(tmp_max))
         req(!is.null(input$mean))
+        tmp_mean <- as.numeric(input$mean)
+        req(!is.na(tmp_mean))
+
         if(input$prior_type %in% c("GA")) {
-            if(input$mean < input$min | input$mean > input$max) {
+            if(tmp_mean < tmp_min | tmp_mean > tmp_max) {
                 out$valid <- FALSE
                 showNotification(
                     id = ns("issue_gamma"),
@@ -2265,8 +2393,8 @@ group_prior_server <- function(input, output, session,
     observe({
         req(local$param_name)
         req(input$prior_type)
-        req(is.numeric(input$min))
-        req(is.numeric(input$max))
+        req(!is.null(input$min))
+        req(!is.null(input$max))
         req(!is.null(input$mean))
         req(is.numeric(input$shape))
         out$raw <- str_c(local$param_name, " ",
@@ -2309,13 +2437,46 @@ mss_group_prior_server <- function(input, output, session,
     local <- reactiveValues(
         microsat_group = list(),
         n_microsat_group = 0,
-        microsat_param = list(),
+        microsat_param = data.frame(
+            param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
+            meaning = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient P",
+                "Individual locus coefficient P",
+                "Mean SNI rate",
+                "Individual locus SNI rate"
+            ),
+            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
+            min_def_value = c("1e-4", "1e-5", "1e-1", "1e-2", "1e-8", "1e-9"),
+            max_def_value = c("1e-3", "1e-2", "3e-1", "9e-1", "1e-5", "1e-4"),
+            mean_def_value = c("5e-4", NA, "2.2e-1", NA, "1e-7", NA),
+            mean_value = c(NA, "Mean_u", NA, "Mean_P", NA, "Mean_u_SNI"),
+            note = c(NA, 1, 2, 1, 3, 1),
+            stringsAsFactors = FALSE
+        ),
         microsat_param_group = list(),
         microsat_prior_list = list(),
         raw_microsat_prior_list = list(),
         seq_group = list(),
         n_seq_group = 0,
-        seq_param = list(),
+        seq_param = data.frame(
+            param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
+            meaning = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient k_C/T",
+                "Individual locus coefficient k_C/T",
+                "Mean coefficient k_A/G",
+                "Individual locus coefficient k_A/G"
+            ),
+            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
+            min_def_value = c("1e-9", "1e-9", "0.05", "0.05", "0.05", "0.05"),
+            max_def_value = c("1e-7", "1e-6", "20", "20", "20", "20"),
+            mean_def_value = c("5e-9", NA, "10", NA, "10", NA),
+            mean_value = c(NA, "Mean_u", NA, "Mean_k1", NA, "Mean_k2"),
+            stringsAsFactors = FALSE
+        ),
         seq_param_group = list(),
         seq_prior_list = list(),
         seq_model_list = list(),
@@ -2367,20 +2528,6 @@ mss_group_prior_server <- function(input, output, session,
     # microsat parameter
     observe({
         req(local$n_microsat_group > 0)
-        local$microsat_param <- data.frame(
-            param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
-            meaning = c(
-                "Mean mutation rate (per site, per generation)",
-                "Individual locus mutation rate",
-                "Mean coefficient P",
-                "Individual locus coefficient P",
-                "Mean SNI rate",
-                "Individual locus SNI rate"
-            ),
-            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
-            mean_value = c(NA, "Mean_u", NA, "Mean_P", NA, "Mean_u_SNI"),
-            stringsAsFactors = FALSE
-        )
         
         microsat_param_group <- local$microsat_param[
             rep(seq(nrow(local$microsat_param)), 
@@ -2393,20 +2540,6 @@ mss_group_prior_server <- function(input, output, session,
     # seq parameter
     observe({
         req(local$n_seq_group > 0)
-        local$seq_param <- data.frame(
-            param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
-            meaning = c(
-                "Mean mutation rate (per site, per generation)",
-                "Individual locus mutation rate",
-                "Mean coefficient k_C/T",
-                "Individual locus coefficient k_C/T",
-                "Mean coefficient k_A/G",
-                "Individual locus coefficient k_A/G"
-            ),
-            gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
-            mean_value = c(NA, "Mean_u", NA, "Mean_k1", NA, "Mean_k2"),
-            stringsAsFactors = FALSE
-        )
         
         seq_param_group <- local$seq_param[
             rep(seq(nrow(local$seq_param)), 
@@ -2431,7 +2564,7 @@ mss_group_prior_server <- function(input, output, session,
                               seq(nrow(local$microsat_param))),
                         function(item1) {
                             group_prior_ui(
-                                ns(str_c("group_", item, "_", 
+                                ns(str_c("M_group_", item, "_", 
                                          item1$param, "_prior"))
                             )
                         }
@@ -2454,11 +2587,15 @@ mss_group_prior_server <- function(input, output, session,
             function(item) {
                 callModule(
                     group_prior_server, 
-                    str_c("group_", item$group, "_", item$param, "_prior"),
+                    str_c("M_group_", item$group, "_", item$param, "_prior"),
                     gamma = reactive(item$gamma), 
                     group_name = reactive(item$group),
                     locus_mode = reactive({"[M]"}),
                     mean_value = reactive(item$mean_value),
+                    min_def_value = reactive(item$min_def_value),
+                    max_def_value = reactive(item$max_def_value),
+                    mean_def_value = reactive(item$mean_def_value),
+                    note = reactive(item$note),
                     param_name = reactive(item$param),
                     param_desc = reactive(item$meaning)
                 )
@@ -2492,7 +2629,7 @@ mss_group_prior_server <- function(input, output, session,
     #     print(local$raw_microsat_prior_list)
     # })
     
-    ## set up seq group prior
+    ## set up seq mutational model and seq group prior
     output$seq_group_prior <- renderUI({
         if(length(local$seq_group) == 0) {
             helpText(
@@ -2506,11 +2643,12 @@ mss_group_prior_server <- function(input, output, session,
                         split(local$seq_param, seq(nrow(local$seq_param))),
                         function(item1) {
                             group_prior_ui(
-                                ns(str_c("group_", item, "_", 
+                                ns(str_c("S_group_", item, "_", 
                                          item1$param, "_prior"))
                             )
                         }
                     )
+                    
                     tagList(
                         tags$ul(tags$li(tags$h5("Group", tags$b(item)))),
                         tagList(
@@ -2553,11 +2691,15 @@ mss_group_prior_server <- function(input, output, session,
             function(item) {
                 callModule(
                     group_prior_server, 
-                    str_c("group_", item$group, "_", item$param, "_prior"),
+                    str_c("S_group_", item$group, "_", item$param, "_prior"),
                     gamma = reactive(item$gamma), 
                     group_name = reactive(item$group),
-                    locus_mode = reactive({"[M]"}),
+                    locus_mode = reactive({"[S]"}),
                     mean_value = reactive(item$mean_value),
+                    min_def_value = reactive(item$min_def_value),
+                    max_def_value = reactive(item$max_def_value),
+                    mean_def_value = reactive(item$mean_def_value),
+                    note = reactive({NULL}),
                     param_name = reactive(item$param),
                     param_desc = reactive(item$meaning)
                 )
@@ -2906,6 +3048,7 @@ training_set_action_server <- function(input, output, session,
         n_stat = 0,
         prior_check_process = NULL,
         prior_check_result = NULL,
+        run_diyabc = 0,
         # input
         proj_dir = NULL,
         proj_file_list = NULL,
@@ -3107,6 +3250,7 @@ training_set_action_server <- function(input, output, session,
         ## check run
         # run ok
         if(local$diyabc_run_result == 0) {
+            local$run_diyabc <- local$run_diyabc + 1
             local$feedback <- helpText(
                 icon("check"), "Run succeeded."
             )
@@ -3300,44 +3444,48 @@ training_set_action_server <- function(input, output, session,
     
     ## feedback nrun
     output$feedback_nrun <- renderUI({
-        req(!is.null(input$nrun))
-        req(!is.null(local$n_rec_initial))
-        req(!is.null(local$n_rec_final))
+        tmp_text <- helpText(
+            "Number of already available simulations = ",
+            tags$i("unknown"),
+            br(), br(),
+            "To generate additional training data, you must set",
+            "the number of simulations to be higher than",
+            tags$i("unknown"), "."
+        )
         
-        # print("n_rec_final =")
-        # print(local$n_rec_final)
-        
-        reftable_size <- max(local$n_rec_initial, local$n_rec_final)
-        
-        if(reftable_size >= input$nrun) {
-            tmp_text <- helpText(
-                icon("warning"), 
-                "Number of already available simulations = ",
-                tags$b(reftable_size),
-                br(), br(),
-                "To generate additional training data, you must set",
-                "the number of simulations to be higher than",
-                tags$b(reftable_size), "."
-            )
-        } else if(local$n_rec_initial == 0 & local$n_rec_initial == 0) {
-            tmp_text <- helpText(
-                "Number of already available simulations = ",
-                tags$i("unknown"),
-                br(), br(),
-                "To generate additional training data, you must set",
-                "the number of simulations to be higher than",
-                tags$i("unknown"), "."
-            )
-        } else {
-            tmp_text <- helpText(
-                "Number of already available simulations = ",
-                tags$b(reftable_size),
-                br(), br(),
-                "To generate additional training data, you must set",
-                "the number of simulations to be higher than",
-                tags$b(reftable_size), "."
-            )
+        if(!is.null(local$run_diyabc)) {
+            if(local$run_diyabc > 0) {
+                if(!is.null(local$n_rec_initial) & !is.null(local$n_rec_final)) {
+                    
+                    reftable_size <- max(local$n_rec_initial, local$n_rec_final)
+                    
+                    tmp_text <- helpText(
+                        "Number of already available simulations = ",
+                        tags$b(reftable_size),
+                        br(), br(),
+                        "To generate additional training data, you must set",
+                        "the number of simulations to be higher than",
+                        tags$b(reftable_size), "."
+                    )
+                    
+                    if(is.numeric(input$nrun)) {
+                        if(reftable_size >= input$nrun) {
+                            tmp_text <- helpText(
+                                icon("warning"), 
+                                "Number of already available simulations = ",
+                                tags$b(reftable_size),
+                                br(), br(),
+                                "To generate additional training data, you must set",
+                                "the number of simulations to be higher than",
+                                tags$b(reftable_size), "."
+                            )
+                        }
+                    }
+                }
+            }
         }
+        
+        tmp_text
     })
     
     ## prior/model checking
