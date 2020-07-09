@@ -10,6 +10,9 @@
 #' diyabc()
 #' }
 #' @export
-diyabc <- function() {
-    shiny::runApp(appDir = system.file("application", package = "diyabcGUI"))
+diyabc <- function(options = list()) {
+    shiny::runApp(
+        appDir = system.file("application", package = "diyabcGUI"),
+        options = options
+    )
 }
