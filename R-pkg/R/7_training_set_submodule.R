@@ -1056,7 +1056,7 @@ prior_ui <- function(id) {
                             ),
                             numericInput(
                                 ns("min"), label = NULL,
-                                value = 10, step = 0.01, min = 0
+                                value = 10, step = 1, min = 0
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -1070,7 +1070,7 @@ prior_ui <- function(id) {
                             ),
                             numericInput(
                                 ns("max"), label = NULL,
-                                value = 10000, step = 0.01, min = 0
+                                value = 10000, step = 1, min = 0
                             ),
                             cellWidths = c("40%", "60%")
                         )
@@ -1205,14 +1205,14 @@ prior_server <- function(input, output, session,
         req(local$param_type)
         if(local$param_type == "A") {
             updateNumericInput(session, "min", value = 0.05, 
-                               min = 0, max = 1)
+                               step = 0.01, min = 0, max = 1)
             updateNumericInput(session, "max", value = 0.95, 
                                min = 0, max = 1)
         } else {
             updateNumericInput(session, "min", value = 10, 
-                               min = NULL, max = NULL)
+                               step = 1, min = NULL, max = NULL)
             updateNumericInput(session, "max", value = 10000, 
-                               min = NULL, max = NULL)
+                               step = 1, min = NULL, max = NULL)
         }
     })
     # observe({
