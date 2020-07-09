@@ -1089,6 +1089,7 @@ rf_control_server <- function(input, output, session,
         
         ## log
         output$run_log <- renderUI({
+            req(!is.null(local$log_file_content))
             do.call(
                 tagList,
                 as.list(local$log_file_content)
