@@ -2947,6 +2947,13 @@ mss_group_prior_server <- function(input, output, session,
 training_set_action_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        h3(icon("list-ol"), "Sumarry statistics"),
+        helpText(
+            "All summary statistics implemented in the program will be used."
+        ) %>% 
+            helper(type = "markdown", 
+                   content = "summary_stats"),
+        hr(),
         h3(icon("gear"), "Run"),
         numericInput(
             ns("nrun"),
