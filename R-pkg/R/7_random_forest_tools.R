@@ -79,7 +79,7 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
     run_proc <- processx::process$new(
         command = abcranger_bin, 
         args = arguments,
-        stdin = NULL,
+        stdin = "|",
         stdout = file.path(proj_dir, "abcranger_call.log"), 
         stderr = file.path(proj_dir, "abcranger_call.log"),
         echo_cmd = TRUE,
