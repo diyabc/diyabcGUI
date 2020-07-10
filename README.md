@@ -46,7 +46,7 @@ diyabc()
 
 The function `diyabc()` will launch DIYABC-RF GUI as a standard `shiny` web app, that you will be able to use either in your web browser or in the Rstudio `shiny` app viewer.
 
-To run simultaneously mutliple instance of DIYABC-RF GUI, e.g. to simultaneously manage and run multiple projects, you just need to run several times the function `diyabc()` from R (this is not possible from RStudio).
+To run simultaneously mutliple instances of DIYABC-RF GUI, e.g. to simultaneously manage and run multiple projects, you just need to run several times the function `diyabc()` from R (this is not possible from RStudio).
 
 ### Shiny server installation
 
