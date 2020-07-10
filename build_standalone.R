@@ -31,17 +31,40 @@ if(!dir.exists(build_path))
 if(dir.exists(file.path(build_path, "DIYABC-RF")))
     fs::dir_delete(file.path(build_path, "DIYABC-RF"))
 
+# switch depending on OS
+os <- str_extract(string = R.version$os, 
+                  pattern = "mingw32|windows|darwin|linux")
+
 # create standalone app
-electricShine::electrify(
-    app_name = "DIYABC-RF",
-    short_description = "DIYABC-RF application",
-    semantic_version = "1.0.0",
-    build_path = build_path,
-    cran_like_url = "https://cran.r-project.org",
-    function_name = "standalone_run_app",
-    local_package_path = file.path(getwd(), "R-pkg"),
-    package_install_opts = list(type = "binary"),
-    run_build = TRUE,
-    permission = TRUE,
-    mac_url = "https://mac.r-project.org/high-sierra/R-4.0-branch/x86_64/R-4.0-branch.tar.gz"
-)
+if(os %in% c("mingw32", "windows")) {
+    electricShine::electrify(
+        app_name = "DIYABC-RF",
+        short_description = "DIYABC-RF application",
+        semantic_version = "1.0.0",
+        build_path = build_path,
+        cran_like_url = "https://cran.r-project.org",
+        function_name = "standalone_run_app",
+        local_package_path = file.path(getwd(), "R-pkg"),
+        package_install_opts = list(type = "binary"),
+        run_build = TRUE,
+        permission = TRUE
+    )
+} else if(os == "darwin") {
+    electricShine::electrify(
+        app_name = "DIYABC-RF",
+        short_description = "DIYABC-RF application",
+        semantic_version = "1.0.0",
+        build_path = build_path,
+        cran_like_url = "https://cran.r-project.org",
+        function_name = "standalone_run_app",
+        local_package_path = file.path(getwd(), "R-pkg"),
+        package_install_opts = list(type = "binary"),
+        run_build = TRUE,
+        permission = TRUE,
+        nodejs_path = "/usr/local/bin",
+        mac_url = "https://mac.r-project.org/high-sierra/R-4.0-branch/x86_64/R-4.0-branch.tar.gz"
+    )
+} else if(os == "linux") {
+    warning("Linux not supported at the moment")
+}
+
