@@ -5,45 +5,48 @@
 simu_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        fluidRow(
-            box(
-                title = "Project settings",
-                width = 12,
-                status = "primary", solidHeader = TRUE,
-                collapsible = TRUE,
-                new_proj_set_ui(ns("proj_set")) %>% 
-                    helper(type = "markdown", 
-                           content = "simulation_project")
-            )
-        ),
-        fluidRow(
-            box(
-                title = "Historical model",
-                width = 12,
-                status = "info", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = TRUE,
-                simu_hist_model_ui(ns("hist_model"))
-            )
-        ),
-        fluidRow(
-            box(
-                title = "Genetic data",
-                width = 12,
-                status = "warning", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = TRUE,
-                genetic_loci_ui(ns("genetic_setting"))
+        box(
+            title = "Soon available",
+            width = 12,
+            collapsible = FALSE,
+            tagList(
+                helpText(
+                    "The 'synthetic data file generation' module",
+                    "is not available at the moment.",
+                    "We are working to make it available as soon as possible."
+                )
             )
         )
-        ,
-        fluidRow(
-            box(
-                title = "Project action",
-                width = 12,
-                status = "danger", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = FALSE,
-                simu_proj_action_ui(ns("proj_action"))
-            )
-        )
+        # box(
+        #     title = "Project settings",
+        #     width = 12,
+        #     status = "primary", solidHeader = TRUE,
+        #     collapsible = TRUE,
+        #     new_proj_set_ui(ns("proj_set")) %>% 
+        #         helper(type = "markdown", 
+        #                content = "simulation_project")
+        # ),
+        # box(
+        #     title = "Historical model",
+        #     width = 12,
+        #     status = "info", solidHeader = TRUE,
+        #     collapsible = TRUE, collapsed = TRUE,
+        #     simu_hist_model_ui(ns("hist_model"))
+        # ),
+        # box(
+        #     title = "Genetic data",
+        #     width = 12,
+        #     status = "warning", solidHeader = TRUE,
+        #     collapsible = TRUE, collapsed = TRUE,
+        #     genetic_loci_ui(ns("genetic_setting"))
+        # ),
+        # box(
+        #     title = "Project action",
+        #     width = 12,
+        #     status = "danger", solidHeader = TRUE,
+        #     collapsible = TRUE, collapsed = FALSE,
+        #     simu_proj_action_ui(ns("proj_action"))
+        # )
     )
 }
 
@@ -57,84 +60,84 @@ simu_page_server <- function(input, output, session,
                              project_dir = reactive({NULL}),
                              project_name = reactive({NULL}),
                              raw_scenario = reactive({NULL})) {
-    # namespace
-    ns <- session$ns
-    # init local
-    local <- reactiveValues(
-        project_dir = NULL,
-        project_name = NULL,
-        raw_scenario = NULL
-    )
-    # get input
-    observe({
-        local$project_dir = project_dir()
-        local$project_name = project_name()
-        local$raw_scenario = raw_scenario()
-    })
-    # init output
-    out <- reactiveValues(
-        genetic_setting = NULL,
-        setting = NULL,
-        scenario = NULL
-    )
-    ## project setting
-    setting <- callModule(new_proj_set_server, "proj_set")
-    # update local
-    observe({
-        local$project_dir <- setting$project_dir
-        local$project_name <- setting$project_name
-    })
-    # update output
-    observe({
-        out$setting <- setting
-    })
-    ## historical model
-    scenario <- callModule(simu_hist_model_server, "hist_model",
-                           project_dir = reactive(local$project_dir),
-                           project_name = reactive(local$name),
-                           raw_scenario = reactive(local$raw_scenario))
-    # update local
-    observe({
-        local$raw_scenario <- scenario$raw_scenario
-    })
-    # update output
-    observe({
-        # print("---- scenario = ")
-        # print(scenario)
-        out$scenario <- scenario
-    })
-    ## genetic loci
-    genetic_setting <- callModule(genetic_loci_server, "genetic_setting")
+    # # namespace
+    # ns <- session$ns
+    # # init local
+    # local <- reactiveValues(
+    #     project_dir = NULL,
+    #     project_name = NULL,
+    #     raw_scenario = NULL
+    # )
+    # # get input
+    # observe({
+    #     local$project_dir = project_dir()
+    #     local$project_name = project_name()
+    #     local$raw_scenario = raw_scenario()
+    # })
+    # # init output
+    # out <- reactiveValues(
+    #     genetic_setting = NULL,
+    #     setting = NULL,
+    #     scenario = NULL
+    # )
+    # ## project setting
+    # setting <- callModule(new_proj_set_server, "proj_set")
+    # # update local
+    # observe({
+    #     local$project_dir <- setting$project_dir
+    #     local$project_name <- setting$project_name
+    # })
     # # update output
     # observe({
-    #     # print("---- genetic_setting = ")
-    #     # print(genetic_setting)
-    #     # print(genetic_setting$locus_description)
-    #     # out$genetic_setting <- genetic_setting
+    #     out$setting <- setting
     # })
-    # ## debugging
+    # ## historical model
+    # scenario <- callModule(simu_hist_model_server, "hist_model",
+    #                        project_dir = reactive(local$project_dir),
+    #                        project_name = reactive(local$name),
+    #                        raw_scenario = reactive(local$raw_scenario))
+    # # update local
     # observe({
-    #     # print(scenario)
-    #     print("sample sizes = ")
-    #     print(scenario$param_setting$sample_sizes)
-    #     # print(genetic_setting)
+    #     local$raw_scenario <- scenario$raw_scenario
     # })
-    ## simulation project action
-    callModule(simu_proj_action_server, "proj_action",
-               project_dir = reactive(setting$project_dir),
-               project_name = reactive(setting$project_name),
-               validation = reactive(setting$validation),
-               raw_param = reactive(scenario$param_setting$param_values),
-               raw_scenario = reactive(scenario$raw_scenario),
-               locus_description = reactive(genetic_setting$locus_description),
-               sample_sizes = reactive(scenario$param_setting$sample_sizes),
-               n_rep = reactive(scenario$param_setting$nrep),
-               sex_ratio = reactive(genetic_setting$sex_ratio),
-               seq_mode = reactive(genetic_setting$seq_mode),
-               locus_type = reactive(genetic_setting$locus_type))
-    
-    # output
-    return(out)
+    # # update output
+    # observe({
+    #     # print("---- scenario = ")
+    #     # print(scenario)
+    #     out$scenario <- scenario
+    # })
+    # ## genetic loci
+    # genetic_setting <- callModule(genetic_loci_server, "genetic_setting")
+    # # # update output
+    # # observe({
+    # #     # print("---- genetic_setting = ")
+    # #     # print(genetic_setting)
+    # #     # print(genetic_setting$locus_description)
+    # #     # out$genetic_setting <- genetic_setting
+    # # })
+    # # ## debugging
+    # # observe({
+    # #     # print(scenario)
+    # #     print("sample sizes = ")
+    # #     print(scenario$param_setting$sample_sizes)
+    # #     # print(genetic_setting)
+    # # })
+    # ## simulation project action
+    # callModule(simu_proj_action_server, "proj_action",
+    #            project_dir = reactive(setting$project_dir),
+    #            project_name = reactive(setting$project_name),
+    #            validation = reactive(setting$validation),
+    #            raw_param = reactive(scenario$param_setting$param_values),
+    #            raw_scenario = reactive(scenario$raw_scenario),
+    #            locus_description = reactive(genetic_setting$locus_description),
+    #            sample_sizes = reactive(scenario$param_setting$sample_sizes),
+    #            n_rep = reactive(scenario$param_setting$nrep),
+    #            sex_ratio = reactive(genetic_setting$sex_ratio),
+    #            seq_mode = reactive(genetic_setting$seq_mode),
+    #            locus_type = reactive(genetic_setting$locus_type))
+    # 
+    # # output
+    # return(out)
 }
 
 #' Simulation historical model ui
