@@ -23,11 +23,11 @@ for command-line softwares `diyabc` (https://github.com/diyabc/diyabc) and
 
 ### Standalone app
 
-For Windows and MacOS users, please download the latest release at 
-<https://github.com/diyabc/diyabcGUI/releases/latest>.
+For Windows users, please download the installer of the latest DIYABC-RF GUI 
+release at <https://github.com/diyabc/diyabcGUI/releases/latest>.
 
-For the moment, the standalone app is not available for Linux users. 
-Nonetheless, Linux users can install the `diyabcGUI` package, c.f. 
+For the moment, the standalone app is not available for Linux and MacOS users. 
+Nonetheless, Linux and MacOS users can install the `diyabcGUI` package, c.f. 
 [below](#r-package-installation), and 
 run the DIYABC-RF GUI as a standard `shiny` app.
 
