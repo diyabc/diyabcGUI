@@ -1,8 +1,8 @@
 Package: diyabcGUI
 Type: Package
-Title: User interface for DYIABC-RF software
+Title: Graphical User Interface for DYIABC-RF software
 Version: 1.0
-Date: 2020-01-27
+Date: 2020-07-10
 Authors@R: c(
     person(
         "Ghislain", "Durif", comment="diyabcGUI main developer",
@@ -37,7 +37,7 @@ Authors@R: c(
         role="ctb"
     ))
 Maintainer: Ghislain Durif <gd.dev@libertymail.net>
-Description: Graphical user interface for DIYABC-RF framework, a set of tools
+Description: Graphical User Interface for DIYABC-RF framework, a set of tools
     implementing Approximate Bayesian Computation (ABC) combined with 
     supervised machine learning based on Random Forests (RF), for model choice 
     and parameter inference in the context of population genetics analysis.
