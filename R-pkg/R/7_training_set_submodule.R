@@ -2947,7 +2947,7 @@ mss_group_prior_server <- function(input, output, session,
 training_set_action_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("list-ol"), "Sumarry statistics"),
+        h3(icon("list-ol"), "Summary statistics"),
         helpText(
             "All summary statistics implemented in the program will be used."
         ) %>% 
