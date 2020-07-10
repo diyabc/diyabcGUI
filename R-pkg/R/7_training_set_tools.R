@@ -336,6 +336,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     init_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,
+        stdin = NULL,
         stdout = file.path(proj_dir, "diyabc_seed_init_call.log"), 
         stderr = file.path(proj_dir, "diyabc_seed_init_call.log"),
         echo_cmd = TRUE
@@ -368,6 +369,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     run_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,
+        stdin = NULL,
         stdout = file.path(proj_dir, "diyabc_run_call.log"), 
         stderr = file.path(proj_dir, "diyabc_run_call.log"),
         echo_cmd = TRUE
