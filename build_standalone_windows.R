@@ -8,9 +8,9 @@ local({
 })
 
 # requirement
-install.packages("devtools")
-install.packages("gtools")
-install.packages("RInno")
+library(devtools) # install.packages("devtools")
+library(gtools) # install.packages("gtools")
+library(RInno) # install.packages("RInno")
 
 # install diyabcGUI
 devtools::install("R-pkg")
