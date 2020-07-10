@@ -254,11 +254,15 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                             sep = " ")
                     )
                     # check SNP encoding
+                    ncore <- getOption("diyabcGUI")$ncore
+                    if(str_detect(R.version$os, "mingw32|windows")) {
+                        ncore <- 1
+                    }
                     check_snp_encoding <- mclapply(
                         1:nrow(content[,-(1:3)]), 
                         function(ind)
                             !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
-                        mc.cores = getOption("diyabcGUI")$ncore
+                        mc.cores = ncore
                     )
                     seek_error <- unlist(lapply(
                         check_snp_encoding, 
