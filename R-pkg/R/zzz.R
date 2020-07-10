@@ -1,6 +1,6 @@
 .onLoad <- function(libname, pkgname) {
     # set up options
-    set_diyabcGUI_options(ncore = parallel::detectCores()/2)
+    set_diyabcGUI_options(ncore = parallel::detectCores())
     # check if binary files are available
     diyabc_bin <- tryCatch(
         find_bin("diyabc"),
