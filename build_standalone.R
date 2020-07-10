@@ -12,6 +12,9 @@ library(devtools) # may require `install.packages("devtools")`
 library(fs) # may require `install.packages("fs")``
 devtools::install_github("chasemc/electricShine")
 
+# update diyabc/abcranger bin
+source("update_bin_release.R")
+
 # install diyabcGUI
 devtools::install("R-pkg")
 
@@ -35,5 +38,6 @@ electricShine::electrify(
     local_package_path = file.path(getwd(), "R-pkg"),
     package_install_opts = list(type = "binary"),
     run_build = TRUE,
-    permission = TRUE
+    permission = TRUE,
+    mac_url = "https://mac.r-project.org/high-sierra/R-4.0-branch/x86_64/R-4.0-branch.tar.gz"
 )
