@@ -11,6 +11,7 @@ local({
 library(devtools)
 library(fs)
 library(electricShine)
+library(stringr)
 
 # update diyabc/abcranger bin
 source("update_bin_release.R")
@@ -32,8 +33,8 @@ if(dir.exists(file.path(build_path, "DIYABC-RF")))
     fs::dir_delete(file.path(build_path, "DIYABC-RF"))
 
 # switch depending on OS
-os <- str_extract(string = R.version$os, 
-                  pattern = "mingw32|windows|darwin|linux")
+os <- stringr::str_extract(string = R.version$os, 
+                           pattern = "mingw32|windows|darwin|linux")
 
 # create standalone app
 if(os %in% c("mingw32", "windows")) {
