@@ -17,6 +17,10 @@ for command-line softwares `diyabc` (https://github.com/diyabc/diyabc) and
 
 ## Installation
 
+### Requirements
+
+- `zip` program
+
 ### Standalone app
 
 For Windows and MacOS users, please download the latest release at 
