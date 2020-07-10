@@ -23,8 +23,10 @@ find_bin <- function(bin_name = "diyabc") {
         stop(str_c("Missing", bin_name, "binary file", sep = " "))
     }
     # find latest binary file
-    bin_candidates <- str_extract(list.files(path), bin_name)
-    bin_candidates <- bin_candidates[!is.na(bin_candidates)]
+    bin_candidates <- list.files(path)[str_detect(list.files(path), bin_name)]
+    if(length(bin_candidates) == 0) {
+        stop(str_c("Missing", bin_name, "binary file", sep = " "))
+    }
     latest_bin <- which.max(
         file.info(file.path(path, bin_candidates))$mtime
     )
