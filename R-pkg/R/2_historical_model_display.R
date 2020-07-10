@@ -1,7 +1,7 @@
 #' Plot historical model
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom ggplot2 aes ggplot geom_point geom_segment theme_void
+#' @importFrom ggplot2 aes annotate ggplot geom_point geom_segment theme_void
 plot_hist_model <- function(scenario_param) {
     
     add_edge <- function(g, start, end, colour = "black") {
@@ -42,5 +42,6 @@ plot_hist_model <- function(scenario_param) {
     # g1 <- add_timeline(g1)
     g1 <- add_edge(g1, start = c(0,0), end = c(10,10), colour = "black")
     g1 <- add_edge(g1, start = c(0,10), end = c(10,0), colour = "black")
+    g1 <- g1 + annotate("text", label = "Soon available", x = 5, y = 9)
     return(g1)
 }
