@@ -30,6 +30,8 @@ run the DIYABC-RF GUI as a standard `shiny` app.
 install.packages("devtools")
 ```
 
+> **Note:** if you encounter any issue when installing `devtools`, please check the [next section](#potential-issue-with-devtools)
+
 2. Install `diyabcGUI` package
 ```R
 devtools::install_github(
@@ -48,6 +50,20 @@ The function `diyabc()` will launch DIYABC-RF GUI as a standard `shiny` web app,
 
 To run simultaneously mutliple instances of DIYABC-RF GUI, e.g. to simultaneously manage and run multiple projects, you just need to run several times the function `diyabc()` from R (this is not possible from RStudio).
 
+### Potential issue with devtools
+
+You may encounter some issue when installing devtools, please check the official 
+[devtools page](https://github.com/r-lib/devtools).
+
+Following `devtools` recommandations, make sure you have a working development environment.
+
+- Windows: Install Rtools.
+- Mac: Install Xcode from the Mac App Store.
+- Linux: Install a compiler and various development libraries (details vary across different flavors of Linux).
+
+For Ubuntu users [here](https://www.digitalocean.com/community/tutorials/how-to-install-r-packages-using-devtools-on-ubuntu-18-04) is a guide to install devtools requirement (users of other Linux distributions may still find it useful).
+
+
 ### Shiny server installation
 
 As a `shiny` app, DIYABC-RF GUI can be installed and run from a Shiny server. To do so, you just need (on Unix system, please adapt for Windows server) to:
@@ -59,6 +75,8 @@ As a `shiny` app, DIYABC-RF GUI can be installed and run from a Shiny server. To
 ln -s /path/to/R_LIBS/diyabcGUI/application /srv/shiny-server/diyabc
 ```
 4. DIYABC-RF GUI is now available on your server at `https://my.shiny.server.address/diyabc`
+
+---
 
 ## Reference
 
