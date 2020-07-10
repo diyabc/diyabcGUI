@@ -384,8 +384,8 @@ cleanup_diyabc_run <- function(project_dir) {
     ## file list
     files <- file.path(
         project_dir,
-        c("diyabc_seed_init_call.log", "diyabc_run_call.log",
-          "header.txt", "RNG_state_0000.bin")
+        # c("diyabc_seed_init_call.log", "diyabc_run_call.log",
+        c("header.txt", "RNG_state_0000.bin")
     )
     # remove files
     lapply(files, function(filename) {

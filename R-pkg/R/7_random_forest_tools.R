@@ -95,18 +95,18 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
 #' @keywords internal
 #' @author Ghislain Durif
 cleanup_abcranger_run <- function(project_dir) {
-    ## file list
-    files <- file.path(
-        project_dir,
-        c("abcranger_param_estim_call.log", 
-          "abcranger_mod_choice_call.log")
-    )
-    # remove files
-    lapply(files, function(filename) {
-        if(file.exists(filename)) {
-            fs::file_delete(filename)
-        }
-    })
+    # ## file list
+    # files <- file.path(
+    #     project_dir,
+    #     c("abcranger_param_estim_call.log", 
+    #       "abcranger_mod_choice_call.log")
+    # )
+    # # remove files
+    # lapply(files, function(filename) {
+    #     if(file.exists(filename)) {
+    #         fs::file_delete(filename)
+    #     }
+    # })
 }
 
 
