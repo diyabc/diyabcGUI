@@ -8,8 +8,8 @@ local({
 })
 
 # requirement
-install.packages("devtools")
-install.packages("fs")
+library(devtools) # may require `install.packages("devtools")`
+library(fs) # may require `install.packages("fs")``
 devtools::install_github("chasemc/electricShine")
 
 # install diyabcGUI
@@ -31,7 +31,7 @@ electricShine::electrify(
     semantic_version = "1.0.0",
     build_path = build_path,
     cran_like_url = "https://cran.r-project.org",
-    function_name = "run_app",
+    function_name = "standalone_run_app",
     local_package_path = file.path(getwd(), "R-pkg"),
     package_install_opts = list(type = "binary"),
     run_build = TRUE,
