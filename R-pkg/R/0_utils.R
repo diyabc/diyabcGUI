@@ -9,12 +9,19 @@ find_bin <- function(bin_name = "diyabc") {
     # binary directory
     path <- bin_dir()
     # platform
-    os <- str_extract(string = R.version$os, pattern = "windows|darwin|linux")
+    os <- str_extract(string = R.version$os, 
+                      pattern = "mingw32|windows|darwin|linux")
+    
+    if(is.na(os)) {
+        stop(str_c("Issue with os:", os, "not supported.", sep = " "))
+    }
+    
     os_id <- switch(
         os,
         "linux"  = "linux",
         "darwin" = "macos",
-        "windows" = "windows"
+        "mingw32" = "windows",
+        "windows" = "windows",
     )
     # binary file
     bin_name <- str_c(bin_name, os_id, sep = "-")
