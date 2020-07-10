@@ -49,7 +49,7 @@ simplified_home_page_ui <- function(id) {
             # )
         ),
         box(
-            title = "Help",
+            title = tags$div(icon("info-circle"), "Help center"),
             width = 12,
             collapsible = FALSE,
             tagList(
