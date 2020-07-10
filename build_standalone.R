@@ -15,7 +15,7 @@ devtools::install_github("chasemc/electricShine")
 # install diyabcGUI
 devtools::install("R-pkg")
 
-# build standalone
+# standalone build path
 build_path <- file.path(getwd(), "build")
 
 # prepare build path
