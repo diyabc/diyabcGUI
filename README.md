@@ -37,7 +37,7 @@ run the DIYABC-RF GUI as a standard `shiny` app.
 install.packages("devtools")
 ```
 
-> **Note:** if you encounter any issue when installing `devtools`, please check the [next section](#potential-issue-with-devtools)
+> **Note:** if you encounter any issue when installing `devtools`, please check the [next section](#potential-issue-with-devtools).
 
 2. Install `diyabcGUI` package
 ```R
@@ -72,7 +72,7 @@ You may encounter some issue when installing devtools, please check the official
 
 Following `devtools` recommandations, make sure you have a working development environment.
 
-- Windows: Install Rtools.
+- Windows: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 - Mac: Install Xcode from the Mac App Store.
 - Linux: Install a compiler and various development libraries (details vary across different flavors of Linux).
 
