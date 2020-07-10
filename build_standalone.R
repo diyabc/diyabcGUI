@@ -1,4 +1,11 @@
-# generate standalone interface for Unix
+# generate standalone interface for Windows/MacOS
+
+# default repos
+local({
+    r <- getOption("repos")
+    r["CRAN"] <- "https://cran.r-project.org"
+    options(repos=r)
+})
 
 # requirement
 install.packages("devtools")
