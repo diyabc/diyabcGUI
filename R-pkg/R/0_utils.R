@@ -82,7 +82,8 @@ dl_latest_bin <- function(prog = "diyabc") {
             if(!bin_name %in% existing_bin_files) {
                 out <- download.file(
                     single_url, 
-                    destfile = file.path(path, bin_name)
+                    destfile = file.path(path, bin_name),
+                    mode = "wb"
                 )
             } else {
                 warning(str_c(bin_name, "is already the latest release",
