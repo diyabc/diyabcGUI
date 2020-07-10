@@ -7,16 +7,20 @@ local({
     options(repos=r)
 })
 
-# requirement
-library(devtools) # may require `install.packages("devtools")`
-library(fs) # may require `install.packages("fs")``
-devtools::install_github("chasemc/electricShine")
+# requirement (see `prepare_build.R`)
+library(devtools)
+library(fs)
+library(electricShine)
 
 # update diyabc/abcranger bin
 source("update_bin_release.R")
 
 # install diyabcGUI
-devtools::install("R-pkg")
+devtools::install("R-pkg", upgrade = "never")
+
+# get bin files
+library(diyabcGUI)
+diyabcGUI::dl_all_latest_bin()
 
 # standalone build path
 build_path <- file.path(getwd(), "build")
