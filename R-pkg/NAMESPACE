@@ -3,6 +3,7 @@
 export(diyabc)
 export(diyabc_server)
 export(diyabc_ui)
+export(standalone_run_app)
 import(shiny)
 importFrom(dplyr,distinct)
 importFrom(dplyr,left_join)
