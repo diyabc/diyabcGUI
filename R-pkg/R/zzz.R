@@ -1,3 +1,20 @@
 .onLoad <- function(libname, pkgname) {
+    # set up options
     set_diyabcGUI_options(ncore = parallel::detectCores()/2)
+    # check if binary files are available
+    diyabc_bin <- tryCatch(
+        find_bin("diyabc"),
+        error = function(e) return(e)
+    )
+    abcranger_bin <- tryCatch(
+        find_bin("abcranger"),
+        error = function(e) return(e)
+    )
+    if("error" %in% class(diyabc_bin) | "error" %in% class(abcranger_bin)) {
+        message(
+            "Warning: ",
+            "Missing binary file(s), please run ",
+            "'diyabcGUI::dl_all_latest_bin()'"
+        )
+    }
 }
