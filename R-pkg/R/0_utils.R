@@ -20,7 +20,7 @@ find_bin <- function(bin_name = "diyabc") {
     bin_name <- str_c(bin_name, os_id, sep = "-")
     # check if bin file exists
     if(!any(str_detect(list.files(path), bin_name))) {
-        stop(str_c("Missing", bin_file, "binary file", sep = " "))
+        stop(str_c("Missing", bin_name, "binary file", sep = " "))
     }
     # find latest binary file
     bin_candidates <- str_extract(list.files(path), bin_name)
@@ -33,7 +33,7 @@ find_bin <- function(bin_name = "diyabc") {
     return(bin_file)
 }
 
-#' Download latest diyabcGUI related binary files
+#' Download latest diyabcGUI related binary files if missing
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom fs file_chmod
@@ -61,14 +61,25 @@ dl_latest_bin <- function(prog = "diyabc") {
     # get latest release list
     release <- release_info$assets
     
+    # already existing binary file
+    existing_bin_files <- list.files(path)
+    
     # download release
     out <- lapply(
         release$browser_download_url, 
         function(single_url) {
-            download.file(
-                single_url, 
-                destfile = file.path(path, basename(single_url))
-            )
+            out <- 0
+            bin_name <- basename(single_url)
+            if(!bin_name %in% existing_bin_files) {
+                out <- download.file(
+                    single_url, 
+                    destfile = file.path(path, bin_name)
+                )
+            } else {
+                warning(str_c(bin_name, "is already the latest release",
+                              sep = " "))
+            }
+            return(out)
         }
     )
     if(!all(out == 0)) {
@@ -79,6 +90,15 @@ dl_latest_bin <- function(prog = "diyabc") {
     bin_files <- list.files(file.path(path))
     bin_files <- bin_files[str_detect(bin_files, prog)]
     fs::file_chmod(file.path(path, bin_files), "a+rx")
+}
+
+#' Download all latest diyabcGUI related binary files if missing
+#' @keywords internal
+#' @author Ghislain Durif
+#' @export
+dl_all_latest_bin <- function() {
+    dl_latest_bin("diyabc")
+    dl_latest_bin("abcranger")
 }
 
 #' Logging function for debugging
