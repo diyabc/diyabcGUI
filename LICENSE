@@ -10,8 +10,8 @@ In summary:
 
  - 'diyabc' (https://github.com/diyabc/diyabc) and 
    'abcranger' (https://github.com/diyabc/abcranger) binary files, 
-   i.e. './bin/diyabc*' and './bin/abcranger*', are 
-   distributed under MIT license (see './bin/LICENSE' file).
+   i.e. './R-pkg/inst/bin/diyabc*' and './R-pkg/inst/bin/abcranger*', are 
+   distributed under MIT license (see './R-pkg/inst/bin/LICENSE' file).
 
  - the 'diyabcGUI' integration into R is distributed under GPL-3 license 
    (see './LICENSE.GPL-3.0' file).
