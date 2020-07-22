@@ -1,19 +1,28 @@
 # Graphical User Interface for DIYABC-RF software
 
-We provide a graphical user interface (GUI) for the DIYABC-RF software [1], 
-called DIYABC-RF GUI.
+We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], 
+called `DIYABC-RF GUI`.
 
-Please check the project [website](https://diyabc.github.io/) for 
-additional information and detailed documentation.
+Please check the project [website](https://diyabc.github.io/) for additional 
+information and detailed documentation.
 
-DIYABC-RF GUI is available as a standalone application, or in a R package called `diyabcGUI` as a `shiny` web app. You can either install the standalone app, or the `diyabcGUI` package and run the DIYABC-RF GUI as a standard `shiny` app, c.f. [below](#r-package-installation).
+`DIYABC-RF GUI` is available as a standalone application, or in a R package 
+called `diyabcGUI` as a `shiny` web app. You can either install and run 
+the standalone app, or install the `diyabcGUI` R package and run 
+`DIYABC-RF GUI` as a standard `shiny` app, c.f. [below](#r-package-installation).
 
-DIYABC-RF GUI is a set of tools implementing Approximate Bayesian 
-Computation (ABC) combined with supervised machine learning based on 
-Random Forests (RF), for model choice and parameter inference in the context 
-of population genetics analysis.`diyabcGUI` provides a user-friendly interface 
-for command-line softwares `diyabc` (https://github.com/diyabc/diyabc) and 
-`abcranger` (https://github.com/diyabc/abcranger).
+`DIYABC-RF GUI` provides a set of tools implementing 
+*Approximate Bayesian Computation* (ABC) combined with supervised machine 
+learning based on *Random Forests* (RF), for **model choice** and 
+**parameter inference** in the context 
+of **population genetics** analysis.
+
+`DIYABC-RF GUI` (and the package `diyabcGUI`) is a user-friendly interface for 
+command-line softwares [diyabc](https://github.com/diyabc/diyabc) and 
+[abcranger](<https://github.com/diyabc/abcranger>), which are elementary bricks 
+of the `DIYABC-RF` pipeline.
+
+---
 
 ## Installation
 
@@ -69,6 +78,8 @@ The function `diyabc()` will launch DIYABC-RF GUI as a standard `shiny` web app,
 
 To run simultaneously mutliple instances of DIYABC-RF GUI, e.g. to simultaneously manage and run multiple projects, you just need to run several times the function `diyabc()` from R (this is not possible from RStudio).
 
+---
+
 ### Potential issue with devtools
 
 You may encounter some issue when installing devtools, please check the official 
@@ -82,6 +93,7 @@ Following `devtools` recommandations, make sure you have a working development e
 
 For Ubuntu users [here](https://www.digitalocean.com/community/tutorials/how-to-install-r-packages-using-devtools-on-ubuntu-18-04) is a guide to install devtools requirement (users of other Linux distributions may still find it useful).
 
+---
 
 ### Shiny server installation
 
