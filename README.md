@@ -45,7 +45,7 @@ run the DIYABC-RF GUI as a standard `shiny` app.
 
 ### R package installation
 
-1. Install `devtools` package if not available
+1. Install `devtools` package (if not installed on your system)
 ```R
 install.packages("devtools")
 ```
