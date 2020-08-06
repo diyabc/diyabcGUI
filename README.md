@@ -22,6 +22,15 @@ command-line softwares [diyabc](https://github.com/diyabc/diyabc) and
 [abcranger](<https://github.com/diyabc/abcranger>), which are elementary bricks 
 of the `DIYABC-RF` pipeline.
 
+### Authorship and licensing
+
+Copyright (c) 2019-2020 DIYABC-RF Core team
+
+DIYABC-RF Core team: François-David Collin, Ghislain Durif, Louis Raynal, 
+Mathieu Gautier, Renaud Vitalis, Eric Lombaert, Jean-Michel Marin, Arnaud Estoup
+
+See the [dedicated license file](./LICENSE) for detailed licensing information.
+
 ---
 
 ## Installation
