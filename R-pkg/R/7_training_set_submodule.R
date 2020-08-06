@@ -729,6 +729,7 @@ hist_model_panel_server <- function(input, output, session,
         project_dir = NULL,
         raw_scenario_list = NULL,
         scenario_list = list(),
+        scenario_id = list(),
         scenario_nb = 0
     )
     # get input
@@ -747,12 +748,13 @@ hist_model_panel_server <- function(input, output, session,
                                     0, local$scenario_nb) + 1
         # id
         id <- local$count
+        local$scenario_id[[ as.character(id) ]] <<- id
         # add new tab
         appendTab(
             inputId = "scenario_tabs",
             tabPanel(
                 title = closable_tab_title(id, 
-                                           label = str_c("Scenario ", id),
+                                           label = "scenario",
                                            ns = ns),
                 value = id,
                 tags$br(),
@@ -767,6 +769,7 @@ hist_model_panel_server <- function(input, output, session,
                                              local$scenario_nb - 1, 0)
                 removeTab(inputId = "scenario_tabs", target = str_c(id))
                 local$scenario_list[[ id ]] <<- NULL
+                local$scenario_id[[ as.character(id) ]] <<- NULL
             })
         })
         # server function
@@ -781,6 +784,20 @@ hist_model_panel_server <- function(input, output, session,
     output$scenario_nb <- renderUI({
         helpText(
             str_c("Current number of scenarii = ", local$scenario_nb)
+        )
+    })
+    
+    # update scenario title
+    observe({
+        req(local$scenario_nb>0)
+        lapply(
+            1:local$scenario_nb,
+            function(ind) {
+                id <- local$scenario_id[[ind]]
+                output[[ str_c("scenario_title", id) ]] <- renderText(
+                    str_c("Scenario ", ind)
+                )
+            }
         )
     })
     
@@ -802,7 +819,7 @@ hist_model_panel_server <- function(input, output, session,
 #' @author Ghislain Durif
 closable_tab_title <- function(id, label, ns) {
     tags$span(
-        label,
+        textOutput(ns(str_c("scenario_title", id)), inline = TRUE),
         HTML("&nbsp;"),
         tags$span(
             actionButton(
