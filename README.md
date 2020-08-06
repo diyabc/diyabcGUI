@@ -1,4 +1,4 @@
-# Graphical User Interface for DIYABC-RF software
+# ![icon](man/figures/coccicon_32x32.png) Graphical User Interface for DIYABC-RF software
 
 We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], 
 called `DIYABC-RF GUI`.
