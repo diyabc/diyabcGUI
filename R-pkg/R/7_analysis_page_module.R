@@ -5,33 +5,35 @@ analysis_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
         tags$style(HTML(".box-header{text-align: center;}")),
-        box(
-            title = tags$b("Project settings"),
-            width = 12,
-            status = "primary", solidHeader = FALSE,
-            collapsible = FALSE,
-            analysis_proj_set_ui(ns("proj_set"))
-        ),
-        box(
-            title = "Training set simulations",
-            width = 12,
-            status = "info", solidHeader = TRUE,
-            collapsible = TRUE, collapsed = TRUE,
-            training_set_ui(ns("train_set"))
-        ),
-        box(
-            title = "Random Forest Analyses",
-            width = 12,
-            status = "warning", solidHeader = TRUE,
-            collapsible = TRUE, collapsed = TRUE,
-            rf_module_ui(ns("rf"))
-        ),
-        box(
-            title = tags$b("Project housekeeping"),
-            width = 12,
-            status = "danger", solidHeader = FALSE,
-            collapsible = FALSE, collapsed = FALSE,
-            proj_action_ui(ns("proj_action"))
+        fluidRow(
+            box(
+                title = tags$b("Project settings"),
+                width = 12,
+                status = "primary", solidHeader = FALSE,
+                collapsible = FALSE,
+                analysis_proj_set_ui(ns("proj_set"))
+            ),
+            box(
+                title = "Training set simulations",
+                width = 12,
+                status = "info", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = TRUE,
+                training_set_ui(ns("train_set"))
+            ),
+            box(
+                title = "Random Forest Analyses",
+                width = 12,
+                status = "warning", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = TRUE,
+                rf_module_ui(ns("rf"))
+            ),
+            box(
+                title = tags$b("Project housekeeping"),
+                width = 12,
+                status = "danger", solidHeader = FALSE,
+                collapsible = FALSE, collapsed = FALSE,
+                proj_action_ui(ns("proj_action"))
+            )
         )
     )
 }

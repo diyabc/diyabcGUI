@@ -4,70 +4,72 @@
 simplified_home_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        box(
-            title = "DIYABC-RF main pipeline",
-            width = 12, 
-            status = "primary", solidHeader = TRUE,
-            collapsible = TRUE,
-            tags$div(
-                tags$p("Including the two modules of DIYABC Random Forest:"),
-                tags$ul(
-                    tags$li("training set simulation"),
-                    tags$li("random forest analyses")
-                )
-            ) %>% 
-                helper(type = "markdown", 
-                       content = "data_analysis"),
-            actionButton(
-                ns("new_analysis_project"),
-                label = "New project",
-                icon = icon("folder-open"),
-                width = "100%"
-            )
-        ),
-        box(
-            title = "Synthetic data file generation",
-            width = 12, 
-            status = "info", solidHeader = TRUE,
-            collapsible = TRUE, collapsed = TRUE,
-            tags$div(
-                tags$p(
-                    "Direct use of DIYABC-RF simulation engine",
-                    "to generate pseudo-oberved datasets."
+        fluidRow(
+            box(
+                title = "DIYABC-RF main pipeline",
+                width = 12, 
+                status = "primary", solidHeader = TRUE,
+                collapsible = TRUE,
+                tags$div(
+                    tags$p("Including the two modules of DIYABC Random Forest:"),
+                    tags$ul(
+                        tags$li("training set simulation"),
+                        tags$li("random forest analyses")
+                    )
                 ) %>% 
                     helper(type = "markdown", 
-                           content = "data_simulation")
+                           content = "data_analysis"),
+                actionButton(
+                    ns("new_analysis_project"),
+                    label = "New project",
+                    icon = icon("folder-open"),
+                    width = "100%"
+                )
             ),
-            helpText(
-                "Soon available"
-            )
-            # actionButton(
-            #     ns("new_simu_project"),
-            #     label = "New project",
-            #     icon = icon("folder-open"),
-            #     width = "100%"
-            # )
-        ),
-        box(
-            title = tags$div(icon("info-circle"), "Help center"),
-            width = 12,
-            collapsible = FALSE,
-            tagList(
-                tags$p(
-                    "Check the documentation at",
-                    tags$a(
-                        "DIYABC-RF GUI official website", 
-                        href="https://diyabc.github.io/"
-                    ),
-                    "."
+            box(
+                title = "Synthetic data file generation",
+                width = 12, 
+                status = "info", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = TRUE,
+                tags$div(
+                    tags$p(
+                        "Direct use of DIYABC-RF simulation engine",
+                        "to generate pseudo-oberved datasets."
+                    ) %>% 
+                        helper(type = "markdown", 
+                               content = "data_simulation")
                 ),
-                tags$p(
-                    "If you encounter any issue, please visit",
-                    tags$a(
-                        "DIYABC-RF GUI issue tracker", 
-                        href="https://github.com/diyabc/diyabcGUI/issues"
+                helpText(
+                    "Soon available"
+                )
+                # actionButton(
+                #     ns("new_simu_project"),
+                #     label = "New project",
+                #     icon = icon("folder-open"),
+                #     width = "100%"
+                # )
+            ),
+            box(
+                title = tags$div(icon("info-circle"), "Help center"),
+                width = 12,
+                collapsible = FALSE,
+                tagList(
+                    tags$p(
+                        "Check the documentation at",
+                        tags$a(
+                            "DIYABC-RF GUI official website", 
+                            href="https://diyabc.github.io/"
+                        ),
+                        "."
                     ),
-                    "."
+                    tags$p(
+                        "If you encounter any issue, please visit",
+                        tags$a(
+                            "DIYABC-RF GUI issue tracker", 
+                            href="https://github.com/diyabc/diyabcGUI/issues"
+                        ),
+                        "."
+                    )
                 )
             )
         )

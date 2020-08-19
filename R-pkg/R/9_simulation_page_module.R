@@ -5,48 +5,50 @@
 simu_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        box(
-            title = "Soon available",
-            width = 12,
-            collapsible = FALSE,
-            tagList(
-                helpText(
-                    "The 'synthetic data file generation' module",
-                    "is not available at the moment.",
-                    "We are working to make it available as soon as possible."
+        fluidRow(
+            box(
+                title = "Soon available",
+                width = 12,
+                collapsible = FALSE,
+                tagList(
+                    helpText(
+                        "The 'synthetic data file generation' module",
+                        "is not available at the moment.",
+                        "We are working to make it available as soon as possible."
+                    )
                 )
             )
+            # box(
+            #     title = "Project settings",
+            #     width = 12,
+            #     status = "primary", solidHeader = TRUE,
+            #     collapsible = TRUE,
+            #     new_proj_set_ui(ns("proj_set")) %>% 
+            #         helper(type = "markdown", 
+            #                content = "simulation_project")
+            # ),
+            # box(
+            #     title = "Historical model",
+            #     width = 12,
+            #     status = "info", solidHeader = TRUE,
+            #     collapsible = TRUE, collapsed = TRUE,
+            #     simu_hist_model_ui(ns("hist_model"))
+            # ),
+            # box(
+            #     title = "Genetic data",
+            #     width = 12,
+            #     status = "warning", solidHeader = TRUE,
+            #     collapsible = TRUE, collapsed = TRUE,
+            #     genetic_loci_ui(ns("genetic_setting"))
+            # ),
+            # box(
+            #     title = "Project action",
+            #     width = 12,
+            #     status = "danger", solidHeader = TRUE,
+            #     collapsible = TRUE, collapsed = FALSE,
+            #     simu_proj_action_ui(ns("proj_action"))
+            # )
         )
-        # box(
-        #     title = "Project settings",
-        #     width = 12,
-        #     status = "primary", solidHeader = TRUE,
-        #     collapsible = TRUE,
-        #     new_proj_set_ui(ns("proj_set")) %>% 
-        #         helper(type = "markdown", 
-        #                content = "simulation_project")
-        # ),
-        # box(
-        #     title = "Historical model",
-        #     width = 12,
-        #     status = "info", solidHeader = TRUE,
-        #     collapsible = TRUE, collapsed = TRUE,
-        #     simu_hist_model_ui(ns("hist_model"))
-        # ),
-        # box(
-        #     title = "Genetic data",
-        #     width = 12,
-        #     status = "warning", solidHeader = TRUE,
-        #     collapsible = TRUE, collapsed = TRUE,
-        #     genetic_loci_ui(ns("genetic_setting"))
-        # ),
-        # box(
-        #     title = "Project action",
-        #     width = 12,
-        #     status = "danger", solidHeader = TRUE,
-        #     collapsible = TRUE, collapsed = FALSE,
-        #     simu_proj_action_ui(ns("proj_action"))
-        # )
     )
 }
 
