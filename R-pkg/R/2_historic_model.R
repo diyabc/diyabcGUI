@@ -81,7 +81,7 @@ hist_model_server <- function(input, output, session,
             # graphical representation
             local$graph <- plot_hist_model(out$param)
             # check
-            out$cond <- check_timeline(input$scenario, out$param)$cond
+            out$cond <- check_condition(input$scenario, out$param)$cond
         } else {
             local$graph <- NULL
             out$cond <- NULL
@@ -126,12 +126,11 @@ hist_model_server <- function(input, output, session,
 
 #' Check timeline
 #' @description 
-#' Check for scenario validity, regarding time consistency, 
-#' possible conditions, 
+#' Check for possible conditions regarding scenario validity, time consistency, 
 #' etc.
 #' @keywords internal
 #' @author Ghislain Durif
-check_timeline <- function(raw_scenario, parsed_scenario) {
+check_condition <- function(raw_scenario, parsed_scenario) {
     # FIXME
     condition <- list()
     # condition <- c("Example of condition...", "Time should be positive.")
@@ -151,7 +150,9 @@ check_timeline <- function(raw_scenario, parsed_scenario) {
 
 #' Parse scenario
 #' @description 
-#' Extract event and parameters from raw scenario, check for syntax validity.
+#' Extract event and parameters from raw scenario, check for syntax validity. 
+#' 
+#' Also check for scenario validity, regarding time consistency.
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom stringr str_c str_count str_detect str_extract_all str_length str_split
@@ -246,7 +247,10 @@ parse_scenario <- function(text) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, lapply(which(!event_valid), function(row) {
-                    return(str_c("There is an issue with event at row ", row+1))
+                    return(
+                        str_c("There is an issue with event format at row ", 
+                              row+1)
+                    )
                 }))
         }
         # number of events
@@ -269,6 +273,74 @@ parse_scenario <- function(text) {
                     at row 1 is lower than number of populations used ", 
                     "in scenario event description."
                 )
+            )
+        }
+        
+        ## check for repetitions and historical inconsistency
+        tmp <- Reduce(
+            "rbind", 
+            lapply(
+                1:nevent,
+                function(event_id) {
+                    tmp_msg <- ""
+                    tmp_valid <- TRUE
+                    if(event_id > 1) {
+                        ## check for use of non existing population
+                        # check for previous merge regarding the considered population
+                        previous_merge <- which(
+                            event_type[1:(event_id-1)] == "merge"
+                        )
+                        disappeared_pop <- unlist(
+                            lapply(
+                                previous_merge, 
+                                function(ind) {
+                                    return(event_pop[[ind]][2])
+                                }
+                            )
+                        )
+                        check_previous_merge <- any(
+                            event_pop[[event_id]] %in% disappeared_pop
+                        )
+                        if(check_previous_merge) {
+                            tmp_valid <- FALSE
+                        }
+                        # check for previous split regarding the considered population
+                        previous_split <- which(
+                            event_type[1:(event_id-1)] == "split"
+                        )
+                        disappeared_pop <- unlist(
+                            lapply(
+                                previous_split, 
+                                function(ind) {
+                                    return(event_pop[[ind]][1])
+                                }
+                            )
+                        )
+                        check_previous_split <- any(
+                            event_pop[[event_id]] %in% disappeared_pop
+                        )
+                        if(check_previous_split) {
+                            tmp_valid <- FALSE
+                        }
+                        # message
+                        if(!tmp_valid) {
+                            tmp_msg <- str_c(
+                                "Use of non-existing population in event at row ",
+                                event_id+1
+                            )
+                        }
+                    }
+                    return(data.frame(tmp_valid, tmp_msg, 
+                                      stringsAsFactors = FALSE))
+                }
+            )
+        )
+        
+        if(!all(tmp$tmp_valid)) {
+            valid <- FALSE
+            msg_list <- c(
+                msg_list,
+                as.list(tmp$tmp_msg[!tmp$tmp_valid])
             )
         }
         
