@@ -257,6 +257,21 @@ parse_scenario <- function(text) {
                 msg_list, str_c("No event in scenario."))
         }
         
+        ## check populations
+        pop_id <- unlist(lapply(event_list, 
+                                function(event) event$event_pop))
+        if(max(pop_id) > npop) {
+            valid <- FALSE
+            msg_list <- append(
+                msg_list, 
+                str_c(
+                    "Number of initial population effective sizes ", "
+                    at row 1 is lower than number of populations used ", 
+                    "in scenario event description."
+                )
+            )
+        }
+        
         ## parameters
         Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
                              Ne_list_0))
