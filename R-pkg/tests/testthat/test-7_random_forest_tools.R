@@ -4,7 +4,7 @@ test_that("abcranger_run", {
     
     # proj dir
     proj_dir = mk_proj_dir()
-    on.exit(tryCatch(fs::dir_detete(proj_dir)))
+    on.exit(tryCatch(fs::dir_delete(proj_dir)))
     logging("tmp dir:", proj_dir)
     
     # copy header and data file from example

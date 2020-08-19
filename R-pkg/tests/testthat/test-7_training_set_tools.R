@@ -3,7 +3,7 @@ context("training_set_tools")
 test_that("write_header", {
     
     proj_dir = mk_proj_dir()
-    on.exit(tryCatch(fs::dir_detete(proj_dir)))
+    on.exit(tryCatch(fs::dir_delete(proj_dir)))
     param_list = list(
         "N1 N UN[100,10000,0.0,0.0]",
         "N2 N UN[100,10000,0.0,0.0]",
@@ -64,7 +64,7 @@ test_that("diyabc_run_trainset_simu", {
     
     # proj dir
     proj_dir = mk_proj_dir()
-    on.exit(tryCatch(fs::dir_detete(proj_dir)))
+    on.exit(tryCatch(fs::dir_delete(proj_dir)))
     logging("tmp dir:", proj_dir)
     
     # copy header and data file from example
