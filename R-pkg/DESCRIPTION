@@ -63,6 +63,7 @@ Imports:
     shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
     tibble,
+    tidyr,
     tools
 Suggests: 
     knitr,

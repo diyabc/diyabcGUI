@@ -3,10 +3,28 @@
 \docType{package}
 \name{diyabcGUI-package}
 \alias{diyabcGUI-package}
+\alias{_PACKAGE}
 \alias{diyabcGUI}
 \title{diyabcGUI
 
 diyabcGUI package}
+\description{
+Graphical User Interface for DIYABC-RF framework, a set of tools
+    implementing Approximate Bayesian Computation (ABC) combined with 
+    supervised machine learning based on Random Forests (RF), for model choice 
+    and parameter inference in the context of population genetics analysis.
+    'diyabcGUI' provides a user-friendly interface  for command-line softwares 
+    'diyabc' (https://github.com/diyabc/diyabc) and 'abcranger' 
+    (https://github.com/diyabc/abcranger).
+}
+\seealso{
+Useful links:
+\itemize{
+  \item \url{https://github.com/diyabc/diyabcGUI}
+  \item Report bugs at \url{https://github.com/diyabc/diyabcGUI/issues}
+}
+
+}
 \author{
 Ghislain Durif
 }
