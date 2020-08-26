@@ -344,6 +344,18 @@ parse_scenario <- function(text) {
             )
         }
         
+        ## check for full coalescence
+        # TODO
+        
+        ## check for duplicate
+        if(length(scenario) != length(unique(scenario))) {
+            valid <- FALSE
+            msg_list <- c(
+                msg_list,
+                "One or more events are duplicated."
+            )
+        }
+        
         ## parameters
         Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
                              Ne_list_0))
