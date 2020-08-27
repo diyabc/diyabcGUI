@@ -28,7 +28,7 @@ find_parent_event <- function(event_type_list, event_pop_list,
         ) %>% drop_na()
         
         if(nrow(find_pop) == 0) {
-            return(-1)
+            return(NA)
         } else {
             find_pop <- head(find_pop, 1)
             
@@ -43,7 +43,7 @@ find_parent_event <- function(event_type_list, event_pop_list,
                 } else if(find_pop$pop_pos == 3) {
                     return(find_pop$event_id + 0.2)
                 } else {
-                    return(-1)
+                    return(NA)
                 }
             }
         }
@@ -85,7 +85,7 @@ scenario2tree <- function(parsed_scenario) {
                         current_pop <- event_pop
                         parent_pop <- event_pop
                     } else if(event_type == "merge") {
-                        current_pop <- event_pop[2]
+                        current_pop <- event_pop[1]
                         parent_pop <- event_pop[1]
                     } else if(event_type == "varNe") {
                         Ne_list[[current_pop]] <- event_param
@@ -99,7 +99,7 @@ scenario2tree <- function(parsed_scenario) {
                     )
                     
                     tmp_out <- data.frame(
-                        id = event_id, event = event_type, pop = parent_pop, 
+                        id = event_id, event = event_type, pop = current_pop, 
                         parent1_id = parent_event, parent2_id = NA,
                         time = event_time, Ne = Ne_list[[current_pop]], 
                         param = ifelse(is.null(event_param), NA, event_param),
@@ -202,13 +202,14 @@ reverse_tree <- function(tree_df) {
     # get root
     root_ind <- which(is.na(tree_df$parent1_id) & is.na(tree_df$parent2_id))
     if(length(root_ind) != 1) {
+        valid <- FALSE
         msg_list <- append(
             msg_list,
             str_c(
-                "Issue with scenario: ",
+                "Issue with scenario:",
                 "populations", str_c(tree_df$pop[root_ind], collapse = ", "),
                 "do not coalesce.",
-                sep = "."
+                sep = " "
             )
         )
     }
@@ -250,13 +251,12 @@ reverse_tree <- function(tree_df) {
     return(lst(rev_tree_df, msg_list, valid))
 }
 
-#' Assign coordinates to tree edges (start and end points)
+#' Extract informations regarding tree context
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom dplyr arrange
-tree_edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
-                                 unit_grid = 2) {
-    
+#' @description 
+#' Returns following informations: timing_list, time_coordinate, event_nb, npop
+tree_context <- function(parsed_scenario, rev_tree_df) {
     # timing list
     timing_list <- unique(unlist(parsed_scenario$event_time))
     
@@ -267,11 +267,11 @@ tree_edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     )
     
     # number of events by timing
-    event_nb <- as.data.frame(table(unlist(parsed_scenario$event_time))) %>% 
-        arrange(timing_list)
+    event_nb <- as.data.frame(
+        table(unlist(parsed_scenario$event_time)),
+        stringsAsFactors = FALSE
+    ) %>% arrange(timing_list)
     colnames(event_nb) <- c("param", "count")
-    
-    npop <- max(unlist(existing_pop))
     
     # check number of existing pop per timing
     existing_pop <- lapply(
@@ -285,23 +285,65 @@ tree_edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     )
     names(existing_pop) <- timing_list
     
+    # number of populations
+    npop <- max(unlist(existing_pop))
+    
+    # output
+    return(lst(
+        timing_list,
+        time_coordinate,
+        event_nb,
+        existing_pop,
+        npop
+    ))
+}
+
+#' Adapt grid unit to avoid node superpositon
+#' @keywords internal
+#' @author Ghislain Durif
+adapt_grid_unit <- function(unit_grid, npop, ntime) {
+    # FIXME
+    if(npop < 1 | ntime < 1) {
+        return(unit_grid)
+    } else if(2*unit_grid*ntime < npop) {
+        return(unit_grid * npop / 2*unit_grid*ntime)
+    } else {
+        return(unit_grid)
+    }
+}
+
+#' Assign coordinates to tree nodes
+#' @keywords internal
+#' @author Ghislain Durif
+tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario, 
+                                 grid_unit = 2) {
+    
+    # tree context
+    info <- tree_context(parsed_scenario, rev_tree_df)
+    timing_list <- info$timing_list
+    time_coordinate <- info$time_coordinate
+    event_nb <- info$event_nb
+    existing_pop <- info$existing_pop
+    npop <- info$npop
+    
     # for each tree node, assign a coordinate
     rev_tree_coord_df <- NULL
     for(node_id in rev_tree_df$id) {
-        print(str_c("### node id = ", node_id))
         x_coord <- NA
         y_coord <- NA
         orient <- NA # left (0) of right (1)
-        tmp_tree_df <- tree_df[tree_df$id == node_id,]
-        tmp_rev_tree_df <- rev_tree_df[rev_tree_df$id == node_id,]
-        if(tmp_rev_tree_df$root) {
+        # current node (from leaf to root)
+        current_node <- tree_df[tree_df$id == node_id,]
+        # current node (from root to leaf)
+        current_node_rev <- rev_tree_df[rev_tree_df$id == node_id,]
+        if(current_node_rev$root) {
             x_coord <- 0
         } else {
             # not root
-            if(tmp_tree_df$event != "split") {
+            if(current_node$event != "split") {
                 parent_node <- rev_tree_coord_df[
-                    rev_tree_coord_df$id == tmp_tree_df$parent1_id,
-                ]
+                    rev_tree_coord_df$id == current_node$parent1_id,
+                    ]
                 parent_x_coord <- parent_node$x_coord
                 
                 if(parent_node$event == "merge") {
@@ -314,20 +356,42 @@ tree_edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                         orient <- 0
                     }
                     
-                    x_coord <- parent_x_coord + fact * unit_grid * 
-                        existing_pop[[ tmp_tree_df$time ]] / npop
+                    # x_coord <- parent_x_coord + fact * grid_unit * 
+                    #     npop / existing_pop[[ current_node$time ]] * 
+                    #     abs(which(timing_list == current_node$time) - 
+                    #             which(timing_list == parent_node$time))
+                    
+                    x_coord <- parent_x_coord + fact * grid_unit * 
+                        abs(which(timing_list == current_node$time) - 
+                                which(timing_list == parent_node$time))
+                    
                 } else if(parent_node$event == "split") {
                     x_coord <- parent_x_coord
+                    
+                # } else if((parent_node$event %in% c("varNe", "sample")) & 
+                #           (parent_node$time == current_node$time)) {
+                #     # specific case of varNe or sample 
+                #     # (at same time than other event)
                 } else {
-                    # sample or varNe (tricky)
+                    # generic case of sample or varNe
                     orient <- parent_node$orient
                     if(!is.na(orient)) {
                         if(orient) {
-                            x_coord <- parent_x_coord + unit_grid * 
-                                existing_pop[[ tmp_tree_df$time ]] / npop
+                            # x_coord <- parent_x_coord + grid_unit * 
+                            #     npop / existing_pop[[ current_node$time ]] * 
+                            #     abs(which(timing_list == current_node$time) - 
+                            #             which(timing_list == parent_node$time))
+                            x_coord <- parent_x_coord + grid_unit * 
+                                abs(which(timing_list == current_node$time) - 
+                                        which(timing_list == parent_node$time))
                         } else {
-                            x_coord <- parent_x_coord - unit_grid * 
-                                existing_pop[[ tmp_tree_df$time ]] / npop
+                            # x_coord <- parent_x_coord - grid_unit * 
+                            #     npop / existing_pop[[ current_node$time ]] * 
+                            #     abs(which(timing_list == current_node$time) - 
+                            #             which(timing_list == parent_node$time))
+                            x_coord <- parent_x_coord - grid_unit * 
+                                abs(which(timing_list == current_node$time) - 
+                                        which(timing_list == parent_node$time))
                         }
                     } else {
                         x_coord <- parent_x_coord
@@ -336,32 +400,166 @@ tree_edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             } else {
                 # split (node between the two parents)
                 parent1_node <- rev_tree_coord_df[
-                    rev_tree_coord_df$id == tmp_tree_df$parent1_id,
+                    rev_tree_coord_df$id == current_node$parent1_id,
                     ]
                 parent2_node <- rev_tree_coord_df[
-                    rev_tree_coord_df$id == tmp_tree_df$parent2_id,
+                    rev_tree_coord_df$id == current_node$parent2_id,
                     ]
                 x_coord <- (parent1_node$x_coord + parent2_node$x_coord)/2
             }
         }
         
         y_coord <- time_coordinate$coord[
-            time_coordinate$param == tmp_tree_df$time
+            time_coordinate$param == current_node$time
             ]
         
         rev_tree_coord_df <- rbind(
             rev_tree_coord_df,
             cbind(
-                tmp_rev_tree_df,
+                current_node_rev,
                 as.data.frame(lst(x_coord, y_coord, orient))
             )
         )
     }
     
-    # for each edge, write the following line:
-    # x_start, y_start, x_end = 0, y_end, Ne, text
+    ## add a top root node
+    rev_tree_coord_df <- rbind(
+        data.frame(
+            id = rev_tree_coord_df$id[1] + 1,
+            event = "root", pop = rev_tree_coord_df$pop[1], 
+            time = NA, Ne = rev_tree_coord_df$Ne[1],
+            param = NA, 
+            leaf = FALSE, root = NA, 
+            child1_id = rev_tree_coord_df$id[1], 
+            child2_id = NA, 
+            x_coord = rev_tree_coord_df$x_coord[1], 
+            y_coord = rev_tree_coord_df$y_coord[1] + 1, 
+            orient = NA,
+            stringsAsFactors = FALSE
+        ),
+        rev_tree_coord_df
+    )
     
+    ## output
+    return(rev_tree_coord_df)
 }
+
+#' Given two nodes, extract edge coordinate
+#' @keywords internal
+#' @author Ghislain Durif
+extract_edge_coordinate <- function(current_node, child_node, ntime,
+                                    grid_unit = 2) {
+    # additional line for text (to manage split event)
+    additional_row <- NULL
+    # text to write
+    current_text <- NA
+    if(child_node$event == "sample") {
+        current_text <- str_c("Sample\npop", child_node$pop, sep = " ")
+    } else if(child_node$event == "split")  {
+        additonal_text <- NA
+        if(current_node$event == "split1") {
+            additonal_text <- str_c(current_node$param)
+        } else if(current_node$event == "split2") {
+            additonal_text <- str_c("1 - ", current_node$param)
+        }
+        additional_row <- data.frame(
+            x_start = NA,
+            y_start = NA,
+            x_end = (current_node$x_coord + child_node$x_coord)/2,
+            y_end = child_node$y_coord - grid_unit / ntime,
+            Ne = current_node$Ne,
+            text = additonal_text,
+            stringsAsFactors = FALSE
+        )
+    }
+    # population effective size
+    current_Ne <- current_node$Ne
+    if((current_node$event == "merge") & (current_node$pop != child_node$pop)) {
+        current_Ne <- child_node$Ne
+    }
+    # edge
+    out <- rbind(
+        data.frame(
+            x_start = current_node$x_coord,
+            y_start = current_node$y_coord,
+            x_end = child_node$x_coord,
+            y_end = child_node$y_coord,
+            Ne = current_Ne,
+            text = current_text,
+            stringsAsFactors = FALSE
+        ),
+        additional_row
+    )
+    # output
+    return(out)
+}
+
+
+#' Assign coordinates to tree edges (start and end points)
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom dplyr arrange
+node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario, 
+                                 rev_tree_coord_df,
+                                 grid_unit = 2) {
+    
+    # tree context
+    info <- tree_context(parsed_scenario, rev_tree_df)
+    timing_list <- info$timing_list
+    time_coordinate <- info$time_coordinate
+    event_nb <- info$event_nb
+    existing_pop <- info$existing_pop
+    npop <- info$npop
+    
+    # adapt
+    
+    # for each edge, assign start and end coordinate + details:
+    # x_start, y_start, x_end, y_end, Ne, text
+    edge_coordinates <- NULL
+    for(node_id in rev_tree_coord_df$id) {
+        print(str_c("### node id = ", node_id))
+        x_start <- NA
+        x_end <- NA
+        y_start <- NA
+        y_end <- NA
+        # current node
+        current_node <- rev_tree_coord_df[rev_tree_coord_df$id == node_id,]
+        # child1 (if any)
+        if(!is.na(current_node$child1_id)) {
+            # child node
+            child_node <- rev_tree_coord_df[
+                rev_tree_coord_df$id == current_node$child1_id,]
+            # extract edge
+            edge_coordinates <- rbind(
+                edge_coordinates,
+                extract_edge_coordinate(current_node, child_node, 
+                                        length(timing_list), grid_unit)
+            )
+        }
+        # child2 (if any)
+        if(!is.na(current_node$child2_id)) {
+            # child node
+            child_node <- rev_tree_coord_df[
+                rev_tree_coord_df$id == current_node$child2_id,]
+            # extract edge
+            edge_coordinates <- rbind(
+                edge_coordinates,
+                extract_edge_coordinate(current_node, child_node, 
+                                        length(timing_list), grid_unit)
+            )
+        }
+    }
+    
+    ## output
+    return(edge_coordinates)
+}
+
+#' Assign coordinates to tree edges (start and end points)
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom dplyr arrange
+tree2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario, 
+                                 grid_unit = 2) {}
 
 #' Check historical model and reformat scenario encoding for display
 #' @keywords internal
@@ -373,10 +571,10 @@ prepare_hist_model_display <- function() {
 #' Box frame for tree graph
 #' @keywords internal
 #' @author Ghislain Durif
-box_frame <- function(g, npop, nevent, unit_grid = 2) {
+box_frame <- function(g, npop, nevent, grid_unit = 2) {
     # box x_width x y_width
-    x_width <- unit_grid * npop
-    y_height <- unit_grid * nevent
+    x_width <- grid_unit * npop
+    y_height <- grid_unit * nevent
     # x frontier: -(x_width + 1)/2 , (x_width + 1)/2
     # y frontier: 0 , y_width + 1
     g <- g + xlim(c(-(x_width + 1)/2, (x_width + 1)/2)) +
@@ -389,7 +587,7 @@ box_frame <- function(g, npop, nevent, unit_grid = 2) {
 #' Plot historical model
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom ggplot2 aes annotate ggplot geom_point geom_segment theme_void
+#' @importFrom ggplot2 aes annotate ggplot ggtitle geom_point geom_segment theme_void
 plot_hist_model <- function(scenario_param) {
     
     add_edge <- function(g, start, end, colour = "black") {
