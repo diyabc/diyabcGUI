@@ -259,123 +259,129 @@ parse_scenario <- function(text) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("No event in scenario."))
-        }
-        
-        ## check populations
-        pop_id <- unlist(lapply(event_list, 
-                                function(event) event$event_pop))
-        if(max(pop_id) > npop) {
-            valid <- FALSE
-            msg_list <- append(
-                msg_list, 
-                str_c(
-                    "Number of initial population effective sizes ", "
+        } else {
+            ## check populations
+            pop_id <- unlist(lapply(event_list, 
+                                    function(event) event$event_pop))
+            if(max(pop_id) > npop) {
+                valid <- FALSE
+                msg_list <- append(
+                    msg_list, 
+                    str_c(
+                        "Number of initial population effective sizes ", "
                     at row 1 is lower than number of populations used ", 
-                    "in scenario event description."
+                        "in scenario event description."
+                    )
+                )
+            }
+            
+            ## check for repetitions and historical inconsistency
+            tmp <- Reduce(
+                "rbind", 
+                lapply(
+                    1:nevent,
+                    function(event_id) {
+                        tmp_msg <- ""
+                        tmp_valid <- TRUE
+                        if(event_id > 1) {
+                            ## check for use of non existing population
+                            # check for previous merge regarding 
+                            # the considered population
+                            previous_merge <- which(
+                                event_type[1:(event_id-1)] == "merge"
+                            )
+                            disappeared_pop <- unlist(
+                                lapply(
+                                    previous_merge, 
+                                    function(ind) {
+                                        return(event_pop[[ind]][2])
+                                    }
+                                )
+                            )
+                            check_previous_merge <- any(
+                                event_pop[[event_id]] %in% disappeared_pop
+                            )
+                            if(check_previous_merge) {
+                                tmp_valid <- FALSE
+                            }
+                            # check for previous split regarding the 
+                            # considered population
+                            previous_split <- which(
+                                event_type[1:(event_id-1)] == "split"
+                            )
+                            disappeared_pop <- unlist(
+                                lapply(
+                                    previous_split, 
+                                    function(ind) {
+                                        return(event_pop[[ind]][1])
+                                    }
+                                )
+                            )
+                            check_previous_split <- any(
+                                event_pop[[event_id]] %in% disappeared_pop
+                            )
+                            if(check_previous_split) {
+                                tmp_valid <- FALSE
+                            }
+                            # message
+                            if(!tmp_valid) {
+                                tmp_msg <- str_c(
+                                    "Use of non-existing population ", 
+                                    "in event at row ",
+                                    event_id+1
+                                )
+                            }
+                        }
+                        return(data.frame(tmp_valid, tmp_msg, 
+                                          stringsAsFactors = FALSE))
+                    }
                 )
             )
+            
+            if(!all(tmp$tmp_valid)) {
+                valid <- FALSE
+                msg_list <- c(
+                    msg_list,
+                    as.list(tmp$tmp_msg[!tmp$tmp_valid])
+                )
+            }
+            
+            ## check for full coalescence
+            # TODO -> done when preparing tree graphic representation
+            
+            ## check for duplicate
+            if(length(scenario) != length(unique(scenario))) {
+                valid <- FALSE
+                msg_list <- c(
+                    msg_list,
+                    "One or more events are duplicated."
+                )
+            }
+            
+            ## parameters
+            Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
+                                 Ne_list_0))
+            Ne_param <- unique(unlist(
+                str_extract_all(string = Ne_param, 
+                                pattern = single_param_regex())
+            ))
+            Ne_param <- Ne_param[!str_detect(
+                string = Ne_param, pattern = "^([0-9]+|[01]\\.?[0-9]?)$"
+            )]
+            
+            rate_param <- unique(unlist(event_param[event_type == "split"]))
+            rate_param <- rate_param[!str_detect(
+                string = rate_param, pattern = "^([0-9]+|[01]\\.?[0-9]?)$"
+            )]
+            
+            time_param <- unique(unlist(
+                str_extract_all(string = event_time, 
+                                pattern = single_time_regex())
+            ))
+            time_param <- time_param[!str_detect(
+                string = time_param, pattern = "^([0-9]+|[01]\\.?[0-9]?)$"
+            )]
         }
-        
-        ## check for repetitions and historical inconsistency
-        tmp <- Reduce(
-            "rbind", 
-            lapply(
-                1:nevent,
-                function(event_id) {
-                    tmp_msg <- ""
-                    tmp_valid <- TRUE
-                    if(event_id > 1) {
-                        ## check for use of non existing population
-                        # check for previous merge regarding the considered population
-                        previous_merge <- which(
-                            event_type[1:(event_id-1)] == "merge"
-                        )
-                        disappeared_pop <- unlist(
-                            lapply(
-                                previous_merge, 
-                                function(ind) {
-                                    return(event_pop[[ind]][2])
-                                }
-                            )
-                        )
-                        check_previous_merge <- any(
-                            event_pop[[event_id]] %in% disappeared_pop
-                        )
-                        if(check_previous_merge) {
-                            tmp_valid <- FALSE
-                        }
-                        # check for previous split regarding the considered population
-                        previous_split <- which(
-                            event_type[1:(event_id-1)] == "split"
-                        )
-                        disappeared_pop <- unlist(
-                            lapply(
-                                previous_split, 
-                                function(ind) {
-                                    return(event_pop[[ind]][1])
-                                }
-                            )
-                        )
-                        check_previous_split <- any(
-                            event_pop[[event_id]] %in% disappeared_pop
-                        )
-                        if(check_previous_split) {
-                            tmp_valid <- FALSE
-                        }
-                        # message
-                        if(!tmp_valid) {
-                            tmp_msg <- str_c(
-                                "Use of non-existing population in event at row ",
-                                event_id+1
-                            )
-                        }
-                    }
-                    return(data.frame(tmp_valid, tmp_msg, 
-                                      stringsAsFactors = FALSE))
-                }
-            )
-        )
-        
-        if(!all(tmp$tmp_valid)) {
-            valid <- FALSE
-            msg_list <- c(
-                msg_list,
-                as.list(tmp$tmp_msg[!tmp$tmp_valid])
-            )
-        }
-        
-        ## check for full coalescence
-        # TODO
-        
-        ## check for duplicate
-        if(length(scenario) != length(unique(scenario))) {
-            valid <- FALSE
-            msg_list <- c(
-                msg_list,
-                "One or more events are duplicated."
-            )
-        }
-        
-        ## parameters
-        Ne_param <- unique(c(unlist(event_param[event_type == "varNe"]),
-                             Ne_list_0))
-        Ne_param <- unique(unlist(
-            str_extract_all(string = Ne_param, 
-                            pattern = single_param_regex())
-        ))
-        Ne_param <- Ne_param[!str_detect(string = Ne_param, 
-                                         pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
-        
-        rate_param <- unique(unlist(event_param[event_type == "split"]))
-        rate_param <- rate_param[!str_detect(string = rate_param, 
-                                             pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
-        
-        time_param <- unique(unlist(
-            str_extract_all(string = event_time, 
-                            pattern = single_time_regex())
-        ))
-        time_param <- time_param[!str_detect(string = time_param, 
-                                             pattern = "^([0-9]+|[01]\\.?[0-9]?)$")]
     }
     ## output
     return(lst(npop, nevent, 
