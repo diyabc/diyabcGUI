@@ -179,18 +179,79 @@ test_that("parse_scenario", {
     text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
     out <- parse_scenario(text)
     expect_true(out$valid)
-    expect_equal(out$npop, 2)
-    expect_equal(out$nevent, 4)
-    # FIXME
-    # expect_equal()
-    # expect_equal()
-    # expect_equal()
-    # expect_equal()
-    # expect_equal()
+    expect_identical(
+        out,
+        list(
+            npop = 2L, nevent = 4, 
+            event_type = c("sample", "sample", "sample", "merge"), 
+            event_time = list(0, 0, "t", "t2"), 
+            event_pop = list(1L, 2L, 1L, 1:2), 
+            event_param = list(NULL, NULL, NULL, NULL), 
+            valid = TRUE, Ne_param = c("N1", "N2"), 
+            Ne_list_0 = c("N1", "N2"), rate_param = NULL, 
+            time_param = c("t", "t2"), msg_list = list()
+        )
+    )
     
-    text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2\nt3 merge 1 2"
+    text <- "N1 N2 N3\n0 sample 1\n0 sample 2\n0 sample 3\nt merge 2 3"
+    out <- parse_scenario(text)
+    expect_true(out$valid)
+    expect_identical(
+        out,
+        list(
+            npop = 3L, nevent = 4, 
+            event_type = c("sample", "sample", "sample", "merge"), 
+            event_time = list(0, 0, 0, "t"), 
+            event_pop = list(1L, 2L, 3L, 2:3), 
+            event_param = list(NULL, NULL, NULL, NULL), 
+            valid = TRUE, Ne_param = c("N1", "N2", "N3"), 
+            Ne_list_0 = c("N1", "N2", "N3"), rate_param = NULL, 
+            time_param = "t", msg_list = list()
+        )
+    )
+    
+    text <- str_c(
+        "N1 N2 N3",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t3 merge 2 3",
+        "t3 varNe 2 N2+N3",
+        "t2 merge 1 2",
+        "t2 varNe 1 N1+N2",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    expect_true(parsed_scenario$valid)
+    expect_identical(
+        parsed_scenario,
+        list(
+            npop = 3L, nevent = 7, 
+            event_type = c("sample", "sample", "sample", "merge", 
+                           "varNe", "merge", "varNe"), 
+            event_time = list(0, 0, 0, "t3", "t3", "t2", "t2"), 
+            event_pop = list(1L, 2L, 3L, 2:3, 2L, 1:2, 1L), 
+            event_param = list(NULL, NULL, NULL, NULL, "N2+N3", NULL, "N1+N2"), 
+            valid = TRUE, Ne_param = c("N2", "N3", "N1"), 
+            Ne_list_0 = c("N1", "N2", "N3"), rate_param = NULL, 
+            time_param = c("t3", "t2"), msg_list = list()
+        )
+    )
+    
+    text <- str_c(
+        "N1 N2", 
+        "0 sample 1", 
+        "0 sample 2", 
+        "t sample 1", 
+        "t2 merge 1 2", 
+        "t3 merge 1 2",
+        sep = "\n"
+    )
     out <- parse_scenario(text)
     expect_false(out$valid)
+    expect_identical(
+        out$msg_list,
+        list("Use of non-existing population in event at row 6")
+    )
     
     text <- str_c(
         "N1 N2 N3 N4",
@@ -204,5 +265,21 @@ test_that("parse_scenario", {
         sep = "\n")
     out <- parse_scenario(text)
     expect_true(out$valid)
+    expect_identical(
+        out,
+        list(
+            npop = 4L, nevent = 7, 
+            event_type = c("sample", "sample", "sample", 
+                           "sample", "split", "split", "merge"), 
+            event_time = list(0, 0, 0, 0, "t3", "t4", "t2"), 
+            event_pop = list(1L, 2L, 3L, 4L, c(3L, 1L, 2L), 
+                             c(4L, 1L, 2L), 1:2), 
+            event_param = list(NULL, NULL, NULL, NULL, "r3", "r4", NULL), 
+            valid = TRUE, Ne_param = c("N1", "N2", "N3", "N4"), 
+            Ne_list_0 = c("N1", "N2", "N3", "N4"), 
+            rate_param = c("r3", "r4"), time_param = c("t3", "t4", "t2"), 
+            msg_list = list()
+        )
+    )
     
 })
