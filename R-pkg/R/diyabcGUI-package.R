@@ -7,6 +7,7 @@
 #' 
 #' @author Ghislain Durif
 #' @importFrom fs path_home dir_delete file_copy file_delete
+#' @importFrom ggplot2 ggplot ggtitle geom_point geom_segment geom_label theme_void theme
 #' @importFrom magrittr %>%
 #' @importFrom parallel detectCores mclapply
 #' @importFrom processx process
