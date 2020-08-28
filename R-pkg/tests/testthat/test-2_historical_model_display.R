@@ -113,7 +113,7 @@ test_that("scenario2tree", {
                 id = 1:4, 
                 event = c("sample", "sample", "sample", "merge"), 
                 pop = c(1L, 2L, 3L, 2L), 
-                parent1_id = c(-1, 4, 4, NA), 
+                parent1_id = c(NA, 4L, 4L, NA), 
                 parent2_id = c(NA, NA, NA, NA), 
                 time = c("0", "0", "0", "t3"), 
                 Ne = c("N1", "N2", "N3", "N2"), 
@@ -337,12 +337,14 @@ test_that("reverse_tree", {
 
 test_that("tree_context", {
     
+    grid_unit <- 2
+    
     text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
     parsed_scenario <- parse_scenario(text)
     tree_df <- scenario2tree(parsed_scenario)
     rev_tree_out <- reverse_tree(tree_df)
     rev_tree_df <- rev_tree_out$rev_tree_df
-    info <- tree_context(parsed_scenario, rev_tree_df)
+    info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     expect_identical(
         info,
         list(
@@ -350,7 +352,7 @@ test_that("tree_context", {
             time_coordinate = structure(
                 list(
                     param = c("0", "t", "t2"), 
-                    coord = c(0, 5, 10)
+                    coord = c(0, 4, 8)
                 ), 
                 class = "data.frame", 
                 row.names = c(NA, -3L)
@@ -380,7 +382,7 @@ test_that("tree_context", {
     tree_df <- scenario2tree(parsed_scenario)
     rev_tree_out <- reverse_tree(tree_df)
     rev_tree_df <- rev_tree_out$rev_tree_df
-    info <- tree_context(parsed_scenario, rev_tree_df)
+    info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     expect_identical(
         info,
         list(
@@ -388,7 +390,7 @@ test_that("tree_context", {
             time_coordinate = structure(
                 list(
                     param = c("0", "t3", "t2"), 
-                    coord = c(0, 5, 10)
+                    coord = c(0, 6, 12)
                 ), 
                 class = "data.frame", 
                 row.names = c(NA, -3L)
@@ -418,7 +420,7 @@ test_that("tree_context", {
     tree_df <- scenario2tree(parsed_scenario)
     rev_tree_out <- reverse_tree(tree_df)
     rev_tree_df <- rev_tree_out$rev_tree_df
-    info <- tree_context(parsed_scenario, rev_tree_df)
+    info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     expect_identical(
         info,
         list(
@@ -426,7 +428,7 @@ test_that("tree_context", {
             time_coordinate = structure(
                 list(
                     param = c("0", "t3", "t2"), 
-                    coord = c(0, 5, 10)
+                    coord = c(0, 6, 12)
                 ), 
                 class = "data.frame", 
                 row.names = c(NA, -3L)
@@ -465,11 +467,11 @@ test_that("tree2node_coordinate", {
         geom_point(aes(col = Ne)) + 
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
     text <- str_c(
         "N1 N2 N3",
@@ -490,11 +492,11 @@ test_that("tree2node_coordinate", {
         geom_point(aes(col = Ne)) + 
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
     text <- str_c(
         "N1 N2 N3",
@@ -515,11 +517,11 @@ test_that("tree2node_coordinate", {
         geom_point(aes(col = Ne)) + 
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
 })
 
 test_that("extract_edge_coordinate", {
@@ -607,11 +609,11 @@ test_that("node2edge_coordinate", {
         geom_label(aes(x=x_end, y=y_end, label = text)) +
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
     text <- str_c(
         "N1 N2 N3",
@@ -637,11 +639,11 @@ test_that("node2edge_coordinate", {
         geom_label(aes(x=x_end, y=y_end, label = text)) +
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
     text <- str_c(
         "N1 N2 N3",
@@ -667,11 +669,11 @@ test_that("node2edge_coordinate", {
         geom_label(aes(x=x_end, y=y_end, label = text)) +
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
     text <- str_c(
         "N1 N2 N3 N4",
@@ -699,10 +701,10 @@ test_that("node2edge_coordinate", {
         geom_label(aes(x=x_end, y=y_end, label = text)) +
         theme_void(base_size = 12) +
         ggtitle("(Warning! Time is not to scale)") +
-        theme(legend.position="left", 
-              legend.justification="top", 
+        theme(legend.position = "left", 
+              legend.justification = "top", 
               legend.direction = "vertical", 
-              plot.margin=margin(10,10,10,10),
-              plot.title = element_text(size=12, hjust = 1))
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     # FIXME
 })

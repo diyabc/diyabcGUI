@@ -256,15 +256,9 @@ reverse_tree <- function(tree_df) {
 #' @author Ghislain Durif
 #' @description 
 #' Returns following informations: timing_list, time_coordinate, event_nb, npop
-tree_context <- function(parsed_scenario, rev_tree_df) {
+tree_context <- function(parsed_scenario, rev_tree_d, grid_unit = 2) {
     # timing list
     timing_list <- unique(unlist(parsed_scenario$event_time))
-    
-    # y-coordinates (for each time)
-    time_coordinate <- data.frame(
-        param = timing_list,
-        coord = seq(0, 10, length.out = length(timing_list))
-    )
     
     # number of events by timing
     event_nb <- as.data.frame(
@@ -288,6 +282,13 @@ tree_context <- function(parsed_scenario, rev_tree_df) {
     # number of populations
     npop <- max(unlist(existing_pop))
     
+    # y-coordinates (for each time)
+    time_coordinate <- data.frame(
+        param = timing_list,
+        coord = seq(from = 0, by = grid_unit * npop, 
+                    length.out = length(timing_list))
+    )
+    
     # output
     return(lst(
         timing_list,
@@ -301,14 +302,12 @@ tree_context <- function(parsed_scenario, rev_tree_df) {
 #' Adapt grid unit to avoid node superpositon
 #' @keywords internal
 #' @author Ghislain Durif
-adapt_grid_unit <- function(unit_grid, npop, ntime) {
+adapt_grid_unit <- function(grid_unit, npop) {
     # FIXME
-    if(npop < 1 | ntime < 1) {
-        return(unit_grid)
-    } else if(2*unit_grid*ntime < npop) {
-        return(unit_grid * npop / 2*unit_grid*ntime)
+    if(npop < 1) {
+        return(grid_unit)
     } else {
-        return(unit_grid)
+        return(grid_unit / npop)
     }
 }
 
@@ -319,7 +318,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                                  grid_unit = 2) {
     
     # tree context
-    info <- tree_context(parsed_scenario, rev_tree_df)
+    info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     timing_list <- info$timing_list
     time_coordinate <- info$time_coordinate
     event_nb <- info$event_nb
@@ -332,19 +331,28 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
         x_coord <- NA
         y_coord <- NA
         orient <- NA # left (0) of right (1)
+        grid_unit_fact <- NA # grid unit refactoring
         # current node (from leaf to root)
         current_node <- tree_df[tree_df$id == node_id,]
         # current node (from root to leaf)
         current_node_rev <- rev_tree_df[rev_tree_df$id == node_id,]
+        
+        print(current_node)
+        
         if(current_node_rev$root) {
             x_coord <- 0
+            grid_unit_fact <- unit_grid
         } else {
-            # not root
+            # not split
             if(current_node$event != "split") {
+                # parent
                 parent_node <- rev_tree_coord_df[
                     rev_tree_coord_df$id == current_node$parent1_id,
                     ]
+                # parent coord
                 parent_x_coord <- parent_node$x_coord
+                
+                grid_unit_fact <- parent_node$grid_unit_fact
                 
                 if(parent_node$event == "merge") {
                     fact <- (node_id == parent_node$child2_id) - 
@@ -356,12 +364,15 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                         orient <- 0
                     }
                     
-                    # x_coord <- parent_x_coord + fact * grid_unit * 
-                    #     npop / existing_pop[[ current_node$time ]] * 
-                    #     abs(which(timing_list == current_node$time) - 
-                    #             which(timing_list == parent_node$time))
+                    parent_orient <- parent_node$orient
+                    if(!is.na(parent_orient)) {
+                        if(parent_orient != orient) {
+                            grid_unit_fact <- unit_grid / 
+                                sqrt(existing_pop[[ current_node$time ]])
+                        }
+                    }
                     
-                    x_coord <- parent_x_coord + fact * grid_unit * 
+                    x_coord <- parent_x_coord + fact * grid_unit_fact * 
                         abs(which(timing_list == current_node$time) - 
                                 which(timing_list == parent_node$time))
                     
@@ -377,19 +388,11 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                     orient <- parent_node$orient
                     if(!is.na(orient)) {
                         if(orient) {
-                            # x_coord <- parent_x_coord + grid_unit * 
-                            #     npop / existing_pop[[ current_node$time ]] * 
-                            #     abs(which(timing_list == current_node$time) - 
-                            #             which(timing_list == parent_node$time))
-                            x_coord <- parent_x_coord + grid_unit * 
+                            x_coord <- parent_x_coord + grid_unit_fact * 
                                 abs(which(timing_list == current_node$time) - 
                                         which(timing_list == parent_node$time))
                         } else {
-                            # x_coord <- parent_x_coord - grid_unit * 
-                            #     npop / existing_pop[[ current_node$time ]] * 
-                            #     abs(which(timing_list == current_node$time) - 
-                            #             which(timing_list == parent_node$time))
-                            x_coord <- parent_x_coord - grid_unit * 
+                            x_coord <- parent_x_coord - grid_unit_fact * 
                                 abs(which(timing_list == current_node$time) - 
                                         which(timing_list == parent_node$time))
                         }
@@ -406,8 +409,12 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                     rev_tree_coord_df$id == current_node$parent2_id,
                     ]
                 x_coord <- (parent1_node$x_coord + parent2_node$x_coord)/2
+                
+                grid_unit_fact <- parent1_node$grid_unit_fact
             }
         }
+        
+        print(grid_unit_fact)
         
         y_coord <- time_coordinate$coord[
             time_coordinate$param == current_node$time
@@ -417,7 +424,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             rev_tree_coord_df,
             cbind(
                 current_node_rev,
-                as.data.frame(lst(x_coord, y_coord, orient))
+                as.data.frame(lst(x_coord, y_coord, orient, grid_unit_fact))
             )
         )
     }
@@ -435,6 +442,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             x_coord = rev_tree_coord_df$x_coord[1], 
             y_coord = rev_tree_coord_df$y_coord[1] + 1, 
             orient = NA,
+            grid_unit_fact = grid_unit,
             stringsAsFactors = FALSE
         ),
         rev_tree_coord_df
@@ -504,7 +512,7 @@ node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                                  grid_unit = 2) {
     
     # tree context
-    info <- tree_context(parsed_scenario, rev_tree_df)
+    info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     timing_list <- info$timing_list
     time_coordinate <- info$time_coordinate
     event_nb <- info$event_nb
