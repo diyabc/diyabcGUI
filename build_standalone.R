@@ -13,9 +13,6 @@ library(fs)
 library(electricShine)
 library(stringr)
 
-# update diyabc/abcranger bin
-source("update_bin_release.R")
-
 # install diyabcGUI
 devtools::install("R-pkg", upgrade = "never")
 
