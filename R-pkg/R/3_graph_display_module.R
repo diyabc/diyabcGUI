@@ -40,7 +40,7 @@ graph_display_ui <- function(id) {
             collapsed = TRUE,
             textInput(
                 ns("filename"),
-                value = "Rplot.eps",
+                value = "historical_scenario.eps",
                 label = "Filename"
             ) %>% 
                 helper(
@@ -65,7 +65,7 @@ graph_display_ui <- function(id) {
             numericInput(
                 ns("graph_width"), 
                 label = "Graph width", 
-                value = 50, min = 1
+                value = 300, min = 1
             ) %>% 
                 helper(
                     type = "inline", 
@@ -75,7 +75,7 @@ graph_display_ui <- function(id) {
             numericInput(
                 ns("graph_height"), 
                 label = "Graph height", 
-                value = 50, min = 1
+                value = 300, min = 1
             ) %>% 
                 helper(
                     type = "inline", 
