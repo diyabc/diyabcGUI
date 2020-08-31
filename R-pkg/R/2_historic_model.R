@@ -78,10 +78,30 @@ hist_model_server <- function(input, output, session,
         local$parser_msg <- out$param$msg_list
         # if valid
         if(out$param$valid) {
-            # graphical representation
-            local$graph <- plot_hist_model(out$param)
-            # check
+            
+            # check conditions
             out$cond <- check_condition(input$scenario, out$param)$cond
+            
+            # prepare data for graph
+            data2plot <- prepare_hist_model_display(out$param, grid_unit = 2)
+            
+            # check for validity
+            out$param$valid <- data2plot$valid
+            
+            # potential message
+            local$parser_msg <- append(
+                local$parser_msg,
+                data2plot$msg_list
+            )
+            
+            # if valid
+            if(out$param$valid) {
+                # graphical representation
+                local$graph <- display_hist_model(data2plot)
+            } else {
+                local$graph <- NULL
+            }
+            
         } else {
             local$graph <- NULL
             out$cond <- NULL
