@@ -597,20 +597,6 @@ prepare_hist_model_display <- function(parsed_scenario, grid_unit = 2) {
                nevent, npop, grid_unit))
 }
 
-#' Box frame for tree graph
-#' @keywords internal
-#' @author Ghislain Durif
-box_frame <- function(g, npop, nevent, grid_unit = 2) {
-    # box x_width x y_width
-    x_width <- grid_unit * npop
-    y_height <- grid_unit * nevent
-    # x frontier: -(x_width + 1)/2 , (x_width + 1)/2
-    # y frontier: 0 , y_width + 1
-    g <- g + xlim(c(-(x_width + 1)/2, (x_width + 1)/2 + 1)) +
-        ylim(c(0, y_height + 1))
-    return(g)
-}
-
 #' display historical model
 #' @keywords internal
 #' @author Ghislain Durif
@@ -638,9 +624,9 @@ display_hist_model <- function(data2plot) {
     # timeline
     g1 <- g1 + geom_segment(
             x = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
-                data2plot$grid_unit,
+                2 * data2plot$grid_unit,
             xend = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
-                data2plot$grid_unit,
+                2 * data2plot$grid_unit,
             y = max(data2plot$edge_coordinates$y_start, na.rm = TRUE),
             yend = min(data2plot$edge_coordinates$y_end, na.rm = TRUE), 
             na.rm = TRUE) +
@@ -648,7 +634,7 @@ display_hist_model <- function(data2plot) {
             data = data2plot$time_coordinates, 
             aes(
                 x = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
-                    data2plot$grid_unit,
+                    2 * data2plot$grid_unit,
                 y = coord,
                 label = str_pad(
                     param,
