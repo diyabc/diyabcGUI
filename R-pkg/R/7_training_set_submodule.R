@@ -2677,7 +2677,8 @@ mss_group_prior_server <- function(input, output, session,
                                     "Kimura-2-parameters (1980)" = "K2P",
                                     "Hasegawa-Kishino-Yano (1985)" = "HKY",
                                     "Tamura Nei (1993)" = "TN"
-                                )
+                                ),
+                                selected = "K2P"
                             ),
                             numericInput(
                                 ns(str_c("group_", item, 
