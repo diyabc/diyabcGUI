@@ -706,5 +706,73 @@ test_that("node2edge_coordinate", {
               legend.direction = "vertical", 
               plot.margin = margin(10,10,10,10),
               plot.title = element_text(size = 12, hjust = 1))
+    
+    text <- str_c(
+        "N1 N2 N3 N4 N5 N6",
+        "0 sample 1",
+        "0 sample 2",
+        "0 sample 3",
+        "0 sample 4",
+        "0 sample 5",
+        "0 sample 6",
+        "t6 merge 5 6",
+        "t5 merge 4 5",
+        "t4 merge 3 4",
+        "t2 merge 1 2",
+        "t3 merge 1 3",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    tree_df <- scenario2tree(parsed_scenario)
+    rev_tree_out <- reverse_tree(tree_df)
+    rev_tree_df <- rev_tree_out$rev_tree_df
+    rev_tree_coord_df <- tree2node_coordinate(tree_df, rev_tree_df, 
+                                              parsed_scenario, grid_unit)
+    
+    edge_coordinates <- node2edge_coordinate(tree_df, rev_tree_df, 
+                                             parsed_scenario, 
+                                             rev_tree_coord_df, grid_unit)
+    
+    g1 <- ggplot(edge_coordinates) +
+        geom_segment(aes(x=x_start, y=y_start, xend=x_end, yend=y_end, col = Ne)) + 
+        geom_label(aes(x=x_end, y=y_end, label = text)) +
+        theme_void(base_size = 12) +
+        ggtitle("(Warning! Time is not to scale)") +
+        theme(legend.position = "left", 
+              legend.justification = "top", 
+              legend.direction = "vertical", 
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     # FIXME
+    
+    text <- str_c(
+        "N1 N2 N3",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t3 merge 2 3",
+        "t3 varNe 2 N2+N3",
+        "t2 merge 1 2",
+        "t2 varNe 1 N1+N2",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    tree_df <- scenario2tree(parsed_scenario)
+    rev_tree_out <- reverse_tree(tree_df)
+    rev_tree_df <- rev_tree_out$rev_tree_df
+    rev_tree_coord_df <- tree2node_coordinate(tree_df, rev_tree_df, 
+                                              parsed_scenario, grid_unit)
+    
+    edge_coordinates <- node2edge_coordinate(tree_df, rev_tree_df, 
+                                             parsed_scenario, 
+                                             rev_tree_coord_df, grid_unit)
+    
+    g1 <- ggplot(edge_coordinates) +
+        geom_segment(aes(x=x_start, y=y_start, xend=x_end, yend=y_end, col = Ne)) + 
+        geom_label(aes(x=x_end, y=y_end, label = text)) +
+        theme_void(base_size = 12) +
+        ggtitle("(Warning! Time is not to scale)") +
+        theme(legend.position = "left", 
+              legend.justification = "top", 
+              legend.direction = "vertical", 
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
 })

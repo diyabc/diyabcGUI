@@ -60,7 +60,7 @@ find_parent_event <- function(event_type_list, event_pop_list,
 #' the `parse_scenario` function, from leaves to root.
 scenario2tree <- function(parsed_scenario) {
     
-    Ne_list <- parsed_scenario$Ne_list_0
+    Ne_list <- as.list(parsed_scenario$Ne_list_0)
     env <- environment()
     
     out <- Reduce(
@@ -68,7 +68,6 @@ scenario2tree <- function(parsed_scenario) {
         lapply(
             1:parsed_scenario$nevent,
             function(event_id) {
-                
                 event_type <- parsed_scenario$event_type[event_id]
                 event_time <- parsed_scenario$event_time[[event_id]]
                 event_pop <- parsed_scenario$event_pop[[event_id]]
@@ -87,9 +86,11 @@ scenario2tree <- function(parsed_scenario) {
                     } else if(event_type == "merge") {
                         current_pop <- event_pop[1]
                         parent_pop <- event_pop[1]
-                    } else if(event_type == "varNe") {
+                    }
+                    
+                    if(event_type == "varNe") {
                         Ne_list[[current_pop]] <- event_param
-                        assign("Ne_list", Ne_list, envir = env)
+                        assign("Ne_list", value = Ne_list, envir = env)
                     }
                     
                     parent_event <- find_parent_event(
@@ -337,11 +338,9 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
         # current node (from root to leaf)
         current_node_rev <- rev_tree_df[rev_tree_df$id == node_id,]
         
-        print(current_node)
-        
         if(current_node_rev$root) {
             x_coord <- 0
-            grid_unit_fact <- unit_grid
+            grid_unit_fact <- grid_unit
         } else {
             # not split
             if(current_node$event != "split") {
@@ -349,56 +348,61 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                 parent_node <- rev_tree_coord_df[
                     rev_tree_coord_df$id == current_node$parent1_id,
                     ]
+                
                 # parent coord
                 parent_x_coord <- parent_node$x_coord
                 
+                # grid unit factor
                 grid_unit_fact <- parent_node$grid_unit_fact
                 
-                if(parent_node$event == "merge") {
-                    fact <- (node_id == parent_node$child2_id) - 
-                        (node_id == parent_node$child1_id)
+                # different timing
+                if(parent_node$time != current_node$time) {
                     
-                    if(fact > 0) {
-                        orient <- 1
-                    } else if(fact < 0) {
-                        orient <- 0
-                    }
-                    
-                    parent_orient <- parent_node$orient
-                    if(!is.na(parent_orient)) {
-                        if(parent_orient != orient) {
-                            grid_unit_fact <- unit_grid / 
-                                sqrt(existing_pop[[ current_node$time ]])
+                    if(parent_node$event == "merge") {
+                        fact <- (node_id == parent_node$child2_id) - 
+                            (node_id == parent_node$child1_id)
+                        
+                        if(fact > 0) {
+                            orient <- 1
+                        } else if(fact < 0) {
+                            orient <- 0
                         }
-                    }
-                    
-                    x_coord <- parent_x_coord + fact * grid_unit_fact * 
-                        abs(which(timing_list == current_node$time) - 
-                                which(timing_list == parent_node$time))
-                    
-                } else if(parent_node$event == "split") {
-                    x_coord <- parent_x_coord
-                    
-                # } else if((parent_node$event %in% c("varNe", "sample")) & 
-                #           (parent_node$time == current_node$time)) {
-                #     # specific case of varNe or sample 
-                #     # (at same time than other event)
-                } else {
-                    # generic case of sample or varNe
-                    orient <- parent_node$orient
-                    if(!is.na(orient)) {
-                        if(orient) {
-                            x_coord <- parent_x_coord + grid_unit_fact * 
-                                abs(which(timing_list == current_node$time) - 
-                                        which(timing_list == parent_node$time))
-                        } else {
-                            x_coord <- parent_x_coord - grid_unit_fact * 
-                                abs(which(timing_list == current_node$time) - 
-                                        which(timing_list == parent_node$time))
+                        
+                        parent_orient <- parent_node$orient
+                        if(!is.na(parent_orient)) {
+                            if(parent_orient != orient) {
+                                grid_unit_fact <- grid_unit / 
+                                    sqrt(existing_pop[[ current_node$time ]])
+                            }
                         }
-                    } else {
+                        
+                        x_coord <- parent_x_coord + fact * grid_unit_fact * 
+                            abs(which(timing_list == current_node$time) - 
+                                    which(timing_list == parent_node$time))
+                        
+                    } else if(parent_node$event == "split") {
                         x_coord <- parent_x_coord
+                    } else {
+                        # generic case of sample or varNe
+                        orient <- parent_node$orient
+                        if(!is.na(orient)) {
+                            if(orient) {
+                                x_coord <- parent_x_coord + grid_unit_fact * 
+                                    abs(which(timing_list == current_node$time) - 
+                                            which(timing_list == parent_node$time))
+                            } else {
+                                x_coord <- parent_x_coord - grid_unit_fact * 
+                                    abs(which(timing_list == current_node$time) - 
+                                            which(timing_list == parent_node$time))
+                            }
+                        } else {
+                            x_coord <- parent_x_coord
+                        }
                     }
+                    
+                } else {
+                    # same timing
+                    x_coord <- parent_x_coord
                 }
             } else {
                 # split (node between the two parents)
@@ -413,8 +417,6 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                 grid_unit_fact <- parent1_node$grid_unit_fact
             }
         }
-        
-        print(grid_unit_fact)
         
         y_coord <- time_coordinate$coord[
             time_coordinate$param == current_node$time
@@ -440,7 +442,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             child1_id = rev_tree_coord_df$id[1], 
             child2_id = NA, 
             x_coord = rev_tree_coord_df$x_coord[1], 
-            y_coord = rev_tree_coord_df$y_coord[1] + 1, 
+            y_coord = rev_tree_coord_df$y_coord[1] + grid_unit, 
             orient = NA,
             grid_unit_fact = grid_unit,
             stringsAsFactors = FALSE
@@ -525,7 +527,7 @@ node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     # x_start, y_start, x_end, y_end, Ne, text
     edge_coordinates <- NULL
     for(node_id in rev_tree_coord_df$id) {
-        print(str_c("### node id = ", node_id))
+        # print(str_c("### node id = ", node_id))
         x_start <- NA
         x_end <- NA
         y_start <- NA
