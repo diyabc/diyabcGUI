@@ -256,7 +256,7 @@ reverse_tree <- function(tree_df) {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @description 
-#' Returns following informations: timing_list, time_coordinate, event_nb, npop
+#' Returns following informations: timing_list, time_coordinates, event_nb, npop
 tree_context <- function(parsed_scenario, rev_tree_d, grid_unit = 2) {
     # timing list
     timing_list <- unique(unlist(parsed_scenario$event_time))
@@ -284,7 +284,7 @@ tree_context <- function(parsed_scenario, rev_tree_d, grid_unit = 2) {
     npop <- max(unlist(existing_pop))
     
     # y-coordinates (for each time)
-    time_coordinate <- data.frame(
+    time_coordinates <- data.frame(
         param = timing_list,
         coord = seq(from = 0, by = grid_unit * npop, 
                     length.out = length(timing_list))
@@ -293,7 +293,7 @@ tree_context <- function(parsed_scenario, rev_tree_d, grid_unit = 2) {
     # output
     return(lst(
         timing_list,
-        time_coordinate,
+        time_coordinates,
         event_nb,
         existing_pop,
         npop
@@ -321,7 +321,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     # tree context
     info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     timing_list <- info$timing_list
-    time_coordinate <- info$time_coordinate
+    time_coordinates <- info$time_coordinates
     event_nb <- info$event_nb
     existing_pop <- info$existing_pop
     npop <- info$npop
@@ -418,8 +418,8 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             }
         }
         
-        y_coord <- time_coordinate$coord[
-            time_coordinate$param == current_node$time
+        y_coord <- time_coordinates$coord[
+            time_coordinates$param == current_node$time
             ]
         
         rev_tree_coord_df <- rbind(
@@ -516,12 +516,10 @@ node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     # tree context
     info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
     timing_list <- info$timing_list
-    time_coordinate <- info$time_coordinate
+    time_coordinates <- info$time_coordinates
     event_nb <- info$event_nb
     existing_pop <- info$existing_pop
     npop <- info$npop
-    
-    # adapt
     
     # for each edge, assign start and end coordinate + details:
     # x_start, y_start, x_end, y_end, Ne, text
@@ -564,18 +562,39 @@ node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     return(edge_coordinates)
 }
 
-#' Assign coordinates to tree edges (start and end points)
-#' @keywords internal
-#' @author Ghislain Durif
-#' @importFrom dplyr arrange
-tree2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario, 
-                                 grid_unit = 2) {}
-
 #' Check historical model and reformat scenario encoding for display
 #' @keywords internal
 #' @author Ghislain Durif
-prepare_hist_model_display <- function() {
+prepare_hist_model_display <- function(parsed_scenario, grid_unit = 2) {
     
+    edge_coordinates <- NULL
+    time_coordinates <- NULL
+    
+    nevent <- parsed_scenario$nevent
+    npop <- parsed_scenario$npop
+    
+    tree_df <- scenario2tree(parsed_scenario)
+    rev_tree_out <- reverse_tree(tree_df)
+    
+    msg_list <- rev_tree_out$msg_list
+    valid <- rev_tree_out$valid
+    
+    if(rev_tree_out$valid) {
+        rev_tree_df <- rev_tree_out$rev_tree_df
+        rev_tree_coord_df <- tree2node_coordinate(tree_df, rev_tree_df, 
+                                                  parsed_scenario, grid_unit)
+        
+        edge_coordinates <- node2edge_coordinate(tree_df, rev_tree_df, 
+                                                 parsed_scenario, 
+                                                 rev_tree_coord_df, grid_unit)
+        
+        # tree context
+        info <- tree_context(parsed_scenario, rev_tree_df, grid_unit)
+        time_coordinates <- info$time_coordinates
+    }
+    
+    return(lst(edge_coordinates, valid, msg_list, time_coordinates, 
+               nevent, npop, grid_unit))
 }
 
 #' Box frame for tree graph
@@ -587,57 +606,58 @@ box_frame <- function(g, npop, nevent, grid_unit = 2) {
     y_height <- grid_unit * nevent
     # x frontier: -(x_width + 1)/2 , (x_width + 1)/2
     # y frontier: 0 , y_width + 1
-    g <- g + xlim(c(-(x_width + 1)/2, (x_width + 1)/2)) +
+    g <- g + xlim(c(-(x_width + 1)/2, (x_width + 1)/2 + 1)) +
         ylim(c(0, y_height + 1))
     return(g)
 }
 
-
-
-#' Plot historical model
+#' display historical model
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom ggplot2 aes annotate ggplot ggtitle geom_point geom_segment theme_void
-plot_hist_model <- function(scenario_param) {
+display_hist_model <- function(data2plot) {
     
-    add_edge <- function(g, start, end, colour = "black") {
-        g <- g + 
-            geom_segment(x = start[1], y = start[2], 
-                         xend = end[1], 
-                         yend = end[2], 
-                         size = 1.2, 
-                         colour = colour)
-        return(g)
-    }
+    # tree
+    g1 <- ggplot(data2plot$edge_coordinates) +
+        geom_segment(aes(x=x_start, y=y_start, 
+                         xend=x_end, yend=y_end, col = Ne), 
+                     size = 2, 
+                     na.rm = TRUE) + 
+        geom_label(aes(x=x_end, y=y_end, label = text), 
+                   na.rm = TRUE) +
+        theme_void(base_size = 12) + 
+        scale_x_continuous(expand = c(0.2, 0.2)) + 
+        scale_y_continuous(expand = c(0.2, 0)) +
+        ggtitle("(Warning! Time is not to scale)") +
+        theme(legend.position = "left", 
+              legend.justification = "top", 
+              legend.direction = "vertical", 
+              plot.margin = margin(10,10,10,10),
+              plot.title = element_text(size = 12, hjust = 1))
     
-    add_timeline <- function(g, events=NULL) {
-        g <- g + 
-            geom_segment(x = 11, y = 0, 
-                         xend = 11, 
-                         yend = 11)
-        g <- g + 
-            geom_segment(x = 11-0.2, y = 10, 
-                         xend = 11+0.2, 
-                         yend = 10)
-        g <- g + 
-            geom_segment(x = 11-0.2, y = 0, 
-                         xend = 11+0.2, 
-                         yend = 0)
-        if(!is.null(events) | missing(events)) {
-            
-        }
-        return(g)
-    }
+    # timeline
+    g1 <- g1 + geom_segment(
+            x = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
+                data2plot$grid_unit,
+            xend = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
+                data2plot$grid_unit,
+            y = max(data2plot$edge_coordinates$y_start, na.rm = TRUE),
+            yend = min(data2plot$edge_coordinates$y_end, na.rm = TRUE), 
+            na.rm = TRUE) +
+        geom_label(
+            data = data2plot$time_coordinates, 
+            aes(
+                x = max(data2plot$edge_coordinates$x_end, na.rm = TRUE) + 
+                    data2plot$grid_unit,
+                y = coord,
+                label = str_pad(
+                    param,
+                    width = ifelse(str_length(param) == 1, 3, 0),
+                    side = "both"
+                )
+            ), 
+            na.rm = TRUE
+        )
     
-    box_frame <- data.frame(x=c(0,12), y=c(0,11))
-    g1 <- ggplot(box_frame, aes(x,y)) + geom_point(alpha=0) + 
-        theme_void()
-    # g1 <- add_edge(g1, start = c(5,10), end = c(5,11), colour = "black")
-    # g1 <- add_edge(g1, start = c(5,10), end = c(0,0), colour = "black")
-    # g1 <- add_edge(g1, start = c(5,10), end = c(10,0), colour = "black")
-    # g1 <- add_timeline(g1)
-    g1 <- add_edge(g1, start = c(0,0), end = c(10,10), colour = "black")
-    g1 <- add_edge(g1, start = c(0,10), end = c(10,0), colour = "black")
-    g1 <- g1 + annotate("text", label = "Soon available", x = 5, y = 9)
     return(g1)
 }

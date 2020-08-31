@@ -776,3 +776,84 @@ test_that("node2edge_coordinate", {
               plot.margin = margin(10,10,10,10),
               plot.title = element_text(size = 12, hjust = 1))
 })
+
+test_that("display_hist_model", {
+    
+    grid_unit <- 2
+    
+    text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+    
+    text <- str_c(
+        "N1 N2 N3",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t3 merge 2 3",
+        "t2 merge 1 2",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+    
+    text <- str_c(
+        "N1 N2 N3",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t3 split 3 1 2 r3",
+        "t2 merge 1 2",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+    
+    text <- str_c(
+        "N1 N2 N3 N4",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "0 sample 4",
+        "t4 merge 3 4",
+        "t2 merge 1 2",
+        "t3 merge 1 3",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+    
+    text <- str_c(
+        "N1 N2 N3 N4 N5 N6",
+        "0 sample 1",
+        "0 sample 2",
+        "0 sample 3",
+        "0 sample 4",
+        "0 sample 5",
+        "0 sample 6",
+        "t6 merge 5 6",
+        "t5 merge 4 5",
+        "t4 merge 3 4",
+        "t2 merge 1 2",
+        "t3 merge 1 3",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+    # FIXME
+    
+    text <- str_c(
+        "N1 N2 N3",
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t3 merge 2 3",
+        "t3 varNe 2 N2+N3",
+        "t2 merge 1 2",
+        "t2 varNe 1 N1+N2",
+        sep = "\n")
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
+})
