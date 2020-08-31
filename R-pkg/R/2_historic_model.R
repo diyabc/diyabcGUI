@@ -193,7 +193,7 @@ parse_scenario <- function(text) {
         text <- str_replace_all(text, pattern = "(?i)split(?-i)", 
                                 replacement = "split")
         # extract scenario rows
-        scenario <- unlist(str_split(text, pattern = "\n"))
+        scenario <- str_trim(unlist(str_split(text, pattern = "\n")))
         ## first line
         # initial population effective size
         Ne_list_0 <- unlist(
