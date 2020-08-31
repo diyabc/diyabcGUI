@@ -1,5 +1,7 @@
 # generate standalone interface for Windows
 
+proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
+
 # default repos
 local({
     r <- getOption("repos")
@@ -13,7 +15,9 @@ library(gtools) # install.packages("gtools")
 library(RInno) # install.packages("RInno")
 
 # install diyabcGUI
-devtools::install("R-pkg")
+devtools::install(file.path(proj_dir, "R-pkg"))
+library(diyabcGUI)
+dl_all_latest_bin()
 
 # dependencies
 dep <- c(
@@ -38,7 +42,7 @@ library(RInno)
 install_inno()
 
 # standalone build path
-build_path <- file.path(getwd(), "build", "windows")
+build_path <- file.path(proj_dir, "build", "windows")
 
 # prepare build path
 if(!dir.exists(build_path))
@@ -47,8 +51,8 @@ if(!dir.exists(build_path))
 # Build an installer
 create_app(
     app_name = "diyabcGUI", 
-    app_dir = "R-pkg/inst/application",
-    app_icon = "coccicon.png",
+    app_dir = file.path(proj_dir, "R-pkg", "inst", "application"),
+    app_icon = file.path(proj_dir, "icon", "coccicon.png"),
     pkgs = c(gtools::getDependencies("diyabcGUI"),  "diyabcGUI"),
     dir_out = build_path,
     include_R = TRUE
