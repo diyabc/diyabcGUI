@@ -38,7 +38,7 @@ if(os %in% c("mingw32", "windows")) {
     electricShine::electrify(
         app_name = "DIYABC-RF",
         short_description = "DIYABC-RF application",
-        semantic_version = "1.0.0",
+        semantic_version = as.character(packageVersion("diyabcGUI")),
         build_path = build_path,
         cran_like_url = "https://cran.r-project.org",
         function_name = "standalone_run_app",
@@ -51,7 +51,7 @@ if(os %in% c("mingw32", "windows")) {
     electricShine::electrify(
         app_name = "DIYABC-RF",
         short_description = "DIYABC-RF application",
-        semantic_version = "1.0.0",
+        semantic_version = as.character(packageVersion("diyabcGUI")),
         build_path = build_path,
         cran_like_url = "https://cran.r-project.org",
         function_name = "standalone_run_app",
