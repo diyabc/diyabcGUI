@@ -47,6 +47,23 @@ if(os %in% c("mingw32", "windows")) {
         run_build = TRUE,
         permission = TRUE
     )
+    
+    # rename exe file
+    exec_filename <- stringr::str_c(
+        "DIYABC-RF Setup ", 
+        as.character(packageVersion("diyabcGUI")), 
+        ".exe", sep = ""
+    )
+    fs::file_copy(
+        path = file.path(
+            build_path, "DIYABC-RF", "dist", exec_filename
+        ), 
+        new_path = file.path(
+            build_path, "DIYABC-RF", "dist", 
+            stringr::str_replace_all(exec_filename, " ", "_")
+        )
+    )
+    
 } else if(os == "darwin") {
     electricShine::electrify(
         app_name = "DIYABC-RF",
@@ -62,6 +79,7 @@ if(os %in% c("mingw32", "windows")) {
         nodejs_path = "/usr/local/bin",
         mac_url = "https://mac.r-project.org/high-sierra/R-4.0-branch/x86_64/R-4.0-branch.tar.gz"
     )
+    
 } else if(os == "linux") {
     warning("Linux not supported at the moment")
 }
