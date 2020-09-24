@@ -96,33 +96,76 @@ dl_latest_bin <- function(prog = "diyabc") {
     release_info <- fromJSON(release_url)
     
     # get latest release list
-    release <- release_info$assets
+    release <- release_info$assets[,c("name", "browser_download_url")]
+    
+    # check if file in release
+    if(nrow(release) < 1) {
+        stop(str_c("Issue with available files at ", release_url, ". ",
+                   "Contact DIYABC-RF support.",
+                   sep = ""))
+    }
     
     # already existing binary file
     existing_bin_files <- list.files(path)
     
     # download release
     out <- lapply(
-        release$browser_download_url, 
-        function(single_url) {
+        split(release, seq(nrow(release))), 
+        function(single_file) {
+            # output
+            #   check:  0 if dl is ok or latest version already here,
+            #           1 if dl failed
+            #           -1 if no binary files was available
             check <- 1
-            bin_name <- basename(single_url)
-            if(str_detect(bin_name, os_id)) {
+            bin_name <- single_file$name
+            bin_url <- single_file$browser_download_url
+            
+            # additional dll files for windows
+            #   vcomp140.dll
+            #   vcruntime140.dll
+            if(str_detect(bin_name, ".dll") & os_id == "windows") {
                 if(!bin_name %in% existing_bin_files) {
                     check <- download.file(
-                        single_url, 
+                        bin_url, 
                         destfile = file.path(path, bin_name),
                         mode = "wb"
                     )
                 } else {
                     check <- 0
-                    warning(str_c(bin_name, "is already the latest release",
+                    warning(str_c(bin_name, "was already downloaded.",
                                   sep = " "))
                 }
+            # abcranger/diyabc binary files
+            } else if(str_detect(bin_name, str_c(prog, "-", os_id, sep = ""))) {
+                if(!bin_name %in% existing_bin_files) {
+                    check <- download.file(
+                        bin_url, 
+                        destfile = file.path(path, bin_name),
+                        mode = "wb"
+                    )
+                } else {
+                    check <- 0
+                    warning(str_c(
+                        "The latest release", bin_name, 
+                        "was already downloaded.", sep = " "
+                    ))
+                }
+            } else {
+                check <- -1
             }
             return(check)
         }
     )
+    
+    # binary files not available at all among files in latest release
+    if(all(out == -1)) {
+        warning(str_c("No binary file available for ", prog, " on ", 
+                      os_id, ". ",
+                      "Contact DIYABC-RF support.",
+                      sep = ""))
+    }
+    
+    # no download success among files in latest release
     if(!any(out == 0)) {
         stop("Issue with download")
     }
