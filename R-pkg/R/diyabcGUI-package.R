@@ -12,7 +12,7 @@
 #' theme_void theme element_text margin scale_x_continuous scale_y_continuous 
 #' unit xlim ylim
 #' @importFrom magrittr %>%
-#' @importFrom parallel detectCores mclapply
+#' @importFrom parallel detectCores
 #' @importFrom processx process
 #' @import shiny
 #' @importFrom shinybusy add_busy_spinner
@@ -22,7 +22,7 @@
 #' @importFrom shinyWidgets actionBttn actionGroupButtons progressBar 
 #' radioGroupButtons updateProgressBar 
 #' @importFrom stringr str_c str_detect str_extract str_extract_all str_length 
-#' str_match str_pad str_replace str_replace_all str_split str_trim
+#' str_match str_pad str_replace str_replace_all str_split str_to_upper str_trim
 #' @importFrom tibble lst
 #' @importFrom tidyr drop_na
 #' @importFrom tools file_ext

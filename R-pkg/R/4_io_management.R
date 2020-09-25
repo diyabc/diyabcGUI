@@ -53,6 +53,8 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode,
 #' @param expected_data_file string, expected data file name for 
 #' existing project, default is NULL.
 #' @importFrom tools file_ext
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom pbapply pblapply
 check_indseq_snp_data_file <- function(data_file, data_dir, 
                                        expected_data_file = NULL) {
     # output
@@ -153,6 +155,8 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                 )
                 valid <- FALSE
             } else {
+                # upper case
+                header <- str_to_upper(header)
                 # header format
                 if(header[1] != "IND" & header[2] != "SEX" & 
                    header[3] != "POP" &
@@ -215,6 +219,10 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                     )
                     valid <- FALSE
                 } else {
+                    # check for SEX column with only F (interpreted as FALSE)
+                    if(is.logical(content[,2])) {
+                        content[,2] <- ifelse(content[,2], "T", "F")
+                    }
                     # check number of locus
                     if(n_loci != (ncol(content) - 3)) {
                         err <- append(
@@ -229,13 +237,14 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                         valid <- FALSE
                     }
                     # check sex content
-                    if(!all(content[,2] %in% c("F", "M"))) {
+                    if(!all(as.character(content[,2]) %in% c("F", "M", "9"))) {
                         err <- append(
                             err, 
                             str_c(
                                 "Issue with IndSeq SNP data file content:",
                                 "'SEX' column should contain only",
-                                "'F' for female or 'M' for male (see manual).",
+                                "'F' for female, 'M' for male", 
+                                "or '9' for missing values (see manual).",
                                 sep = " "
                             )
                         )
@@ -255,15 +264,25 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                     )
                     # check SNP encoding
                     ncore <- getOption("diyabcGUI")$ncore
-                    if(str_detect(R.version$os, "mingw32|windows")) {
-                        ncore <- 1
-                    }
-                    check_snp_encoding <- mclapply(
-                        1:nrow(content[,-(1:3)]), 
-                        function(ind)
-                            !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
-                        mc.cores = ncore
-                    )
+                    check_snp_encoding <- NULL
+                    # if(get_os() != "windows") {
+                    #     check_snp_encoding <- pblapply(
+                    #         1:nrow(content[,-(1:3)]), 
+                    #         function(ind)
+                    #             !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
+                    #         cl = ncore
+                    #     )
+                    # } else {
+                        cl <- makeCluster(ncore)
+                        check_snp_encoding <- pblapply(
+                            1:nrow(content[,-(1:3)]), 
+                            function(ind)
+                                !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
+                            cl = cl
+                        )
+                        stopCluster(cl)
+                    # }
+                    
                     seek_error <- unlist(lapply(
                         check_snp_encoding, 
                         function(item) "try-error" %in% class(item)
