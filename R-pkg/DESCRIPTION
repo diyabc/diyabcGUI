@@ -58,7 +58,7 @@ Imports:
     ggplot2,
     lubridate, 
     magrittr, 
-    parallel, processx,
+    parallel, pbapply, processx,
     shiny, shinybusy, shinydashboard, shinyFiles, 
     shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
