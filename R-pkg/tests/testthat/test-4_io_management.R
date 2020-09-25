@@ -23,7 +23,7 @@ test_that("check_data_file", {
     
     # mss
     data_file <- "mss_example_001.mss"
-    data_dir <- data_dir("mss")
+    data_dir <- data4test_dir("mss")
     locus_type <- "mss"
     seq_mode <- NULL
     out <- check_data_file(data_file, data_dir, locus_type, seq_mode, 
@@ -72,7 +72,7 @@ test_that("check_poolseq_snp_data_file", {
 test_that("check_mss_data_file", {
     
     data_file <- "mss_example_001.mss"
-    data_dir <- data_dir("mss")
+    data_dir <- data4test_dir("mss")
     out <- check_mss_data_file(
         data_file, data_dir, expected_data_file = NULL
     )

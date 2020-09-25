@@ -9,12 +9,12 @@ bin_dir <- function() {
     return(bindir)
 }
 
-#' find data directory
+#' find data for test directory
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param data_type string, `"indseq_snp"`, `"poolseq_snp"` or `"mss"`. Default 
 #' is NULL and parent data directory is returned.
-data_dir <- function(data_type = NULL) {
+data4test_dir <- function(data_type = NULL) {
     datadir <- system.file("data4test", package = "diyabcGUI")
     if(str_length(datadir) == 0) {
         stop("data directory not found")
