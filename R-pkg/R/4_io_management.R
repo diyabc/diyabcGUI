@@ -237,7 +237,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                         valid <- FALSE
                     }
                     # check sex content
-                    if(!all(as.character(content[,2]) %in% c("F", "M", "9"))) {
+                    if(!all(str_to_upper(as.character(content[,2])) %in% c("F", "M", "9"))) {
                         err <- append(
                             err, 
                             str_c(
@@ -265,14 +265,14 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                     # check SNP encoding
                     ncore <- getOption("diyabcGUI")$ncore
                     check_snp_encoding <- NULL
-                    # if(get_os() != "windows") {
-                    #     check_snp_encoding <- pblapply(
-                    #         1:nrow(content[,-(1:3)]), 
-                    #         function(ind)
-                    #             !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
-                    #         cl = ncore
-                    #     )
-                    # } else {
+                    if(get_os() != "windows") {
+                        check_snp_encoding <- pblapply(
+                            1:nrow(content[,-(1:3)]),
+                            function(ind)
+                                !all(content[ind,-(1:3)] %in% c(0,1,2,9)),
+                            cl = ncore
+                        )
+                    } else {
                         cl <- makeCluster(ncore)
                         check_snp_encoding <- pblapply(
                             1:nrow(content[,-(1:3)]), 
@@ -281,7 +281,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                             cl = cl
                         )
                         stopCluster(cl)
-                    # }
+                    }
                     
                     seek_error <- unlist(lapply(
                         check_snp_encoding, 
