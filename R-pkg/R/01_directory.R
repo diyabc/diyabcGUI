@@ -24,7 +24,8 @@ data4test_dir <- function(data_type = NULL) {
             data_type,
             "indseq_snp" = "IndSeq_SNP",
             "poolseq_snp" = "PoolSeq_SNP",
-            "mss" = "Microsat_Sequences"
+            "mss" = "Microsat_Sequences",
+            stop("bad input for 'data_type' arg")
         )
         datadir <- file.path(datadir, subdir)
     }
