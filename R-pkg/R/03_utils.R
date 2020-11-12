@@ -1,9 +1,24 @@
+#' Return diyabcGUI related program file name
+#' @keywords internal
+#' @author Ghislain Durif
+prog_name <- function(prog = "diyabc") {
+    out <- switch(
+        prog,
+        "diyabc" = "diyabc-RF",
+        "abcranger" = "abcranger",
+        stop("Bad input for 'prog' arg.")
+    )
+    return(out)
+}
+
+
+
 #' Find diyabcGUI related binary files
 #' @keywords internal
 #' @author Ghislain Durif
-find_bin <- function(bin_name = "diyabc") {
+find_bin <- function(prog = "diyabc") {
     # check input
-    if(!bin_name %in% c("diyabc", "abcranger")) {
+    if(!prog %in% c("diyabc", "abcranger")) {
         stop("Wrong input")
     }
     # binary directory
@@ -11,7 +26,7 @@ find_bin <- function(bin_name = "diyabc") {
     # platform
     os_id <- get_os()
     # binary file
-    bin_name <- str_c(bin_name, os_id, sep = "-")
+    bin_name <- str_c(prog_name(prog), os_id, sep = "-")
     # check if bin file exists
     if(!any(str_detect(list.files(path), bin_name))) {
         stop(str_c("Missing", bin_name, "binary file", sep = " "))
@@ -38,7 +53,7 @@ clean_bin_dir <- function() {
     # existing binary file
     existing_bin_files <- list.files(path)
     existing_bin_files <- existing_bin_files[str_detect(existing_bin_files, 
-                                                        "diyabc|abcranger")]
+                                                        "diyabc|abcranger|dll")]
     # delete diyabc/abcranger files
     if(length(existing_bin_files) > 0) {
         fs::file_delete(file.path(path, existing_bin_files))
@@ -70,6 +85,8 @@ get_os <- function() {
 #' Download latest diyabcGUI related binary files if missing
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param prog string, name of the program to download, eligible name are
+#' `"diyabc-RF"` and `"abcranger"`.
 #' @importFrom fs file_chmod
 #' @importFrom jsonlite fromJSON
 #' @export
@@ -120,24 +137,13 @@ dl_latest_bin <- function(prog = "diyabc") {
             bin_name <- single_file$name
             bin_url <- single_file$browser_download_url
             
-            # additional dll files for windows
-            #   vcomp140.dll
-            #   vcruntime140.dll
-            if(str_detect(bin_name, ".dll") & os_id == "windows") {
-                if(!bin_name %in% existing_bin_files) {
-                    check <- download.file(
-                        bin_url, 
-                        destfile = file.path(path, bin_name),
-                        mode = "wb"
-                    )
-                } else {
-                    check <- 0
-                    warning(str_c(bin_name, "was already downloaded.",
-                                  sep = " "))
-                }
             # abcranger/diyabc binary files
-            } else if(str_detect(bin_name, str_c(prog, "-", os_id, sep = ""))) {
+            if(str_detect(bin_name, str_c(prog_name(prog), "-", 
+                                          os_id, sep = ""))) {
                 if(!bin_name %in% existing_bin_files) {
+                    # avoid blacklisting
+                    Sys.sleep(2)
+                    # dl
                     check <- download.file(
                         bin_url, 
                         destfile = file.path(path, bin_name),
@@ -170,9 +176,19 @@ dl_latest_bin <- function(prog = "diyabc") {
         stop("Issue with download")
     }
     
+    # zip extraction for diyabc on Windows
+    zip_files <- list.files(path, pattern = "\\.zip$")
+    if(length(zip_files) > 0) {
+        latest_zip <- which.max(file.info(file.path(path, zip_files))$mtime)
+        tmp <- unzip(file.path(path, zip_files[latest_zip]), exdir = path)
+        if(length(tmp) == 0) {
+            stop(str_c("Issue when unzipping ", zip_files[latest_zip]))
+        }
+        fs::file_delete(file.path(path, zip_files))
+    }
+    
     # set up rights
-    bin_files <- list.files(file.path(path))
-    bin_files <- bin_files[str_detect(bin_files, prog)]
+    bin_files <- list.files(path, pattern = prog)
     fs::file_chmod(file.path(path, bin_files), "a+rx")
 }
 
@@ -189,15 +205,49 @@ dl_all_latest_bin <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 logging <- function(...) {
-    print(str_c(..., sep = " "))
+    if(getOption("diyabcGUI")$verbose)
+        print(str_c(..., sep = " ", collapse = " "))
+}
+
+#' Enable logging verbosity
+#' @keywords internal
+#' @author Ghislain Durif
+enable_logging <- function() {
+    # current option status
+    diyabcGUI_options <- getOption("diyabcGUI")
+    # enable logging
+    diyabcGUI_options$verbose <- TRUE
+    # save change
+    options("diyabcGUI" = diyabcGUI_options)
+}
+
+#' Disable logging verbosity
+#' @keywords internal
+#' @author Ghislain Durif
+disable_logging <- function() {
+    # current option status
+    diyabcGUI_options <- getOption("diyabcGUI")
+    # enable logging
+    diyabcGUI_options$verbose <- FALSE
+    # save change
+    options("diyabcGUI" = diyabcGUI_options)
 }
 
 #' Set up diyabcGUI options
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param ncore integer, number of cores to used for parallel computations, 
+#' default is half available cores.
+#' @param simu_loop_size integer, batch size for simulation loop, default 
+#' is 100.
+#' @param verbose boolean, enable/disable logging verbosity, default is FALSE.
 set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
-                                  simu_loop_size = 100) {
+                                  simu_loop_size = 100,
+                                  verbose = FALSE) {
+    # cast
+    ncore <- as.integer(ncore)
+    simu_loop_size <- as.integer(simu_loop_size)
     # set up package options
-    diyabcGUI_options <- lst(ncore, simu_loop_size)
+    diyabcGUI_options <- lst(ncore, simu_loop_size, verbose)
     options("diyabcGUI" = diyabcGUI_options)
 }
