@@ -240,14 +240,18 @@ disable_logging <- function() {
 #' default is half available cores.
 #' @param simu_loop_size integer, batch size for simulation loop, default 
 #' is 100.
+#' @param image_ext string, possible ggplot extensions among `"eps"`, `"ps"`, 
+#' `"tex"`, `"pdf"`, `"jpeg"`, `"tiff"`, `"png"`, `"bmp"`, `"svg"`
 #' @param verbose boolean, enable/disable logging verbosity, default is FALSE.
 set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
-                                  simu_loop_size = 100,
+                                  simu_loop_size = 100, 
+                                  image_ext = "png",
                                   verbose = FALSE) {
     # cast
     ncore <- as.integer(ncore)
     simu_loop_size <- as.integer(simu_loop_size)
+    image_ext <- as.character(image_ext)
     # set up package options
-    diyabcGUI_options <- lst(ncore, simu_loop_size, verbose)
+    diyabcGUI_options <- lst(ncore, simu_loop_size, image_ext, verbose)
     options("diyabcGUI" = diyabcGUI_options)
 }

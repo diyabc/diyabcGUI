@@ -86,8 +86,14 @@ test_that("set_diyabcGUI_options", {
     expect_false(is.null(diyabcGUI_options))
     expect_false(is.null(diyabcGUI_options$ncore))
     expect_false(is.null(diyabcGUI_options$simu_loop_size))
+    expect_false(is.null(diyabcGUI_options$image_ext))
     expect_false(is.null(diyabcGUI_options$verbose))
     expect_true(is.integer(diyabcGUI_options$ncore))
     expect_true(is.integer(diyabcGUI_options$simu_loop_size))
+    expect_true(is.character(diyabcGUI_options$image_ext))
+    expect_true(
+        diyabcGUI_options$image_ext %in% c("eps", "ps", "tex", "pdf", "jpeg", 
+                                           "tiff", "png", "bmp", "svg")
+    )
     expect_true(is.logical(diyabcGUI_options$verbose))
 })
