@@ -1,0 +1,10 @@
+Parameter estimation analyses proceeded using: 
+- Parameter name: N1
+- Scenario 1
+- 12000 simulated datasets
+- 1000 trees
+- Minimum node size of 5
+- 130 summary statistics
+- 3 axes of summary statistics PLS linear combination
+- 5 noise variables
+- 50 out-of-band samples used as test

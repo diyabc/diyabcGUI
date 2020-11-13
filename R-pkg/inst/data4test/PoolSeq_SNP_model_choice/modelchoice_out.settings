@@ -1,0 +1,7 @@
+Model choice analyses proceeded using: 
+- 12000 simulated datasets
+- 1000 trees
+- Minimum node size of 1
+- 130 summary statistics
+- 5 axes of summary statistics LDA linear combination
+- 5 noise variables
