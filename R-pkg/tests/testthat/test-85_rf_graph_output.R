@@ -1,0 +1,106 @@
+context("RF graph output")
+
+test_that("param_estim_graph_ouptut", {
+    # input argument
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    graph_dir <- mk_proj_dir("testing")
+    param <- "N1"
+    prefix <- "estimparam_out"
+    
+    param_estim_graph_ouptut(proj_dir, graph_dir, param, prefix)
+    
+    expect_identical(
+        list.files(graph_dir), 
+        c(
+            str_c(prefix, "_graph_density_plot.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_error_versus_ntrees.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_variable_importance.", 
+                  get_option("image_ext"))
+        )
+    )
+})
+
+test_that("param_estim_density", {
+    # input argument
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    param <- "N1"
+    prefix <- "estimparam_out"
+    # run and test
+    g1 <- param_estim_density(proj_dir, param, prefix)
+    expect_true("ggplot" %in% class(g1))
+})
+
+test_that("oob_error_graph", {
+    # parameter estimation test
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    prefix <- "estimparam_out"
+    g1 <- oob_error_graph(proj_dir, prefix)
+    expect_true("ggplot" %in% class(g1))
+    # model choice test
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    prefix <- "modelchoice_out"
+    g1 <- oob_error_graph(proj_dir, prefix)
+    expect_true("ggplot" %in% class(g1))
+})
+
+test_that("var_imp_graph", {
+    # parameter estimation test
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    prefix <- "estimparam_out"
+    g1 <- var_imp_graph(proj_dir, prefix)
+    expect_true("ggplot" %in% class(g1))
+    # model choice test
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    prefix <- "modelchoice_out"
+    g1 <- var_imp_graph(proj_dir, prefix)
+    expect_true("ggplot" %in% class(g1))
+})
+
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
+
+test_that("param_estim_graph_ouptut", {})
