@@ -5,6 +5,8 @@
 We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], 
 called `DIYABC-RF GUI`.
 
+> **Note:** `DIYABC-RF GUI` replaces the old interface [`DIYABC V2.1`](https://diyabc.github.io/old/) which is not maintained anymore.
+
 Please check the project [website](https://diyabc.github.io/) for additional 
 information and detailed documentation.
 
