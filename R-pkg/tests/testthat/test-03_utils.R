@@ -80,7 +80,7 @@ test_that("disable_logging", {
 test_that("set_diyabcGUI_options", {
     # setup options
     set_diyabcGUI_options()
-    # option status
+    # option state
     diyabcGUI_options <- getOption("diyabcGUI")
     # check
     expect_false(is.null(diyabcGUI_options))
@@ -97,3 +97,16 @@ test_that("set_diyabcGUI_options", {
     )
     expect_true(is.logical(diyabcGUI_options$verbose))
 })
+
+test_that("get_option", {
+    # setup options
+    set_diyabcGUI_options()
+    # test
+    expect_error(get_option("option"))
+    expect_true(is.integer(get_option("ncore")))
+    expect_true(is.integer(get_option("simu_loop_size")))
+    expect_true(is.character(get_option("image_ext")))
+    expect_true(is.logical(get_option("verbose")))
+})
+
+    

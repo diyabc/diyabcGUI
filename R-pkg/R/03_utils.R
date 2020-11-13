@@ -255,3 +255,16 @@ set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
     diyabcGUI_options <- lst(ncore, simu_loop_size, image_ext, verbose)
     options("diyabcGUI" = diyabcGUI_options)
 }
+
+#' Get current diyabcGUI option states
+#' @keywords internal
+#' @author Ghislain Durif
+get_option <- function(option_name) {
+    # current option state
+    diyabcGUI_options <- getOption("diyabcGUI")
+    # check input
+    if(! option_name %in% names(diyabcGUI_options))
+        stop("Bad input for 'option_name' arg")
+    # output
+    return(diyabcGUI_options[[ option_name ]])
+}
