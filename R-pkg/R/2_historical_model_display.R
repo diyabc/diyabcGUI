@@ -257,7 +257,7 @@ reverse_tree <- function(tree_df) {
 #' @author Ghislain Durif
 #' @description 
 #' Returns following informations: timing_list, time_coordinates, event_nb, npop
-tree_context <- function(parsed_scenario, rev_tree_d, grid_unit = 2) {
+tree_context <- function(parsed_scenario, rev_tree_df, grid_unit = 2) {
     # timing list
     timing_list <- unique(unlist(parsed_scenario$event_time))
     
