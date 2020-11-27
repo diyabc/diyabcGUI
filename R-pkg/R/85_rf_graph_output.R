@@ -103,19 +103,20 @@ var_imp_graph <- function(proj_dir, prefix = "estimparam_out") {
 model_choice_graph_ouptut <- function(proj_dir, graph_dir, 
                                       prefix = "modelchoice_out") {
     # lda output
-    g1 <- lda_coordinate_graph(proj_dir, prefix)
+    # FIXME
+    # g1 <- lda_coordinate_graph(proj_dir, prefix)
     # graph oob error vs n tree
     g2 <- oob_error_graph(proj_dir, prefix)
     # graph of top 50 variable importance
     g3 <- var_imp_graph(proj_dir, prefix)
     # save graph
-    ggsave(
-        filename = str_c(prefix, "_graph_lda.", 
-                         get_option("image_ext")),
-        plot = g1, 
-        path = graph_dir,
-        units = "cm", width = 14, height = 10
-    )
+    # ggsave(
+    #     filename = str_c(prefix, "_graph_lda.", 
+    #                      get_option("image_ext")),
+    #     plot = g1, 
+    #     path = graph_dir,
+    #     units = "cm", width = 14, height = 10
+    # )
     ggsave(
         filename = str_c(prefix, "_graph_error_versus_ntrees.", 
                          get_option("image_ext")),
