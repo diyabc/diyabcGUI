@@ -59,48 +59,31 @@ test_that("var_imp_graph", {
 })
 
 
-test_that("param_estim_graph_ouptut", {})
+test_that("param_estim_graph_ouptut", {
+    
+    # input argument
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    graph_dir <- mk_proj_dir("testing")
+    prefix <- "modelchoice_out"
+    model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
+    
+    expect_identical(
+        list.files(graph_dir), 
+        c(
+            str_c(prefix, "_graph_error_versus_ntrees.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_lda.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_variable_importance.", 
+                  get_option("image_ext"))
+        )
+    )
 
-test_that("param_estim_graph_ouptut", {})
+})
 
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
-
-test_that("param_estim_graph_ouptut", {})
+test_that("lda_coordinate_graph", {
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    prefix <- "modelchoice_out"
+    g1 <- lda_coordinate_graph(proj_dir, prefix)
+    expect_true("ggplot" %in% class(g1))
+})

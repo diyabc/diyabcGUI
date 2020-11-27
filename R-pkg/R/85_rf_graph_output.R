@@ -65,7 +65,7 @@ oob_error_graph <- function(proj_dir, prefix = "estimparam_out") {
     ooberror$ntree <- 1:nrow(ooberror)
     # graph oob error vs n tree
     g1 <- ggplot(ooberror) +
-        geom_point(aes(x=ntree, y=error)) +
+        geom_point(aes(x=ntree, y=error), alpha = 0.6) +
         theme_bw(base_size = 12) +
         xlab("number of tree") +
         ylab("OOB error")
@@ -100,5 +100,63 @@ var_imp_graph <- function(proj_dir, prefix = "estimparam_out") {
 #' Model choice graphical output
 #' @keywords internal
 #' @author Ghislain Durif
-model_choice_graph_ouptut <- function(proj_dir, graph_dir, param, 
-                                      prefix = "modelchoice_out") {}
+model_choice_graph_ouptut <- function(proj_dir, graph_dir, 
+                                      prefix = "modelchoice_out") {
+    # lda output
+    g1 <- lda_coordinate_graph(proj_dir, prefix)
+    # graph oob error vs n tree
+    g2 <- oob_error_graph(proj_dir, prefix)
+    # graph of top 50 variable importance
+    g3 <- var_imp_graph(proj_dir, prefix)
+    # save graph
+    ggsave(
+        filename = str_c(prefix, "_graph_lda.", 
+                         get_option("image_ext")),
+        plot = g1, 
+        path = graph_dir,
+        units = "cm", width = 14, height = 10
+    )
+    ggsave(
+        filename = str_c(prefix, "_graph_error_versus_ntrees.", 
+                         get_option("image_ext")),
+        plot = g2, 
+        path = graph_dir,
+        units = "cm", width = 12, height = 10
+    )
+    ggsave(
+        filename = str_c(prefix, "_graph_variable_importance.", 
+                         get_option("image_ext")),
+        plot = g3, 
+        path = graph_dir,
+        units = "cm", width = 12, height = 22
+    )
+}
+
+
+#' Model choice LDA latent coordinates graphical output
+#' @keywords internal
+#' @author Ghislain Durif
+lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
+    
+    # LDA latent space coordinates
+    file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
+    lda_out <- read.csv(file_name, header = FALSE, skip = 1, sep = ";")
+    # tagging
+    lda_out$tag <- c("observations", 
+                     rep("simulations", length = nrow(lda_out) - 1))
+    # LDA latent space first two axes: observation vs simulation coordinates
+    g1 <- ggplot(lda_out) +
+        geom_point(
+            data = subset(lda_out, lda_out$tag == "simulations"), 
+            aes(x=V1, y=V2, col=tag), alpha = 0.1
+        ) +
+        geom_point(
+            data = subset(lda_out, lda_out$tag == "observations"), 
+            aes(x=V1, y=V2, col=tag), alpha = 1, size = 2
+        ) +
+        xlab("axis 1") +
+        ylab("axis 2") +
+        theme_bw(base_size = 12)
+    # output
+    return(g1)
+}
