@@ -187,3 +187,26 @@ parse_abcranger_group <- function(txt, n_scenario) {
     }
     return(lst(msg, valid))
 }
+
+
+#' Abcranger postprocessing
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' After a successfool abcranger run, result postprocessing includes graphical 
+#' output generation.
+abcranger_postprocess <- function(proj_dir, graph_dir, 
+                                  run_mode = "param_estim", 
+                                  prefix = "estimparam_out", 
+                                  param = NULL) {
+    # graphical output
+    if(run_mode == "param_estim") {
+        # parameter estimation
+        if(!is.null(param)) {
+            param_estim_graph_ouptut(proj_dir, graph_dir, param, prefix)
+        }
+    } else if(run_mode == "model_choice") {
+        # model choice
+        model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
+    }
+}

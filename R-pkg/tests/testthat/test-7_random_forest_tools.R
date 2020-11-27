@@ -67,3 +67,48 @@ test_that("parse_abcranger_group", {
     n_scenario <- 6
     expect_false(parse_abcranger_group(txt, n_scenario)$valid)
 })
+
+
+test_that("abcranger_postprocess", {
+    # parameter estimation
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    graph_dir <- mk_proj_dir("testing")
+    param <- "N1"
+    prefix <- "estimparam_out"
+    run_mode <- "param_estim"
+    
+    abcranger_postprocess(proj_dir, graph_dir, run_mode, prefix, param)
+    
+    expect_identical(
+        list.files(graph_dir), 
+        c(
+            str_c(prefix, "_graph_density_plot.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_error_versus_ntrees.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_variable_importance.", 
+                  get_option("image_ext"))
+        )
+    )
+    
+    # model choice
+    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    graph_dir <- mk_proj_dir("testing")
+    param <- NULL
+    prefix <- "modelchoice_out"
+    run_mode <- "model_choice"
+    
+    abcranger_postprocess(proj_dir, graph_dir, run_mode, prefix, param)
+    
+    expect_identical(
+        list.files(graph_dir), 
+        c(
+            str_c(prefix, "_graph_error_versus_ntrees.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_lda.", 
+                  get_option("image_ext")),
+            str_c(prefix, "_graph_variable_importance.", 
+                  get_option("image_ext"))
+        )
+    )
+})
