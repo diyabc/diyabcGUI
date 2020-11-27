@@ -1120,6 +1120,20 @@ rf_control_server <- function(input, output, session,
                     )
                 )
             )
+            ## post processing
+            req(!is.null(local$proj_dir))
+            req(!is.null(local$run_mode))
+            prefix <- switch(
+                local$run_mode,
+                "param_estim" = "estimparam_out",
+                "model_choice" = "modelchoice_out"
+            )
+            abcranger_postprocess(
+                local$proj_dir, local$proj_dir, 
+                run_mode = local$run_mode, prefix = prefix, 
+                param = local$parameter
+            )
+            
         } else if(local$abcranger_run_result == -1000) {
             ## stopped run
             local$feedback <- helpText(
