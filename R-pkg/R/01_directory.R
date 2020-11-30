@@ -47,7 +47,7 @@ example_dir <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 help_dir <- function() {
-    helpdir <- system.file("help", package = "diyabcGUI")
+    helpdir <- system.file("app_help", package = "diyabcGUI")
     if(str_length(helpdir) == 0) {
         stop("help directory not found")
     }

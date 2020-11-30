@@ -57,6 +57,7 @@ Imports:
     fs,
     ggplot2,
     lubridate, 
+    jsonlite, 
     magrittr, 
     parallel, pbapply, processx,
     shiny, shinybusy, shinydashboard, shinyFiles, 

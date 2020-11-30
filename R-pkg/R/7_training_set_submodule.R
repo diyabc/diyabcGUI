@@ -2805,7 +2805,7 @@ mss_group_prior_server <- function(input, output, session,
     observe({
         local$microsat_col_name <- NULL
         req(length(local$microsat_group) > 0)
-        rf_col <- c("µmic", "pmic", "snimic")
+        rf_col <- c("mumic", "pmic", "snimic")
         group_id <- str_extract(local$microsat_group, "[0-9]+")
         if(length(group_id) > 0) {
             local$microsat_col_name <- apply(
@@ -2834,7 +2834,7 @@ mss_group_prior_server <- function(input, output, session,
         # "Kimura-2-parameters (1980)" = "K2P" (MU, K1)
         # "Hasegawa-Kishino-Yano (1985)" = "HKY" (MU, K1)
         # "Tamura Nei (1993)" = "TN" (MU, K1, K2)
-        rf_col <- c("µseq", "k1seq", "k2seq")
+        rf_col <- c("museq", "k1seq", "k2seq")
 
         local$seq_col_name <- unname(unlist(
             lapply(
@@ -3003,7 +3003,7 @@ training_set_action_ui <- function(id) {
             label = "Simulate",
             style = "fill",
             block = TRUE,
-            col = "primary"
+            color = "primary"
         ),
         progressBar(
             id = ns("simu_progress"),

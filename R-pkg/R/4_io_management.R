@@ -148,7 +148,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
             if("error" %in% class(header)) {
                 err <- append(
                     err, 
-                    stR_c(
+                    str_c(
                         "Issue with IndSeq SNP file header second line:",
                         header$message, sep = " "
                     )
@@ -464,7 +464,7 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
             if("error" %in% class(header)) {
                 err <- append(
                     err, 
-                    stR_c(
+                    str_c(
                         "Issue with PoolSeq SNP file header second line:",
                         header$message, sep = " "
                     )

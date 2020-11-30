@@ -11,7 +11,7 @@
         error = function(e) return(e)
     )
     if("error" %in% class(diyabc_bin) | "error" %in% class(abcranger_bin)) {
-        message(
+        packageStartupMessage(
             "Warning: ",
             "Missing binary file(s), please run ",
             "'diyabcGUI::dl_all_latest_bin()'"

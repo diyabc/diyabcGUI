@@ -160,7 +160,7 @@ rf_parameter_ui <- function(id) {
             label = "Check input",
             style = "fill",
             block = TRUE,
-            col = "success"
+            color = "success"
         ),
         br(),
         uiOutput(ns("feedback_context")),
@@ -751,7 +751,7 @@ rf_control_ui <- function(id) {
             label = "Run",
             style = "fill",
             block = TRUE,
-            col = "primary"
+            color = "primary"
         ),
         progressBar(
             id = ns("rf_progress"),

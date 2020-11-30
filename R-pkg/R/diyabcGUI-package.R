@@ -27,4 +27,5 @@
 #' @importFrom tibble lst
 #' @importFrom tidyr drop_na
 #' @importFrom tools file_ext
+#' @importFrom utils download.file head read.csv read.table tail unzip zip
 "_PACKAGE"
