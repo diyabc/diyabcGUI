@@ -25,6 +25,11 @@ app_simplified_sidebar <- function() {
                 "Preferences", 
                 tabName = "pref_tab", 
                 icon = icon("gear")
+            ),
+            menuItem(
+                "Quit", 
+                tabName = "quit",
+                icon = icon("circle-o-notch")
             )
         )
     )
@@ -55,6 +60,17 @@ app_simplified_body <- function() {
             tabItem(
                 tabName = "pref_tab",
                 pref_page_ui("pref_page")
+            ),
+            tabItem(
+                tabName = "quit",
+                h1("Confirmation needed ?"),
+                actionBttn(
+                    "quitting",
+                    label = "Quit",
+                    icon = icon("check"),
+                    style = "fill", 
+                    color = "danger"
+                )
             )
         )
     )
@@ -92,6 +108,11 @@ simplified_index_server <- function(input, output, session) {
     
     ## preferences
     callModule(pref_page_server, "pref_page")
+    
+    ## quit
+    observeEvent(input$quitting, {
+        stopApp()
+    })
 }
 
 #' App dashboard sidebar
@@ -195,9 +216,9 @@ index_server <- function(input, output, session) {
     
     # debugging
     observe({
-        print(paste0("analysis current tabs = ", 
+        pprint(paste0("analysis current tabs = ", 
                      paste0(unlist(analysis_setting$current_tabs), collapse = " ")))
-        print(paste0("analysis empty tabs = ", 
+        pprint(paste0("analysis empty tabs = ", 
                      paste0(unlist(analysis_setting$empty_tabs), collapse = " ")))
     })
     
