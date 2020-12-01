@@ -201,12 +201,29 @@ dl_all_latest_bin <- function() {
     dl_latest_bin("abcranger")
 }
 
+#' Custom print
+#' @keywords internal
+#' @author Ghislain Durif
+pprint <- function(...) {
+    # message(as.character(...))
+    print(...)
+}
+
+#' Reset sink (console output redirection)
+#' @keywords internal
+#' @author Ghislain Durif
+reset_sink <- function() {
+    for(i in seq_len(sink.number())){
+        sink(NULL)
+    }
+}
+
 #' Logging function for debugging
 #' @keywords internal
 #' @author Ghislain Durif
 logging <- function(...) {
     if(getOption("diyabcGUI")$verbose)
-        print(str_c(..., sep = " ", collapse = " "))
+        pprint(str_c(..., sep = " ", collapse = " "))
 }
 
 #' Enable logging verbosity

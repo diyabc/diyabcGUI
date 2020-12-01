@@ -24,6 +24,11 @@ diyabc <- function() {
 #' @author Ghislain Durif
 #' @export
 standalone_run_app <- function(options = list()) {
+    con <- file(file.path(dirname(tempdir()), "DIYABC-RF_GUI.log"))
+    sink(con, append=TRUE)
+    sink(con, append=TRUE, type="message")
+    on.exit(reset_sink())
+    
     shiny::shinyApp(
         ui = diyabc_ui(),
         server = diyabc_server,
