@@ -50,8 +50,8 @@ training_set_server <- function(input, output, session,
         local$valid_proj <- valid_proj()
         
         # # debugging
-        # print("=== training set: project directory")
-        # print(local$proj_dir)
+        # pprint("=== training set: project directory")
+        # pprint(local$proj_dir)
     })
     
     # init output
@@ -61,8 +61,8 @@ training_set_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("data info")
-    #     print(local$data_info)
+    #     pprint("data info")
+    #     pprint(local$data_info)
     # })
     
     # check project directory
@@ -121,14 +121,14 @@ training_set_server <- function(input, output, session,
     
     # ## debugging
     # observeEvent(local$proj_header_content, {
-    #     print("project header content")
-    #     print(local$proj_header_content)
+    #     pprint("project header content")
+    #     pprint(local$proj_header_content)
     # })
     
     ## training set def or show
     output$enable_def <- renderUI({
         
-        # print("###### debug enable def")
+        # pprint("###### debug enable def")
         # logging("new proj =", local$new_proj)
         # logging("valid proj =", local$valid_proj)
         
@@ -184,7 +184,7 @@ training_set_server <- function(input, output, session,
     ## enable control
     output$enable_control <- renderUI({
         
-        # print("###### debug enable control")
+        # pprint("###### debug enable control")
         # logging("valid proj =", local$valid_proj)
         
         req(!is.null(local$valid_proj))
@@ -447,8 +447,8 @@ training_set_def_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("hist_model_def")
-    #     print(hist_model_def$scenario_list)
+    #     pprint("hist_model_def")
+    #     pprint(hist_model_def$scenario_list)
     # })
     
     # update local
@@ -478,24 +478,24 @@ training_set_def_server <- function(input, output, session,
                 }
             ))
             
-            # print("--- param list")
-            # print(local$param_list)
+            # pprint("--- param list")
+            # pprint(local$param_list)
             
             # param count list
             local$param_count_list <- lapply(
                 local$scenario_list,
                 function(item) {
-                    # print(item$param)
+                    # pprint(item$param)
                     return(length(item$param$Ne_param) + 
                                length(item$param$time) + 
                                length(item$param$rate))
                 }
             )
             
-            # print("--- param count list")
-            # print(local$param_count_list)
+            # pprint("--- param count list")
+            # pprint(local$param_count_list)
             
-            # print("----")
+            # pprint("----")
             # condition
             local$cond_list <- Reduce("c", lapply(
                 local$scenario_list,
@@ -520,7 +520,7 @@ training_set_def_server <- function(input, output, session,
     observe({
         req(!is.null(prior_cond_set$raw_prior_list))
         req(!is.null(prior_cond_set$raw_cond_list))
-        # print(prior_cond_set$raw_prior_list)
+        # pprint(prior_cond_set$raw_prior_list)
         local$raw_param_list <- unique(prior_cond_set$raw_prior_list)
         local$raw_cond_list <- prior_cond_set$raw_cond_list
     })
@@ -536,30 +536,30 @@ training_set_def_server <- function(input, output, session,
     ## write header file (if necessary) and check it
     observeEvent(input$validate, {
         
-        # print("proj_dir =")
-        # print(local$proj_dir)
-        # print("raw_param_list =")
-        # print(local$raw_param_list)
-        # print("param_count_list =")
-        # print(local$param_count_list)
-        # print("scenario_list =")
-        # print(local$raw_scenario_list)
-        # print("cond_list =")
-        # print(local$raw_cond_list)
-        # print("data_file =")
-        # print(local$data_file)
-        # print("locus_type =")
-        # print(local$locus_type)
-        # print("seq_mode =")
-        # print(local$seq_mode)
-        # print("locus =")
-        # print(locus_setup$locus)
-        # print("mss_locus =")
-        # print(locus_setup$mss_locus)
-        # print("mss_group_prior =")
-        # print(locus_setup$mss_group_prior)
-        # print("mss_rf_col_name")
-        # print(locus_setup$mss_rf_col_name)
+        # pprint("proj_dir =")
+        # pprint(local$proj_dir)
+        # pprint("raw_param_list =")
+        # pprint(local$raw_param_list)
+        # pprint("param_count_list =")
+        # pprint(local$param_count_list)
+        # pprint("scenario_list =")
+        # pprint(local$raw_scenario_list)
+        # pprint("cond_list =")
+        # pprint(local$raw_cond_list)
+        # pprint("data_file =")
+        # pprint(local$data_file)
+        # pprint("locus_type =")
+        # pprint(local$locus_type)
+        # pprint("seq_mode =")
+        # pprint(local$seq_mode)
+        # pprint("locus =")
+        # pprint(locus_setup$locus)
+        # pprint("mss_locus =")
+        # pprint(locus_setup$mss_locus)
+        # pprint("mss_group_prior =")
+        # pprint(locus_setup$mss_group_prior)
+        # pprint("mss_rf_col_name")
+        # pprint(locus_setup$mss_rf_col_name)
         
         ready <- TRUE
         msg <- list()
@@ -638,8 +638,8 @@ training_set_def_server <- function(input, output, session,
             )
             
             # # debugging
-            # print("is header ok")
-            # print(file_check$valid)
+            # pprint("is header ok")
+            # pprint(file_check$valid)
             
             out$valid_def <- file_check$valid
             
@@ -805,8 +805,8 @@ hist_model_panel_server <- function(input, output, session,
     observe({
         out$scenario_list <- local$scenario_list
         # if(length(local$scenario_list) > 0) {
-        #     print(local$scenario_list[[1]]$raw)
-        #     print(local$scenario_list[[1]]$param)
+        #     pprint(local$scenario_list[[1]]$raw)
+        #     pprint(local$scenario_list[[1]]$param)
         # }
     })
     
@@ -904,8 +904,8 @@ prior_cond_set_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("param list")
-    #     print(unique(local$param_list))
+    #     pprint("param list")
+    #     pprint(unique(local$param_list))
     # })
     
     # render ui param prior setting
@@ -936,7 +936,7 @@ prior_cond_set_server <- function(input, output, session,
             local$prior_list,
             function(item) return(item$raw)
         ))
-        # print(out$raw_prior_list)
+        # pprint(out$raw_prior_list)
     })
     # get input condition
     observeEvent(input$cond_set, {
@@ -960,7 +960,7 @@ prior_cond_set_server <- function(input, output, session,
             output$cond_format <- renderUI({
                 req(!is.null(local$cond_check$valid))
                 req(!is.null(local$cond_check$msg))
-                # print(local$cond_check)
+                # pprint(local$cond_check)
                 if(!local$cond_check$valid) {
                     helpText(
                         tags$span(icon("warning"), 
@@ -1294,12 +1294,12 @@ locus_setup_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("data info")
-    #     print(local$data_info)
-    #     print("locus type")
-    #     print(local$locus_type)
-    #     print("seq mode")
-    #     print(local$seq_mode)
+    #     pprint("data info")
+    #     pprint(local$data_info)
+    #     pprint("locus type")
+    #     pprint(local$locus_type)
+    #     pprint("seq mode")
+    #     pprint(local$seq_mode)
     # })
     
     # init out
@@ -1313,10 +1313,10 @@ locus_setup_server <- function(input, output, session,
     output$setup <- renderUI({
         
         # # debugging
-        # print("locus_type")
-        # print(local$locus_type)
-        # print("locus")
-        # print(local$data_info$locus_type)
+        # pprint("locus_type")
+        # pprint(local$locus_type)
+        # pprint("locus")
+        # pprint(local$data_info$locus_type)
         
         req(local$locus_type)
         req(local$seq_mode)
@@ -1381,8 +1381,8 @@ locus_setup_server <- function(input, output, session,
         } else if(local$locus_type == "mss") {
             # FIXME
             
-            # print("data info")
-            # print(local$data_info)
+            # pprint("data info")
+            # pprint(local$data_info)
             # warning("not supported at the moment")
             
             # microsat locus
@@ -1454,8 +1454,8 @@ locus_setup_server <- function(input, output, session,
                 }
             )
             # # debugging
-            # print("locus setup")
-            # print(out$locus)
+            # pprint("locus setup")
+            # pprint(out$locus)
         } else if(local$locus_type == "mss") {
             req(!is.null(mss_group$raw_locus))
             req(!is.null(mss_prior$raw_group_prior_list))
@@ -1540,8 +1540,8 @@ mss_group_setup_server <- function(input, output, session,
     observe({
         local$data_info <- data_info()
         # # debugging
-        # print("data info")
-        # print(local$data_info)
+        # pprint("data info")
+        # pprint(local$data_info)
     })
     
     # init output
@@ -1599,10 +1599,10 @@ mss_group_setup_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("microsat locus")
-    #     print(local$microsat_locus)
-    #     print("seq locus")
-    #     print(local$seq_locus)
+    #     pprint("microsat locus")
+    #     pprint(local$microsat_locus)
+    #     pprint("seq locus")
+    #     pprint(local$seq_locus)
     # })
     
     # setup microsat
@@ -1624,8 +1624,8 @@ mss_group_setup_server <- function(input, output, session,
     )
     
     # observe({
-    #     print("nb of microsat group")
-    #     print(microsat_group$n_group)
+    #     pprint("nb of microsat group")
+    #     pprint(microsat_group$n_group)
     # })
     
     # setup seq
@@ -1648,9 +1648,9 @@ mss_group_setup_server <- function(input, output, session,
     )
     
     # observe({
-    #     print("nb of seq group")
-    #     print(seq_group$n_group)
-    #     print(reactiveValuesToList(seq_group))
+    #     pprint("nb of seq group")
+    #     pprint(seq_group$n_group)
+    #     pprint(reactiveValuesToList(seq_group))
     # })
     
     ## show/hide microsat motif/range set up
@@ -1736,8 +1736,8 @@ mss_group_setup_server <- function(input, output, session,
             )
         )
         
-        # print("microsat_locus_motif_range")
-        # print(local$microsat_locus_motif_range)
+        # pprint("microsat_locus_motif_range")
+        # pprint(local$microsat_locus_motif_range)
     })
     
     ## format microsat locus
@@ -1760,8 +1760,8 @@ mss_group_setup_server <- function(input, output, session,
                                          local$microsat_locus_motif_range,
                                          by = "name")
         
-        # print("microsat locus")
-        # print(tmp_microsat)
+        # pprint("microsat locus")
+        # pprint(tmp_microsat)
         
         local$raw_microsat_locus <- apply(
             tmp_microsat,
@@ -1769,8 +1769,8 @@ mss_group_setup_server <- function(input, output, session,
             str_c, collapse = " "
         )
         
-        # print("raw microsat locus")
-        # print(local$raw_microsat_locus)
+        # pprint("raw microsat locus")
+        # pprint(local$raw_microsat_locus)
         
     })
     
@@ -1781,8 +1781,8 @@ mss_group_setup_server <- function(input, output, session,
         req(all(str_length(seq_group$locus_group) > 0))
         req(length(local$seq_length) > 0)
         
-        # print("seq locus group")
-        # print(seq_group$locus_group)
+        # pprint("seq locus group")
+        # pprint(seq_group$locus_group)
         
         tmp_seq_group <- data.frame(
             name = local$seq_locus,
@@ -1793,8 +1793,8 @@ mss_group_setup_server <- function(input, output, session,
             stringsAsFactors = FALSE
         )
         
-        # print("seq locus group")
-        # print(tmp_seq_group)
+        # pprint("seq locus group")
+        # pprint(tmp_seq_group)
         
         local$raw_seq_locus <- apply(
             tmp_seq_group,
@@ -1802,18 +1802,18 @@ mss_group_setup_server <- function(input, output, session,
             str_c, collapse = " "
         )
         
-        # print("raw seq locus")
-        # print(local$raw_seq_locus)
+        # pprint("raw seq locus")
+        # pprint(local$raw_seq_locus)
     })
     
     ## output
     observe({
-        # print("raw microsat locus")
-        # print(local$raw_microsat_locus)
-        # print("raw seq locus")
-        # print(local$raw_seq_locus)
-        # print("locus name")
-        # print(local$data_info$locus_name)
+        # pprint("raw microsat locus")
+        # pprint(local$raw_microsat_locus)
+        # pprint("raw seq locus")
+        # pprint(local$raw_seq_locus)
+        # pprint("locus name")
+        # pprint(local$data_info$locus_name)
         
         req(length(local$raw_microsat_locus) + length(local$raw_seq_locus) > 0)
         req(!is.null(local$data_info$locus_name))
@@ -1834,8 +1834,8 @@ mss_group_setup_server <- function(input, output, session,
             by = "name"
         )$info
         
-        # print("raw locus")
-        # print(out$raw_locus)
+        # pprint("raw locus")
+        # pprint(out$raw_locus)
     })
     
     # group info
@@ -1864,8 +1864,8 @@ mss_group_setup_server <- function(input, output, session,
         colnames(tmp_group_info) <- c("mode", "group")
         out$group_info <- tmp_group_info
         
-        # print("group info")
-        # print(out$group_info)
+        # pprint("group info")
+        # pprint(out$group_info)
     })
     
     return(out)
@@ -1919,9 +1919,9 @@ locus_group_setup_server <- function(input, output, session,
         local$locus_name <- locus_name()
         local$n_existing_group <- n_existing_group()
         
-        # print("input locus group setup")
-        # print(local$locus_name)
-        # print(local$n_existing_group)
+        # pprint("input locus group setup")
+        # pprint(local$locus_name)
+        # pprint(local$n_existing_group)
     })
     
     # init output
@@ -2008,8 +2008,8 @@ locus_group_setup_server <- function(input, output, session,
             }
         ))
         
-        # print("locus group")
-        # print(out$locus_group)
+        # pprint("locus group")
+        # pprint(out$locus_group)
     })
     
     observe({
@@ -2017,8 +2017,8 @@ locus_group_setup_server <- function(input, output, session,
         req(all(str_length(out$locus_group) > 0))
         out$n_group <- max(as.integer(out$locus_group))
         
-        # print("nb locus group")
-        # print(out$n_group)
+        # pprint("nb locus group")
+        # pprint(out$n_group)
     })
     
     return(out)
@@ -2150,18 +2150,18 @@ group_prior_server <- function(input, output, session,
     
     # debugging
     # observe({
-    #     print("---- param :")
-    #     print(local$param_name)
-    #     print("gamma :")
-    #     print(local$gamma)
-    #     print("mean value =")
-    #     print(local$mean_value)
-    #     print("mean def value =")
-    #     print(local$mean_def_value)
-    #     print("min def value =")
-    #     print(local$min_def_value)
-    #     print("max def value =")
-    #     print(local$max_def_value)
+    #     pprint("---- param :")
+    #     pprint(local$param_name)
+    #     pprint("gamma :")
+    #     pprint(local$gamma)
+    #     pprint("mean value =")
+    #     pprint(local$mean_value)
+    #     pprint("mean def value =")
+    #     pprint(local$mean_def_value)
+    #     pprint("min def value =")
+    #     pprint(local$min_def_value)
+    #     pprint("max def value =")
+    #     pprint(local$max_def_value)
     # })
     
     # init output
@@ -2207,8 +2207,8 @@ group_prior_server <- function(input, output, session,
     
     # update min input
     observe({
-        # print("test update min")
-        # print(local$min_def_value)
+        # pprint("test update min")
+        # pprint(local$min_def_value)
         req(!is.null(local$min_def_value))
         updateTextInput(
             session, "min", 
@@ -2218,8 +2218,8 @@ group_prior_server <- function(input, output, session,
     
     # update max input
     observe({
-        # print("test update max")
-        # print(local$max_def_value)
+        # pprint("test update max")
+        # pprint(local$max_def_value)
         req(!is.null(local$max_def_value))
         updateTextInput(
             session, "max", 
@@ -2229,9 +2229,9 @@ group_prior_server <- function(input, output, session,
     
     # update mean input
     observe({
-        # print("test update mean")
-        # print(local$mean_value)
-        # print(local$mean_def_value)
+        # pprint("test update mean")
+        # pprint(local$mean_value)
+        # pprint(local$mean_def_value)
         req(!is.null(local$mean_value))
         if(is.na(local$mean_value)) {
             shinyjs::enable("mean")
@@ -2256,8 +2256,8 @@ group_prior_server <- function(input, output, session,
     observe({
         req(local$param_name)
         req(!is.null(input$min))
-        # print("input min")
-        # print(input$min)
+        # pprint("input min")
+        # pprint(input$min)
         tmp_min <- as.numeric(input$min)
         if(is.na(tmp_min)) {
             out$valid <- FALSE
@@ -2508,8 +2508,8 @@ mss_group_prior_server <- function(input, output, session,
     # get input
     observe({
         local$group_info <- group_info()
-        # print("MSS group info")
-        # print(local$group_info)
+        # pprint("MSS group info")
+        # pprint(local$group_info)
     })
     
     # init output
@@ -2520,8 +2520,8 @@ mss_group_prior_server <- function(input, output, session,
     
     # parse input
     observe({
-        # print("group info")
-        # print(local$group_info)
+        # pprint("group info")
+        # pprint(local$group_info)
         
         req(is.data.frame(local$group_info))
         req(nrow(local$group_info) > 0)
@@ -2621,8 +2621,8 @@ mss_group_prior_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("microsat prior list")
-    #     print(local$microsat_prior_list)
+    #     pprint("microsat prior list")
+    #     pprint(local$microsat_prior_list)
     # })
     
     ## get output
@@ -2642,8 +2642,8 @@ mss_group_prior_server <- function(input, output, session,
     })
 
     # observe({
-    #     print("raw microsat prior list")
-    #     print(local$raw_microsat_prior_list)
+    #     pprint("raw microsat prior list")
+    #     pprint(local$raw_microsat_prior_list)
     # })
     
     ## set up seq mutational model and seq group prior
@@ -2726,8 +2726,8 @@ mss_group_prior_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("seq prior list")
-    #     print(local$seq_prior_list)
+    #     pprint("seq prior list")
+    #     pprint(local$seq_prior_list)
     # })
     
     ## get output
@@ -2747,8 +2747,8 @@ mss_group_prior_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("raw seq prior list")
-    #     print(local$raw_seq_prior_list)
+    #     pprint("raw seq prior list")
+    #     pprint(local$raw_seq_prior_list)
     # })
     
     ## get mutation model for sequence
@@ -2796,8 +2796,8 @@ mss_group_prior_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("seq model list")
-    #     print(local$seq_model_list)
+    #     pprint("seq model list")
+    #     pprint(local$seq_model_list)
     # })
     
     ### reftable column names
@@ -2819,8 +2819,8 @@ mss_group_prior_server <- function(input, output, session,
             )
         }
         
-        # print("microsat rf col name")
-        # print(local$microsat_col_name)
+        # pprint("microsat rf col name")
+        # pprint(local$microsat_col_name)
     })
     
     # seq
@@ -2859,22 +2859,22 @@ mss_group_prior_server <- function(input, output, session,
             )
         ))
         
-        # print("seq rf col name")
-        # print(local$seq_col_name)
+        # pprint("seq rf col name")
+        # pprint(local$seq_col_name)
     })
     
     
     ### output
     observe({
         
-        # print("raw microsat prior list")
-        # print(local$raw_microsat_prior_list)
+        # pprint("raw microsat prior list")
+        # pprint(local$raw_microsat_prior_list)
         # 
-        # print("raw seq prior list")
-        # print(local$raw_seq_prior_list)
+        # pprint("raw seq prior list")
+        # pprint(local$raw_seq_prior_list)
         # 
-        # print("seq model list")
-        # print(local$seq_model_list)
+        # pprint("seq model list")
+        # pprint(local$seq_model_list)
         
         tmp_microsat_prior <- NULL
         if(local$n_microsat_group > 0) {
@@ -2898,7 +2898,7 @@ mss_group_prior_server <- function(input, output, session,
                 }
             )
         }
-        # print(tmp_microsat_prior)
+        # pprint(tmp_microsat_prior)
         
         tmp_seq_prior <- NULL
         if(local$n_seq_group > 0) {
@@ -2932,14 +2932,14 @@ mss_group_prior_server <- function(input, output, session,
                 }
             )
         }
-        # print(tmp_seq_prior)
+        # pprint(tmp_seq_prior)
         
         out$raw_group_prior_list <- unlist(
             c(tmp_microsat_prior, tmp_seq_prior)
         )
         
-        # print("raw_group_prior_list")
-        # print(out$raw_group_prior_list)
+        # pprint("raw_group_prior_list")
+        # pprint(out$raw_group_prior_list)
     })
     
     # rf col name
@@ -2952,8 +2952,8 @@ mss_group_prior_server <- function(input, output, session,
             local$seq_col_name
         )
         
-        # print("rf col name")
-        # print(out$rf_col_name)
+        # pprint("rf col name")
+        # pprint(out$rf_col_name)
     })
     
     return(out)
@@ -3090,16 +3090,16 @@ training_set_action_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("Training set action input")
-    #     print(local$proj_dir)
-    #     print(local$valid_proj)
-    #     print(local$valid_def)
+    #     pprint("Training set action input")
+    #     pprint(local$proj_dir)
+    #     pprint(local$valid_proj)
+    #     pprint(local$valid_def)
     # })
     
     # # debugging
     # observe({
-    #     print("=== training set simu run: project directory")
-    #     print(local$proj_dir)
+    #     pprint("=== training set simu run: project directory")
+    #     pprint(local$proj_dir)
     # })
     
     # init output
@@ -3135,13 +3135,13 @@ training_set_action_server <- function(input, output, session,
         req(length(local$proj_file_list) > 0)
         
         # # debugging
-        # print("simulate")
-        # print("valid proj ?")
-        # print(local$valid_proj)
-        # print("valid def ?")
-        # print(local$valid_def)
-        # print("proj file list")
-        # print(local$proj_file_list)
+        # pprint("simulate")
+        # pprint("valid proj ?")
+        # pprint(local$valid_proj)
+        # pprint("valid def ?")
+        # pprint(local$valid_def)
+        # pprint("proj file list")
+        # pprint(local$proj_file_list)
         
         req(input$nrun)
         req(local$proj_dir)
@@ -3215,9 +3215,9 @@ training_set_action_server <- function(input, output, session,
                 ## ready to run
                 
                 # debugging
-                # print("check options")
-                # print(getOption("diyabcGUI"))
-                # print(getOption("shiny.maxRequestSize"))
+                # pprint("check options")
+                # pprint(getOption("diyabcGUI"))
+                # pprint(getOption("shiny.maxRequestSize"))
                 
                 ## reset log
                 local$log_start_line = NULL
@@ -3241,8 +3241,8 @@ training_set_action_server <- function(input, output, session,
     observeEvent(local$diyabc_run_process, {
         req(!is.null(local$diyabc_run_process))
         
-        print("diyabc run process")
-        print(local$diyabc_run_process)
+        pprint("diyabc run process")
+        pprint(local$diyabc_run_process)
         
         observe({
             req(!is.null(local$diyabc_run_process))
@@ -3392,7 +3392,7 @@ training_set_action_server <- function(input, output, session,
     ## progress bar
     observeEvent(local$log_file_content, {
         
-        # print("----------- monitor progress -----------")
+        # pprint("----------- monitor progress -----------")
         # logging("objective nrun =", input$nrun)
         # logging("current log length =", length(local$log_file_content))
         
@@ -3418,38 +3418,38 @@ training_set_action_server <- function(input, output, session,
                 
                 local$log_start_line <- head(which(find_pttrn), 1)
                 pttrn_match <- local$log_file_content[local$log_start_line]
-                # print("pattern match")
-                # print(pttrn_match)
-                # print("log_start_line")
-                # print(local$log_start_line)
+                # pprint("pattern match")
+                # pprint(pttrn_match)
+                # pprint("log_start_line")
+                # pprint(local$log_start_line)
                 
                 local$n_rec_initial <- as.integer(str_extract(
                     pttrn_match,
                     "(?<=rt\\.nrec=)[0-9]+"
                 ))
-                # print("n_rec_initial")
-                # print(local$n_rec_initial)
+                # pprint("n_rec_initial")
+                # pprint(local$n_rec_initial)
                 
                 local$n_rec_final <- as.integer(str_extract(
                     pttrn_match,
                     "(?<=nrecneeded=)[0-9]+"
                 ))
-                # print("n_rec_final")
-                # print(local$n_rec_final)
+                # pprint("n_rec_final")
+                # pprint(local$n_rec_final)
                 
                 local$n_scenario <- as.integer(str_extract(
                     pttrn_match,
                     "(?<=nscenarios=)[0-9]+"
                 ))
-                # print("n_scenario")
-                # print(local$n_scenario)
+                # pprint("n_scenario")
+                # pprint(local$n_scenario)
                 
                 local$n_stat <- as.integer(str_extract(
                     pttrn_match,
                     "(?<=rt\\.nstat=)[0-9]+"
                 ))
-                # print("n_stat")
-                # print(local$n_stat)
+                # pprint("n_stat")
+                # pprint(local$n_stat)
             }
         } else {
             last_message <- tail(
@@ -3585,8 +3585,8 @@ training_set_action_server <- function(input, output, session,
     observeEvent(local$prior_check_process, {
         req(!is.null(local$prior_check_process))
 
-        print("diyabc prior/model check process")
-        print(local$prior_check_process)
+        pprint("diyabc prior/model check process")
+        pprint(local$prior_check_process)
 
         observe({
             req(!is.null(local$prior_check_process))

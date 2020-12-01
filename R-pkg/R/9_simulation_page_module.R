@@ -104,25 +104,25 @@ simu_page_server <- function(input, output, session,
     # })
     # # update output
     # observe({
-    #     # print("---- scenario = ")
-    #     # print(scenario)
+    #     # pprint("---- scenario = ")
+    #     # pprint(scenario)
     #     out$scenario <- scenario
     # })
     # ## genetic loci
     # genetic_setting <- callModule(genetic_loci_server, "genetic_setting")
     # # # update output
     # # observe({
-    # #     # print("---- genetic_setting = ")
-    # #     # print(genetic_setting)
-    # #     # print(genetic_setting$locus_description)
+    # #     # pprint("---- genetic_setting = ")
+    # #     # pprint(genetic_setting)
+    # #     # pprint(genetic_setting$locus_description)
     # #     # out$genetic_setting <- genetic_setting
     # # })
     # # ## debugging
     # # observe({
-    # #     # print(scenario)
-    # #     print("sample sizes = ")
-    # #     print(scenario$param_setting$sample_sizes)
-    # #     # print(genetic_setting)
+    # #     # pprint(scenario)
+    # #     pprint("sample sizes = ")
+    # #     pprint(scenario$param_setting$sample_sizes)
+    # #     # pprint(genetic_setting)
     # # })
     # ## simulation project action
     # callModule(simu_proj_action_server, "proj_action",
@@ -256,9 +256,9 @@ simu_hist_model_param_server <- function(input, output, session,
     observe({
         local$scenario_cond = scenario_cond()
         local$scenario_param = scenario_param()
-        # print("check input")
-        # print(local$scenario_cond)
-        # print(local$scenario_param)
+        # pprint("check input")
+        # pprint(local$scenario_cond)
+        # pprint(local$scenario_param)
     })
     # init output reactive values
     out <- reactiveValues(param_values = list(),
@@ -632,7 +632,7 @@ simu_proj_action_server <- function(input, output, session,
     # # debugging
     # observe({
     #     req(local$raw_param)
-    #     print(local$raw_param)
+    #     pprint(local$raw_param)
     # })
     
     ## write header file
@@ -647,9 +647,9 @@ simu_proj_action_server <- function(input, output, session,
         req(!is.null(local$seq_mode))
         req(!is.null(local$locus_type))
         
-        # print(local$samples_sizes)
+        # pprint(local$samples_sizes)
         # 
-        # print(local$locus_type)
+        # pprint(local$locus_type)
         
         write_headersim(local$project_name, local$project_dir, 
                         local$seq_mode, local$locus_type,

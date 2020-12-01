@@ -11,37 +11,37 @@ write_header <- function(proj_dir, data_file,
     # FIXME check input
     
     # # debugging
-    # print("------ write_header input")
-    # print("proj_dir =")
-    # print(proj_dir)
-    # print("param_list =")
-    # print(param_list)
-    # print("param_count_list =")
-    # print(param_count_list)
-    # print("scenario_list =")
-    # print(scenario_list)
-    # print("cond_list =")
-    # print(cond_list)
-    # print("data_file =")
-    # print(data_file)
-    # print("locus_type =")
-    # print(locus_type)
-    # print("seq_mode =")
-    # print(seq_mode)
-    # print("locus =")
-    # print(locus)
-    # print("mss_locus =")
-    # print(mss_locus)
-    # print("mss_group_prior =")
-    # print(mss_group_prior)
-    # print("mss_rf_col_name")
-    # print(mss_rf_col_name)
+    # pprint("------ write_header input")
+    # pprint("proj_dir =")
+    # pprint(proj_dir)
+    # pprint("param_list =")
+    # pprint(param_list)
+    # pprint("param_count_list =")
+    # pprint(param_count_list)
+    # pprint("scenario_list =")
+    # pprint(scenario_list)
+    # pprint("cond_list =")
+    # pprint(cond_list)
+    # pprint("data_file =")
+    # pprint(data_file)
+    # pprint("locus_type =")
+    # pprint(locus_type)
+    # pprint("seq_mode =")
+    # pprint(seq_mode)
+    # pprint("locus =")
+    # pprint(locus)
+    # pprint("mss_locus =")
+    # pprint(mss_locus)
+    # pprint("mss_group_prior =")
+    # pprint(mss_group_prior)
+    # pprint("mss_rf_col_name")
+    # pprint(mss_rf_col_name)
     
     out <- NULL
     
     filename <- "header.txt"
     
-    # print("log1")
+    # pprint("log1")
     ## data filename and summary
     n_stat <- NULL
     if(locus_type == "snp") {
@@ -60,7 +60,7 @@ write_header <- function(proj_dir, data_file,
                         sep = " "),
                   sep = "\n")
     
-    # print("log2")
+    # pprint("log2")
     ## scenario
     sec2 <- str_c(length(scenario_list), "scenarios:",
                   str_c(str_count(string = scenario_list, 
@@ -91,7 +91,7 @@ write_header <- function(proj_dir, data_file,
                   str_c(format_scenario, collapse = "\n"),
                   sep = "\n")
     
-    # print("log3")
+    # pprint("log3")
     ## historical parameters priors
     sec3 <- str_c(
         str_c("historical parameters priors ",
@@ -110,7 +110,7 @@ write_header <- function(proj_dir, data_file,
         }
     }
     
-    # print("log4")
+    # pprint("log4")
     ## loci description
     sec4 <- NULL
     if(locus_type == "snp") {
@@ -157,7 +157,7 @@ write_header <- function(proj_dir, data_file,
         )
     }
     
-    # print("log5")
+    # pprint("log5")
     ## group summary statistics
     sec5 <- NULL
     microsat_group <- NULL
@@ -232,7 +232,7 @@ write_header <- function(proj_dir, data_file,
         }
     }
     
-    # print("log6")
+    # pprint("log6")
     ## final summary
     summary_stat <- NULL
     

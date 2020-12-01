@@ -525,7 +525,7 @@ node2edge_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
     # x_start, y_start, x_end, y_end, Ne, text
     edge_coordinates <- NULL
     for(node_id in rev_tree_coord_df$id) {
-        # print(str_c("### node id = ", node_id))
+        # pprint(str_c("### node id = ", node_id))
         x_start <- NA
         x_end <- NA
         y_start <- NA

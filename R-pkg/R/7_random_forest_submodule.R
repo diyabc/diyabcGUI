@@ -73,8 +73,8 @@ rf_module_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("proj_file_list")
-    #     print(local$proj_file_list)
+    #     pprint("proj_file_list")
+    #     pprint(local$proj_file_list)
     # })
     
     # check required files
@@ -345,8 +345,8 @@ rf_parameter_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("proj_header_file")
-    #     print(local$proj_header_file)
+    #     pprint("proj_header_file")
+    #     pprint(local$proj_header_file)
     # })
     
     ## context
@@ -731,8 +731,8 @@ rf_parameter_server <- function(input, output, session,
     })
     
     # observe({
-    #     print("------- run mode = ")
-    #     print(out$run_mode)
+    #     pprint("------- run mode = ")
+    #     pprint(out$run_mode)
     # })
     
     ## output
@@ -879,21 +879,21 @@ rf_control_server <- function(input, output, session,
     
     # # debugging
     # observe({
-    #     print("log file content")
-    #     print(tail(local$log_file_content, 5))
+    #     pprint("log file content")
+    #     pprint(tail(local$log_file_content, 5))
     # })
     
     ## run
     observeEvent(input$run, {
         
         # # debugging
-        # print("run set up?")
-        # print("valid proj ?")
-        # print(local$valid_proj)
-        # print("proj ready ?")
-        # print(local$proj_ready)
-        # print("proj file list")
-        # print(local$proj_file_list)
+        # pprint("run set up?")
+        # pprint("valid proj ?")
+        # pprint(local$valid_proj)
+        # pprint("proj ready ?")
+        # pprint(local$proj_ready)
+        # pprint("proj file list")
+        # pprint(local$proj_file_list)
         
         req(!is.null(local$proj_ready))
         req(!is.null(local$valid_proj))
@@ -977,9 +977,9 @@ rf_control_server <- function(input, output, session,
                 ## ready to run
                 
                 # debugging
-                # print("check options")
-                # print(getOption("diyabcGUI"))
-                # print(getOption("shiny.maxRequestSize"))
+                # pprint("check options")
+                # pprint(getOption("diyabcGUI"))
+                # pprint(getOption("shiny.maxRequestSize"))
                 
                 ## reset log
                 local$log_start_line = NULL
@@ -992,41 +992,41 @@ rf_control_server <- function(input, output, session,
                 )
                 
                 # # debugging
-                # print("run")
-                # print("valid proj ?")
-                # print(local$valid_proj)
-                # print("proj ready ?")
-                # print(local$proj_ready)
-                # print("proj file list")
-                # print(local$proj_file_list)
+                # pprint("run")
+                # pprint("valid proj ?")
+                # pprint(local$valid_proj)
+                # pprint("proj ready ?")
+                # pprint(local$proj_ready)
+                # pprint("proj file list")
+                # pprint(local$proj_file_list)
                 # 
-                # print("abcranger args")
-                # print("proj_dir =")
-                # print(local$proj_dir)
-                # print("run mode =")
-                # print(local$run_mode)
+                # pprint("abcranger args")
+                # pprint("proj_dir =")
+                # pprint(local$proj_dir)
+                # pprint("run mode =")
+                # pprint(local$run_mode)
                 # 
-                # print("n_rec =")
-                # print(local$n_rec)
+                # pprint("n_rec =")
+                # pprint(local$n_rec)
                 # 
-                # print("min_node_size =")
-                # print(local$min_node_size)
-                # print("noise_columns =")
-                # print(local$noise_columns)
-                # print("linear =")
-                # print(local$linear)
-                # print("n_tree")
-                # print(local$n_tree)
+                # pprint("min_node_size =")
+                # pprint(local$min_node_size)
+                # pprint("noise_columns =")
+                # pprint(local$noise_columns)
+                # pprint("linear =")
+                # pprint(local$linear)
+                # pprint("n_tree")
+                # pprint(local$n_tree)
                 # 
                 # if(local$run_mode == "param_estim") {
-                #     print("chosen_scen =")
-                #     print(local$chosen_scenario)
-                #     print("pls_max_var")
-                #     print(local$pls_max_var)
-                #     print("noob =")
-                #     print(local$noob)
-                #     print("parameter =")
-                #     print(local$parameter)
+                #     pprint("chosen_scen =")
+                #     pprint(local$chosen_scenario)
+                #     pprint("pls_max_var")
+                #     pprint(local$pls_max_var)
+                #     pprint("noob =")
+                #     pprint(local$noob)
+                #     pprint("parameter =")
+                #     pprint(local$parameter)
                 # }
                 
                 req(!is.null(local$proj_dir))
@@ -1062,8 +1062,8 @@ rf_control_server <- function(input, output, session,
     observeEvent(local$abcranger_run_process, {
         req(!is.null(local$abcranger_run_process))
         
-        print("abcranger run process")
-        print(local$abcranger_run_process)
+        pprint("abcranger run process")
+        pprint(local$abcranger_run_process)
         
         observe({
             req(!is.null(local$abcranger_run_process))

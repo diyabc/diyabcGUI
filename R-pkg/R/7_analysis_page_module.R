@@ -76,8 +76,8 @@ analysis_page_server <- function(input, output, session) {
     
     # # debugging
     # observe({
-    #     print("#### Project settings ####")
-    #     print(reactiveValuesToList(proj_set))
+    #     pprint("#### Project settings ####")
+    #     pprint(reactiveValuesToList(proj_set))
     # })
     
     
@@ -104,8 +104,8 @@ analysis_page_server <- function(input, output, session) {
     
     # # debugging
     # observe({
-    #     print("training set valid proj")
-    #     print(training_set$valid_proj)
+    #     pprint("training set valid proj")
+    #     pprint(training_set$valid_proj)
     # })
     
     ## random forest module
@@ -299,8 +299,8 @@ analysis_proj_set_server <- function(input, output, session) {
         new_file_input$valid <- (new_file_input$name %in% possible_files)
         
         # # debugging
-        # print("new file input")
-        # print(new_file_input)
+        # pprint("new file input")
+        # pprint(new_file_input)
         
         ## delete non related files
         lapply(
@@ -317,8 +317,8 @@ analysis_proj_set_server <- function(input, output, session) {
         new_file_input <- new_file_input[new_file_input$valid,]
         
         # # debugging
-        # print("new file input")
-        # print(new_file_input)
+        # pprint("new file input")
+        # pprint(new_file_input)
         
         ## copy files to project directory
         if(nrow(new_file_input) > 0) {
@@ -352,7 +352,7 @@ analysis_proj_set_server <- function(input, output, session) {
         }
     })
     
-    # print possible files when uploading existing projects
+    # pprint possible files when uploading existing projects
     output$file_check <- renderUI({
         helpText(
             tags$p(
@@ -531,8 +531,8 @@ analysis_proj_set_server <- function(input, output, session) {
         out$proj_file_list <- local$file_input$name[local$file_input$valid]
 
         # # debugging
-        # print("file_input")
-        # print(local$file_input)
+        # pprint("file_input")
+        # pprint(local$file_input)
     })
 
     ## Data file file
@@ -624,7 +624,7 @@ input_data_server <- function(input, output, session,
     observe({
         local$proj_dir <- proj_dir()
         # # debugging
-        # print(paste0("input proj dir = ", local$proj_dir))
+        # pprint(paste0("input proj dir = ", local$proj_dir))
     })
     ## init output
     out <- reactiveValues(
@@ -705,11 +705,11 @@ check_data_server <- function(input, output, session,
         local$proj_dir <- proj_dir()
         
         # # debugging
-        # print(paste0("input data file = ", local$data_file))
-        # print(paste0("expected data file = ", local$exp_data_file))
-        # print(paste0("input locus type = ", local$locus_type))
-        # print(paste0("input seq mode = ", local$seq_mode))
-        # print(paste0("input proj dir = ", local$proj_dir))
+        # pprint(paste0("input data file = ", local$data_file))
+        # pprint(paste0("expected data file = ", local$exp_data_file))
+        # pprint(paste0("input locus type = ", local$locus_type))
+        # pprint(paste0("input seq mode = ", local$seq_mode))
+        # pprint(paste0("input proj dir = ", local$proj_dir))
     })
     # init output
     out <- reactiveValues(

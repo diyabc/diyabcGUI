@@ -52,7 +52,7 @@ dir_choice_server <- function(input, output, session,
         roots = volumes,
         defaultRoot = "wd"
     )
-    # print path
+    # pprint path
     output$dir_value <- renderText({
         out$path
     })

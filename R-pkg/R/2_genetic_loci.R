@@ -77,11 +77,11 @@ locus_nb_server <- function(input, output, session,
     })
     # get input
     observe({
-        # print(input$auto_dip)
-        # print(input$auto_hap)
-        # print(input$x_linked)
-        # print(input$y_linked)
-        # print(input$mito)
+        # pprint(input$auto_dip)
+        # pprint(input$auto_hap)
+        # pprint(input$x_linked)
+        # pprint(input$y_linked)
+        # pprint(input$mito)
         local$auto_dip <- input$auto_dip
         local$auto_hap <- input$auto_hap
         local$x_linked <- input$x_linked
@@ -108,11 +108,11 @@ locus_nb_server <- function(input, output, session,
         req(!is.null(local$x_linked))
         req(!is.null(local$y_linked))
         req(!is.null(local$mito))
-        # print(local$auto_dip)
-        # print(local$auto_hap)
-        # print(local$x_linked)
-        # print(local$y_linked)
-        # print(local$mito)
+        # pprint(local$auto_dip)
+        # pprint(local$auto_hap)
+        # pprint(local$x_linked)
+        # pprint(local$y_linked)
+        # pprint(local$mito)
         out$locus_count <- parse_locus_count(
             local$auto_dip, local$auto_hap,
             local$x_linked, local$y_linked,
@@ -120,8 +120,8 @@ locus_nb_server <- function(input, output, session,
         out$total_count <- sum(c(local$auto_dip, local$auto_hap,
                                  local$x_linked, local$y_linked,
                                  local$mito))
-        # print("-- locus count =")
-        # print(out$locus_count)
+        # pprint("-- locus count =")
+        # pprint(out$locus_count)
     })
     # output
     return(out)
@@ -316,9 +316,9 @@ genetic_loci_server <- function(input, output, session) {
                            poolseq = reactive(local$poolseq))
     # update haploid status
     observe({
-        # print(dna_loci)
-        # print(microsat_loci)
-        # print(snp_loci)
+        # pprint(dna_loci)
+        # pprint(microsat_loci)
+        # pprint(snp_loci)
         local$haploid <- any(c(dna_loci$haploid, 
                                microsat_loci$haploid,
                                snp_loci$haploid))
@@ -335,7 +335,7 @@ genetic_loci_server <- function(input, output, session) {
                               "snp" = snp_loci$locus_count)
         out$locus_description <- parse_locus_description(locus_count,
                                                          local$locus_type)
-        # print(out$locus_description)
+        # pprint(out$locus_description)
     })
     # get seq mode and locus type
     observe({
