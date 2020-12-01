@@ -16,6 +16,7 @@ diyabc <- function() {
     )
 }
 
+
 #' Launch DIYABC-RF graphical user interface for standalone app
 #' @description
 #' FIXME
@@ -24,14 +25,24 @@ diyabc <- function() {
 #' @author Ghislain Durif
 #' @export
 standalone_run_app <- function(options = list()) {
-    con <- file(file.path(dirname(tempdir()), "DIYABC-RF_GUI.log"))
-    sink(con, append=TRUE)
-    sink(con, append=TRUE, type="message")
-    on.exit(reset_sink())
-    
     shiny::shinyApp(
         ui = diyabc_ui(),
         server = diyabc_server,
-        options = options
+        onStart = redirect_output,
+        options = options,
     ) 
+}
+
+
+#' Launch shiny console output to a file
+#' @description
+#' FIXME
+#' @details
+#' FIXME
+#' @author Ghislain Durif
+#' @export
+redirect_output <- function() {
+    con <- file(file.path(dirname(tempdir()), "DIYABC-RF_GUI.log"))
+    sink(con, append=TRUE)
+    sink(con, append=TRUE, type="message")
 }
