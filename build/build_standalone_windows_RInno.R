@@ -1,5 +1,8 @@
 # generate standalone interface for Windows
 
+## RInno setup
+# see https://github.com/ficonsulting/RInno
+
 # project directory
 proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
 setwd(proj_dir)
@@ -31,13 +34,6 @@ Dependencies <- gtools::getDependencies(
 
 # version
 Version <- as.character(packageVersion("diyabcGUI"))
-
-# see https://github.com/ficonsulting/RInno
-
-# load library
-library(RInno)
-# Use RInno to get Inno Setup
-install_inno()
 
 # standalone build path
 build_path <- file.path(proj_dir, "build", "windows")

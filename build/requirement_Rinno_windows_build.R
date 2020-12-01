@@ -15,3 +15,11 @@ pkg_list <- c(
 )
 
 install.packages(pkg_list)
+
+## RInno setup
+# see https://github.com/ficonsulting/RInno
+
+# load library
+library(RInno)
+# Use RInno to get Inno Setup
+install_inno()
