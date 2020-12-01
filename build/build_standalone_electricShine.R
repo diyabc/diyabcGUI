@@ -18,20 +18,23 @@ library(electricShine)
 library(stringr)
 
 # install diyabcGUI
-devtools::install("R-pkg", upgrade = "never")
+devtools::install(file.path(proj_dir, "R-pkg"), upgrade = "never")
 
 # get bin files
 library(diyabcGUI)
 diyabcGUI::dl_all_latest_bin()
 
 # standalone build path
-build_path <- file.path(getwd(), "build", "windows")
+build_path <- file.path(proj_dir, "build", "windows")
+
+# app name
+app_name <- "DIYABC-RF_GUI"
 
 # prepare build path
 if(!dir.exists(build_path))
     fs::dir_create(build_path)
-if(dir.exists(file.path(build_path, "DIYABC-RF_GUI")))
-    fs::dir_delete(file.path(build_path, "DIYABC-RF_GUI"))
+if(dir.exists(file.path(build_path, app_name)))
+    fs::dir_delete(file.path(build_path, app_name))
 
 # switch depending on OS
 os <- stringr::str_extract(string = R.version$os, 
@@ -40,13 +43,13 @@ os <- stringr::str_extract(string = R.version$os,
 # create standalone app
 if(os %in% c("mingw32", "windows")) {
     electricShine::electrify(
-        app_name = "DIYABC-RF_GUI",
-        short_description = "DIYABC-RF application",
+        app_name = app_name,
+        short_description = "DIYABC-RF GUI application",
         semantic_version = as.character(packageVersion("diyabcGUI")),
         build_path = build_path,
         cran_like_url = "https://cran.r-project.org",
         function_name = "standalone_run_app",
-        local_package_path = file.path(getwd(), "R-pkg"),
+        local_package_path = file.path(proj_dir, "R-pkg"),
         package_install_opts = list(type = "binary"),
         run_build = TRUE,
         permission = TRUE

@@ -22,9 +22,11 @@ library(RInno)
 library(stringr)
 
 # install diyabcGUI
-devtools::install(file.path(proj_dir, "R-pkg"))
+devtools::install(file.path(proj_dir, "R-pkg"), upgrade = "never")
+
+# get bin files
 library(diyabcGUI)
-dl_all_latest_bin()
+diyabcGUI::dl_all_latest_bin()
 
 # dependencies
 Dependencies <- gtools::getDependencies(
