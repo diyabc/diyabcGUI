@@ -1,6 +1,8 @@
 # generate standalone interface for Windows
 
+# project directory
 proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
+setwd(proj_dir)
 
 # default repos
 local({
@@ -10,9 +12,11 @@ local({
 })
 
 # requirement
-library(devtools) # install.packages("devtools")
-library(gtools) # install.packages("gtools")
-library(RInno) # install.packages("RInno")
+library(devtools)
+library(fs)
+library(gtools)
+library(RInno)
+library(stringr)
 
 # install diyabcGUI
 devtools::install(file.path(proj_dir, "R-pkg"))
@@ -20,19 +24,13 @@ library(diyabcGUI)
 dl_all_latest_bin()
 
 # dependencies
-dep <- c(
-    "dplyr",
-    "fs",
-    "ggplot2",
-    "lubridate", 
-    "magrittr", 
-    "parallel", "processx",
-    "shiny", "shinybusy", "shinydashboard", "shinyFiles", 
-    "shinyhelper", "shinyjs", "shinyWidgets", 
-    "stringr", 
-    "tibble",
-    "tools"
+Dependencies <- gtools::getDependencies(
+    "diyabcGUI", 
+    dependencies = c("Depends", "Imports", "LinkingTo")
 )
+
+# version
+Version <- as.character(packageVersion("diyabcGUI"))
 
 # see https://github.com/ficonsulting/RInno
 
@@ -50,10 +48,11 @@ if(!dir.exists(build_path))
 
 # Build an installer
 create_app(
-    app_name = "diyabcGUI", 
+    app_name = str_c("DIYABC-RF_GUI_", Version),
     app_dir = file.path(proj_dir, "R-pkg", "inst", "application"),
     app_icon = file.path(proj_dir, "icon", "coccicon.png"),
-    pkgs = c(gtools::getDependencies("diyabcGUI"),  "diyabcGUI"),
+    pkgs = Dependencies,
+    remotes = c("diyabc/diyabcGUI"),
     dir_out = build_path,
     include_R = TRUE
 )

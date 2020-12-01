@@ -1,5 +1,9 @@
 # generate standalone interface for Windows/MacOS
 
+# project directory
+proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
+setwd(proj_dir)
+
 # default repos
 local({
     r <- getOption("repos")
@@ -21,13 +25,13 @@ library(diyabcGUI)
 diyabcGUI::dl_all_latest_bin()
 
 # standalone build path
-build_path <- file.path(getwd(), "build")
+build_path <- file.path(getwd(), "build", "windows")
 
 # prepare build path
 if(!dir.exists(build_path))
     fs::dir_create(build_path)
-if(dir.exists(file.path(build_path, "DIYABC-RF")))
-    fs::dir_delete(file.path(build_path, "DIYABC-RF"))
+if(dir.exists(file.path(build_path, "DIYABC-RF_GUI")))
+    fs::dir_delete(file.path(build_path, "DIYABC-RF_GUI"))
 
 # switch depending on OS
 os <- stringr::str_extract(string = R.version$os, 
@@ -36,7 +40,7 @@ os <- stringr::str_extract(string = R.version$os,
 # create standalone app
 if(os %in% c("mingw32", "windows")) {
     electricShine::electrify(
-        app_name = "DIYABC-RF",
+        app_name = "DIYABC-RF_GUI",
         short_description = "DIYABC-RF application",
         semantic_version = as.character(packageVersion("diyabcGUI")),
         build_path = build_path,
@@ -50,16 +54,16 @@ if(os %in% c("mingw32", "windows")) {
     
     # rename exe file
     exec_filename <- stringr::str_c(
-        "DIYABC-RF Setup ", 
+        "DIYABC-RF_GUI Setup ", 
         as.character(packageVersion("diyabcGUI")), 
         ".exe", sep = ""
     )
     fs::file_copy(
         path = file.path(
-            build_path, "DIYABC-RF", "dist", exec_filename
+            build_path, "DIYABC-RF_GUI", "dist", exec_filename
         ), 
         new_path = file.path(
-            build_path, "DIYABC-RF", "dist", 
+            build_path, "DIYABC-RF_GUI", "dist", 
             stringr::str_replace_all(exec_filename, " ", "_")
         )
     )

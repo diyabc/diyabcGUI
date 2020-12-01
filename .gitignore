@@ -4,5 +4,6 @@
 .Ruserdata
 man
 
-build
+build/dist
+build/windows
 draft
