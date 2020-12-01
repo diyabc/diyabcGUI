@@ -47,7 +47,7 @@ create_app(
     app_name = str_c("DIYABC-RF_GUI_", Version),
     app_dir = file.path(proj_dir, "R-pkg", "inst", "application"),
     app_icon = file.path(proj_dir, "icon", "coccicon.png"),
-    pkgs = Dependencies,
+    pkgs = unique(c("shiny", "jsonlite", "httr", Dependencies)),
     remotes = c("diyabc/diyabcGUI"),
     dir_out = build_path,
     include_R = TRUE

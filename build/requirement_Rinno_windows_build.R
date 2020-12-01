@@ -10,6 +10,9 @@ pkg_list <- c(
     "devtools", 
     "fs", 
     "gtools", 
+    "httr", 
+    "jsonlite", 
+    "magrittr", 
     "RInno", 
     "stringr"
 )
