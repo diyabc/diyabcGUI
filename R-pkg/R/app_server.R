@@ -17,11 +17,4 @@ diyabc_server <- function(input, output, session) {
     ## index server function
     simplified_index_server(input, output, session)
     # index_server(input, output, session)
-    ## requirement to be able to exit standalone
-    if(!interactive()) {
-        session$onSessionEnded(function() {
-            stopApp()
-            q("no")
-        })
-    }
 }

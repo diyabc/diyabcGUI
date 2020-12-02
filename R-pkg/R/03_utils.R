@@ -213,8 +213,9 @@ pprint <- function(...) {
 #' @keywords internal
 #' @author Ghislain Durif
 reset_sink <- function() {
-    for(i in seq_len(sink.number())){
-        sink(NULL)
+    if(sink.number() > 0) {
+        sink(type = "message")
+        sink()
     }
 }
 

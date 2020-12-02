@@ -26,11 +26,11 @@ diyabc <- function() {
 #' @export
 standalone_run_app <- function(options = list()) {
     shiny::shinyApp(
-        ui = diyabc_ui(),
-        server = diyabc_server,
-        onStart = redirect_output,
+        ui = diyabcGUI::diyabc_ui(),
+        server = diyabcGUI::diyabc_server,
+        onStart = diyabcGUI::redirect_output,
         options = options,
-    ) 
+    )
 }
 
 
@@ -42,7 +42,17 @@ standalone_run_app <- function(options = list()) {
 #' @author Ghislain Durif
 #' @export
 redirect_output <- function() {
-    con <- file(file.path(dirname(tempdir()), "DIYABC-RF_GUI.log"))
+    logfile <- file.path(dirname(tempdir()), "DIYABC-RF_GUI.log")
+    pprint(str_c("log file: ", logfile))
+    con <- file(logfile)
     sink(con, append=TRUE)
     sink(con, append=TRUE, type="message")
+    
+    shiny::onStop(function() {
+        reset_sink()
+        print(str_c("interactive ? ", interactive()))
+        if(!interactive()) {
+            q("no")
+        }
+    })
 }
