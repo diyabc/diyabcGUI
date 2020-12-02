@@ -31,9 +31,15 @@ if(!dir.exists(dist_dir)) fs::dir_create(dist_dir)
 devtools::load_all(src_dir)
 
 # dependencies
-dep <- gtools::getDependencies(
+dep <- sort(gtools::getDependencies(
     "diyabcGUI", 
     dependencies = c("Depends", "Imports", "LinkingTo")
+))
+
+write.table(
+    dep, 
+    file = file.path(dist_dir, "requirements.txt"), 
+    row.names = FALSE, col.names = FALSE, quote = FALSE
 )
 
 # version
