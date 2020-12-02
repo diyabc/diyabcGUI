@@ -30,11 +30,14 @@ if(!dir.exists(dist_dir)) fs::dir_create(dist_dir)
 # load diyabcGUI
 devtools::load_all(src_dir)
 
-# dependencies
-dep <- sort(gtools::getDependencies(
-    "diyabcGUI", 
-    dependencies = c("Depends", "Imports", "LinkingTo")
-))
+# dependencies (jsonlite required by desktopDeployR)
+dep <- sort(unique(c(
+    "jsonlite",
+    gtools::getDependencies(
+        "diyabcGUI", 
+        dependencies = c("Depends", "Imports", "LinkingTo")
+    )
+)))
 
 write.table(
     dep, 
