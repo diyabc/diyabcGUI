@@ -35,13 +35,6 @@ ddr_dir <- file.path(build_dir, "DesktopDeployR")
 if(!dir.exists(ddr_dir))
     stop("Missing submodule DesktopDeployR, please init Git submodules")
 
-# standalone name
-app_version <- as.character(packageVersion(
-    "diyabcGUI", lib.loc = file.path(ddr_dir, "app", "library")
-))
-app_name <- "DIYABC-RF_GUI"
-full_app_name <- str(app_name, "_", app_version)
-
 # dependencies
 fs::file_copy(
     file.path(dist_dir, "requirements.txt"),
@@ -67,6 +60,13 @@ setwd(ddr_dir)
 on.exit(setwd(cwd))
 shell.exec("prepare.bat")
 setwd(cwd)
+
+# standalone name
+app_version <- as.character(packageVersion(
+    "diyabcGUI", lib.loc = file.path(ddr_dir, "app", "library")
+))
+app_name <- "DIYABC-RF_GUI"
+full_app_name <- str(app_name, "_", app_version)
 
 # zip standalone
 zip_dir <- file.path(build_dir, full_app_name)
