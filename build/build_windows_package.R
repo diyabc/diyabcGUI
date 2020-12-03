@@ -1,5 +1,9 @@
 ## build diyabcGUI zip package for Windows
 
+## check OS
+if(!R.version$os %in% c("mingw32", "windows"))
+    stop("Windows standalone build can only be done on Windows OS")
+
 # default repos
 local({
     r <- getOption("repos")
@@ -13,9 +17,11 @@ library(fs)
 library(gtools)
 library(stringr)
 
+# current working directory
+cwd <- getwd()
+
 # project directory
 proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
-setwd(proj_dir)
 
 # package source
 src_dir <- file.path(proj_dir, "R-pkg")
@@ -70,8 +76,8 @@ diyabcGUI::dl_all_latest_bin()
 zipfile <- file.path(dist_dir, str_c("diyabcGUI_", Version, ".zip"))
 if(file.exists(zipfile)) fs::file_delete(zipfile)
 setwd(dirname(system.file(package = "diyabcGUI")))
+on.exit(setwd(cwd))
 zip(
     zipfile = zipfile, 
     files = basename(system.file(package = "diyabcGUI"))
 )
-setwd(proj_dir)
