@@ -67,7 +67,7 @@ app_version <- as.character(packageVersion(
     "diyabcGUI", lib.loc = file.path(ddr_dir, "app", "library")
 ))
 app_name <- "DIYABC-RF_GUI"
-full_app_name <- str(app_name, "_", app_version)
+full_app_name <- str_c(app_name, "_", app_version)
 
 # zip standalone
 zip_dir <- file.path(build_dir, full_app_name)
