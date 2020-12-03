@@ -2,38 +2,32 @@
 
 > **Disclaimer:** `DIYABC-RF GUI` is under final development stage and not officially released yet. You may still encounter a few bugs.
 
-We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], 
-called `DIYABC-RF GUI`.
+We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], called `DIYABC-RF GUI`.
 
 > **Note:** `DIYABC-RF GUI` replaces the old interface [`DIYABC V2.1`](https://diyabc.github.io/old/) which is not maintained anymore.
 
-Please check the project [website](https://diyabc.github.io/) for additional 
-information and detailed documentation.
+Please check the project [website](https://diyabc.github.io/) for additional information and detailed documentation.
 
-`DIYABC-RF GUI` is available as a standalone application, or in a R package 
-called `diyabcGUI` as a `shiny` web app. You can either install and run 
-the standalone app, or install the `diyabcGUI` R package and run 
-`DIYABC-RF GUI` as a standard `shiny` app, c.f. [below](#r-package-installation).
+## Availability
 
-`DIYABC-RF GUI` provides a set of tools implementing 
-*Approximate Bayesian Computation* (ABC) combined with supervised machine 
-learning based on *Random Forests* (RF), for **model choice** and 
-**parameter inference** in the context 
-of **population genetics** analysis.
+`DIYABC-RF GUI` is available as a standalone application, or as a `shiny` web app implemented in the `diyabcGUI` R package .
 
-`DIYABC-RF GUI` (and the package `diyabcGUI`) is a user-friendly interface for 
-command-line softwares [diyabc](https://github.com/diyabc/diyabc) and 
-[abcranger](<https://github.com/diyabc/abcranger>), which are elementary bricks 
-of the `DIYABC-RF` pipeline.
+You can either install and run the standalone app, or install the `diyabcGUI` R package and run `DIYABC-RF GUI` as a standard `shiny` app, c.f. [below](#r-package-installation).
 
-### Authorship and licensing
+`DIYABC-RF GUI` provides a set of tools implementing *Approximate Bayesian Computation* (ABC) combined with supervised machine learning based on *Random Forests* (RF), for **model choice** and **parameter inference** in the context of **population genetics** analysis.
 
-Copyright (c) 2019-2020 DIYABC-RF Core team
+`DIYABC-RF GUI` (and the package `diyabcGUI`) is a user-friendly interface for command-line softwares [diyabc](https://github.com/diyabc/diyabc) and [abcranger](<https://github.com/diyabc/abcranger>), which are elementary bricks of the `DIYABC-RF` pipeline.
 
-DIYABC-RF Core team: François-David Collin, Ghislain Durif, Louis Raynal, 
+## Authorship and licensing
+
+The DIYABC-RF GUI software is edited by the DIYABC-RF Core team.
+
+**DIYABC-RF Core team**: François-David Collin, Ghislain Durif, Louis Raynal, 
 Mathieu Gautier, Renaud Vitalis, Eric Lombaert, Jean-Michel Marin, Arnaud Estoup
 
-See the [dedicated license file](./LICENSE) for detailed licensing information.
+The Windows DIYABC-RF GUI standalone app is based on DesktopDeployR by Wyming Lee Pang (https://github.com/wleepang/DesktopDeployR).
+
+See the [dedicated file](./COPYRIGHTS) for detailed copyright and licensing information.
 
 ---
 
@@ -45,12 +39,21 @@ See the [dedicated license file](./LICENSE) for detailed licensing information.
 
 ### Standalone app
 
-For Windows users, please download the installer of the latest DIYABC-RF GUI 
-release at <https://github.com/diyabc/diyabcGUI/releases/latest>.
+For Windows users:
 
-For the moment, the standalone app is not available for Linux and MacOS users. 
-Nonetheless, Linux and MacOS users can install the `diyabcGUI` package, c.f. 
-[below](#r-package-installation), and 
+1. Please download the latest release of `DIYABC-RF GUI` at <https://github.com/diyabc/diyabcGUI/releases/latest> and unzip `DIYABC-RF_GUI_<latest_version>.zip`
+
+2. To launch `DIYABC-RF GUI`, run `DIYABC-RF_GUI.bat` in the previously extracted directory (either by double-clicking it or in a terminal, you can also create a shortcut to run it by right-clicking on it).
+
+3. It will open a new tab in your web browser and you can use `DIYABC-RF GUI` as a web app.
+
+**Important**: you should not forget to quit the app when you are done with the dedicated button (otherwise some background related processes will remains active). Repeat steps 2 and 3 to launch again the application.
+
+> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>.log`.
+
+If you want to open multiple DIYABC-RF projects, you need to simultaneously open multiple instances of DIYABC-RF GUI (i.e. step 2 and 3).
+
+At the moment, the standalone app is not available for Linux and MacOS users. Nonetheless, Linux and MacOS users can install the `diyabcGUI` package, c.f. [below](#r-package-installation), and 
 run the DIYABC-RF GUI as a standard `shiny` app.
 
 > **Note:** if encountering instability in the standalone app, we recommend to install and use the `shiny` app available in the `diyabcGUI` R package, c.f. [below](#r-package-installation).
@@ -79,7 +82,7 @@ library(diyabcGUI)
 diyabcGUI::dl_all_latest_bin()
 ```
 
-> **Note:** you can run this command from time to time to update required binary files in case new versions were released.
+> **Note:** you can run this command from time to time to update the required binary files in case new versions were released.
 
 4. Launch the interface
 ```R
@@ -119,6 +122,12 @@ As a `shiny` app, DIYABC-RF GUI can be installed and run from a Shiny server. To
 ln -s /path/to/R_LIBS/diyabcGUI/application /srv/shiny-server/diyabc
 ```
 4. DIYABC-RF GUI is now available on your server at `https://my.shiny.server.address/diyabc`
+
+---
+
+## Standalone build (for developpers)
+
+Please see the dedicated [directory](build/README.md) for instructions about the standalone building.
 
 ---
 
