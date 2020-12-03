@@ -10,12 +10,18 @@ If you are a DIYABC-RF GUI user, please refer to README file at project root for
 
 > To be run on Windows OS.
 
-1. Build `diyabcGUI` packages zip sources for Windows
+1. Init and/or update `DesktopDeployrR` submodule
+```bash
+git submodule init
+git submodule update
+```
+
+2. Build `diyabcGUI` packages zip sources for Windows
 ```bash
 Rscript.exe build_windows_package.R
 ```
 
-2. Build `DIYABC-RF_GUI` standalone app for Windows
+3. Build `DIYABC-RF_GUI` standalone app for Windows
 ```bash
 Rscript.exe build_windows_standalone.R
 ```
