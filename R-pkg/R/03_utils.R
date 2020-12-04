@@ -230,6 +230,7 @@ logging <- function(...) {
 #' Enable logging verbosity
 #' @keywords internal
 #' @author Ghislain Durif
+#' @export
 enable_logging <- function() {
     # current option status
     diyabcGUI_options <- getOption("diyabcGUI")
@@ -242,6 +243,7 @@ enable_logging <- function() {
 #' Disable logging verbosity
 #' @keywords internal
 #' @author Ghislain Durif
+#' @export
 disable_logging <- function() {
     # current option status
     diyabcGUI_options <- getOption("diyabcGUI")
@@ -261,6 +263,7 @@ disable_logging <- function() {
 #' @param image_ext string, possible ggplot extensions among `"eps"`, `"ps"`, 
 #' `"tex"`, `"pdf"`, `"jpeg"`, `"tiff"`, `"png"`, `"bmp"`, `"svg"`
 #' @param verbose boolean, enable/disable logging verbosity, default is FALSE.
+#' @export
 set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
                                   simu_loop_size = 100, 
                                   image_ext = "png",
@@ -277,6 +280,7 @@ set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
 #' Get current diyabcGUI option states
 #' @keywords internal
 #' @author Ghislain Durif
+#' @export
 get_option <- function(option_name) {
     # current option state
     diyabcGUI_options <- getOption("diyabcGUI")
