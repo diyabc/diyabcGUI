@@ -32,6 +32,10 @@ Rscript.exe build_windows_standalone.R
 
 1. Unzip `DIYABC-RF_GUI_<latest_version>.zip` 
 
-2. Run `DIYABC-RF_GUI.bat` in the extracted directory (either by double-clicking it or in a terminal).
+2. Run `DIYABC-RF_GUI` (or `DIYABC-RF_GUI.bat`) in the previously extracted directory (either by double-clicking it or in a terminal).
 
-> A log file with for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI.log`.
+> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>.log`.
+
+### Debugging
+
+If you encounter any issue, you can try to use the application as a local shiny app (it should give you additional verbosity). To do this you can run `cmd.exe /c run_local_app_debug.bat` from the previously extracted directory in a terminal.

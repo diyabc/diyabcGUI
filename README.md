@@ -43,7 +43,7 @@ For Windows users:
 
 1. Please download the latest release of `DIYABC-RF GUI` at <https://github.com/diyabc/diyabcGUI/releases/latest> and unzip `DIYABC-RF_GUI_<latest_version>.zip`
 
-2. To launch `DIYABC-RF GUI`, run `DIYABC-RF_GUI.bat` in the previously extracted directory (either by double-clicking it or in a terminal, you can also create a shortcut to run it by right-clicking on it).
+2. To launch `DIYABC-RF GUI`, run `DIYABC-RF_GUI` (or `DIYABC-RF_GUI.bat`) in the previously extracted directory (either by double-clicking it or in a terminal, you can also create a shortcut to run it by right-clicking on it).
 
 3. It will open a new tab in your web browser and you can use `DIYABC-RF GUI` as a web app.
 
