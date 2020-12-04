@@ -40,9 +40,17 @@ standalone_run_app <- function(options = list()) {
 #' @details
 #' FIXME
 #' @author Ghislain Durif
+#' @importFrom lubridate now
 #' @export
 redirect_output <- function() {
-    logfile <- file.path(dirname(tempdir()), "DIYABC-RF_GUI.log")
+    logfile <- file.path(
+        dirname(tempdir()), 
+        str_c(
+            "DIYABC-RF_GUI", 
+            str_replace_all(lubridate::now(), pattern = " ", replacement = "_"),
+            ".log"
+        )
+    )
     pprint(str_c("log file: ", logfile))
     con <- file(logfile)
     sink(con, append=TRUE)
