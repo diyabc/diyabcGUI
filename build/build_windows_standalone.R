@@ -62,6 +62,8 @@ source("generate_Renviron.R")
 system("cmd.exe /c prepare.bat")
 setwd(cwd)
 
+Sys.sleep(2)
+
 # standalone name
 app_version <- as.character(packageVersion(
     "diyabcGUI", lib.loc = file.path(ddr_dir, "app", "library")
@@ -76,7 +78,9 @@ on.exit(file.rename(zip_dir, ddr_dir))
 setwd(build_dir)
 on.exit(setwd(cwd))
 zipfile <- file.path(dist_dir, str_c(full_app_name, "_windows.zip"))
+if(file.exists(zipfile)) fs::file_delete(zipfile)
 zip(
     zipfile = zipfile, 
     files = basename(zip_dir)
 )
+file.rename(zip_dir, ddr_dir)
