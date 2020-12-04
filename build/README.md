@@ -34,7 +34,7 @@ Rscript.exe build_windows_standalone.R
 
 2. Run `DIYABC-RF_GUI` (or `DIYABC-RF_GUI.bat`) in the previously extracted directory (either by double-clicking it or in a terminal).
 
-> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>.log`.
+> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>_<random_number>/`.
 
 ### Debugging
 

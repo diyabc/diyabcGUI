@@ -49,7 +49,7 @@ For Windows users:
 
 **Important**: you should not forget to quit the app when you are done with the dedicated button (otherwise some background related processes will remains active). Repeat steps 2 and 3 to launch again the application.
 
-> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>.log`.
+> A log file for DIYABC-RF GUI is available in your user-specific directory for temporary files, generally `C:\Users\<username>\AppData\Local\Temp\DIYABC-RF_GUI_<timestamp>_<random_number>/`.
 
 If you want to open multiple DIYABC-RF projects, you need to simultaneously open multiple instances of DIYABC-RF GUI (i.e. step 2 and 3).
 
