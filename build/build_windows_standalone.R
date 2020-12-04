@@ -58,7 +58,6 @@ if(!dir.exists(Rcpp_src))
 # Environment setup
 setwd(ddr_dir)
 on.exit(setwd(cwd))
-source("generate_Renviron.R")
 system("cmd.exe /c prepare.bat")
 setwd(cwd)
 
