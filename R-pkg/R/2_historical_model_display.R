@@ -359,13 +359,22 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                 if(parent_node$time != current_node$time) {
                     
                     if(parent_node$event == "merge") {
-                        fact <- (node_id == parent_node$child2_id) - 
-                            (node_id == parent_node$child1_id)
                         
-                        if(fact > 0) {
-                            orient <- 1
-                        } else if(fact < 0) {
-                            orient <- 0
+                        fact <- NA
+                        # case of merging into ghost pop
+                        if(any(is.na(c(parent_node$child1_id, 
+                                       parent_node$child2_id)))) {
+                            fact <- 0
+                        } else {
+                            # standard merge
+                            fact <- (node_id == parent_node$child2_id) - 
+                                (node_id == parent_node$child1_id)
+                            
+                            if(fact > 0) {
+                                orient <- 1
+                            } else if(fact < 0) {
+                                orient <- 0
+                            }
                         }
                         
                         parent_orient <- parent_node$orient
@@ -442,7 +451,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
             child1_id = rev_tree_coord_df$id[1], 
             child2_id = NA, 
             x_coord = rev_tree_coord_df$x_coord[1], 
-            y_coord = rev_tree_coord_df$y_coord[1] + grid_unit, 
+            y_coord = rev_tree_coord_df$y_coord[1] + 1.5 * grid_unit, 
             orient = NA,
             grid_unit_fact = grid_unit,
             stringsAsFactors = FALSE
