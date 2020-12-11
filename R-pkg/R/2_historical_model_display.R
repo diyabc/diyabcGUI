@@ -487,6 +487,9 @@ extract_edge_coordinate <- function(current_node, child_node, ntime,
     if((current_node$event == "merge") & (current_node$pop != child_node$pop)) {
         current_Ne <- child_node$Ne
     }
+    else if(current_node$event == "varNe") {
+        current_Ne <- child_node$Ne
+    }
     # edge
     out <- rbind(
         data.frame(
