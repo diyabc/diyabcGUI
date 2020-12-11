@@ -267,7 +267,7 @@ disable_logging <- function() {
 set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
                                   simu_loop_size = 100, 
                                   image_ext = "png",
-                                  verbose = FALSE) {
+                                  verbose = TRUE) {
     # cast
     ncore <- as.integer(ncore)
     simu_loop_size <- as.integer(simu_loop_size)
