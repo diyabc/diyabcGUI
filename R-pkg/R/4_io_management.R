@@ -816,8 +816,8 @@ check_mss_data_file <- function(data_file, data_dir,
                 
                 ## DATA content
                 data_ind <- head(pop_match_ind, 1):length(file_content)
+                data_ind <- data_ind[!data_ind %in% pop_match_ind]
                 data_content <- file_content[data_ind]
-                data_content <- data_content[data_content != "POP"]
                 
                 # write data content to a temporary file
                 data_content <- str_replace_all(
