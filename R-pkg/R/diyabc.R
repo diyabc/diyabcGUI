@@ -35,6 +35,25 @@ browser_diyabc <- function() {
     )
 }
 
+#' Launch DIYABC-RF graphical user interface in debug mode
+#' @description
+#' FIXME
+#' @details
+#' FIXME
+#' @author Ghislain Durif
+#' @return shiny application object
+#' @examples
+#' \dontrun{
+#' diyabc()
+#' }
+#' @export
+debug_diyabc <- function() {
+    options(shiny.error = browser)
+    shiny::runApp(
+        appDir = system.file("application", package = "diyabcGUI")
+    )
+}
+
 
 #' Launch DIYABC-RF graphical user interface for standalone app
 #' @description
