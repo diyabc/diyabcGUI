@@ -859,8 +859,16 @@ proj_action_server <- function(input, output, session,
     
     ## reset
     observeEvent(input$reset, {
-        req(!is.null(input$reset))
-        out$reset <- ifelse(!is.null(out$reset), out$reset, 0) + 1
+        ask_confirmation(
+            inputId = "reset_confirmation",
+            title = "Want to confirm ?"
+        )
+    })
+    observeEvent(input$reset_confirmation, {
+        req(!is.null(input$reset_confirmation))
+        if(isTRUE(input$reset_confirmation)) {
+            out$reset <- ifelse(!is.null(out$reset), out$reset, 0) + 1
+        }
     })
     
     ## output
