@@ -36,21 +36,6 @@ if(!dir.exists(dist_dir)) fs::dir_create(dist_dir)
 # load diyabcGUI
 devtools::load_all(src_dir)
 
-# dependencies (jsonlite required by desktopDeployR)
-dep <- sort(unique(c(
-    "jsonlite",
-    gtools::getDependencies(
-        "diyabcGUI", 
-        dependencies = c("Depends", "Imports", "LinkingTo")
-    )
-)))
-
-write.table(
-    dep, 
-    file = file.path(dist_dir, "requirements.txt"), 
-    row.names = FALSE, col.names = FALSE, quote = FALSE
-)
-
 # version
 Version <- as.character(packageVersion("diyabcGUI"))
 
@@ -67,6 +52,21 @@ devtools::install(
 #     ref = "prod",
 #     upgrade = "never"
 # )
+
+# dependencies (jsonlite required by desktopDeployR)
+dep <- sort(unique(c(
+    "jsonlite",
+    gtools::getDependencies(
+        "diyabcGUI", 
+        dependencies = c("Depends", "Imports", "LinkingTo")
+    )
+)))
+
+write.table(
+    dep, 
+    file = file.path(dist_dir, "requirements.txt"), 
+    row.names = FALSE, col.names = FALSE, quote = FALSE
+)
 
 # get latest required bin
 library(diyabcGUI)
