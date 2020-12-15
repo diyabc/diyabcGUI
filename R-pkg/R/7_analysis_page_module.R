@@ -853,7 +853,7 @@ proj_action_server <- function(input, output, session,
             setwd(local$proj_dir)
             cleanup_diyabc_run(local$proj_dir)
             cleanup_abcranger_run(local$proj_dir)
-            zip(file, list.files(local$proj_dir))
+            zip::zip(file, list.files(local$proj_dir))
         }
     )
     

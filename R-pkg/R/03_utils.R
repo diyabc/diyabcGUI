@@ -11,8 +11,6 @@ prog_name <- function(prog = "diyabc") {
     return(out)
 }
 
-
-
 #' Find diyabcGUI related binary files
 #' @keywords internal
 #' @author Ghislain Durif
@@ -180,7 +178,7 @@ dl_latest_bin <- function(prog = "diyabc") {
     zip_files <- list.files(path, pattern = "\\.zip$")
     if(length(zip_files) > 0) {
         latest_zip <- which.max(file.info(file.path(path, zip_files))$mtime)
-        tmp <- unzip(file.path(path, zip_files[latest_zip]), exdir = path)
+        tmp <- zip::unzip(file.path(path, zip_files[latest_zip]), exdir = path)
         if(length(tmp) == 0) {
             stop(str_c("Issue when unzipping ", zip_files[latest_zip]))
         }

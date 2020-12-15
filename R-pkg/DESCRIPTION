@@ -65,7 +65,8 @@ Imports:
     stringr, 
     tibble,
     tidyr,
-    tools
+    tools,
+    zip
 Suggests: 
     knitr,
     rmarkdown,
