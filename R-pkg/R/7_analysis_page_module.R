@@ -151,7 +151,7 @@ analysis_proj_set_ui <- function(id) {
         helpText(
             "You can either: (i) start with a new project;", 
             "(ii) open one of your own an existing project;", 
-            "or (iii) open one of the joined examples."
+            "or (iii) open one of the included examples."
         ),
         radioGroupButtons(
             ns("proj_type"),
@@ -352,7 +352,7 @@ analysis_proj_set_server <- function(input, output, session) {
         }
     })
     
-    # pprint possible files when uploading existing projects
+    # print possible files when uploading existing projects
     output$file_check <- renderUI({
         helpText(
             tags$p(
@@ -874,3 +874,4 @@ proj_action_server <- function(input, output, session,
     ## output
     return(out)
 }
+
