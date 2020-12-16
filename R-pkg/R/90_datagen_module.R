@@ -1,3 +1,145 @@
+#' Synthetic data generation module ui
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        tags$style(HTML(".box-header{text-align: center;}")),
+        fluidRow(
+            box(
+                title = tags$b("Project settings"),
+                width = 12,
+                status = "primary", solidHeader = FALSE,
+                collapsible = FALSE,
+                datagen_proj_set_ui(ns("proj_set"))
+            ),
+            box(
+                title = "Historical model",
+                width = 12,
+                status = "info", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = FALSE,
+                "WriteME"
+                # datagen_hist_model_ui(ns("hist_model"))
+            ),
+            box(
+                title = "Genetic data",
+                width = 12,
+                status = "warning", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = FALSE,
+                "WriteME"
+                # genetic_loci_ui(ns("genetic_setting"))
+            ),
+            box(
+                title = "Data file generation",
+                width = 12,
+                status = "warning", solidHeader = TRUE,
+                collapsible = TRUE, collapsed = FALSE,
+                "WriteME"
+                # datafile_gen_ui(ns("datafile_gen"))
+            ),
+            box(
+                title = tags$b("Project administration"),
+                width = 12,
+                status = "danger", solidHeader = FALSE,
+                collapsible = FALSE, collapsed = FALSE,
+                proj_admin_ui(ns("proj_admin"))
+            )
+        )
+    )
+}
+
+#' Synthetic data generation module server
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues()
+    
+    # init output
+    out <- reactiveValues(
+        reset = NULL
+    )
+    
+    ## project setting
+    proj_set <- callModule(datagen_proj_set_server, "proj_set")
+    
+    ## administration
+    proj_admin <- callModule(
+        proj_action_server, "proj_admin",
+        proj_dir = reactive(proj_set$proj_dir),
+        proj_name = reactive(proj_set$proj_name)
+    )
+    
+    ## reset
+    observeEvent(proj_admin$reset, {
+        req(proj_admin$reset)
+        out$reset <- proj_admin$reset
+    })
+    
+    # output
+    return(out)
+}
+
+#' Data generation module project setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_proj_set_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h3("Project name"),
+        textInput(ns("proj_name"), label = NULL, placeholder = "project name"),
+        hr(),
+        h3("Data type"),
+        data_type_ui(ns("data_type"))
+    )
+}
+
+#' Data generation module project setup server
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_proj_set_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues()
+    
+    # init output
+    out <- reactiveValues(
+        proj_dir = mk_proj_dir(),
+        proj_name = NULL,
+        locus_type = NULL,
+        seq_mode = NULL
+    )
+    
+    # clean on exit
+    session$onSessionEnded(function() {
+        isolate(tryCatch(fs::dir_delete(out$proj_dir)))
+    })
+    
+    ## project name
+    observeEvent(input$proj_name, {
+        req(input$proj_name)
+        out$proj_name <- input$proj_name
+    })
+    
+    ## data type
+    data_type <- callModule(data_type_server, "data_type")
+    observe({
+        req(data_type$locus_type)
+        req(data_type$seq_mode)
+        out$locus_type <- data_type$locus_type
+        out$seq_mode <- data_type$seq_mode
+    })
+    
+    # output
+    return(out)
+}
+
+
 #' Simulation page ui
 #' @keywords internal
 #' @author Ghislain Durif
