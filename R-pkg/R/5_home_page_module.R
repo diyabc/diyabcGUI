@@ -21,8 +21,8 @@ simplified_home_page_ui <- function(id) {
                            content = "data_analysis"),
                 actionButton(
                     ns("new_analysis_project"),
-                    label = "New project",
-                    icon = icon("folder-open"),
+                    label = "Start",
+                    icon = icon("play-circle"),
                     width = "100%"
                 )
             ),
@@ -44,8 +44,8 @@ simplified_home_page_ui <- function(id) {
                 )
                 # actionButton(
                 #     ns("new_simu_project"),
-                #     label = "New project",
-                #     icon = icon("folder-open"),
+                #     label = "Start",
+                #     icon = icon("play-circle"),
                 #     width = "100%"
                 # )
             ),
