@@ -3,12 +3,16 @@
 #' @author Ghislain Durif
 datagen_debug_app <- function() {
     shiny::shinyApp(
-        ui = fluidPage(
-            datagen_ui("datagen_testing")
+        ui = dashboardPage(
+            dashboardHeader(),
+            dashboardSidebar(),
+            dashboardBody(
+                datagen_page_ui("datagen_testing")
+            )
         ),
         server = function(input, output, session) {
             callModule(
-                datagen_server, "datagen_testing"
+                datagen_page_server, "datagen_testing"
             )
         }
     )

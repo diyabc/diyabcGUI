@@ -1,7 +1,7 @@
 #' Synthetic data generation module ui
 #' @keywords internal
 #' @author Ghislain Durif
-datagen_ui <- function(id) {
+datagen_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
         tags$style(HTML(".box-header{text-align: center;}")),
@@ -51,7 +51,7 @@ datagen_ui <- function(id) {
 #' Synthetic data generation module server
 #' @keywords internal
 #' @author Ghislain Durif
-datagen_server <- function(input, output, session) {
+datagen_page_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
     
@@ -109,7 +109,7 @@ datagen_proj_set_server <- function(input, output, session) {
     
     # init output
     out <- reactiveValues(
-        proj_dir = mk_proj_dir(),
+        proj_dir = mk_proj_dir("diyabc_datagen"),
         proj_name = NULL,
         locus_type = NULL,
         seq_mode = NULL
@@ -118,6 +118,11 @@ datagen_proj_set_server <- function(input, output, session) {
     # clean on exit
     session$onSessionEnded(function() {
         isolate(tryCatch(fs::dir_delete(out$proj_dir)))
+    })
+    
+    # debugging
+    observe({
+        logging("project directory:", out$proj_dir)
     })
     
     ## project name
