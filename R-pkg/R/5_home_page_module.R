@@ -8,7 +8,7 @@ simplified_home_page_ui <- function(id) {
             box(
                 title = "DIYABC-RF main pipeline",
                 width = 12, 
-                status = "primary", solidHeader = TRUE,
+                status = "warning", solidHeader = TRUE,
                 collapsible = TRUE,
                 tags$div(
                     tags$p("Including the two modules of DIYABC Random Forest:"),
@@ -39,15 +39,12 @@ simplified_home_page_ui <- function(id) {
                         helper(type = "markdown", 
                                content = "data_simulation")
                 ),
-                helpText(
-                    "Soon available"
+                actionButton(
+                    ns("new_datagen_project"),
+                    label = "Start",
+                    icon = icon("play-circle"),
+                    width = "100%"
                 )
-                # actionButton(
-                #     ns("new_simu_project"),
-                #     label = "Start",
-                #     icon = icon("play-circle"),
-                #     width = "100%"
-                # )
             ),
             box(
                 title = tags$div(icon("info-circle"), "Help center"),
@@ -83,7 +80,7 @@ simplified_home_page_server <- function(input, output, session) {
     # init output
     out <- reactiveValues(
         new_analysis_project = NULL,
-        new_simu_project = NULL
+        new_datagen_project = NULL
     )
     # analysis project reactivity
     observeEvent(input$new_analysis_project, {
@@ -93,11 +90,11 @@ simplified_home_page_server <- function(input, output, session) {
             0
         ) + 1
     })
-    # simu project reactivity
-    observeEvent(input$new_simu_project, {
-        out$new_simu_project <- ifelse(
-            !is.null(out$new_simu_project),
-            out$new_simu_project,
+    # datagen project reactivity
+    observeEvent(input$new_datagen_project, {
+        out$new_datagen_project <- ifelse(
+            !is.null(out$new_datagen_project),
+            out$new_datagen_project,
             0
         ) + 1
     })
