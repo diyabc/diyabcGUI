@@ -128,7 +128,7 @@ analysis_page_server <- function(input, output, session) {
     observeEvent(proj_action$reset, {
         req(proj_action$reset)
         out$reset <- proj_action$reset
-        # session$reload()
+        session$reload()
     })
     
     # output
@@ -235,7 +235,7 @@ analysis_proj_set_server <- function(input, output, session) {
         locus_type = NULL,
         seq_mode = NULL,
         new_proj = TRUE,
-        proj_dir = mk_proj_dir(),
+        proj_dir = mk_proj_dir("diyabc_rf"),
         proj_file_list = character(0),
         proj_header_content = list(),
         proj_name = NULL,
@@ -246,6 +246,11 @@ analysis_proj_set_server <- function(input, output, session) {
     # clean on exit
     session$onSessionEnded(function() {
         isolate(tryCatch(fs::dir_delete(out$proj_dir)))
+    })
+    
+    # debugging
+    observe({
+        logging("project directory:", out$proj_dir)
     })
     
     ## project name
@@ -386,11 +391,6 @@ analysis_proj_set_server <- function(input, output, session) {
                 )
             )
         )
-    })
-    
-    # debugging
-    observe({
-        logging("project directory:", out$proj_dir)
     })
     
     ## Manage example project
