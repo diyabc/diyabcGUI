@@ -18,7 +18,7 @@ app_simplified_sidebar <- function() {
             ),
             menuItem(
                 "Synthetic data file generation", 
-                tabName = "simu_tab", 
+                tabName = "datagen_tab", 
                 icon = icon("dna")
             ),
             menuItem(
@@ -54,8 +54,8 @@ app_simplified_body <- function() {
                 analysis_page_ui("analysis_page")
             ),
             tabItem(
-                tabName = "simu_tab",
-                simu_page_ui("simu_page")
+                tabName = "datagen_tab",
+                datagen_page_ui("datagen_page")
             ),
             tabItem(
                 tabName = "pref_tab",
@@ -88,23 +88,29 @@ simplified_index_server <- function(input, output, session) {
         updateTabItems(session, "app_menu", selected = "analysis_tab")
     })
     
-    ## new simu project
-    observeEvent(home_page$new_simu_project, {
-        req(home_page$new_simu_project)
-        updateTabItems(session, "app_menu", selected = "simu_tab")
+    ## new data generation project
+    observeEvent(home_page$new_datagen_project, {
+        req(home_page$new_datagen_project)
+        updateTabItems(session, "app_menu", selected = "datagen_tab")
     })
     
     ## analysis page
     analysis_page <- callModule(analysis_page_server, "analysis_page")
-    # reset
-    observeEvent(analysis_page$reset, {
-        req(analysis_page$reset)
-        session$reload()
-        updateTabItems(session, "app_menu", selected = "analysis_tab")
-    })
+    # # reset
+    # observeEvent(analysis_page$reset, {
+    #     req(analysis_page$reset)
+    #     session$reload()
+    #     updateTabItems(session, "app_menu", selected = "analysis_tab")
+    # })
     
-    ## simu page
-    callModule(simu_page_server, "simu_page")
+    ## datagen page
+    datagen_page <- callModule(datagen_page_server, "datagen_page")
+    # # reset
+    # observeEvent(datagen_page$reset, {
+    #     req(datagen_page$reset)
+    #     session$reload()
+    #     updateTabItems(session, "app_menu", selected = "datagen_tab")
+    # })
     
     ## preferences
     callModule(pref_page_server, "pref_page")
