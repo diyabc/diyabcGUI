@@ -42,9 +42,9 @@ pref_page_ui <- function(id) {
             ),
             helpText(
                 "DIYABC simulation engine generates data by batch.",
-                "Here you can set up the batch size, by default it is 100,",
+                "Here you can set up the batch size, by default it is 50,",
                 "meaning that simulating 1000 individuals will be done in",
-                "10 batches of 100 individuals."
+                "20 batches of 50 individuals."
             )
         )
     )
