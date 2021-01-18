@@ -66,6 +66,28 @@ simplified_home_page_ui <- function(id) {
                             href="https://github.com/diyabc/diyabcGUI/issues"
                         ),
                         "."
+                    ),
+                    hr(),
+                    tags$p(
+                        "Help inside the application:", br(),
+                        tags$ul(
+                            tags$li(
+                                "Specific help pop-ups relative to some panels",
+                                "are directly available inside",
+                                "the application by clicking on",
+                                "the close-by", icon("question-circle"), "."
+                            ),
+                            br(),
+                            tags$li(
+                                "Reactive feedback is also",
+                                "provided by the different panels",
+                                "of the application.",
+                                tags$i("Warning"), "messages are idenfied by a", 
+                                icon("warning"), "and",
+                                tags$i("informative"), "messages by a", 
+                                icon("comment"), "."
+                            )
+                        )
                     )
                 )
             )
