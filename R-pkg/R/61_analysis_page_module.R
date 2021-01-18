@@ -141,8 +141,7 @@ analysis_page_server <- function(input, output, session) {
 analysis_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3("Project name"),
-        textInput(ns("proj_name"), label = NULL, placeholder = "project name"),
+        proj_name_ui(ns("proj_name_setup")),
         hr(),
         h3("Data type"),
         data_type_ui(ns("data_type")),
@@ -224,6 +223,7 @@ analysis_proj_set_server <- function(input, output, session) {
     local <- reactiveValues(
         data_file = NULL,
         file_input = NULL,
+        valid_proj_name = FALSE,
         # data.frame with 4 columns:
         # name (chr), size (int), type (chr), datapath (chr)
         header_data_file = NULL
@@ -254,9 +254,16 @@ analysis_proj_set_server <- function(input, output, session) {
     })
     
     ## project name
-    observeEvent(input$proj_name, {
-        req(input$proj_name)
-        out$proj_name <- input$proj_name
+    proj_name_setup <- callModule(proj_name_server, "proj_name_setup")
+    
+    observeEvent(proj_name_setup$proj_name, {
+        req(proj_name_setup$proj_name)
+        out$proj_name <- proj_name_setup$proj_name
+    })
+    
+    observeEvent(proj_name_setup$valid_proj_name, {
+        req(!is.null(proj_name_setup$valid_proj_name))
+        local$valid_proj_name <- proj_name_setup$valid_proj_name
     })
     
     ## data type
@@ -566,6 +573,7 @@ analysis_proj_set_server <- function(input, output, session) {
     observe({
         
         req(!is.null(out$valid_data_file))
+        req(!is.null(local$valid_proj_name))
         
         # check header if required
         valid_header <- TRUE
@@ -573,7 +581,7 @@ analysis_proj_set_server <- function(input, output, session) {
             valid_header <- out$proj_header_content$valid
         }
         
-        out$valid_proj <- valid_header & out$valid_data_file
+        out$valid_proj <- local$valid_proj_name & valid_header & out$valid_data_file
         
         # # debugging
         # logging("valid proj?", out$valid_proj)
@@ -762,7 +770,7 @@ check_data_server <- function(input, output, session,
         if(local$file_check$valid) {
             req(local$file_check$msg)
             helpText(
-                h5("Data file info"),
+                h5(icon("comment"), "Data file info"),
                 do.call(
                     tags$ul,
                     lapply(local$file_check$msg, function(item) {
