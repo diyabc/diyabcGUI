@@ -224,6 +224,18 @@ show_existing_proj_ui <- function(id) {
     ns <- NS(id)
     
     tagList(
+        actionButton(
+            ns("edit"),
+            label = "Edit configuration",
+            icon = icon("edit")
+        ),
+        helpText(
+            "By editing the training set simulation configuration,", 
+            "it will", tags$b("erase"), "the corresponding training set file",
+            "(", tags$code("reftableRF.bin"), ")", 
+            "if existing."
+        ),
+        hr(),
         h3(icon("history"), "Historical models"),
         helpText(
             "Historical scenarii defined in the provided header file."
@@ -269,6 +281,15 @@ show_existing_proj_server <- function(input, output, session,
     observe({
         local$proj_header_content <- proj_header_content()
         local$valid_proj <- valid_proj()
+    })
+    
+    ## edit
+    observeEvent(input$edit, {
+        show_alert(
+            title = "Not available",
+            text = "This functionality will be soon available.",
+            type = "error"
+        )
     })
     
     # show historical model
@@ -2975,9 +2996,9 @@ training_set_action_ui <- function(id) {
         h3(icon("gear"), "Run"),
         numericInput(
             ns("nrun"),
-            label = "Number of simulations",
+            label = "Number of simulations requested in the training set",
             value = 100,
-            min = 100
+            min = 10
         ),
         uiOutput(ns("feedback_nrun")),
         helpText(
@@ -3025,12 +3046,13 @@ training_set_action_ui <- function(id) {
         h5(icon("comment"), "Run logs"),
         tags$pre(
             uiOutput(ns("run_log")),
-            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
+            style = "width:80vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
         ),
         hr(),
         h4("Prior and scenario checking"),
         helpText(
-            "This action requires a training set file (`reftableRF.bin`)",
+            "This action requires a training set file",
+            tags$code("reftableRF.bin"),
             "either generated when clicking on 'Simulate'",
             "or uploaded with an existing project."
         ),
@@ -3220,7 +3242,7 @@ training_set_action_server <- function(input, output, session,
                 # pprint(getOption("shiny.maxRequestSize"))
                 
                 ## reset log
-                local$log_start_line = NULL
+                local$log_start_line <- NULL
                 
                 local$feedback <- helpText(
                     icon("spinner", class = "fa-spin"),
@@ -3450,6 +3472,17 @@ training_set_action_server <- function(input, output, session,
                 ))
                 # pprint("n_stat")
                 # pprint(local$n_stat)
+                
+                ## update progress bar
+                if(input$nrun > local$n_rec_initial) {
+                    updateProgressBar(
+                        session = session,
+                        id = "simu_progress",
+                        value = local$n_rec_initial, 
+                        total = input$nrun,
+                        title = "Running simulation:"
+                    )
+                }
             }
         } else {
             last_message <- tail(
@@ -3537,6 +3570,7 @@ training_set_action_server <- function(input, output, session,
                                 "Number of already available simulations = ",
                                 tags$b(reftable_size),
                                 br(), br(),
+                                icon("warning"),
                                 "To generate additional training data, you must set",
                                 "the number of simulations to be higher than",
                                 tags$b(reftable_size), "."
