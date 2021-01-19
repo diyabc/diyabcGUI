@@ -12,6 +12,10 @@ proj_admin_ui <- function(id) {
             color = "primary",
             block = TRUE
         ),
+        helpText(
+            icon("clock"), 
+            "Preparing the zip file to save your project may take some time."
+        ),
         hr(),
         actionBttn(
             inputId = ns("reset"),
