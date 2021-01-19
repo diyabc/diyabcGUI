@@ -1,6 +1,6 @@
 # Summary statistics
 
-**WARNING!** ALL SUMMARY STATISTICS IMPLEMENTED IN THE PROGRAM WILL BE COMPUTED AND INCLUDED IN THE TRAINING DATASET.
+**Warning!** All summary statistics implemented in the program will be computed and included in the training dataset.
 
 ## For SNP loci (both IndSeq and PoolSeq SNPs)
 
