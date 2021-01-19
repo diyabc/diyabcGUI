@@ -422,7 +422,7 @@ rf_parameter_server <- function(input, output, session,
                 tmp_n_scenario
             ),
             tags$div(
-                "Total number simulated datasets:",
+                "Total number of simulated datasets:",
                 tmp_ref_table_size,
                 tmp_n_rec_per_scenario
             ),
@@ -452,14 +452,14 @@ rf_parameter_server <- function(input, output, session,
         req(!is.null(local$ref_table_size))
         if(local$ref_table_size > 0) {
             helpText(
-                "0 means using the full training data set,",
-                "i.e. 0 is equivalent to the total number",
+                tags$code("0"), "means using the full training data set,",
+                "i.e.", tags$code("0"), "is equivalent to the total number of",
                 "simulated datasets:", tags$b(local$ref_table_size)
             )
         } else {
             helpText(
-                "0 means using the full training data set,",
-                "i.e. 0 is equivalent to the total number",
+                tags$code("0"), "means using the full training data set,",
+                "i.e.", tags$code("0"), "is equivalent to the total number of",
                 "simulated datasets."
             )
         }

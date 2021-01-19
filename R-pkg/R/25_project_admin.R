@@ -1,26 +1,24 @@
 #' Project administration ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinyWidgets downloadBttn
 proj_admin_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        fluidRow(
-            column(
-                width = 6,
-                downloadButton(
-                    ns("save"), 
-                    label = "Save",
-                    style = "width:100%;"
-                )
-            ),
-            column(
-                width = 6,
-                actionButton(
-                    ns("reset"),
-                    label = tags$span(icon("refresh"), "Reset"),
-                    width = "100%"
-                )
-            )
+        downloadBttn(
+            ns("save"),
+            label = "Save",
+            style = "fill",
+            color = "primary",
+            block = TRUE
+        ),
+        hr(),
+        actionBttn(
+            inputId = ns("reset"),
+            label = tags$span(icon("refresh"), "Reset"),
+            style = "fill",
+            block = TRUE,
+            color = "danger"
         )
     )
 }
