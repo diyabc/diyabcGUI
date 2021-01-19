@@ -424,28 +424,9 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                 )
                 valid <- FALSE
             }
-            # MAF
-            pttrn <- "(?<=<)MAF=[:graph:]+(?=>)"
-            if(str_detect(info, pttrn)) {
-                msg <- append(
-                    msg,
-                    str_c("Minimum allele frequency criterion:", 
-                          str_extract(info, pttrn), sep = " ")
-                )
-            } else {
-                msg <- append(
-                    msg,
-                    str_c(
-                        "Missing 'minimum allele frequency criterion (MAF)'",
-                        "in PoolSeq SNP file header first line:",
-                        "Hudson algorithm will be used.", sep = " "
-                    )
-                )
-            }
             # additional info
             pttrn <- str_c(
                 "(<NM=[0-9]+\\.?[0-9]*NF>)", 
-                "(<MAF=[:graph:]+>)", 
                 "(<MRC=[:graph:]+>)",
                 sep = "|"
             )
@@ -453,7 +434,8 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
             if(str_length(add_info) > 0) {
                 msg <- append(
                     msg,
-                    str_c("Additional information:", add_info, sep = " ")
+                    str_c("Additional information in data file header:", 
+                          add_info, sep = " ")
                 )
             }
             ## header
@@ -542,6 +524,10 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                         )
                         valid <- FALSE
                     }
+                    msg <- append(
+                        msg,
+                        str_c("Number of population(s) =", n_pop, sep = " ")
+                    )
                     # nb of locus
                     n_loci <- nrow(content)
                     msg <- append(
