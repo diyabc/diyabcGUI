@@ -68,7 +68,7 @@ datagen_page_server <- function(input, output, session) {
     
     ## administration
     proj_admin <- callModule(
-        proj_action_server, "proj_admin",
+        proj_admin_server, "proj_admin",
         proj_dir = reactive(proj_set$proj_dir),
         proj_name = reactive(proj_set$proj_name)
     )
