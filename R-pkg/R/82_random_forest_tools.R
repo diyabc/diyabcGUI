@@ -224,28 +224,30 @@ abcranger_postprocess <- function(proj_dir, graph_dir,
 #' sub-directory
 abcranger_subdir <- function(proj_dir, sub_proj_name, prefix) {
     if(!is.null(sub_proj_name)) {
-        # create sub-directory
-        sub_dir_path <- file.path(proj_dir, sub_proj_name)
-        if(!dir.exists(sub_dir_path)) {
-            fs::dir_create(sub_dir_path)
-        }
-        # move output files
-        tmp_file_list <- list.files(proj_dir, pattern = prefix)
-        if(length(tmp_file_list) > 0) {
-            tmp_file_info <- file.info(file.path(proj_dir, tmp_file_list))
-            if(any(!tmp_file_info$isdir)) {
-                tmp_file_list <- tmp_file_list[!tmp_file_info$isdir]
-                tmp_move <- lapply(
-                    tmp_file_list, 
-                    function(tmp_file) {
-                        fs::file_copy(
-                            path = file.path(proj_dir, tmp_file),
-                            new_path = file.path(sub_dir_path, tmp_file),
-                            overwrite = TRUE
-                        )
-                        fs::file_delete(file.path(proj_dir, tmp_file))
-                    }
-                )
+        if(str_length(sub_proj_name) > 0) {
+            # create sub-directory
+            sub_dir_path <- file.path(proj_dir, sub_proj_name)
+            if(!dir.exists(sub_dir_path)) {
+                fs::dir_create(sub_dir_path)
+            }
+            # move output files
+            tmp_file_list <- list.files(proj_dir, pattern = prefix)
+            if(length(tmp_file_list) > 0) {
+                tmp_file_info <- file.info(file.path(proj_dir, tmp_file_list))
+                if(any(!tmp_file_info$isdir)) {
+                    tmp_file_list <- tmp_file_list[!tmp_file_info$isdir]
+                    tmp_move <- lapply(
+                        tmp_file_list, 
+                        function(tmp_file) {
+                            fs::file_copy(
+                                path = file.path(proj_dir, tmp_file),
+                                new_path = file.path(sub_dir_path, tmp_file),
+                                overwrite = TRUE
+                            )
+                            fs::file_delete(file.path(proj_dir, tmp_file))
+                        }
+                    )
+                }
             }
         }
     }
