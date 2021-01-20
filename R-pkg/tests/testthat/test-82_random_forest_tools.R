@@ -112,3 +112,60 @@ test_that("abcranger_postprocess", {
         )
     )
 })
+
+test_that("abcranger_subdir", {
+    
+    ## parameter estimation
+    
+    # prepare data for test
+    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    tmp_dir <- mk_proj_dir("testing")
+    fs::dir_copy(path = data_dir, new_path = tmp_dir)
+    proj_dir <- file.path(tmp_dir, "PoolSeq_SNP_estim_param")
+    # list.files(proj_dir)
+    sub_proj_name <- "sub_proj_test"
+    prefix <- "estimparam_out"
+    
+    # file setup
+    proj_file_list <- list.files(proj_dir)
+    n_file <- length(proj_file_list)
+    n_file_to_move <- sum(str_detect(proj_file_list, pattern = prefix))
+    
+    # manage sub proj dir
+    abcranger_subdir(proj_dir, sub_proj_name, prefix)
+    
+    # check
+    subproj_file_list <- list.files(file.path(proj_dir, sub_proj_name))
+    expect_true(length(subproj_file_list) == n_file_to_move)
+    
+    proj_file_list <- list.files(proj_dir)
+    expect_true(length(proj_file_list) == n_file - n_file_to_move + 1)
+        
+    ## model choice
+    
+    # prepare data for test
+    
+    # prepare data for test
+    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
+    tmp_dir <- mk_proj_dir("testing")
+    fs::dir_copy(path = data_dir, new_path = tmp_dir)
+    proj_dir <- file.path(tmp_dir, "PoolSeq_SNP_estim_param")
+    # list.files(proj_dir)
+    sub_proj_name <- "sub_proj_test"
+    prefix <- "modelchoice_out"
+    
+    # file setup
+    proj_file_list <- list.files(proj_dir)
+    n_file <- length(proj_file_list)
+    n_file_to_move <- sum(str_detect(proj_file_list, pattern = prefix))
+    
+    # manage sub proj dir
+    abcranger_subdir(proj_dir, sub_proj_name, prefix)
+    
+    # check
+    subproj_file_list <- list.files(file.path(proj_dir, sub_proj_name))
+    expect_true(length(subproj_file_list) == n_file_to_move)
+    
+    proj_file_list <- list.files(proj_dir)
+    expect_true(length(proj_file_list) == n_file - n_file_to_move + 1)
+})

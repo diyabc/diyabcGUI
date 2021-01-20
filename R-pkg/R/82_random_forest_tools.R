@@ -198,6 +198,7 @@ parse_abcranger_group <- function(txt, n_scenario) {
 abcranger_postprocess <- function(proj_dir, graph_dir, 
                                   run_mode = "param_estim", 
                                   prefix = "estimparam_out", 
+                                  sub_proj_name = NULL,
                                   param = NULL) {
     # graphical output
     if(run_mode == "param_estim") {
@@ -205,8 +206,47 @@ abcranger_postprocess <- function(proj_dir, graph_dir,
         if(!is.null(param)) {
             param_estim_graph_ouptut(proj_dir, graph_dir, param, prefix)
         }
+        # move file to subproject directory
+        abcranger_subdir(proj_dir, sub_proj_name, prefix = "estimparam_out")
     } else if(run_mode == "model_choice") {
         # model choice
         model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
+        # move file to subproject directory
+        abcranger_subdir(proj_dir, sub_proj_name, prefix = "modelchoice_out")
+    }
+}
+
+#' Abcranger sub-project directory management
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' After a successfool abcranger run, result files are moved to a dedicated 
+#' sub-directory
+abcranger_subdir <- function(proj_dir, sub_proj_name, prefix) {
+    if(!is.null(sub_proj_name)) {
+        # create sub-directory
+        sub_dir_path <- file.path(proj_dir, sub_proj_name)
+        if(!dir.exists(sub_dir_path)) {
+            fs::dir_create(sub_dir_path)
+        }
+        # move output files
+        tmp_file_list <- list.files(proj_dir, pattern = prefix)
+        if(length(tmp_file_list) > 0) {
+            tmp_file_info <- file.info(file.path(proj_dir, tmp_file_list))
+            if(any(!tmp_file_info$isdir)) {
+                tmp_file_list <- tmp_file_list[!tmp_file_info$isdir]
+                tmp_move <- lapply(
+                    tmp_file_list, 
+                    function(tmp_file) {
+                        fs::file_copy(
+                            path = file.path(proj_dir, tmp_file),
+                            new_path = file.path(sub_dir_path, tmp_file),
+                            overwrite = TRUE
+                        )
+                        fs::file_delete(file.path(proj_dir, tmp_file))
+                    }
+                )
+            }
+        }
     }
 }
