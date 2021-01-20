@@ -14,7 +14,14 @@ proj_admin_ui <- function(id) {
         ),
         helpText(
             icon("clock"), 
-            "Preparing the zip file to save your project may take some time."
+            "Preparing the zip file to save your project may take some time.",
+            br(),  br(),
+            icon("warning"), 
+            "Depending on the configuration of your web browser,",
+            "you may or may not be able to choose where the project zip file", 
+            "will be saved on your computer. If you cannot choose, the file",
+            "will be saved to a default location, like the",
+            tags$code("Downloads"), "folder in your home directory."
         ),
         hr(),
         actionBttn(
