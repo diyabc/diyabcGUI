@@ -802,7 +802,7 @@ rf_control_ui <- function(id) {
         h5(icon("comment"), "Run logs"),
         tags$pre(
             uiOutput(ns("run_log")),
-            style = "width:80vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
         )
     )
 }

@@ -3046,7 +3046,7 @@ training_set_action_ui <- function(id) {
         h5(icon("comment"), "Run logs"),
         tags$pre(
             uiOutput(ns("run_log")),
-            style = "width:80vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
         ),
         hr(),
         h4("Prior and scenario checking"),
