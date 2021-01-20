@@ -59,7 +59,7 @@ test_that("var_imp_graph", {
 })
 
 
-test_that("param_estim_graph_ouptut", {
+test_that("model_choice_graph_ouptut", {
     
     # input argument
     proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
