@@ -134,6 +134,7 @@ rf_module_server <- function(input, output, session,
         proj_file_list = reactive(local$proj_file_list),
         proj_ready = reactive(local$proj_ready),
         valid_proj = reactive(local$valid_proj),
+        sub_proj_name = reactive(rf_param$proj_name),
         group = reactive(rf_param$group),
         min_node_size = reactive(rf_param$min_node_size),
         noise_columns = reactive(rf_param$noise_columns),
@@ -162,10 +163,16 @@ rf_parameter_ui <- function(id) {
             block = TRUE,
             color = "success"
         ),
+        helpText(
+            icon("clock"), "Checking the input may take some time."
+        ),
         br(),
         uiOutput(ns("feedback_context")),
         hr(),
-        h4("Settings"),
+        proj_name_ui(ns("proj_name_setup"), 
+                     label = "Analysis (sub-project) name"),
+        hr(),
+        h3("Settings"),
         radioButtons(
             ns("run_mode"), 
             label = "Mode",
@@ -282,6 +289,8 @@ rf_parameter_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
+        valid_proj_name = FALSE,
+        param_ready = TRUE,
         param_list = list(),
         proj_header_content = NULL,
         ref_table_size = 0,
@@ -303,6 +312,7 @@ rf_parameter_server <- function(input, output, session,
     # output
     out <- reactiveValues(
         param_ready = TRUE,
+        proj_name = NULL,
         # parameters
         chosen_scenario = NULL,
         group = NULL,
@@ -316,6 +326,19 @@ rf_parameter_server <- function(input, output, session,
         pls_max_var = NULL,
         run_mode = NULL
     )
+    
+    ## project name
+    proj_name_setup <- callModule(proj_name_server, "proj_name_setup")
+    
+    observeEvent(proj_name_setup$proj_name, {
+        req(proj_name_setup$proj_name)
+        out$proj_name <- proj_name_setup$proj_name
+    })
+    
+    observeEvent(proj_name_setup$valid_proj_name, {
+        req(!is.null(proj_name_setup$valid_proj_name))
+        local$valid_proj_name <- proj_name_setup$valid_proj_name
+    })
         
     ## monitor change in headerRF.txt file
     proj_header_content <- function() return(list())
@@ -513,7 +536,7 @@ rf_parameter_server <- function(input, output, session,
             "You can use one of the following parameter",
             "or an arithmetic combination of them, such",
             "as division, addition or multiplication of",
-            "two existing parameters. like 't/N' or 'T1+T2'.",
+            "two existing parameters. like 't/N' or 't1+t2'.",
             tags$div(
                 style = "column-count:2;",
                 do.call(
@@ -635,7 +658,7 @@ rf_parameter_server <- function(input, output, session,
         )
         
         # save check
-        out$param_ready <- out$param_ready & group_check$valid
+        local$param_ready <- local$param_ready & group_check$valid
         
         # feedback
         output$feedback_group <- renderUI({
@@ -704,15 +727,21 @@ rf_parameter_server <- function(input, output, session,
         req(input$run_mode)
         if(input$run_mode == "param_estim") {
             if(is.null(input$parameter)) {
-                out$param_ready <- FALSE
+                local$param_ready <- FALSE
             } else if(str_length(input$parameter) == 0) {
-                out$param_ready <- FALSE
+                local$param_ready <- FALSE
             } else {
-                out$param_ready <- TRUE
+                local$param_ready <- TRUE
             }
         } else {
-            out$param_ready <- TRUE
+            local$param_ready <- TRUE
         }
+    })
+    
+    observe({
+        req(!is.null(local$param_ready))
+        req(!is.null(local$valid_proj_name))
+        out$param_ready <- local$param_ready & local$valid_proj_name
     })
     
     # output
@@ -773,7 +802,7 @@ rf_control_ui <- function(id) {
         h5(icon("comment"), "Run logs"),
         tags$pre(
             uiOutput(ns("run_log")),
-            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
+            style = "width:80vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
         )
     )
 }
@@ -786,6 +815,7 @@ rf_control_server <- function(input, output, session,
                               proj_file_list = reactive({NULL}),
                               proj_ready = reactive({FALSE}),
                               valid_proj = reactive({FALSE}),
+                              sub_proj_name = reactive({NULL}),
                               # parameters
                               group = reactive({NULL}),
                               chosen_scenario = reactive({NULL}),
@@ -819,6 +849,7 @@ rf_control_server <- function(input, output, session,
         proj_file_list = NULL,
         proj_ready = NULL,
         valid_proj = NULL,
+        sub_proj_name = NULL,
         # parameters
         group = NULL,
         chosen_scenario = NULL,
@@ -839,6 +870,7 @@ rf_control_server <- function(input, output, session,
         local$proj_file_list <- proj_file_list()
         local$proj_ready <- proj_ready()
         local$valid_proj <- valid_proj()
+        local$sub_proj_name <- sub_proj_name()
         
         local$group <- group()
         local$min_node_size <- min_node_size()
@@ -971,7 +1003,7 @@ rf_control_server <- function(input, output, session,
             } else if(!local$proj_ready) {
                 local$feedback <- helpText(
                     icon("warning"), "Missing parameters.",
-                    "Check run settings."
+                    "Check analysis name and run settings."
                 )
             } else {
                 ## ready to run
@@ -1123,6 +1155,7 @@ rf_control_server <- function(input, output, session,
             ## post processing
             req(!is.null(local$proj_dir))
             req(!is.null(local$run_mode))
+            req(!is.null(local$sub_proj_name))
             prefix <- switch(
                 local$run_mode,
                 "param_estim" = "estimparam_out",
@@ -1131,6 +1164,7 @@ rf_control_server <- function(input, output, session,
             abcranger_postprocess(
                 local$proj_dir, local$proj_dir, 
                 run_mode = local$run_mode, prefix = prefix, 
+                sub_proj_name = local$sub_proj_name,
                 param = local$parameter
             )
             
