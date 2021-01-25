@@ -101,7 +101,7 @@ To run simultaneously mutliple instances of DIYABC-RF GUI, e.g. to simultaneousl
 You may encounter some issue when installing devtools, please check the official 
 [devtools page](https://github.com/r-lib/devtools).
 
-Following `devtools` recommandations, make sure you have a working development environment.
+Following `devtools` recommendations, make sure you have a working development environment.
 
 - Windows: Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/).
 - Mac: Install Xcode from the Mac App Store.
