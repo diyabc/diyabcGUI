@@ -103,20 +103,19 @@ var_imp_graph <- function(proj_dir, prefix = "estimparam_out") {
 model_choice_graph_ouptut <- function(proj_dir, graph_dir, 
                                       prefix = "modelchoice_out") {
     # lda output
-    # FIXME
-    # g1 <- lda_coordinate_graph(proj_dir, prefix)
+    g1 <- lda_coordinate_graph(proj_dir, prefix)
     # graph oob error vs n tree
     g2 <- oob_error_graph(proj_dir, prefix)
     # graph of top 50 variable importance
     g3 <- var_imp_graph(proj_dir, prefix)
     # save graph
-    # ggsave(
-    #     filename = str_c(prefix, "_graph_lda.", 
-    #                      get_option("image_ext")),
-    #     plot = g1, 
-    #     path = graph_dir,
-    #     units = "cm", width = 14, height = 10
-    # )
+    ggsave(
+        filename = str_c(prefix, "_graph_lda.",
+                         get_option("image_ext")),
+        plot = g1,
+        path = graph_dir,
+        units = "cm", width = 14, height = 10
+    )
     ggsave(
         filename = str_c(prefix, "_graph_error_versus_ntrees.", 
                          get_option("image_ext")),
@@ -141,18 +140,22 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
     
     # LDA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
-    lda_out <- read.csv(file_name, header = FALSE, skip = 1, sep = ";")
+    lda_out <- read.table(file_name, skip = 1)
     # tagging
     lda_out$tag <- c("observations", 
                      rep("simulations", length = nrow(lda_out) - 1))
+    # alpha level
+    lda_out$alpha <- c(1, rep(0.1, length = nrow(lda_out) - 1))
+    # point size
+    lda_out$size <- c(2, rep(1, length = nrow(lda_out) - 1))
     # LDA latent space first two axes: observation vs simulation coordinates
     g1 <- ggplot(lda_out) +
         geom_point(
-            data = subset(lda_out, lda_out$tag == "simulations"), 
+            data = subset(lda_out, lda_out$tag == "simulations"),
             aes(x=V1, y=V2, col=tag), alpha = 0.1
         ) +
         geom_point(
-            data = subset(lda_out, lda_out$tag == "observations"), 
+            data = subset(lda_out, lda_out$tag == "observations"),
             aes(x=V1, y=V2, col=tag), alpha = 1, size = 2
         ) +
         xlab("axis 1") +
