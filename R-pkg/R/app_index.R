@@ -43,7 +43,7 @@ app_simplified_sidebar <- function() {
 app_simplified_body <- function() {
     dashboardBody(
         useShinyjs(),
-        add_busy_spinner(spin = "fading-circle"),
+        add_busy_spinner(spin = "fading-circle", margins = c(0, 10)),
         tabItems(
             tabItem(
                 tabName = "home_tab",
