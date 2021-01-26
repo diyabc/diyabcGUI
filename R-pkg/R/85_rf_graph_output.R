@@ -137,17 +137,12 @@ model_choice_graph_ouptut <- function(proj_dir, graph_dir,
 #' @keywords internal
 #' @author Ghislain Durif
 lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
-    
     # LDA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
     lda_out <- read.table(file_name, skip = 1)
     # tagging
     lda_out$tag <- c("observations", 
                      rep("simulations", length = nrow(lda_out) - 1))
-    # alpha level
-    lda_out$alpha <- c(1, rep(0.1, length = nrow(lda_out) - 1))
-    # point size
-    lda_out$size <- c(2, rep(1, length = nrow(lda_out) - 1))
     # LDA latent space first two axes: observation vs simulation coordinates
     g1 <- ggplot(lda_out) +
         geom_point(
