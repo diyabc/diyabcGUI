@@ -3665,6 +3665,7 @@ training_set_action_server <- function(input, output, session,
     observeEvent(local$prior_check_result, {
 
         req(!is.null(local$prior_check_result))
+        req(!is.null(local$proj_dir))
 
         logging("diyabc prior/model check run exit status:",
                 local$prior_check_result)
@@ -3672,6 +3673,7 @@ training_set_action_server <- function(input, output, session,
         ## check run
         # run ok
         if(local$prior_check_result == 0) {
+            # notification
             showNotification(
                 id = ns("prior_mod_check_run_ok"),
                 duration = 5,
@@ -3683,6 +3685,25 @@ training_set_action_server <- function(input, output, session,
                         "Prior and scenario checking is done."
                     )
                 )
+            )
+            # graph output
+            tryCatch(
+                scenario_check_graph_ouptut(local$proj_dir, local$proj_dir),
+                error = function(e) {
+                    showNotification(
+                        id = ns("prior_mod_check_graph_output_fail"),
+                        duration = 5,
+                        closeButton = TRUE,
+                        type = "error",
+                        tagList(
+                            tags$p(
+                                icon("warning"),
+                                "Graphical output generation for",
+                                "scenario checking failed."
+                            )
+                        )
+                    )
+                }
             )
         } else if(local$prior_check_result == -1000) {
             showNotification(
