@@ -797,7 +797,8 @@ hist_model_panel_server <- function(input, output, session,
         local$scenario_list[[ id ]] <<- callModule(
             hist_model_server, str_c("model", id),
             project_dir = reactive(local$project_dir), 
-            raw_scenario = reactive(local$raw_scenario)
+            raw_scenario = reactive(local$raw_scenario),
+            scenario_id = reactive(id)
         )
     })
     

@@ -39,13 +39,15 @@ hist_model_ui <- function(id) {
 #' @param raw_scenario raw scenario as a `reactive`.
 hist_model_server <- function(input, output, session,
                               project_dir = reactive({NULL}), 
-                              raw_scenario = reactive({NULL})) {
+                              raw_scenario = reactive({NULL}),
+                              scenario_id = reactive({NULL})) {
     # init local reactive values
     local <- reactiveValues(
         graph = NULL,
         parser_msg = NULL,
         project_dir = NULL,
-        raw_scenario = NULL
+        raw_scenario = NULL,
+        scenario_id = NULL
     )
     # init output reactive values
     out <- reactiveValues(
@@ -58,6 +60,7 @@ hist_model_server <- function(input, output, session,
     observe({
         local$project_dir = project_dir()
         local$raw_scenario = raw_scenario()
+        local$scenario_id = scenario_id()
         # logging("input raw scenario = ", local$raw_scenario)
     })
     # update if input provided
@@ -139,7 +142,8 @@ hist_model_server <- function(input, output, session,
     ## graph display
     callModule(graph_display_server, "model_display", 
                graph = reactive(local$graph), 
-               project_dir = reactive(local$project_dir))
+               project_dir = reactive(local$project_dir),
+               scenario_id = reactive(local$scenario_id))
     # output
     return(out)
 }

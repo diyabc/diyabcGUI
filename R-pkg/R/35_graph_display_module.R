@@ -40,7 +40,7 @@ graph_display_ui <- function(id) {
             collapsed = TRUE,
             textInput(
                 ns("filename"),
-                value = "historical_scenario.eps",
+                value = "historical_scenario.jpeg",
                 label = "Filename"
             ) %>% 
                 helper(
@@ -117,7 +117,8 @@ graph_display_ui <- function(id) {
 #' @importFrom shinyjs disable enable hide show
 graph_display_server <- function(input, output, session, 
                                  graph = reactive({NULL}), 
-                                 project_dir = reactive({NULL})) {
+                                 project_dir = reactive({NULL}),
+                                 scenario_id = reactive({NULL})) {
     # namespace
     ns <- session$ns
     # init local values
@@ -126,12 +127,25 @@ graph_display_server <- function(input, output, session,
         check_filename = TRUE,
         filename = NULL,
         graph = NULL,
-        project_dir = NULL
+        project_dir = NULL,
+        scenario_id = NULL
     )
     # get input
     observe({
         local$graph = graph()
         local$dirname = project_dir()
+        local$scenario_id = as.character(scenario_id())
+    })
+    # update input file name if scenario id is given
+    observeEvent(local$scenario_id, {
+        req(local$scenario_id)
+        req(is.character(local$scenario_id))
+        req(str_length(local$scenario_id) > 0)
+        
+        updateTextInput(
+            session, "filename", 
+            value = str_c("historical_scenario", local$scenario_id, ".jpeg")
+        )
     })
     # # debugging
     # observe({
