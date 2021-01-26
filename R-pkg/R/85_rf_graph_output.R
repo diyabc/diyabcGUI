@@ -65,7 +65,7 @@ oob_error_graph <- function(proj_dir, prefix = "estimparam_out") {
     ooberror$ntree <- 1:nrow(ooberror)
     # graph oob error vs n tree
     g1 <- ggplot(ooberror) +
-        geom_point(aes(x=ntree, y=error), alpha = 0.6) +
+        geom_point(aes(x=ntree, y=error), alpha = 1, size = 0.2) +
         theme_bw(base_size = 12) +
         xlab("number of tree") +
         ylab("OOB error")
