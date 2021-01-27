@@ -472,20 +472,53 @@ rf_parameter_server <- function(input, output, session,
     
     ## feedback regarding n_rec
     output$feedback_nrec <- renderUI({
-        req(!is.null(local$ref_table_size))
-        if(local$ref_table_size > 0) {
-            helpText(
-                tags$code("0"), "means using the full training data set,",
-                "i.e.", tags$code("0"), "is equivalent to the total number of",
-                "simulated datasets:", tags$b(local$ref_table_size)
-            )
-        } else {
-            helpText(
-                tags$code("0"), "means using the full training data set,",
-                "i.e.", tags$code("0"), "is equivalent to the total number of",
-                "simulated datasets."
-            )
+        
+        txt <- tagList(
+            tags$code("0"), 
+            "means using the full training data set,",
+            "i.e.", tags$code("0"), 
+            "is equivalent to the total number of",
+            "available simulated datasets."
+        )
+        
+        if(isTruthy(out$run_mode)) {
+            if(out$run_mode == "param_estim") {
+                if(isTruthy(out$chosen_scenario) & 
+                   isTruthy(local$n_rec_per_scenario)) {
+                    txt <- tagList(
+                        tags$code("0"), 
+                        "means using the full training data set,",
+                        "i.e.", tags$code("0"), 
+                        "is equivalent to the total number of",
+                        "simulated datasets available for the chosen scenario:", 
+                        tags$b(local$n_rec_per_scenario[
+                            as.integer(out$chosen_scenario)
+                            ])
+                    )
+                } else {
+                    txt <- tagList(
+                        tags$code("0"), 
+                        "means using the full training data set,",
+                        "i.e.", tags$code("0"), 
+                        "is equivalent to the total number of",
+                        "simulated datasets available for the chosen scenario."
+                    )
+                }
+            } else {
+                if(isTruthy(local$ref_table_size) && 
+                   (local$ref_table_size > 0)) {
+                    txt <- tagList(
+                        tags$code("0"), 
+                        "means using the full training data set,",
+                        "i.e.", tags$code("0"), 
+                        "is equivalent to the total number of",
+                        "simulated datasets:", tags$b(local$ref_table_size)
+                    )
+                }
+            }
         }
+        
+        helpText(txt)
     })
     
     # possible scenario and possible parameters
