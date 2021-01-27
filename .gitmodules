@@ -1,4 +1,4 @@
 [submodule "build/DesktopDeployR"]
-	path = build/DesktopDeployR
+	path = build/DIYABC-RF_GUI_windows
 	url = https://github.com/diyabc/DesktopDeployR.git
 	branch = prod

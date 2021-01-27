@@ -1,6 +1,6 @@
-Files: ./build/DesktopDeployR/*
-Copyright: see dedicated ./build/DesktopDeployR/COPYRIGHTS file
-License: see dedicated ./build/DesktopDeployR/COPYRIGHTS file
+Files: ./build/DIYABC-RF_GUI_windows/*
+Copyright: see dedicated ./build/DIYABC-RF_GUI_windows/COPYRIGHTS file
+License: see dedicated ./build/DIYABC-RF_GUI_windows/COPYRIGHTS file
 
 Files: ./R-pkg/bin/diyabc* ./R-pkg/bin/abcranger*
 Copyright: 2019-2020 DIYABC-RF Core team

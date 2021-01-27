@@ -31,7 +31,7 @@ build_dir <- file.path(proj_dir, "build")
 dist_dir <- file.path(build_dir, "dist")
 
 # DesktopDeployR directory
-ddr_dir <- file.path(build_dir, "DesktopDeployR")
+ddr_dir <- file.path(build_dir, "DIYABC-RF_GUI_windows")
 if(!dir.exists(ddr_dir))
     stop("Missing submodule DesktopDeployR, please init Git submodules")
 
