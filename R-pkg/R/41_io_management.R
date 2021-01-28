@@ -63,12 +63,15 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
     spec <- NULL
     valid <- TRUE
     
+    content  <- NULL
+    indiv_info <- NULL
+    
     locus <- NULL
     locus_details <- NULL
     n_loci <- NULL
     n_pop <- NULL
     n_indiv <- NULL
-    col_type <- NULL
+    snp_type <- NULL
     maf <- NULL
     
     err <- list()
@@ -197,10 +200,6 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                 }
                 # nb of locus
                 n_loci <- length(header) - 3
-                msg <- append(
-                    msg,
-                    str_c("Number of loci =", n_loci, sep = " ")
-                )
                 # locus type
                 candidate_locus <- c("A", "H", "X", "Y", "M")
                 locus_encoding <- str_c(header[-(1:3)], collapse = " ")
@@ -215,8 +214,8 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                         ))
                     }
                 ))
-                # save col type for filtering
-                col_type <- header
+                # save snp type for filtering
+                snp_type <- header[-(1:3)]
                 # merge header
                 header_length <- length(header)
                 header <- str_c(header[1:min(20,header_length)], 
@@ -286,47 +285,24 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                             "from", n_pop, "populations", 
                             sep = " ")
                     )
-                    # check SNP encoding
-                    ncore <- getOption("diyabcGUI")$ncore
-                    check_snp_encoding <- NULL
-                    if(get_os() != "windows") {
-                        check_snp_encoding <- pblapply(
-                            1:nrow(content[,-(1:3)]),
-                            function(ind)
-                                !all(content[ind,-(1:3)] %in% c(0,1,2,9)),
-                            cl = ncore
-                        )
-                    } else {
-                        cl <- makeCluster(ncore)
-                        check_snp_encoding <- pblapply(
-                            1:nrow(content[,-(1:3)]), 
-                            function(ind)
-                                !all(content[ind,-(1:3)] %in% c(0,1,2,9)), 
-                            cl = cl
-                        )
-                        stopCluster(cl)
-                    }
-                    
-                    seek_error <- unlist(lapply(
-                        check_snp_encoding, 
-                        function(item) "try-error" %in% class(item)
-                    ))
-                    if(any(seek_error)) {
-                        error_msg <- attributes(
-                            check_snp_encoding[[ which(seek_error[1]) ]]
-                        )$condition$message
+                    # reformat data
+                    indiv_info <- content[,1:3]
+                    colnames(indiv_info) <- c("IND", "SEX", "POP")
+                    content <- t(as.matrix(content[,-(1:3)]))
+                    # check for any
+                    if(any(is.na(content)) | any(is.na(indiv_info))) {
                         err <- append(
                             err, 
                             str_c(
-                                "Issue when checking IndSeq SNP data file",
-                                "content:",
-                                error_msg,
+                                "Issue with IndSeq SNP file data content:",
+                                "NA values were found",
                                 sep = " "
                             )
                         )
                         valid <- FALSE
                     } else {
-                        if(any(unlist(check_snp_encoding))) {
+                        # check SNP encoding
+                        if(!all(content %in% c(0,1,2,9))) {
                             err <- append(
                                 err, 
                                 str_c(
@@ -345,38 +321,57 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
         ## filtering locus
         if(valid) {
             locus_details <- filter_snp_indseq(
-                content, col_type, locus_details, maf
+                content, indiv_info, snp_type, locus_details, maf
             )
-            locus <- unname(unlist(lapply(
-                split(locus_details, seq(nrow(locus_details))), 
-                function(item) {
-                    if(item$count > 0)
-                        return(str_c(item$count - item$filter, 
-                                     " <", item$type, ">"))
-                    else
-                        return(NULL)
-                }
-            )))
-            locus_msg <- unname(unlist(lapply(
-                split(locus_details, seq(nrow(locus_details))), 
-                function(item) {
-                    if(item$count > 0)
-                        return(str_c(
-                            item$count - item$filter, 
-                            " <", item$type, ">",
-                            " (", item$filter, " loci, including ",
-                            item$mono, " monomorphic loci are filtered out ",
-                            "based on MAF criterion)"
-                        ))
-                    else
-                        return(NULL)
-                }
-            )))
-            msg <- append(
-                msg,
-                str_c("available loci:", str_c(locus_msg, collapse =  "; "), 
-                      sep = " ")
-            )
+            if(is.null(locus_details)) {
+                err <- append(
+                    err, 
+                    str_c(
+                        "Issue with IndSeq SNP file data content:",
+                        "error during SNP filtering, ",
+                        "probable issue with SNP data encoding (see manual).",
+                        sep = " "
+                    )
+                )
+                valid <- FALSE
+            } else {
+                locus <- unname(unlist(lapply(
+                    split(locus_details, seq(nrow(locus_details))), 
+                    function(item) {
+                        if(item$count > 0)
+                            return(str_c(item$count - item$filter, 
+                                         " <", item$type, ">"))
+                        else
+                            return(NULL)
+                    }
+                )))
+                locus_msg <- unname(unlist(lapply(
+                    split(locus_details, seq(nrow(locus_details))), 
+                    function(item) {
+                        if(item$count > 0) {
+                            item_type <- str_c("<", item$type, ">")
+                            return(str_c(
+                                item$count - item$filter, item_type,
+                                "(note:", item$filter, item_type, 
+                                "loci, including ",
+                                item$mono, item_type,
+                                "monomorphic loci, are filtered out",
+                                "based on MAF criterion)", sep = " "
+                            ))
+                        } else
+                            return(NULL)
+                    }
+                )))
+                msg <- append(
+                    msg,
+                    str_c("Total number of loci =", n_loci, sep = " ")
+                )
+                msg <- append(
+                    msg,
+                    str_c("available loci:", str_c(locus_msg, collapse =  "; "), 
+                          sep = " ")
+                )
+            }
         }
         ## output
         spec <- lst(locus, n_indiv, n_loci, n_pop)
@@ -493,45 +488,32 @@ indseq_locus_filter <- function(snp_data, sex_data, locus_type, maf) {
 #' haploid locus (`H`), Y-chromosome (`Y`) in male and 
 #' mitochondrial locus (`M`). 
 #' Note : missing values are encoded by a `9`.
-#' @param col_type vector of column header, being `IND`, `SEX`, `POP` followed
+#' @param snp_type vector of column header, being `IND`, `SEX`, `POP` followed
 #' by each locus type (among `A`, `H`, `X`, `Y`, `M`).
 #' @param locus_details data.frame with two columns, `count` being the number 
 #' of locus for each type in the data, and `type` being the corresponding locus 
 #' type (among `A`, `H`, `X`, `Y`, `M`).
 #' @importFrom dplyr bind_rows
-filter_snp_indseq <- function(content, col_type, locus_details, maf=0.05) {
+filter_snp_indseq <- function(content, indiv_info, snp_type, locus_details, 
+                              maf=0.05) {
     
     ncore <- getOption("diyabcGUI")$ncore
     snp_filter <- NULL
-    if(get_os() != "windows") {
-        snp_filter <- pblapply(
-            1:(ncol(content) - 3) + 3,
-            function(ind) {
-                out <- indseq_locus_filter(
-                    snp_data = content[,ind], 
-                    sex_data = content[,2], 
-                    locus_type = col_type[ind], 
-                    maf = maf
-                )
-            },
-            cl = ncore
-        )
-    } else {
-        cl <- makeCluster(ncore)
-        snp_filter <- pblapply(
-            1:(ncol(content) - 3) + 3,
-            function(ind) {
-                out <- indseq_locus_filter(
-                    snp_data = content[,ind], 
-                    sex_data = content[,2], 
-                    locus_type = col_type[ind], 
-                    maf = maf
-                )
-            }, 
-            cl = cl
-        )
-        stopCluster(cl)
-    }
+    
+    if(is.null(maf)) maf <- 0
+    
+    snp_filter <- pblapply(
+        1:nrow(content),
+        function(ind) {
+            out <- indseq_locus_filter(
+                snp_data = content[ind,], 
+                sex_data = indiv_info$SEX, 
+                locus_type = snp_type[ind], 
+                maf = maf
+            )
+        },
+        cl = ncore
+    )
     
     seek_error <- unlist(lapply(
         snp_filter, 
@@ -556,7 +538,7 @@ filter_snp_indseq <- function(content, col_type, locus_details, maf=0.05) {
         # extract number of filtered loci by type
         tmp_filter <- tapply(
             snp_filter$filter, 
-            tail(col_type, length(col_type) - 3), 
+            snp_type, 
             sum
         )
         tmp_filter <- data.frame(
@@ -567,7 +549,7 @@ filter_snp_indseq <- function(content, col_type, locus_details, maf=0.05) {
         # extract number of monomorphic loci by type
         tmp_mono <- tapply(
             snp_filter$mono, 
-            tail(col_type, length(col_type) - 3), 
+            snp_type, 
             sum
         )
         tmp_mono <- data.frame(
@@ -578,7 +560,7 @@ filter_snp_indseq <- function(content, col_type, locus_details, maf=0.05) {
         # extract number of loci with issue regarding sex by type
         tmp_issue <- tapply(
             snp_filter$issue, 
-            tail(col_type, length(col_type) - 3), 
+            snp_type, 
             sum
         )
         tmp_issue <- data.frame(
@@ -786,7 +768,7 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                     n_loci <- nrow(content)
                     msg <- append(
                         msg,
-                        str_c("Number of loci =", n_loci, sep = " ")
+                        str_c("Total number of loci =", n_loci, sep = " ")
                     )
                     # locus type
                     locus <- str_c(n_loci, "<A>", sep = " ")
