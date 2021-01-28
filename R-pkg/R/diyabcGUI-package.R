@@ -17,7 +17,7 @@
 #' @importFrom processx process
 #' @import shiny
 #' @importFrom shinybusy add_busy_spinner
-#' @importFrom shinydashboard box
+#' @importFrom shinydashboard box updateTabItems
 #' @importFrom shinyhelper helper
 #' @importFrom shinyjs disable enable hidden hide reset show
 #' @importFrom shinyWidgets actionBttn actionGroupButtons ask_confirmation progressBar 
