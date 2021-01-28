@@ -66,7 +66,7 @@ datagen_page_server <- function(input, output, session) {
     ## project setting
     proj_set <- callModule(datagen_proj_set_server, "proj_set")
     
-    ## administration
+    ## action
     proj_admin <- callModule(
         proj_admin_server, "proj_admin",
         proj_dir = reactive(proj_set$proj_dir),
@@ -77,6 +77,7 @@ datagen_page_server <- function(input, output, session) {
     observeEvent(proj_admin$reset, {
         req(proj_admin$reset)
         out$reset <- proj_admin$reset
+        session$reload()
     })
     
     # output
@@ -89,8 +90,7 @@ datagen_page_server <- function(input, output, session) {
 datagen_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3("Project name"),
-        textInput(ns("proj_name"), label = NULL, placeholder = "project name"),
+        proj_name_ui(ns("proj_name_setup")),
         hr(),
         h3("Data type"),
         data_type_ui(ns("data_type"))
@@ -105,7 +105,7 @@ datagen_proj_set_server <- function(input, output, session) {
     ns <- session$ns
     
     # init local
-    local <- reactiveValues()
+    local <- reactiveValues(valid_proj_name = FALSE)
     
     # init output
     out <- reactiveValues(
@@ -126,9 +126,16 @@ datagen_proj_set_server <- function(input, output, session) {
     })
     
     ## project name
-    observeEvent(input$proj_name, {
-        req(input$proj_name)
-        out$proj_name <- input$proj_name
+    proj_name_setup <- callModule(proj_name_server, "proj_name_setup")
+    
+    observeEvent(proj_name_setup$proj_name, {
+        req(proj_name_setup$proj_name)
+        out$proj_name <- proj_name_setup$proj_name
+    })
+    
+    observeEvent(proj_name_setup$valid_proj_name, {
+        req(!is.null(proj_name_setup$valid_proj_name))
+        local$valid_proj_name <- proj_name_setup$valid_proj_name
     })
     
     ## data type
