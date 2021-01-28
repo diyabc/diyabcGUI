@@ -18,7 +18,7 @@ graph_display_ui <- function(id) {
                     ),
                 shinyjs::hidden(
                     plotOutput(
-                        ns("display")
+                        ns("display"), height = "370px"
                     )
                 ),
                 actionGroupButtons(
@@ -29,9 +29,8 @@ graph_display_ui <- function(id) {
                         tags$span(icon("save"), "Save image")
                     ),
                     fullwidth = TRUE
-                ),
-                br()
-            ),
+                )
+            )
         ),
         box(
             title = "Image settings",

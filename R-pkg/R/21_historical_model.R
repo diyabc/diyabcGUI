@@ -13,7 +13,7 @@ hist_model_ui <- function(id) {
                 textAreaInput(
                     ns("scenario"), 
                     label = NULL, 
-                    rows = 12,
+                    height = "356px", 
                     resize = "none"
                 ),
                 actionButton(
