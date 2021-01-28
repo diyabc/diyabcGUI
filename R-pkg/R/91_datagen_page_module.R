@@ -18,8 +18,7 @@ datagen_page_ui <- function(id) {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = FALSE,
-                "WriteME"
-                # datagen_hist_model_ui(ns("hist_model"))
+                datagen_hist_model_ui(ns("hist_model"))
             ),
             box(
                 title = "Genetic data",
@@ -56,7 +55,9 @@ datagen_page_server <- function(input, output, session) {
     ns <- session$ns
     
     # init local
-    local <- reactiveValues()
+    local <- reactiveValues(
+        raw_scenario = NULL
+    )
     
     # init output
     out <- reactiveValues(
@@ -65,6 +66,18 @@ datagen_page_server <- function(input, output, session) {
     
     ## project setting
     proj_set <- callModule(datagen_proj_set_server, "proj_set")
+    
+    ## historical model
+    hist_model <- callModule(
+        datagen_hist_model_server, "hist_model",
+        proj_dir = reactive(proj_set$proj_dir),
+        raw_scenario = reactive(local$raw_scenario)
+    )
+    
+    # update local
+    observe({
+        local$raw_scenario <- hist_model$raw_scenario
+    })
     
     ## action
     proj_admin <- callModule(
@@ -84,7 +97,7 @@ datagen_page_server <- function(input, output, session) {
     return(out)
 }
 
-#' Data generation module project setup ui
+#' Data generation project setup module ui
 #' @keywords internal
 #' @author Ghislain Durif
 datagen_proj_set_ui <- function(id) {
@@ -97,7 +110,7 @@ datagen_proj_set_ui <- function(id) {
     )
 }
 
-#' Data generation module project setup server
+#' Data generation project setup module server
 #' @keywords internal
 #' @author Ghislain Durif
 datagen_proj_set_server <- function(input, output, session) {
@@ -149,6 +162,104 @@ datagen_proj_set_server <- function(input, output, session) {
     
     # output
     return(out)
+}
+
+#' Data generation historical model setup module ui
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_hist_model_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        hist_model_ui(ns("hist_model")),
+        datagen_hist_model_param_ui(ns("param_setting"))
+    )
+}
+
+#' Data generation historical model setup module
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param proj_dir project directory as a `reactive`.
+#' @param raw_scenario raw scenario as a `reactive`.
+#' @importFrom shinyjs disable enable
+datagen_hist_model_server <- function(
+    input, output, session,
+    proj_dir = reactive({NULL}),
+    raw_scenario = reactive({NULL})
+) {
+    # init local
+    local <- reactiveValues(
+        proj_dir = NULL,
+        raw_scenario = NULL
+    )
+    
+    # get input
+    observe({
+        local$proj_dir = proj_dir()
+        local$raw_scenario = raw_scenario()
+    })
+    
+    # init output
+    out <- reactiveValues(
+        raw_scenario = NULL,
+        scenario_param = NULL
+    )
+    # define model
+    hist_model <- callModule(
+        hist_model_server, "hist_model",
+        project_dir = reactive(local$proj_dir), 
+        raw_scenario = reactive(local$raw_scenario)
+    )
+    
+    # update output
+    observe({
+        out$raw_scenario <- hist_model$raw
+        out$scenario_param <- hist_model$param
+    })
+    
+    # # scenario parameter values
+    # param_setting <- callModule(simu_hist_model_param_server,
+    #                             "param_setting",
+    #                             scenario_cond = reactive(scenario$cond),
+    #                             scenario_param = reactive(scenario$param))
+    # # update output
+    # observe({
+    #     out$param_setting <- param_setting
+    # })
+    # output
+    return(out)
+}
+
+#' Data generation historical model parameter setup module ui
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_hist_model_param_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        verticalLayout(
+            tagList(
+                hr(),
+                h3("Parameter values"),
+                uiOutput(ns("Ne_param_values")),
+                uiOutput(ns("time_param_values")),
+                uiOutput(ns("rate_param_values")),
+                uiOutput(ns("conditions"))
+            ),
+            tagList(
+                hr(),
+                h3("Sample sizes"),
+                uiOutput(ns("sample_param"))
+            ),
+            tagList(
+                hr(),
+                h3("Simulation number"),
+                numericInput(
+                    ns("nrep"),
+                    label = "Number of repetitions",
+                    value = 1
+                )
+            )
+        )
+    )
 }
 
 
