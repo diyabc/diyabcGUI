@@ -9,7 +9,7 @@ simplified_home_page_ui <- function(id) {
                 title = "DIYABC-RF main pipeline",
                 width = 12, 
                 status = "warning", solidHeader = TRUE,
-                collapsible = TRUE,
+                collapsible = TRUE, collapsed = FALSE,
                 tags$div(
                     tags$p("Including the two modules of DIYABC Random Forest:"),
                     tags$ul(
@@ -30,7 +30,7 @@ simplified_home_page_ui <- function(id) {
                 title = "Synthetic data file generation",
                 width = 12, 
                 status = "info", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = TRUE,
+                collapsible = TRUE, collapsed = FALSE,
                 tags$div(
                     tags$p(
                         "Direct use of DIYABC-RF simulation engine",
