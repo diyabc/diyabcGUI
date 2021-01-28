@@ -350,14 +350,28 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                     function(item) {
                         if(item$count > 0) {
                             item_type <- str_c("<", item$type, ">")
-                            return(str_c(
-                                item$count - item$filter, item_type,
-                                "(note:", item$filter, item_type, 
-                                "loci, including ",
-                                item$mono, item_type,
-                                "monomorphic loci, are filtered out",
-                                "based on MAF criterion)", sep = " "
-                            ))
+                            txt <- str_c(
+                                item$count - item$filter, item_type, sep = " "
+                            )
+                            if(item$filter > 0) {
+                                txt <- str_c(
+                                    item$count - item$filter, item_type,
+                                    "(note:", item$filter, item_type, 
+                                    "loci are filtered out",
+                                    "based on MAF criterion)", sep = " "
+                                )
+                            }
+                            if(item$mono > 0) {
+                                str_c(
+                                    item$count - item$filter, item_type,
+                                    "(note:", item$filter, item_type, 
+                                    "loci, including ",
+                                    item$mono, item_type,
+                                    "monomorphic loci, are filtered out",
+                                    "based on MAF criterion)", sep = " "
+                                )
+                            }
+                            return(txt)
                         } else
                             return(NULL)
                     }
@@ -368,7 +382,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                 )
                 msg <- append(
                     msg,
-                    str_c("available loci:", str_c(locus_msg, collapse =  "; "), 
+                    str_c("Available loci:", str_c(locus_msg, collapse =  "; "), 
                           sep = " ")
                 )
             }
@@ -470,7 +484,7 @@ indseq_locus_filter <- function(snp_data, sex_data, locus_type, maf) {
     
     # filter
     return(data.frame(
-        filter = !((af > maf) & ((1 - af) > maf)),
+        filter = !((af >= maf) & ((1 - af) >= maf)),
         mono = !((af > 0) & ((1 - af) > 0)),
         issue = issue,
         stringsAsFactors = FALSE
@@ -596,6 +610,12 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
     err <- list()
     msg <- list()
     
+    locus <- NULL
+    n_loci <- NULL
+    n_pop <- NULL
+    n_indiv <- NULL
+    mrc <- NULL
+    
     # data path
     data_path <- file.path(data_dir, data_file)
     
@@ -607,11 +627,6 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
         err <- append(err, "Input data file is empty")
         valid <- FALSE
     } else {
-        ## init output
-        locus <- NULL
-        n_loci <- NULL
-        n_pop <- NULL
-        n_indiv <- NULL
         ## check file type
         if(tools::file_ext(data_path) != "snp") {
             err <- append(
@@ -640,7 +655,7 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                 valid <- FALSE
             }
             # MRC
-            pttrn <- "(?<=<)MRC=[:graph:]+(?=>)"
+            pttrn <- "(?<=<)MRC=[0-9]+(?=>)"
             if(str_detect(info, pttrn)) {
                 msg <- append(
                     msg,
@@ -649,6 +664,8 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                         str_extract(info, pttrn), sep = " "
                     )
                 )
+                pttrn <- "(?<=<MRC=)[0-9]+(?=>)"
+                mrc <- as.integer(str_extract(info, pttrn))
             } else {
                 err <- append(
                     err,
@@ -770,15 +787,6 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                         msg,
                         str_c("Total number of loci =", n_loci, sep = " ")
                     )
-                    # locus type
-                    locus <- str_c(n_loci, "<A>", sep = " ")
-                    msg <- append(
-                        msg,
-                        str_c(
-                            "loci:", str_c(locus, collapse =  ", "), 
-                            sep = " "
-                        )
-                    )
                     # check data encoding
                     check_snp_encoding <- apply(content, 2, is.integer)
                     if(!all(unlist(check_snp_encoding))) {
@@ -803,6 +811,30 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                             )
                         )
                         valid <- FALSE
+                    }
+                    # loci
+                    if(valid) {
+                        # filtering locus
+                        allele1_count <- apply(
+                            content[,rep(c(TRUE,FALSE), n_pop)], 1, sum
+                        )
+                        allele2_count <- apply(
+                            content[,rep(c(FALSE,TRUE), n_pop)], 1, sum
+                        )
+                        snp_filter <- (allele1_count >= mrc) & 
+                                        (allele2_count >= mrc)
+                        # locus type
+                        locus <- str_c(sum(snp_filter), "<A>", sep = " ")
+                        msg <- append(
+                            msg,
+                            str_c(
+                                "Available loci:", locus, 
+                                "(note:", sum(!snp_filter), 
+                                "loci are filtered out",
+                                "based on MRC criterion)",
+                                sep = " "
+                            )
+                        )
                     }
                 }
             }
