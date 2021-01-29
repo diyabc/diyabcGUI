@@ -871,8 +871,9 @@ prior_cond_set_ui <- function(id) {
         ),
         helpText(
             icon("warning"),
-            "You might need to impose some conditions on historical parameters",
-            "(e.g. to avoid genealogical problems)",
+            "You might need to impose some conditions on", 
+            "historical parameters",
+            "(e.g. to avoid genealogical inconsistencies)",
             "or to constraint simulation settings.",
             br(), br(),
             "For instance, there can be two time parameters with overlapping",
