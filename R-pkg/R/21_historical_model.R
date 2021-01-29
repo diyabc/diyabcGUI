@@ -158,16 +158,16 @@ check_condition <- function(raw_scenario, parsed_scenario) {
     # FIXME
     condition <- list()
     # condition <- c("Example of condition...", "Time should be positive.")
-    # # time related condtion
-    # time_param <- parsed_scenario$time_param
-    # if(!is.null(time_param) & length(time_param > 1)) {
-    #     time_cond <- lapply(
-    #         1:(length(time_param)-1), 
-    #         function(ind) {
-    #             return(str_c(time_param[ind+1], ">=", time_param[ind]))
-    #         })
-    #     condition <- c(condition, time_cond)
-    # }
+    # time related condition
+    time_param <- parsed_scenario$time_param
+    if(!is.null(time_param) & (length(time_param) > 1)) {
+        time_cond <- lapply(
+            1:(length(time_param)-1),
+            function(ind) {
+                return(str_c(time_param[ind+1], ">=", time_param[ind]))
+            })
+        condition <- c(condition, time_cond)
+    }
     # output
     return(list(cond = condition))
 }
