@@ -171,7 +171,8 @@ datagen_hist_model_ui <- function(id) {
     ns <- NS(id)
     tagList(
         hist_model_ui(ns("hist_model")),
-        datagen_hist_model_param_ui(ns("param_setting"))
+        hr(),
+        datagen_model_param_ui(ns("param_setting"))
     )
 }
 
@@ -216,50 +217,108 @@ datagen_hist_model_server <- function(
         out$scenario_param <- hist_model$param
     })
     
-    # # scenario parameter values
-    # param_setting <- callModule(simu_hist_model_param_server,
-    #                             "param_setting",
-    #                             scenario_cond = reactive(scenario$cond),
-    #                             scenario_param = reactive(scenario$param))
-    # # update output
-    # observe({
-    #     out$param_setting <- param_setting
-    # })
+    # scenario parameter values
+    param_setting <- callModule(
+        datagen_model_param_server,
+        "param_setting",
+        scenario_cond = reactive(hist_model$cond),
+        scenario_param = reactive(hist_model$param)
+    )
+    
+    # update output
+    observe({
+        out$param_setting <- reactiveValuesToList(param_setting)
+        # print(out$param_setting)
+    })
     # output
     return(out)
 }
 
-#' Data generation historical model parameter setup module ui
+#' Data generation model parameter setup module ui
 #' @keywords internal
 #' @author Ghislain Durif
-datagen_hist_model_param_ui <- function(id) {
+datagen_model_param_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        verticalLayout(
-            tagList(
-                hr(),
-                h3("Parameter values"),
-                uiOutput(ns("Ne_param_values")),
-                uiOutput(ns("time_param_values")),
-                uiOutput(ns("rate_param_values")),
-                uiOutput(ns("conditions"))
-            ),
-            tagList(
-                hr(),
-                h3("Sample sizes"),
-                uiOutput(ns("sample_param"))
-            ),
-            tagList(
-                hr(),
-                h3("Simulation number"),
-                numericInput(
-                    ns("nrep"),
-                    label = "Number of repetitions",
-                    value = 1
-                )
-            )
-        )
+        datagen_hist_model_param_ui(ns("hist_param")),
+        hr(),
+        datagen_sampling_param_ui(ns("samp_param"))
     )
+}
+
+#' Data generation model parameter setup module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param scenario_cond list of conditions on scenario parameters as a `reactive`.
+#' @param scenario_param scenario parameter list as `reactive`.
+datagen_model_param_server <- function(
+    input, output, session,
+    scenario_cond = reactive({NULL}),
+    scenario_param = reactive({NULL})
+) {
+    # local reactive values
+    local <- reactiveValues(
+        scenario_cond = NULL,
+        scenario_param = NULL,
+        n_pop = NULL,
+        n_sample = NULL
+    )
+    
+    # get input
+    observe({
+        local$scenario_cond = scenario_cond()
+        local$scenario_param = scenario_param()
+        # pprint("check input")
+        # pprint(local$scenario_cond)
+        # pprint(local$scenario_param)
+        
+        if(isTruthy(local$scenario_param)) {
+            if(isTruthy(local$scenario_param$npop)) {
+                local$n_pop <- local$scenario_param$npop
+            }
+            if(isTruthy(local$scenario_param$event_type)) {
+                local$n_sample <- sum(local$scenario_param$event_type ==
+                                          "sample")
+            }
+        } 
+    })
+    
+    # init output reactive values
+    out <- reactiveValues(param_values = list(),
+                          sample_sizes = list(),
+                          n_rep = NULL)
+    
+    # setup parameter input
+    hist_param <- callModule(
+        datagen_hist_model_param_server, "hist_param",
+        scenario_cond = reactive(local$scenario_cond),
+        scenario_param = reactive(local$scenario_param)
+    )
+    
+    # update output
+    observe({
+        req(hist_param$param_values)
+        out$param_values <- hist_param$param_values
+    })
+    
+    # sample
+    samp_param <- callModule(
+        datagen_sampling_param_server, "samp_param",
+        n_pop = reactive(local$n_pop),
+        n_sample = reactive(local$n_sample)
+    )
+    
+    # update output
+    observe({
+        req(samp_param$sample_sizes)
+        out$sample_sizes <- samp_param$sample_sizes
+    })
+    observe({
+        req(samp_param$n_rep)
+        out$n_rep <- samp_param$n_rep
+    })
+    # output
+    return(out)
 }
 
 
@@ -398,7 +457,7 @@ simu_page_server <- function(input, output, session,
     #            raw_scenario = reactive(scenario$raw_scenario),
     #            locus_description = reactive(genetic_setting$locus_description),
     #            sample_sizes = reactive(scenario$param_setting$sample_sizes),
-    #            n_rep = reactive(scenario$param_setting$nrep),
+    #            n_rep = reactive(scenario$param_setting$n_rep),
     #            sex_ratio = reactive(genetic_setting$sex_ratio),
     #            seq_mode = reactive(genetic_setting$seq_mode),
     #            locus_type = reactive(genetic_setting$locus_type))
@@ -407,116 +466,43 @@ simu_page_server <- function(input, output, session,
     # return(out)
 }
 
-#' Simulation historical model ui
+#' Data generation historical model parameter setup module ui
 #' @keywords internal
 #' @author Ghislain Durif
-simu_hist_model_ui <- function(id) {
+datagen_hist_model_param_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        hist_model_ui(ns("hist_model")),
-        simu_hist_model_param_ui(ns("param_setting"))
+        h3("Parameter values"),
+        uiOutput(ns("Ne_param_values")),
+        uiOutput(ns("time_param_values")),
+        uiOutput(ns("rate_param_values")),
+        uiOutput(ns("conditions"))
     )
 }
 
-#' Simulation historical model server
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param project_dir project directory as a `reactive`.
-#' @param project_name project name as a `reactive`.
-#' @param raw_scenario raw scenario as a `reactive`.
-#' @importFrom shinyjs disable enable
-simu_hist_model_server <- function(input, output, session,
-                                   project_dir = reactive({NULL}),
-                                   project_name = reactive({NULL}),
-                                   raw_scenario = reactive({NULL})) {
-    # init local
-    local <- reactiveValues(
-        project_dir = NULL,
-        project_name = NULL,
-        raw_scenario = NULL
-    )
-    # get input
-    observe({
-        local$project_dir = project_dir()
-        local$project_name = project_name()
-        local$raw_scenario = raw_scenario()
-    })
-    # init output
-    out <- reactiveValues(
-        raw_scenario = NULL,
-        scenario_param = NULL
-    )
-    # define model
-    scenario <- callModule(hist_model_server, "hist_model",
-                           project_dir = reactive(local$project_dir), 
-                           raw_scenario = reactive(local$raw_scenario))
-    # update output
-    observe({
-        out$raw_scenario <- scenario$raw
-        out$scenario_param <- scenario$param
-    })
-    # scenario parameter values
-    param_setting <- callModule(simu_hist_model_param_server,
-                               "param_setting",
-                               scenario_cond = reactive(scenario$cond),
-                               scenario_param = reactive(scenario$param))
-    # update output
-    observe({
-        out$param_setting <- param_setting
-    })
-    # output
-    return(out)
-}
-
-#' Simulation historical model parameter setting ui
-#' @keywords internal
-#' @author Ghislain Durif
-simu_hist_model_param_ui <- function(id) {
-    ns <- NS(id)
-    tagList(
-        verticalLayout(
-            tagList(
-                hr(),
-                h3("Parameter values"),
-                uiOutput(ns("Ne_param_values")),
-                uiOutput(ns("time_param_values")),
-                uiOutput(ns("rate_param_values")),
-                uiOutput(ns("conditions"))
-            ),
-            tagList(
-                hr(),
-                h3("Sample sizes"),
-                uiOutput(ns("sample_param"))
-            ),
-            tagList(
-                hr(),
-                h3("Simulation number"),
-                numericInput(
-                    ns("nrep"),
-                    label = "Number of repetitions",
-                    value = 1
-                )
-            )
-        )
-    )
-}
-
-#' Simulation historical model parameter setting server
+#' Data generation historical model parameter setup module server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param scenario_cond list of conditions on scenario parameters as a `reactive`.
 #' @param scenario_param scenario parameter list as `reactive`.
-#' @importFrom shinydashboard infoBox renderInfoBox
-#' @importFrom shinyjs disable enable
-simu_hist_model_param_server <- function(input, output, session,
-                                         scenario_cond = reactive({NULL}),
-                                         scenario_param = reactive({NULL})) {
+datagen_hist_model_param_server <- function(
+    input, output, session,
+    scenario_cond = reactive({NULL}),
+    scenario_param = reactive({NULL})
+) {
     # local reactive values
     local <- reactiveValues(
         scenario_cond = NULL,
         scenario_param = NULL,
-        param_values = list()
+        param_list = list(),
+        param_df = data.frame(
+            name = character(),
+            type = character(),
+            value = numeric(),
+            stringsAsFactors=FALSE
+        )
     )
+    
     # get input
     observe({
         local$scenario_cond = scenario_cond()
@@ -524,99 +510,282 @@ simu_hist_model_param_server <- function(input, output, session,
         # pprint("check input")
         # pprint(local$scenario_cond)
         # pprint(local$scenario_param)
+        
+        # parse new parameter (if any)
+        tmp_param_df = data.frame(
+            name = character(),
+            type = character(),
+            value = numeric(),
+            stringsAsFactors=FALSE
+        )
+        
+        # parse scenario Ne parameters
+        if(isTruthy(local$scenario_param$Ne_param)) {
+            tmp_param_df <- bind_rows(
+                tmp_param_df,
+                data.frame(
+                    name = local$scenario_param$Ne_param,
+                    type = rep("N", length(local$scenario_param$Ne_param)),
+                    value = rep(100, length(local$scenario_param$Ne_param)),
+                    stringsAsFactors=FALSE
+                )
+            )
+        }
+        
+        # parse scenario time parameters
+        if(isTruthy(local$scenario_param$time_param)) {
+            tmp_param_df <- bind_rows(
+                tmp_param_df,
+                data.frame(
+                    name = local$scenario_param$time_param,
+                    type = rep("T", length(local$scenario_param$time_param)),
+                    value = rep(100, length(local$scenario_param$time_param)),
+                    stringsAsFactors=FALSE
+                )
+            )
+        }
+        
+        # parse scenario admixture rate parameters
+        if(isTruthy(local$scenario_param$rate_param)) {
+            tmp_param_df <- bind_rows(
+                tmp_param_df,
+                data.frame(
+                    name = local$scenario_param$rate_param,
+                    type = rep("A", length(local$scenario_param$rate_param)),
+                    value = rep(0.5, length(local$scenario_param$rate_param)),
+                    stringsAsFactors=FALSE
+                )
+            )
+        }
+        
+        # remove old parameter not existing anymore
+        keep_old_ind <- local$param_df$name %in% tmp_param_df$name
+        
+        # add unexisting parameters
+        add_new_ind <- !(tmp_param_df$name %in% local$param_df$name)
+        
+        # merge
+        local$param_df <- bind_rows(
+            local$param_df[keep_old_ind,],
+            tmp_param_df[add_new_ind,]
+        )
     })
+    
     # init output reactive values
-    out <- reactiveValues(param_values = list(),
-                          sample_sizes = list(),
-                          nrep = NULL)
-    # Ne parameters
+    out <- reactiveValues(param_values = NULL,
+                          sample_sizes = NULL,
+                          n_rep = NULL)
+    
+    # # debugging
+    # observe({
+    #     pprint("parameter values")
+    #     pprint(local$param_df)
+    # })
+    
+    # setup parameter input
     observe({
-        req(local$scenario_param)
-        # get Ne params
-        param_list <- local$scenario_param$Ne_param
-        # rendering
+        # rendering Ne param
+        req(nrow(local$param_df) > 0)
+        Ne_param_ind <- local$param_df$type == "N"
+        req(sum(Ne_param_ind) > 0)
+        tmp_param_df <- local$param_df[Ne_param_ind,]
         output$Ne_param_values <- renderUI({
-            render_model_param(session, param_list,
-                               "Ne parameter(s)",
-                               "Effective population size.",
-                               value = 100, min = 0, max = NA, step = 1)
-        })
-        # return value
-        local$param_values$Ne <- lapply(param_list, function(param) {
-            return(list(name = param, type = "N", value = input[[ param ]]))
+            render_model_param(
+                session, tmp_param_df,
+                "Ne parameter(s)",
+                "Effective population size.",
+                min = 0, max = NA, step = 1
+            )
         })
     })
-    # time parameters
+    
     observe({
-        req(local$scenario_param)
-        # get time params
-        param_list <- local$scenario_param$time_param
-        # rendering
+        # rendering time param
+        req(nrow(local$param_df) > 0)
+        time_param_ind <- local$param_df$type == "T"
+        req(sum(time_param_ind) > 0)
+        tmp_param_df <- local$param_df[time_param_ind,]
         output$time_param_values <- renderUI({
-            render_model_param(session, param_list, "Time parameter(s)",
-                               "Time in <b>backward generations</b>.",
-                               value = 100, min = 0, max = NA, step = 1)
-        })
-        # return value
-        local$param_values$time <- lapply(param_list, function(param) {
-            return(list(name = param, type = "T", value = input[[ param ]]))
+            render_model_param(
+                session, tmp_param_df,
+                "Time parameter(s)",
+                "Time in <b>backward generations</b>.",
+                min = 0, max = NA, step = 1
+            )
         })
     })
-    # rate parameters
+    
     observe({
-        req(local$scenario_param)
-        # get rate params
-        param_list <- local$scenario_param$rate_param
-        # rendering
-        output$rate_param_values <- renderUI({
-            render_model_param(session, param_list, "Admixture rate parameter(s)",
-                               "Rate between 0 and 1.",
-                               value = 0.5, min = 0, max = 1, step = 0.001)
+        # rendering rate param
+        req(nrow(local$param_df) > 0)
+        rate_param_ind <- local$param_df$type == "A"
+        req(sum(rate_param_ind) > 0)
+        tmp_param_df <- local$param_df[rate_param_ind,]
+        output$time_param_values <- renderUI({
+            render_model_param(
+                session, tmp_param_df,
+                "Admixture rate parameter(s)",
+                "Rate between 0 and 1.",
+                min = 0, max = 1, step = 0.001
+            )
         })
-        # return value
-        local$param_values$rate_param <- lapply(param_list, function(param) {
-            return(list(name = param, type = "A", value = input[[ param ]]))
-        })
+    })
+    
+    # get input value
+    observe({
+        req(nrow(local$param_df) > 0)
+        for(ind in seq(nrow(local$param_df))) {
+            item_name <- local$param_df$name[ind]
+            if(isTruthy(input[[ item_name ]])) {
+                current_value <- input[[ item_name ]]
+                if(local$param_df$value[ind] != current_value) {
+                    local$param_df$value[ind] <- current_value
+                }
+            }
+        }
     })
     
     # update output
     observe({
-        param_list <- c(local$param_values$Ne, 
-                        local$param_values$time, 
-                        local$param_values$rate)
-        out$param_values <- unlist(lapply(param_list, function(item) {
-            return(
-                str_c(item$name, item$type, item$value, sep = " ")
-            )
-        }))
+        req(nrow(local$param_df) > 0)
+        out$param_values <- unlist(lapply(
+            split(local$param_df, seq(nrow(local$param_df))),
+            function(item) {
+                return(
+                    str_c(item$name, item$type, item$value, sep = " ")
+                )
+            }
+        ))
     })
     
+    # # debugging
+    # observe({
+    #     pprint("parameter setup")
+    #     pprint(out$param_values)
+    # })
+    
     # info on conditions
-    observeEvent(local$scenario_cond, {
-        output$conditions <- renderUI({
-            if(!is.null(local$scenario_cond) & length(local$scenario_cond) > 0) {
-                helpText(
-                    h4(icon("warning"), "Conditions"),
-                    tags$p(
-                        "You may want to consider the following conditions ",
-                        "when setting the parameter values above."
-                    ),
-                    tags$p(
-                        "This is an advisory warning to avoid gene genealogy ",
-                        "incongruenties. You may prefer to ignore it."
-                    ),
+    output$conditions <- renderUI({
+        txt <- tagList()
+        # pprint("scenario cond")
+        # pprint(local$scenario_cond)
+        if(isTruthy(local$scenario_cond) && length(local$scenario_cond) > 0) {
+            txt <- helpText(
+                h4(icon("warning"), "Conditions"),
+                tags$p(
+                    "You may want to consider the following conditions ",
+                    "when setting the parameter values above:"
+                ),
+                tags$p(
                     do.call(
                         tags$ul,
                         lapply(local$scenario_cond, function(item) {
                             return(tags$li(item))
                         })
                     )
+                ),
+                tags$p(
+                    "This is an advisory warning to avoid gene genealogy ",
+                    "inconsistencies. You may prefer to ignore it."
                 )
-            } else {
-                tagList()
-            }
-        })
+            )
+        }
+        txt
     })
+    # output
+    return(out)
+}
+
+#' Render model parameter ui
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param param_df data.frame with attributes `name`, `type` and `value`.
+#' @param min numeric, input min value. Default is 0.
+#' @param max numeric, input min value. Default is NA (no max value).
+#' @param step numeric, step value for input.
+render_model_param <- function(session, param_df, title, doc,
+                               min = 0, max = NA, step = 1) {
+    ns <- session$ns
+    out <- tagList()
+
+    if(nrow(param_df) > 0) {
+        # lexicographic order
+        param_df <- param_df[order(param_df$name),]
+        # numeric input for each parameters
+        numeric_input_list <- lapply(
+            split(param_df, seq(nrow(param_df))), 
+            function(item) {
+                return(
+                    column(
+                        width = 6,
+                        numericInput(
+                            ns(item$name), label = item$name,
+                            value = item$value, min = min,
+                            max = max, step = step
+                        )
+                    )
+                )
+            }
+        )
+        names(numeric_input_list) <- NULL
+        
+        # Convert the list to a tagList
+        # this is necessary for the list of items to display properly.
+        out <- tagList(
+            h5(title) %>%
+                helper(
+                    type = "inline",
+                    title = title,
+                    content = doc
+                ),
+            do.call(fluidRow, numeric_input_list)
+        )
+    }
+    # out
+    return(out)
+}
+
+#' Data generation sampling parameter setup module ui
+#' @keywords internal
+#' @author Ghislain Durif
+datagen_sampling_param_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h3("Sample sizes"),
+        uiOutput(ns("sample_param")),
+        hr(),
+        h3("Simulation number"),
+        numericInput(
+            ns("n_rep"),
+            label = "Number of repetitions",
+            value = 1,
+            min = 1, max = NA, step = 1
+        )
+    )
+}
+
+#' Data generation model parameter setup module server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param n_pop number of population in the model, as a `reactive`.
+#' @param n_sample number of sample in the model, as a `reactive`.
+datagen_sampling_param_server <- function(
+    input, output, session,
+    n_pop = reactive({NULL}),
+    n_sample = reactive({NULL})
+) {
+    # local reactive values
+    local <- reactiveValues(
+        n_pop = NULL
+    )
+    
+    # get input
+    observe({
+        local$n_pop = n_pop()
+    })
+    
+    # init output
+    out <- reactiveValues(sample_sizes = list(), n_rep = NULL)
     
     # sample
     observe({
@@ -662,50 +831,10 @@ simu_hist_model_param_server <- function(input, output, session,
     })
     # number of repetitions
     observe({
-        out$nrep <- input$nrep
+        out$n_rep <- input$n_rep
     })
     # output
     return(out)
-}
-
-#' Render model parameter ui
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param type string, int or float
-#' @param value numeric, default input value. Default is 100.
-#' @param min numeric, input min value. Default is 0.
-#' @param max numeric, input min value. Default is NA (no max value).
-#' @param step numeric, step value for input.
-render_model_param <- function(session, param_list, title, doc,
-                               value = 100, min = 0, max = NA, step = 1) {
-    ns <- session$ns
-
-    if(length(param_list) > 0) {
-        # numeric input for each parameters
-        numeric_input_list <- lapply(param_list, function(param) {
-            fluidRow(
-                column(
-                    width = 10,
-                    numericInput(ns(param), label = param,
-                                 value = value, min = min,
-                                 max = max, step = step)
-                )
-            )
-        })
-        # Convert the list to a tagList - this is necessary for the list of items
-        # to display properly.
-        tagList(
-            h5(title) %>%
-                helper(
-                    type = "inline",
-                    title = title,
-                    content = doc
-                ),
-            do.call(flowLayout, numeric_input_list)
-        )
-    } else {
-        tagList()
-    }
 }
 
 #' Render sampling parameter ui
