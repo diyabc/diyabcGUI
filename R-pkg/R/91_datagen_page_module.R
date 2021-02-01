@@ -25,8 +25,7 @@ datagen_page_ui <- function(id) {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = FALSE,
-                "WriteME"
-                # genetic_loci_ui(ns("genetic_setting"))
+                genetic_loci_ui(ns("gene_set"))
             ),
             box(
                 title = "Data file generation",
@@ -78,6 +77,12 @@ datagen_page_server <- function(input, output, session) {
     observe({
         local$raw_scenario <- hist_model$raw_scenario
     })
+    
+    # ## genetic loci
+    gene_set <- callModule(
+        genetic_loci_server, "gene_set",
+        locus_type = reactive(proj_set$locus_type),
+        seq_mode = reactive(proj_set$seq_mode))
     
     ## action
     proj_admin <- callModule(
@@ -855,11 +860,11 @@ datagen_sampling_param_server <- function(
         )
     })
     
-    # debugging
-    observe({
-        pprint("sample_df")
-        pprint(local$sample_df)
-    })
+    # # debugging
+    # observe({
+    #     pprint("sample_df")
+    #     pprint(local$sample_df)
+    # })
     
     # init output
     out <- reactiveValues(sample_sizes = NULL, n_rep = NULL)
