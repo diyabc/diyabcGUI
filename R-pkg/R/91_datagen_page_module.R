@@ -23,7 +23,7 @@ datagen_page_ui <- function(id) {
             box(
                 title = "Genetic data",
                 width = 12,
-                status = "warning", solidHeader = TRUE,
+                status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = FALSE,
                 "WriteME"
                 # genetic_loci_ui(ns("genetic_setting"))
@@ -261,7 +261,9 @@ datagen_model_param_server <- function(
         scenario_cond = NULL,
         scenario_param = NULL,
         n_pop = NULL,
-        n_sample = NULL
+        n_sample = NULL,
+        sample_pop = NULL,
+        sample_time = NULL
     )
     
     # get input
@@ -273,15 +275,36 @@ datagen_model_param_server <- function(
         # pprint(local$scenario_param)
         
         if(isTruthy(local$scenario_param)) {
+            # number of populations
             if(isTruthy(local$scenario_param$npop)) {
                 local$n_pop <- local$scenario_param$npop
             }
             if(isTruthy(local$scenario_param$event_type)) {
-                local$n_sample <- sum(local$scenario_param$event_type ==
-                                          "sample")
+                # number of sampling
+                sample_event_ind <- local$scenario_param$event_type == "sample"
+                local$n_sample <- sum(sample_event_ind)
+                
+                if(local$n_sample > 0) {
+                    # populations concerned by sample 
+                    if(isTruthy(local$scenario_param$event_pop)) {
+                        local$sample_pop <- 
+                            local$scenario_param$event_pop[sample_event_ind]
+                    }
+                    # time of sampling
+                    if(isTruthy(local$scenario_param$event_time)) {
+                        local$sample_time <- 
+                            local$scenario_param$event_time[sample_event_ind]
+                    }
+                }
             }
         } 
     })
+    
+    # # debugging
+    # observe({
+    #     pprint(str_c("n_sample = ", local$n_sample))
+    #     pprint(str_c("n_pop = ", local$n_pop))
+    # })
     
     # init output reactive values
     out <- reactiveValues(param_values = list(),
@@ -305,7 +328,9 @@ datagen_model_param_server <- function(
     samp_param <- callModule(
         datagen_sampling_param_server, "samp_param",
         n_pop = reactive(local$n_pop),
-        n_sample = reactive(local$n_sample)
+        n_sample = reactive(local$n_sample),
+        sample_pop = reactive(local$sample_pop),
+        sample_time = reactive(local$sample_time)
     )
     
     # update output
@@ -317,6 +342,7 @@ datagen_model_param_server <- function(
         req(samp_param$n_rep)
         out$n_rep <- samp_param$n_rep
     })
+    
     # output
     return(out)
 }
@@ -772,67 +798,124 @@ datagen_sampling_param_ui <- function(id) {
 datagen_sampling_param_server <- function(
     input, output, session,
     n_pop = reactive({NULL}),
-    n_sample = reactive({NULL})
+    n_sample = reactive({NULL}),
+    sample_pop = reactive({NULL}),
+    sample_time = reactive({NULL})
 ) {
     # local reactive values
     local <- reactiveValues(
-        n_pop = NULL
+        n_pop = NULL,
+        n_sample = NULL,
+        sample_pop = NULL,
+        sample_time = NULL,
+        sample_df = data.frame(
+            id = character(),
+            pop = character(),
+            time = character(),
+            tag = character(),
+            n_f = numeric(),
+            n_m = numeric(),
+            stringsAsFactors=FALSE
+        )
     )
     
     # get input
     observe({
-        local$n_pop = n_pop()
+        local$n_pop <- n_pop()
+        local$n_sample <- n_sample()
+        local$sample_pop <- sample_pop()
+        local$sample_time <- sample_time()
+    })
+    
+    # format input
+    observe({
+        req(local$n_sample)
+        req(local$n_sample > 0)
+        req(length(local$sample_pop) > 0)
+        req(length(local$sample_time) > 0)
+        
+        # parse new samples (if any)
+        local$sample_df <- Reduce(
+            "bind_rows",
+            lapply(
+                1:local$n_sample, 
+                function(ind) {
+                    return(data.frame(
+                        id = as.integer(ind),
+                        pop = as.character(local$sample_pop[ind]),
+                        time = as.character(local$sample_time[ind]),
+                        tag = str_c("pop_", local$sample_pop[ind],
+                                    "_time_", local$sample_time[ind]),
+                        n_f = as.integer(25),
+                        n_m = as.integer(25),
+                        stringsAsFactors=FALSE
+                    ))
+                }
+            )
+        )
+    })
+    
+    # debugging
+    observe({
+        pprint("sample_df")
+        pprint(local$sample_df)
     })
     
     # init output
-    out <- reactiveValues(sample_sizes = list(), n_rep = NULL)
+    out <- reactiveValues(sample_sizes = NULL, n_rep = NULL)
     
-    # sample
+    # setup sample size input
     observe({
-        req(local$scenario_param)
-        # parameter
-        param <- local$scenario_param
-        # number of sample event
-        nsample <- sum(param$event_type == "sample")
-        # logging("nsample = ", nsample)
-        # number of population
-        npop <- param$npop
-        # populations concerned by sample
-        sample_pop <- param$event_pop[param$event_type == "sample"]
-        # time of sampling
-        sample_time <- param$event_time[param$event_type == "sample"]
-        # rendering
+        req(nrow(local$sample_df) > 0)
         output$sample_param <- renderUI({
-            # numeric input for each sample
-            numeric_input_list <- list()
-            if(!is.null(npop) & nsample > 0) {
-                numeric_input_list <- lapply(1:nsample, function(sample_id) {
-                    render_sample_sizes(session, sample_id,
-                                        unlist(sample_time[sample_id]),
-                                        unlist(sample_pop[sample_id]))
-                })
-            }
-            # Convert the list to a tagList
-            tagList(
-                do.call(flowLayout, numeric_input_list)
+            render_sample_sizes(
+                session, local$sample_df
             )
         })
-        # return value
-        if(nsample > 0) {
-            out$sample_sizes <- Reduce("rbind", lapply(
-                1:nsample,
-                function(sample_id) {
-                    tag_name <- str_c("sample", sample_id)
-                    return(c(input[[str_c(tag_name, "_f")]],
-                             input[[str_c(tag_name, "_m")]]))
+    })
+
+    # get input value
+    observe({
+        req(nrow(local$sample_df) > 0)
+        for(ind in seq(nrow(local$sample_df))) {
+            item_tag <- local$sample_df$tag[ind]
+
+            item_name <- str_c("sample_", item_tag, "_f")
+            if(isTruthy(input[[ item_name ]])) {
+                current_value <- input[[ item_name ]]
+                if(local$sample_df$n_f[ind] != current_value) {
+                    local$sample_df$n_f[ind] <- current_value
                 }
-            ))
+            }
+
+            item_name <- str_c("sample_", item_tag, "_m")
+            if(isTruthy(input[[ item_name ]])) {
+                current_value <- input[[ item_name ]]
+                if(local$sample_df$n_m[ind] != current_value) {
+                    local$sample_df$n_m[ind] <- current_value
+                }
+            }
         }
     })
+
+    # update output
+    observe({
+        req(nrow(local$sample_df) > 0)
+        out$sample_sizes <- Reduce("rbind", lapply(
+            split(local$sample_df, seq(nrow(local$sample_df))),
+            function(item) {
+                return(
+                    c(item$n_f, item$n_m)
+                )
+            }
+        ))
+    })
+    
     # number of repetitions
     observe({
         out$n_rep <- input$n_rep
     })
+    
     # output
     return(out)
 }
@@ -840,44 +923,49 @@ datagen_sampling_param_server <- function(
 #' Render sampling parameter ui
 #' @keywords internal
 #' @author Ghislain Durif
-render_sample_sizes <- function(session, sample_id, time_tag, pop_id) {
-    # init output reactive values
-    out <- reactiveValues()
-    # module namespace
+render_sample_sizes <- function(session, sample_df) {
+    
     ns <- session$ns
-    # sampling tag
-    tag_name <- paste0("sample", sample_id)
-                       # "_pop", pop_id,
-                       # "_time", time_tag)
-    # ui
-    tagList(
-        h5(tags$b("# ", sample_id), " from pop. ", tags$b(pop_id),
-           " at time ", tags$b(time_tag)),
-        verticalLayout(
-            fluidRow(
-                column(
-                    width = 10,
-                    numericInput(
-                        ns(paste0(tag_name, "_f")),
-                        label = "Female",
-                        value = 25,
-                        min = 0
-                    ),
-                ),
-            ),
-            fluidRow(
-                column(
-                    width = 10,
-                    numericInput(
-                        ns(paste0(tag_name, "_m")),
-                        label = "Male",
-                        value = 25,
-                        min = 0
+    out <- tagList()
+    
+    if(nrow(sample_df) > 0) {
+        # numeric input for each samples
+        numeric_input_list <- lapply(
+            split(sample_df, seq(nrow(sample_df))), 
+            function(item) {
+                return(
+                    tagList(
+                        h5("From pop. ", tags$b(item$pop),
+                           " at time ", tags$b(item$time)),
+                        fluidRow(
+                            column(
+                                width = 10,
+                                verticalLayout(
+                                    numericInput(
+                                        ns(str_c("sample_", item$tag, "_f")),
+                                        label = "Female",
+                                        value = item$n_f,
+                                        min = 0
+                                    ),
+                                    numericInput(
+                                        ns(str_c("sample_", item$tag, "_m")),
+                                        label = "Male",
+                                        value = item$n_m,
+                                        min = 0
+                                    )
+                                )
+                            )
+                        )
                     )
                 )
-            )
+            }
         )
-    )
+        names(numeric_input_list) <- NULL
+        
+        out <- do.call(flowLayout, numeric_input_list)
+    }
+    # out
+    return(out)
 }
 
 #' Simulation project action module ui
