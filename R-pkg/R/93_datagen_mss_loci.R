@@ -182,7 +182,7 @@ genetic_loci_ui <- function(id) {
 #' Genetic loci module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinyjs disable enable
+#' @importFrom dplyr distinct
 genetic_loci_server <- function(input, output, session,
                                 locus_type = reactive({NULL}),
                                 seq_mode = reactive({NULL})) {
@@ -195,6 +195,7 @@ genetic_loci_server <- function(input, output, session,
         locus_nb_ui = NULL,
         poolseq = FALSE,
         locus_count = NULL,
+        mss_group_info = NULL,
         # input
         locus_type = NULL,
         seq_mode = NULL
@@ -211,7 +212,11 @@ genetic_loci_server <- function(input, output, session,
     })
     
     # init output values
-    out <- reactiveValues(locus_description = NULL, sex_ratio = NULL)
+    out <- reactiveValues(
+        locus_description = NULL, 
+        mss_group_prior = NULL, 
+        sex_ratio = NULL
+    )
     
     # # debugging
     # observe({
@@ -345,13 +350,47 @@ genetic_loci_server <- function(input, output, session,
     #     pprint(out$locus_description)
     # })
     
-    # mss_prior <- callModule(
-    #     mss_group_prior_server,
-    #     "mss_prior",
-    #     group_info = reactive(mss_group$group_info)
-    # )
     
-    # get sex ratio
+    ## MSS group prior
+    observe({
+        # FIXME
+        # refactor mss_group_prior_server
+        if(isTruthy(mss_config$mss_data_info) &&
+           is.data.frame(mss_config$mss_data_info) %% 
+           nrow(mss_config$mss_data_info) > 0) {
+            tmp_mss_group_info <- 
+                mss_config$mss_data_info[,c("mode", "group")] %>%
+                distinct()
+            
+            tmp_mss_group_info$mode <- str_c("[", tmp_mss_group_info$mode, "]")
+            tmp_mss_group_info$group <- str_c("G", tmp_mss_group_info$group)
+            
+            local$mss_group_info <- tmp_mss_group_info
+        } else {
+            local$mss_group_info <- NULL
+        }
+    })
+    
+    mss_prior <- callModule(
+        mss_group_prior_server,
+        "mss_prior",
+        group_info = reactive(local$mss_group_info)
+    )
+    
+    # output
+    observe({
+        if(isTruthy(mss_prior$raw_group_prior_list) && 
+           length(mss_prior$raw_group_prior_list) > 0) {
+            out$mss_group_prior <- mss_prior$raw_group_prior_list
+        } else {
+            out$mss_group_prior <- NULL
+        }
+        
+        pprint("mss group prior")
+        pprint(out$mss_group_prior)
+    })
+    
+    ## get sex ratio
     observe({
         req(input$sex_ratio)
         out$sex_ratio <- input$sex_ratio
