@@ -195,7 +195,6 @@ genetic_loci_server <- function(input, output, session,
         locus_nb_ui = NULL,
         poolseq = FALSE,
         locus_count = NULL,
-        mss_locus_info = NULL,
         # input
         locus_type = NULL,
         seq_mode = NULL
@@ -277,9 +276,6 @@ genetic_loci_server <- function(input, output, session,
     # parse numerical input and format output
     observe({
         req(local$locus_type)
-        # req(!is.null(dna_loci$locus_count))
-        # req(!is.null(microsat_loci$locus_count))
-        # req(!is.null(snp_loci$locus_count))
         local$locus_count <- switch(
             local$locus_type,
             "mss" = rbind(
@@ -300,10 +296,6 @@ genetic_loci_server <- function(input, output, session,
             # pprint("mss data info")
             # pprint(local$mss_data_info)
         }
-        # pprint(locus_count)
-        # out$locus_description <- parse_locus_description(locus_count,
-        #                                                  local$locus_type)
-        # pprint(out$locus_description)
     })
     
     ## MSS setup
@@ -324,6 +316,34 @@ genetic_loci_server <- function(input, output, session,
         mss_data_info = reactive(local$mss_data_info),
         datagen_mode = TRUE
     )
+    
+    ## format locus description
+    observe({
+        if(local$locus_type == "snp") {
+            req(local$locus_count)
+            req(is.data.frame(local$locus_count))
+            req(nrow(local$locus_count) > 0)
+            out$locus_description <- format_snp_locus_description(
+                local$locus_count, datagen_mode = TRUE
+            )
+            
+        } else if(local$locus_type == "mss") {
+            req(mss_config$mss_data_info)
+            req(is.data.frame(mss_config$mss_data_info))
+            req(nrow(mss_config$mss_data_info) > 0)
+            
+            out$locus_description <- format_mss_locus_description(
+                mss_config$mss_data_info, datagen_mode = TRUE
+            )
+        }
+        
+    })
+    
+    # ## debugging
+    # observe({
+    #     pprint("locus formating")
+    #     pprint(out$locus_description)
+    # })
     
     # mss_prior <- callModule(
     #     mss_group_prior_server,
@@ -640,140 +660,20 @@ mss_config_setup_server <- function(input, output, session,
         datagen_mode = datagen_mode
     )
     
+    ## merge output
+    observe({
+        # merge user input
+        out$mss_data_info <- rbind(microsat_setup$mss_data_info,
+                                   seq_setup$mss_data_info)
+    })
+    
+    # ## debugging
     # observe({
-    #     pprint("nb of seq group")
-    #     pprint(seq_group$n_group)
-    #     pprint(reactiveValuesToList(seq_group))
+    #     pprint("MSS data info")
+    #     pprint(out$mss_data_info)
     # })
     
-    # ## format microsat locus
-    # observe({
-    #     req(length(local$microsat_locus) > 0)
-    #     req(length(microsat_group$locus_group) > 0)
-    #     req(all(str_length(microsat_group$locus_group) > 0))
-    #     req(is.data.frame(local$microsat_locus_motif_range))
-    #     req(nrow(local$microsat_locus_motif_range) > 0)
-    #     
-    #     tmp_microsat_group <- data.frame(
-    #         name = local$microsat_locus,
-    #         type = str_c("<", local$microsat_locus_type, ">"),
-    #         mode = rep("[M]", length(local$microsat_locus)),
-    #         group = str_c("G", microsat_group$locus_group),
-    #         stringsAsFactors = FALSE
-    #     )
-    #     
-    #     tmp_microsat <- dplyr::left_join(tmp_microsat_group, 
-    #                                      local$microsat_locus_motif_range,
-    #                                      by = "name")
-    #     
-    #     # pprint("microsat locus")
-    #     # pprint(tmp_microsat)
-    #     
-    #     local$raw_microsat_locus <- apply(
-    #         tmp_microsat,
-    #         1,
-    #         str_c, collapse = " "
-    #     )
-    #     
-    #     # pprint("raw microsat locus")
-    #     # pprint(local$raw_microsat_locus)
-    #     
-    # })
-    # 
-    # ## format seq locus
-    # observe({
-    #     req(length(local$seq_locus) > 0)
-    #     req(length(seq_group$locus_group) > 0)
-    #     req(all(str_length(seq_group$locus_group) > 0))
-    #     req(length(local$seq_length) > 0)
-    #     
-    #     # pprint("seq locus group")
-    #     # pprint(seq_group$locus_group)
-    #     
-    #     tmp_seq_group <- data.frame(
-    #         name = local$seq_locus,
-    #         type = str_c("<", local$seq_locus_type, ">"),
-    #         mode = rep("[S]", length(local$seq_locus)),
-    #         group = str_c("G", seq_group$locus_group),
-    #         length = local$seq_length,
-    #         stringsAsFactors = FALSE
-    #     )
-    #     
-    #     # pprint("seq locus group")
-    #     # pprint(tmp_seq_group)
-    #     
-    #     local$raw_seq_locus <- apply(
-    #         tmp_seq_group,
-    #         1,
-    #         str_c, collapse = " "
-    #     )
-    #     
-    #     # pprint("raw seq locus")
-    #     # pprint(local$raw_seq_locus)
-    # })
-    # 
-    # ## output
-    # observe({
-    #     # pprint("raw microsat locus")
-    #     # pprint(local$raw_microsat_locus)
-    #     # pprint("raw seq locus")
-    #     # pprint(local$raw_seq_locus)
-    #     # pprint("locus name")
-    #     # pprint(local$data_info$locus_name)
-    #     
-    #     req(length(local$raw_microsat_locus) + length(local$raw_seq_locus) > 0)
-    #     req(!is.null(local$data_info$locus_name))
-    #     
-    #     tmp_raw_locus <- unlist(c(local$raw_microsat_locus, 
-    #                               local$raw_seq_locus))
-    #     
-    #     out$raw_locus <- left_join(
-    #         data.frame(
-    #             name = local$data_info$locus_name, 
-    #             stringsAsFactors = FALSE
-    #         ),
-    #         data.frame(
-    #             name = str_extract(tmp_raw_locus, "^[A-Za-z0-9_\\-]+(?= )"),
-    #             info = tmp_raw_locus, 
-    #             stringsAsFactors = FALSE
-    #         ),
-    #         by = "name"
-    #     )$info
-    #     
-    #     # pprint("raw locus")
-    #     # pprint(out$raw_locus)
-    # })
-    # 
-    # # group info
-    # observe({
-    #     req(length(out$raw_locus) > 0)
-    #     
-    #     tmp_group_info <- Reduce(
-    #         "rbind",
-    #         unique(
-    #             str_extract_all(
-    #                 out$raw_locus,
-    #                 "(\\[[MS]\\])|(G[0-9]+)"
-    #             )
-    #         )
-    #     )
-    #     
-    #     # issue when a single group
-    #     if(length(tmp_group_info) == 2) {
-    #         tmp_group_info <- data.frame(c1 = tmp_group_info[1],
-    #                                      c2 = tmp_group_info[2])
-    #     } else {
-    #         tmp_group_info <- as.data.frame(tmp_group_info)
-    #     }
-    #     
-    #     row.names(tmp_group_info) <- NULL
-    #     colnames(tmp_group_info) <- c("mode", "group")
-    #     out$group_info <- tmp_group_info
-    #     
-    #     # pprint("group info")
-    #     # pprint(out$group_info)
-    # })
-    
+    ## output
     return(out)
 }
 
@@ -1106,10 +1006,101 @@ render_locus_ui <- function(session, item, possible_groups,
 }
 
 
+#' Format mss locus config for header file
+#' @keywords internal
+#' @author Ghislain Durif
+format_mss_locus_description <- function(mss_data_info, datagen_mode = FALSE) {
+    
+    out <- NULL
+    
+    if(is.data.frame(mss_data_info) && nrow(mss_data_info) > 0) {
+        out <- unlist(lapply(
+            split(mss_data_info, seq(nrow(mss_data_info))),
+            function(item) {
+                tmp <- str_c(
+                    item$name, " ",
+                    "<", item$type, ">", " ",
+                    "[", item$mode, "]", " ",
+                    "G", as.integer(item$group)
+                )
+                if(item$mode == "M") {
+                    tmp <- str_c(
+                        tmp,
+                        as.integer(item$motif),
+                        as.integer(item$range),
+                        sep = " "
+                    )
+                } else if(item$mode == "S") {
+                    if(datagen_mode) {
+                        tmp <- str_c(
+                            tmp,
+                            as.integer(item$length), 
+                            as.integer(item$perc_A), 
+                            as.integer(item$perc_C), 
+                            as.integer(item$perc_G), 
+                            as.integer(item$perc_T),
+                            sep = " "
+                        )
+                    } else {
+                        tmp <- str_c(
+                            tmp,
+                            as.integer(item$length),
+                            sep = " "
+                        )
+                    }
+                }
+                return(tmp)
+            }
+        ))
+    }
+    # output
+    return(out)
+}
+
+#' Format snp locus config for header file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_count data.frame with attributes `type`, `count` and 
+#' `from` (only required if `datagen_mode = FALSE`)
+format_snp_locus_description <- function(locus_count, datagen_mode = FALSE) {
+    
+    out <- NULL
+    
+    if(is.data.frame(locus_count)) {
+        locus_count <- locus_count[locus_count$count>0,]
+        if(nrow(locus_count) > 0) {
+            out <- unlist(lapply(
+                1:nrow(locus_count), 
+                function(ind) {
+                    if(datagen_mode) {
+                        return(str_c(
+                            locus_count$count[ind], " ",
+                            "<", locus_count$type[ind], ">", " ",
+                            "[P]", " ",
+                            "G", ind
+                        ))
+                    } else {
+                        return(str_c(
+                            locus_count$count[ind], " ",
+                            "<", locus_count$type[ind], ">", " ",
+                            "G", ind, " ",
+                            "from", " ", locus_count$from[ind]
+                        ))
+                    }
+                }
+            ))
+        }
+    }
+    
+    # output
+    return(out)
+}
+
+
 #' Parse locus description setting
 #' @keywords internal
 #' @author Ghislain Durif
-parse_locus_description <- function(locus_count, locus_type = "snp") {
+format_locus_description <- function(locus_count, locus_type = "snp") {
     out <- NULL
     ## check for null input
     if(!is.null(locus_count)) {
