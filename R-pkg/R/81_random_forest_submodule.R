@@ -819,7 +819,7 @@ rf_control_ui <- function(id) {
             id = ns("rf_progress"),
             value = 0,
             total = 100,
-            title = "Not working at the moment.",
+            title = "",
             display_pct = TRUE
         ),
         uiOutput(ns("feedback")),
