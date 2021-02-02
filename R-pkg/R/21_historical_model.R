@@ -47,15 +47,19 @@ hist_model_server <- function(input, output, session,
         parser_msg = NULL,
         project_dir = NULL,
         raw_scenario = NULL,
-        scenario_id = NULL
+        scenario_id = NULL,
+        validated = FALSE
     )
+    
     # init output reactive values
     out <- reactiveValues(
         cond = NULL,
         raw = NULL,
         param = NULL,
-        trigger = NULL
+        trigger = NULL,
+        valid = FALSE
     )
+    
     # get input
     observe({
         local$project_dir = project_dir()
@@ -63,13 +67,21 @@ hist_model_server <- function(input, output, session,
         local$scenario_id = scenario_id()
         # logging("input raw scenario = ", local$raw_scenario)
     })
+    
     # update if input provided
     observe({
         req(local$raw_scenario)
         updateTextAreaInput(session, "scenario", value = local$raw_scenario)
     })
+    
+    # unvalidate if scenario is edited
+    observeEvent(input$scenario, {
+        local$validated <- FALSE
+    })
+    
     # parse and check input scenario
     observeEvent(input$validate, {
+        local$validated <- TRUE
         # input (remove empty final line)
         out$raw <- str_replace(string = input$scenario, 
                                pattern = "\\n$", 
@@ -89,6 +101,7 @@ hist_model_server <- function(input, output, session,
             data2plot <- prepare_hist_model_display(out$param, grid_unit = 2)
             
             # check for validity
+            out$valid <- out$param$valid && data2plot$valid
             out$param$valid <- data2plot$valid
             
             # potential message
@@ -108,31 +121,37 @@ hist_model_server <- function(input, output, session,
         } else {
             local$graph <- NULL
             out$cond <- NULL
+            out$valid <- FALSE
         }
     })
+    
     # update local
     observeEvent(out$raw, {
         local$raw_scenario <- out$raw
     })
+    
     # update parser message
-    observeEvent(local$parser_msg, {
-        output$parser_msg <- renderUI({
-            if(!is.null(local$parser_msg) & is.list(local$parser_msg) & 
-               length(local$parser_msg) > 0) {
-                helpText(
-                    h4(icon("warning"), "Issue(s) with scenario"),
-                    do.call(
-                        tags$ul,
-                        lapply(local$parser_msg, function(item) {
-                            return(tags$li(item))
-                        })
-                    )
+    output$parser_msg <- renderUI({
+        req(!is.null(local$validated))
+        if(!local$validated) {
+            helpText(
+                icon("warning"), "Scenario is not validated"
+            )
+        } else if(isTruthy(local$parser_msg) & length(local$parser_msg) > 0) {
+            helpText(
+                h4(icon("warning"), "Issue(s) with scenario"),
+                do.call(
+                    tags$ul,
+                    lapply(local$parser_msg, function(item) {
+                        return(tags$li(item))
+                    })
                 )
-            } else {
-                tagList()
-            }
-        })
+            )
+        } else {
+                NULL
+        }
     })
+    
     # # debugging
     # observe({
     #     logging("project dir :", local$project_dir)
@@ -144,6 +163,7 @@ hist_model_server <- function(input, output, session,
                graph = reactive(local$graph), 
                project_dir = reactive(local$project_dir),
                scenario_id = reactive(local$scenario_id))
+    
     # output
     return(out)
 }
