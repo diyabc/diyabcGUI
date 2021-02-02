@@ -104,11 +104,11 @@ locus_nb_server <- function(input, output, session,
     
     # get input
     observe({
-        # pprint(input$auto_dip)
-        # pprint(input$auto_hap)
-        # pprint(input$x_linked)
-        # pprint(input$y_linked)
-        # pprint(input$mito)
+        # pprint(str_c("auto_dip = ", input$auto_dip))
+        # pprint(str_c("auto_hap = ", input$auto_hap))
+        # pprint(str_c("x_linked = ", input$x_linked))
+        # pprint(str_c("y_linked = ", input$y_linked))
+        # pprint(str_c("mito = ", input$mito))
         local$auto_dip <- input$auto_dip
         local$auto_hap <- input$auto_hap
         local$x_linked <- input$x_linked
@@ -129,24 +129,28 @@ locus_nb_server <- function(input, output, session,
     
     # parse input
     observe({
-        req(local$auto_dip)
-        req(local$auto_hap)
-        req(local$x_linked)
-        req(local$y_linked)
-        req(local$mito)
-        req(local$locus_type)
-        # pprint(local$auto_dip)
-        # pprint(local$auto_hap)
-        # pprint(local$x_linked)
-        # pprint(local$y_linked)
-        # pprint(local$mito)
-        out$locus_count <- parse_locus_count(
-            local$auto_dip, local$auto_hap,
-            local$x_linked, local$y_linked,
-            local$mito, local$locus_type)
-        out$total_count <- sum(out$locus_count$count)
-        # pprint("-- locus count =")
-        # pprint(out$locus_count)
+        if(isTruthy(local$auto_dip) &&
+           isTruthy(local$auto_hap) &&
+           isTruthy(local$x_linked) &&
+           isTruthy(local$y_linked) &&
+           isTruthy(local$mito) &&
+           isTruthy(local$locus_type)) {
+            # pprint(local$auto_dip)
+            # pprint(local$auto_hap)
+            # pprint(local$x_linked)
+            # pprint(local$y_linked)
+            # pprint(local$mito)
+            out$locus_count <- parse_locus_count(
+                local$auto_dip, local$auto_hap,
+                local$x_linked, local$y_linked,
+                local$mito, local$locus_type)
+            out$total_count <- sum(out$locus_count$count)
+            # pprint("-- locus count =")
+            # pprint(out$locus_count)
+        } else {
+            out$locus_count <- NULL
+            out$total_count <- NULL
+        }
     })
     
     # output
@@ -161,6 +165,7 @@ genetic_loci_ui <- function(id) {
     tagList(
         verticalLayout(
             h3("Locus number"),
+            uiOutput(ns("feedback_locus_nb")),
             uiOutput(ns("locus_nb_ui")),
             helpText(
                 icon("warning"),
@@ -168,7 +173,6 @@ genetic_loci_ui <- function(id) {
             ),
             hr(),
             uiOutput(ns("mss_setup")),
-            tags$hr(),
             numericInput(ns("sex_ratio"), label = "Sex ratio (SR)", 
                          value = 0.5, min = 0, max = 1, step = 0.01),
             helpText(
@@ -215,7 +219,8 @@ genetic_loci_server <- function(input, output, session,
     out <- reactiveValues(
         locus_description = NULL, 
         mss_group_prior = NULL, 
-        sex_ratio = NULL
+        sex_ratio = NULL,
+        valid = FALSE
     )
     
     # # debugging
@@ -303,13 +308,28 @@ genetic_loci_server <- function(input, output, session,
         }
     })
     
+    ## feedback on locus number setup
+    output$feedback_locus_nb <- renderUI({
+        if(isTruthy(local$locus_count) &&
+           is.data.frame(local$locus_count) &&
+           any(local$locus_count$count > 0)) {
+            NULL
+        } else {
+            helpText(
+                icon("warning"),
+                "No locus will be simulated. All numbers are null or missing."
+            )
+        }
+    })
+    
     ## MSS setup
     output$mss_setup <- renderUI({
         if(local$locus_type == "mss") {
             tagList(
                 mss_config_setup_ui(ns("mss_config")),
                 br(),
-                mss_group_prior_ui(ns("mss_prior"))
+                mss_group_prior_ui(ns("mss_prior")),
+                hr()
             )
         } else {
             NULL
@@ -386,14 +406,22 @@ genetic_loci_server <- function(input, output, session,
             out$mss_group_prior <- NULL
         }
         
-        pprint("mss group prior")
-        pprint(out$mss_group_prior)
+        # pprint("mss group prior")
+        # pprint(out$mss_group_prior)
     })
     
     ## get sex ratio
     observe({
         req(input$sex_ratio)
         out$sex_ratio <- input$sex_ratio
+    })
+    
+    ## valid ?
+    observe({
+        out$valid <- (length(out$locus_description) > 0) &&
+                        (((local$locus_type == "mss") &&
+                                (length(out$mss_group_prior) > 0)) ||
+                            local$locus_type == "snp")
     })
     
     # output
