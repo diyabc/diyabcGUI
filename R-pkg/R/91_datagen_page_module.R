@@ -32,8 +32,7 @@ datagen_page_ui <- function(id) {
                 width = 12,
                 status = "warning", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = FALSE,
-                "WriteME"
-                # datafile_gen_ui(ns("datafile_gen"))
+                datafile_gen_ui(ns("datafile_gen"))
             ),
             box(
                 title = tags$b("Project administration"),
@@ -55,7 +54,8 @@ datagen_page_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
-        raw_scenario = NULL
+        raw_scenario = NULL,
+        valid = FALSE
     )
     
     # init output
@@ -78,13 +78,41 @@ datagen_page_server <- function(input, output, session) {
         local$raw_scenario <- hist_model$raw_scenario
     })
     
-    # ## genetic loci
+    ## genetic loci
     gene_set <- callModule(
         genetic_loci_server, "gene_set",
         locus_type = reactive(proj_set$locus_type),
-        seq_mode = reactive(proj_set$seq_mode))
+        seq_mode = reactive(proj_set$seq_mode)
+    )
     
-    ## action
+    ## valid ?
+    observe({
+        req(!is.null(proj_set$valid))
+        req(!is.null(hist_model$valid))
+        req(proj_set$locus_type)
+        local$valid <- proj_set$valid && hist_model$valid && gene_set$valid
+        
+        # pprint(str_c("valid setup ? ", local$valid))
+    })
+    
+    ## data generation
+    callModule(
+        datafile_gen_server, "datafile_gen",
+        proj_dir = reactive(proj_set$proj_dir),
+        proj_name = reactive(proj_set$proj_name),
+        valid = reactive(local$valid),
+        raw_param = reactive(hist_model$param_values),
+        raw_scenario = reactive(hist_model$raw_scenario),
+        locus_description = reactive(gene_set$locus_description),
+        mss_group_prior = reactive(gene_set$mss_group_prior),
+        sample_sizes = reactive(hist_model$sample_sizes),
+        n_rep = reactive(hist_model$n_rep),
+        sex_ratio = reactive(gene_set$sex_ratio),
+        seq_mode = reactive(proj_set$seq_mode),
+        locus_type = reactive(proj_set$locus_type)
+    )
+    
+    ## admin
     proj_admin <- callModule(
         proj_admin_server, "proj_admin",
         proj_dir = reactive(proj_set$proj_dir),
@@ -130,7 +158,8 @@ datagen_proj_set_server <- function(input, output, session) {
         proj_dir = mk_proj_dir("diyabc_datagen"),
         proj_name = NULL,
         locus_type = NULL,
-        seq_mode = NULL
+        seq_mode = NULL,
+        valid = FALSE
     )
     
     # clean on exit
@@ -163,6 +192,12 @@ datagen_proj_set_server <- function(input, output, session) {
         req(data_type$seq_mode)
         out$locus_type <- data_type$locus_type
         out$seq_mode <- data_type$seq_mode
+    })
+    
+    ## valid ?
+    observe({
+        req(!is.null(local$valid_proj_name))
+        out$valid <- local$valid_proj_name
     })
     
     # output
@@ -207,7 +242,11 @@ datagen_hist_model_server <- function(
     # init output
     out <- reactiveValues(
         raw_scenario = NULL,
-        scenario_param = NULL
+        scenario_param = NULL,
+        valid = FALSE,
+        param_values = NULL,
+        sample_sizes = NULL,
+        n_rep = NULL
     )
     # define model
     hist_model <- callModule(
@@ -220,6 +259,7 @@ datagen_hist_model_server <- function(
     observe({
         out$raw_scenario <- hist_model$raw
         out$scenario_param <- hist_model$param
+        out$valid <- hist_model$valid
     })
     
     # scenario parameter values
@@ -232,8 +272,9 @@ datagen_hist_model_server <- function(
     
     # update output
     observe({
-        out$param_setting <- reactiveValuesToList(param_setting)
-        # print(out$param_setting)
+        out$param_values <- param_setting$param_values
+        out$sample_sizes <- param_setting$sample_sizes
+        out$n_rep <- param_setting$n_rep
     })
     # output
     return(out)
@@ -973,64 +1014,92 @@ render_sample_sizes <- function(session, sample_df) {
     return(out)
 }
 
-#' Simulation project action module ui
+#' Data simulation module ui for synthetic data generation
 #' @keywords internal
 #' @author Ghislain Durif
-simu_proj_action_ui <- function(id) {
+datafile_gen_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        actionGroupButtons(
-            inputIds = c(ns("save"),
-                         ns("duplicate")),
-            labels = list(
-                tags$span(icon("save"), "Save"),
-                tags$span(icon("copy"), "Duplicate")
-            ),
-            fullwidth = TRUE
+        uiOutput(ns("feedback_valid")),
+        actionBttn(
+            inputId = ns("validate"),
+            label = "Validate simulation project",
+            style = "fill",
+            block = TRUE,
+            color = "success"
         ),
+        uiOutput(ns("feedback_validate")),
         hr(),
         actionBttn(
             inputId = ns("simulate"),
             label = "Simulate",
             style = "fill",
             block = TRUE
+        ),
+        hr(),
+        progressBar(
+            id = ns("simu_progress"),
+            value = 0,
+            total = 100,
+            title = "",
+            display_pct = TRUE
+        ),
+        uiOutput(ns("feedback")),
+        br(),
+        actionBttn(
+            inputId = ns("stop"),
+            label = "Stop",
+            style = "fill",
+            block = TRUE,
+            color = "danger"
+        ),
+        br(),
+        h5(icon("comment"), "Run logs"),
+        tags$pre(
+            uiOutput(ns("run_log")),
+            style = "width:60vw; overflow:scroll; overflow-y:scroll; height:130px; resize: both;"
         )
     )
 }
 
-#' Simulation project action module server
+#' Data simulation module server for synthetic data generation
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param project_dir project directory as a `reactive`.
-#' @param project_name project name as a `reactive`.
-#' @param validation boolean indicating if the project setting are validated, 
+#' @param proj_dir project directory as a `reactive`.
+#' @param proj_name project name as a `reactive`.
+#' @param valid boolean indicating if the project setting are valid, 
 #' as a `reactive`.
 #' @param raw_param scenario parameter raw setting as a `reactive`. 
 #' @param raw_scenario raw scenario as a `reactive`.
 #' @param locus_description genetic locus setting as a `reactive`.
-simu_proj_action_server <- function(input, output, session,
-                                    project_dir = reactive({NULL}),
-                                    project_name = reactive({NULL}),
-                                    validation = reactive({TRUE}),
-                                    raw_param = reactive({NULL}),
-                                    raw_scenario = reactive({NULL}),
-                                    locus_description = reactive({NULL}),
-                                    sample_sizes = reactive({NULL}),
-                                    n_rep = reactive({NULL}),
-                                    sex_ratio = reactive({NULL}),
-                                    seq_mode = reactive({NULL}),
-                                    locus_type = reactive({NULL})) {
+datafile_gen_server <- function(
+    input, output, session,
+    proj_dir = reactive({NULL}),
+    proj_name = reactive({NULL}),
+    valid = reactive({FALSE}),
+    raw_param = reactive({NULL}),
+    raw_scenario = reactive({NULL}),
+    locus_description = reactive({NULL}),
+    mss_group_prior = reactive({NULL}),
+    sample_sizes = reactive({NULL}),
+    n_rep = reactive({NULL}),
+    sex_ratio = reactive({NULL}),
+    seq_mode = reactive({NULL}),
+    locus_type = reactive({NULL})
+) {
     # namespace
     ns <- session$ns
     # init local
     local <- reactiveValues(
-        saved = FALSE,
-        project_dir = NULL,
-        project_name = NULL,
-        validation = NULL,
+        validated = FALSE,
+        # input
+        proj_dir = NULL,
+        proj_name = NULL,
+        valid = FALSE,
         raw_param = NULL,
         raw_scenario = NULL,
         locus_description = NULL,
+        mss_group_prior = NULL,
         sample_sizes = NULL,
         sex_ratio = NULL,
         n_rep = NULL,
@@ -1039,131 +1108,155 @@ simu_proj_action_server <- function(input, output, session,
     )
     # get input
     observe({
-        local$project_dir <- project_dir()
-        local$project_name <- project_name()
-        local$validation <- validation()
+        local$proj_dir <- proj_dir()
+        local$proj_name <- proj_name()
+        local$valid <- valid()
         local$raw_param <- raw_param()
         local$raw_scenario <- raw_scenario()
         local$locus_description <- locus_description()
+        local$mss_group_prior <- mss_group_prior()
         local$sample_sizes <- sample_sizes()
         local$sex_ratio <- sex_ratio()
         local$n_rep <- n_rep()
         local$seq_mode <- seq_mode()
         local$locus_type <- locus_type()
+        
+        # pprint(str_c("valid_project ? ", local$valid))
+        local$validated <- FALSE
     })
-    # init output
-    out <- reactiveValues(
-        duplicate = NULL,
-        save = NULL
-    )
     
-    # disable saved if not validated
-    observeEvent(local$validation, {
-        req(!is.null(local$validation))
-        if(local$validation) {
-            shinyjs::enable("save")
+    ## init output
+    out <- reactiveValues()
+    
+    ## feedback on project setup
+    output$feedback_valid <- renderUI({
+        req(!is.null(local$valid))
+        if(!local$valid) {
+            helpText(
+                icon("warning"),
+                "Issue with the configuration or paremeters",
+                "of the simulation project.",
+                "Please check the different setup panels above."
+            )
         } else {
-            shinyjs::disable("save")
-            # # directory not existing
-            # showNotification(
-            #     id = ns("project_dir_issue"),
-            #     duration = 5,
-            #     closeButton = TRUE,
-            #     type = "warning",
-            #     tagList(
-            #         tags$p(
-            #             icon("warning"),
-            #             paste0("Directory does not exists. ", 
-            #                    "Did you 'validate' the project?")
-            #         )
-            #     )
-            # )
+            NULL
         }
     })
     
-    # un-saved if modification to input
-    observeEvent({
-        local$project_dir
-        local$project_name
-        local$raw_param
-        local$raw_scenario
-        local$locus_description
-        local$n_rep
-        local$sex_ratio
-    }, {
-        local$saved <- FALSE
+    
+    # deactivate validate if project not valid
+    observeEvent(local$valid, {
+        req(!is.null(local$valid))
+        if(local$valid) {
+            shinyjs::enable("validate")
+        } else {
+            shinyjs::disable("validate")
+        }
     })
     
-    # deactivate simulate if not saved
-    observeEvent(local$saved, {
-        req(!is.null(local$saved))
-        if(local$saved) {
+    # validate project
+    observeEvent(input$validate, {
+        req(input$validate)
+        req(!is.null(local$valid))
+        if(local$valid) {
+            local$validated <- TRUE
+        } else {
+            local$validated <- FALSE
+        }
+    })
+    
+    # validate feedback
+    output$feedback_validate <- renderUI({
+        req(!is.null(local$validated))
+        if(!local$validated) {
+            helpText(
+                icon("warning"),
+                "You need to validate your project", 
+                "to be able to run the simulation."
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    # deactivate simulate if project not validated
+    observeEvent(local$validated, {
+        req(!is.null(local$validated))
+        if(local$validated) {
             shinyjs::enable("simulate")
         } else {
             shinyjs::disable("simulate")
         }
     })
     
-    # save project = write header file
-    observeEvent(input$save, {
-        # FIXME write header file
-        local$saved <- TRUE
-    })
-    
-    # FIXME project duplication
-    observeEvent(input$duplicate, {
-        out$duplicate <- ifelse(is.null(out$duplicate), 0, out$duplicate) + 1
-    })
-    
-    ## prepare for simulation
-    # # debugging
-    # observe({
-    #     req(local$raw_param)
-    #     pprint(local$raw_param)
-    # })
-    
     ## write header file
-    observeEvent(input$save, {
-        req(!is.null(local$project_dir))
-        req(!is.null(local$project_name))
-        req(!is.null(local$raw_param))
-        req(!is.null(local$raw_scenario))
-        req(!is.null(local$locus_description))
-        req(!is.null(local$n_rep))
-        req(!is.null(local$sex_ratio))
-        req(!is.null(local$seq_mode))
-        req(!is.null(local$locus_type))
+    observeEvent(input$validate, {
+        req(local$proj_dir)
+        req(local$proj_name)
+        req(local$raw_param)
+        req(local$raw_scenario)
+        req(local$locus_description)
+        req(local$n_rep)
+        req(local$sex_ratio)
+        req(local$seq_mode)
+        req(local$locus_type)
+        
+        if(local$locus_type == "mss") {
+            req(local$mss_group_prior)
+        }
         
         # pprint(local$samples_sizes)
         # 
         # pprint(local$locus_type)
         
-        write_headersim(local$project_name, local$project_dir, 
-                        local$seq_mode, local$locus_type,
-                        local$raw_scenario, local$raw_param, 
-                        local$locus_description, 
-                        local$sample_sizes,
-                        local$n_rep, local$sex_ratio)
+        res <- tryCatch(
+            write_headersim(
+                local$proj_name, local$proj_dir, 
+                local$seq_mode, local$locus_type,
+                local$raw_scenario, local$raw_param, 
+                local$locus_description, 
+                local$sample_sizes,
+                local$n_rep, local$sex_ratio
+            ), 
+            error = function(e) return(e)
+        )
         
-        showNotification(
-            id = ns("headerfile_ok"),
-            duration = 5,
-            closeButton = TRUE,
-            type = "message",
-            tagList(
-                tags$p(
-                    icon("check"),
-                    paste0("Project is ready to run simulations.")
+        if("error" %in% class(res)) {
+            local$valid <- FALSE
+            showNotification(
+                id = ns("headerfile_nok"),
+                duration = 10,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Issue when writing simulation configuration file.",
+                        "Check configuration panels above."
+                    )
                 )
             )
-        )
+        } else {
+            showNotification(
+                id = ns("headerfile_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        paste0("Project is ready to run simulations.")
+                    )
+                )
+            )
+        }
     })
     
     ## FIXME run simulation
     observeEvent(input$simulate, {
         logging("Running simulation")
         check <- tryCatch(
-            diyabc_run_simu(project_dir = local$project_dir, n_core = 1),
+            diyabc_run_simu(proj_dir = local$proj_dir, n_core = 1),
             error = function(e) return(e)
         )
         if(!is.null(check) & !is.null(check$message)) {
