@@ -9,6 +9,7 @@
 #' @param sample_sizes list of integer sample sizes.
 write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
                             raw_scenario, raw_param, locus_description, 
+                            mss_group_prior, n_group,
                             sample_sizes,
                             n_rep = 1, sex_ratio = 0.5) {
     
@@ -45,14 +46,34 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
                   "(", length(raw_param), ")\n",
                   str_c(raw_param, collapse = "\n"))
     ## loci description
-    total_locus_count <- sum(as.numeric(str_extract(
-                            string = locus_description, pattern = "^[0-9]+")))
+    total_locus_count <- NULL
+    
+    if(locus_type == "mss") {
+        total_locus_count <- length(locus_description)
+    } else if(locus_type == "snp") {
+        total_locus_count <- sum(as.numeric(str_extract(
+            string = locus_description, pattern = "^[0-9]+"
+        )))
+    } else {
+        stop("locus_type not supported")
+    }
+    
     sec4 <- str_c("loci description ",
                   "(", total_locus_count, ")\n",
                   str_c(locus_description, collapse = "\n"))
+    
+    ## mss group prior (if relevant)
+    sec5 <- NULL
+    if(locus_type == "mss") {
+        sec5 <- str_c(
+            str_c("groups (", n_group, ")"),
+            str_c(mss_group_prior, collapse = "\n"),
+            sep = "\n"
+        )
+    }
+    
     ## merge
-    # out <- str_split(str_c(sec1, sec2, sec3, sec4, sep = "\n\n"), "\n")
-    out <- str_c(sec1, sec2, sec3, sec4, sep = "\n\n")
+    out <- str_c(sec1, sec2, sec3, sec4, sec5, sep = "\n\n")
     out <- str_c(out, "\n\n")
     
     ## write to file

@@ -105,6 +105,7 @@ datagen_page_server <- function(input, output, session) {
         raw_scenario = reactive(hist_model$raw_scenario),
         locus_description = reactive(gene_set$locus_description),
         mss_group_prior = reactive(gene_set$mss_group_prior),
+        n_group = reactive(gene_set$n_group),
         sample_sizes = reactive(hist_model$sample_sizes),
         n_rep = reactive(hist_model$n_rep),
         sex_ratio = reactive(gene_set$sex_ratio),
@@ -1081,6 +1082,7 @@ datafile_gen_server <- function(
     raw_scenario = reactive({NULL}),
     locus_description = reactive({NULL}),
     mss_group_prior = reactive({NULL}),
+    n_group = reactive({NULL}),
     sample_sizes = reactive({NULL}),
     n_rep = reactive({NULL}),
     sex_ratio = reactive({NULL}),
@@ -1100,6 +1102,7 @@ datafile_gen_server <- function(
         raw_scenario = NULL,
         locus_description = NULL,
         mss_group_prior = NULL,
+        n_group = NULL,
         sample_sizes = NULL,
         sex_ratio = NULL,
         n_rep = NULL,
@@ -1115,6 +1118,7 @@ datafile_gen_server <- function(
         local$raw_scenario <- raw_scenario()
         local$locus_description <- locus_description()
         local$mss_group_prior <- mss_group_prior()
+        local$n_group <- n_group()
         local$sample_sizes <- sample_sizes()
         local$sex_ratio <- sex_ratio()
         local$n_rep <- n_rep()
@@ -1196,6 +1200,7 @@ datafile_gen_server <- function(
         req(local$raw_param)
         req(local$raw_scenario)
         req(local$locus_description)
+        req(local$n_group)
         req(local$n_rep)
         req(local$sex_ratio)
         req(local$seq_mode)
@@ -1214,7 +1219,8 @@ datafile_gen_server <- function(
                 local$proj_name, local$proj_dir, 
                 local$seq_mode, local$locus_type,
                 local$raw_scenario, local$raw_param, 
-                local$locus_description, 
+                local$locus_description, local$mss_group_prior,
+                local$n_group,
                 local$sample_sizes,
                 local$n_rep, local$sex_ratio
             ), 
