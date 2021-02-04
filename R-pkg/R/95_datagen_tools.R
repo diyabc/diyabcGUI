@@ -82,30 +82,70 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
 #' Run simulation
 #' @keywords internal
 #' @author Ghislain Durif
-diyabc_run_simu <- function(project_dir, n_core = 1) {
+diyabc_run_datagen <- function(proj_dir) {
+    # executable
     diyabc_bin <- find_bin("diyabc")
+    
     # check project dir
-    if(!dir.exists(project_dir)) {
+    if(!dir.exists(proj_dir)) {
         stop("Input directory does not exist")
     }
-    if(!str_detect(string = project_dir, pattern = "/$")) {
-        project_dir <- str_c(project_dir, "/")
+    safe_proj_dir <- proj_dir
+    if(!str_detect(string = proj_dir, 
+                   pattern = str_c(.Platform$file.sep, "$"))) {
+        safe_proj_dir <- str_c(proj_dir, .Platform$file.sep)
     }
-    # init seeds
-    cmd <- str_c(diyabc_bin, 
-                 "-p", project_dir, "-n",
-                 str_c("'t:", n_core, "'"),
-                 sep = " ")
-    check <- system(cmd)
-    if(check != 0) {
+    
+    # check for headersim file
+    if(! "headersim.txt" %in% list.files(proj_dir)) {
+        stop("missing headersim input file")
+    }
+    
+    # remove seed file if existing
+    if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
+        fs::file_delete(file.path(proj_dir, "RNG_state_0000.bin"))
+    }
+    
+    ### init seeds
+    logging("diyabc init")
+    arguments <- c(
+        "-p", safe_proj_dir,
+        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'")
+    )
+    init_proc <- processx::process$new(
+        command = diyabc_bin, 
+        args = arguments,
+        stdin = NULL,
+        stdout = file.path(proj_dir, "diyabc_seed_init_call.log"), 
+        stderr = file.path(proj_dir, "diyabc_seed_init_call.log"),
+        echo_cmd = TRUE
+    )
+    init_proc$wait()
+    
+    # exit check
+    init_check <- init_proc$get_exit_status()
+    # logging("diyabc init", init_check)
+    if(init_check != 0) {
         warning("Issue with seed initialization")
     }
-    # run
-    cmd <- str_c(diyabc_bin, "-p", project_dir, "-k", sep = " ")
-    check <- system(cmd)
-    if(check != 0) {
-        stop("Issue with simulation run")
-    }
-    # output
-    return(NULL)
+    
+    ### run
+    logging("diyabc simu run")
+    arguments <- c(
+        "-p", safe_proj_dir, 
+        "-k",
+        "-t", as.character(getOption("diyabcGUI")$ncore)
+    )
+    
+    run_proc <- processx::process$new(
+        command = diyabc_bin, 
+        args = arguments,
+        stdin = NULL,
+        stdout = file.path(proj_dir, "diyabc_run_call.log"), 
+        stderr = file.path(proj_dir, "diyabc_run_call.log"),
+        echo_cmd = TRUE
+    )
+    
+    ## output process
+    return(run_proc)
 }

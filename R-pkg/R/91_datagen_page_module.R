@@ -1094,6 +1094,9 @@ datafile_gen_server <- function(
     # init local
     local <- reactiveValues(
         validated = FALSE,
+        diyabc_run_process = NULL,
+        diyabc_run_result = NULL,
+        log_file_content = NULL,
         # input
         proj_dir = NULL,
         proj_name = NULL,
@@ -1198,30 +1201,30 @@ datafile_gen_server <- function(
         
         local$validated <- FALSE
         
-        pprint("- proj_dir")
-        pprint(local$proj_dir)
-        pprint("- proj_name")
-        pprint(local$proj_name)
-        pprint("- raw_param")
-        pprint(local$raw_param)
-        pprint("- raw_scenario")
-        pprint(local$raw_scenario)
-        pprint("- locus_description")
-        pprint(local$locus_description)
-        pprint("- mss_group_prior")
-        pprint(local$mss_group_prior)
-        pprint("- n_group")
-        pprint(local$n_group)
-        pprint("- sample_sizes")
-        pprint(local$sample_sizes)
-        pprint("- n_rep")
-        pprint(local$n_rep)
-        pprint("- sex_ratio")
-        pprint(local$sex_ratio)
-        pprint("- seq_mode")
-        pprint(local$seq_mode)
-        pprint("- locus_type")
-        pprint(local$locus_type)
+        # pprint("- proj_dir")
+        # pprint(local$proj_dir)
+        # pprint("- proj_name")
+        # pprint(local$proj_name)
+        # pprint("- raw_param")
+        # pprint(local$raw_param)
+        # pprint("- raw_scenario")
+        # pprint(local$raw_scenario)
+        # pprint("- locus_description")
+        # pprint(local$locus_description)
+        # pprint("- mss_group_prior")
+        # pprint(local$mss_group_prior)
+        # pprint("- n_group")
+        # pprint(local$n_group)
+        # pprint("- sample_sizes")
+        # pprint(local$sample_sizes)
+        # pprint("- n_rep")
+        # pprint(local$n_rep)
+        # pprint("- sex_ratio")
+        # pprint(local$sex_ratio)
+        # pprint("- seq_mode")
+        # pprint(local$seq_mode)
+        # pprint("- locus_type")
+        # pprint(local$locus_type)
         
         req(local$proj_dir)
         req(local$proj_name)
@@ -1284,14 +1287,204 @@ datafile_gen_server <- function(
         }
     })
     
-    ## FIXME run simulation
-    observeEvent(input$simulate, {
-        logging("Running simulation")
-        check <- tryCatch(
-            diyabc_run_simu(proj_dir = local$proj_dir, n_core = 1),
-            error = function(e) return(e)
+    ## read log file
+    log_file_content <- function() return(rep("", nlog))
+    observeEvent(local$proj_dir, {
+        req(local$proj_dir)
+        log_file_content <<- reactiveFileReader(
+            1000, session,
+            file.path(local$proj_dir, "diyabc_run_call.log"),
+            function(file) {
+                if(file.exists(file)) {
+                    readLines(file, warn=FALSE)
+                } else {
+                    character(0)
+                }
+            }
         )
-        if(!is.null(check) & !is.null(check$message)) {
+    })
+    
+    observe({
+        local$log_file_content <- log_file_content()
+    })
+    
+    ## run simulation
+    observeEvent(input$simulate, {
+        
+        req(!is.null(local$validated))
+        req(local$proj_dir)
+        
+        ## run in progress
+        if(!is.null(local$diyabc_run_process)) {
+            showNotification(
+                id = ns("run_in_progress"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "warning",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Run in progress."
+                    )
+                )
+            )
+        } else {
+            ## prepare run
+            req(is.null(local$diyabc_run_process))
+            
+            ## init progress bar
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = 0, total = local$n_rep,
+                title = "Running simulation:"
+            )
+            
+            ## check if possible to run
+            if(!local$validated) {
+                local$feedback <- helpText(
+                    icon("warning"), "Project is not validated."
+                )
+            } else if(! "headersim.txt" %in% list.files(local$proj_dir)) {
+                local$feedback <- helpText(
+                    icon("warning"), 
+                    "Missing header configuration file."
+                )
+                showNotification(
+                    id = ns("missing_files"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "warning",
+                    tagList(
+                        tags$p(
+                            icon("warning"), 
+                            "Missing header configuration file."
+                        )
+                    )
+                )
+            } else {
+                ## ready to run
+                
+                # debugging
+                # pprint("check options")
+                # pprint(getOption("diyabcGUI"))
+                # pprint(getOption("shiny.maxRequestSize"))
+                
+                local$feedback <- helpText(
+                    icon("spinner", class = "fa-spin"),
+                    "Simulations are running."
+                )
+                
+                logging("Running simulation")
+                local$diyabc_run_process <- diyabc_run_datagen(
+                    local$proj_dir
+                )
+            }
+        }
+    })
+    
+    ## monitor simulation run
+    observeEvent(local$diyabc_run_process, {
+        req(!is.null(local$diyabc_run_process))
+        
+        pprint("diyabc run process")
+        pprint(local$diyabc_run_process)
+        
+        observe({
+            req(!is.null(local$diyabc_run_process))
+            proc <- local$diyabc_run_process
+            req(!is.null(proc$is_alive()))
+            if(proc$is_alive()) {
+                invalidateLater(2000, session)
+            } else {
+                local$diyabc_run_result <- proc$get_exit_status()
+            }
+        })
+    })
+    
+    ## clean up after run
+    observeEvent(local$diyabc_run_result, {
+        
+        req(!is.null(local$diyabc_run_result))
+        
+        logging("diyabc simu run exit status:",
+                local$diyabc_run_result)
+        
+        ## log
+        output$run_log <- renderUI({
+            req(!is.null(local$log_file_content))
+            do.call(
+                tagList,
+                as.list(local$log_file_content)
+            )
+        })
+        
+        ## check run
+        # run ok
+        if(local$diyabc_run_result == 0) {
+            local$feedback <- helpText(
+                icon("check"), "Run succeeded."
+            )
+            updateProgressBar(
+                session = session,
+                id = "simu_progress",
+                value = local$n_rep, total = local$n_rep,
+                title = "Running simulation:"
+            )
+            showNotification(
+                id = ns("run_ok"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "message",
+                tagList(
+                    tags$p(
+                        icon("check"),
+                        "Simulations are done."
+                    )
+                )
+            )
+        } else if(local$diyabc_run_result == -1000) {
+            ## stopped run
+            local$feedback <- helpText(
+                icon("warning"), "Simulation run was stopped."
+            )
+            showNotification(
+                id = ns("stop_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Simulation run was stopped."
+                    )
+                )
+            )
+        } else if(local$diyabc_run_result == -2000) {
+            ## stopped run
+            local$feedback <- helpText(
+                icon("warning"), 
+                "Error in simulation process:", 
+                "check your scenarios, priors and conditions."
+            )
+            showNotification(
+                id = ns("stop_run"),
+                duration = 5,
+                closeButton = TRUE,
+                type = "error",
+                tagList(
+                    tags$p(
+                        icon("warning"),
+                        "Error in simulation process:", 
+                        "check your scenarios, priors and conditions."
+                    )
+                )
+            )
+        } else {
+            ## error during run
+            local$feedback <- helpText(
+                icon("warning"), "Issues with run (see log panel below)."
+            )
             showNotification(
                 id = ns("run_not_ok"),
                 duration = 5,
@@ -1300,23 +1493,42 @@ datafile_gen_server <- function(
                 tagList(
                     tags$p(
                         icon("warning"),
-                        str_c(check$message)
+                        "A problem happened during simulations."
                     )
                 )
             )
-        } else {
+        }
+        
+        # reset
+        local$diyabc_run_result <- NULL
+        local$diyabc_run_process <- NULL
+    })
+    
+    ## stop run
+    observeEvent(input$stop, {
+        ## if no current run
+        if(is.null(local$diyabc_run_process)) {
+            local$feedback <- helpText(
+                icon("warning"), "No current run to stop."
+            )
             showNotification(
-                id = ns("run_ok"),
+                id = ns("no_run"),
                 duration = 5,
                 closeButton = TRUE,
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("check"),
-                        "Simulations are done."
+                        icon("warning"), "No current run to stop."
                     )
                 )
             )
+        } else {
+            ## stop current run
+            proc <- local$diyabc_run_process
+            if(proc$is_alive()) {
+                proc$kill()
+            }
+            local$diyabc_run_result <- -1000
         }
     })
 }
