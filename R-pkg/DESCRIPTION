@@ -60,6 +60,7 @@ Imports:
     jsonlite, 
     magrittr, 
     parallel, pbapply, processx,
+    rlang,
     shiny, 
     shinybusy (>= 0.2.2), 
     shinydashboard, shinyFiles, 
