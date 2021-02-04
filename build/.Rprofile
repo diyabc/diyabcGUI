@@ -8,7 +8,8 @@ local({
 })
 
 # install package list
-install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL) {
+install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL,
+                        type = getOption("pkgType")) {
     
     message("---------------------------------")
     
@@ -22,7 +23,7 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL) {
                                 !(pkg_list %in% old_pkg_list)]
     
     if(length(pkg_ok_list) > 0) {
-        message("Available and up-to-date packages:")
+        message("-- Available and up-to-date packages:")
         message(paste(pkg_ok_list, collapse = "\n"))
         message("---------------------------------")
     }
@@ -31,11 +32,11 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL) {
     pkg2update_list <- pkg_list[pkg_list %in% old_pkg_list]
     
     if(length(pkg2update_list) > 0) {
-        message("Packages to update:")
+        message("-- Packages to update:")
         message(paste(pkg2update_list, collapse = "\n"))
         message("--> updating")
         Sys.sleep(2)
-        update.packages(lib.loc = R_lib, oldPkgs = pkg2update_list)
+        install.packages(pkg2update_list, lib = R_lib, type = type)
         message("---------------------------------")
     }
     
@@ -43,11 +44,11 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL) {
     missing_pkg_list <- pkg_list[!pkg_list %in% cur_pkg_list]
     
     if(length(missing_pkg_list) > 0) {
-        message("Missing packages:")
+        message("-- Missing packages:")
         message(paste(missing_pkg_list, collapse = "\n"))
         message("--> installing")
         Sys.sleep(2)
-        install.packages(missing_pkg_list, lib = R_lib)
+        install.packages(missing_pkg_list, lib = R_lib, type = type)
         message("---------------------------------")
     }
 }
