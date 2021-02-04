@@ -10,7 +10,7 @@ if(!file.exists(".Renviron"))
     stop("You should run 'generate_Renviron.R'")
 
 # dev requirements
-pkg_list <- c("devtools", "fs", "stringr", "gtools")
+pkg_list <- c("devtools", "fs", "stringr", "gtools", "rlang", "testthat")
 install_pkg(pkg_list, force_update, R_lib = Sys.getenv("R_LIBS_USER"))
 
 # package dependencies
