@@ -13,9 +13,9 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL) {
     message("---------------------------------")
     
     # current installed packages
-    cur_pkg_list <- installed.packages()[,1]
+    cur_pkg_list <- installed.packages(lib.loc = R_lib)[,1]
     # current installed and out-dated packages
-    old_pkg_list <- old.packages()[,1]
+    old_pkg_list <- old.packages(lib.loc = R_lib)[,1]
     
     # package up-to-date
     pkg_ok_list <- pkg_list[(pkg_list %in% cur_pkg_list) & 
