@@ -354,8 +354,8 @@ datagen_model_param_server <- function(
     # })
     
     # init output reactive values
-    out <- reactiveValues(param_values = list(),
-                          sample_sizes = list(),
+    out <- reactiveValues(param_values = NULL,
+                          sample_sizes = NULL,
                           n_rep = NULL)
     
     # setup parameter input
@@ -948,14 +948,14 @@ datagen_sampling_param_server <- function(
     # update output
     observe({
         req(nrow(local$sample_df) > 0)
-        out$sample_sizes <- Reduce("rbind", lapply(
+        out$sample_sizes <- unname(unlist(lapply(
             split(local$sample_df, seq(nrow(local$sample_df))),
             function(item) {
                 return(
-                    c(item$n_f, item$n_m)
+                    str_c(item$n_f, item$n_m, sep = " ")
                 )
             }
-        ))
+        )))
     })
     
     # number of repetitions
@@ -1195,12 +1195,41 @@ datafile_gen_server <- function(
     
     ## write header file
     observeEvent(input$validate, {
+        
+        local$validated <- FALSE
+        
+        pprint("- proj_dir")
+        pprint(local$proj_dir)
+        pprint("- proj_name")
+        pprint(local$proj_name)
+        pprint("- raw_param")
+        pprint(local$raw_param)
+        pprint("- raw_scenario")
+        pprint(local$raw_scenario)
+        pprint("- locus_description")
+        pprint(local$locus_description)
+        pprint("- mss_group_prior")
+        pprint(local$mss_group_prior)
+        pprint("- n_group")
+        pprint(local$n_group)
+        pprint("- sample_sizes")
+        pprint(local$sample_sizes)
+        pprint("- n_rep")
+        pprint(local$n_rep)
+        pprint("- sex_ratio")
+        pprint(local$sex_ratio)
+        pprint("- seq_mode")
+        pprint(local$seq_mode)
+        pprint("- locus_type")
+        pprint(local$locus_type)
+        
         req(local$proj_dir)
         req(local$proj_name)
         req(local$raw_param)
         req(local$raw_scenario)
         req(local$locus_description)
         req(local$n_group)
+        req(local$sample_sizes)
         req(local$n_rep)
         req(local$sex_ratio)
         req(local$seq_mode)
@@ -1209,10 +1238,6 @@ datafile_gen_server <- function(
         if(local$locus_type == "mss") {
             req(local$mss_group_prior)
         }
-        
-        # pprint(local$samples_sizes)
-        # 
-        # pprint(local$locus_type)
         
         res <- tryCatch(
             write_headersim(
@@ -1224,11 +1249,11 @@ datafile_gen_server <- function(
                 local$sample_sizes,
                 local$n_rep, local$sex_ratio
             ), 
-            error = function(e) return(e)
+            error = function(e) {pprint(e); return(e)}
         )
         
         if("error" %in% class(res)) {
-            local$valid <- FALSE
+            local$validated <- FALSE
             showNotification(
                 id = ns("headerfile_nok"),
                 duration = 10,
@@ -1243,6 +1268,7 @@ datafile_gen_server <- function(
                 )
             )
         } else {
+            local$validated <- TRUE
             showNotification(
                 id = ns("headerfile_ok"),
                 duration = 5,

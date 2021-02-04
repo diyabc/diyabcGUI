@@ -28,11 +28,10 @@ write_headersim <- function(project_name, project_dir, seq_mode, locus_type,
         sec1 <- str_c("SNP", sec1, sep = "_")
     }
     sec1 <- str_c(sec1, 
-                  str_c(nrow(sample_sizes), "samples", sep = " "), 
+                  str_c(length(sample_sizes), "samples", sep = " "), 
                   sep = "\n")
     
-    sample_string <- str_c(apply(sample_sizes, 1, str_c, collapse = " "),
-                           collapse = "\n")
+    sample_string <- str_c(sample_sizes, collapse = "\n")
     sec1 <- str_c(sec1, sample_string, sep = "\n")
     
     ## scenario

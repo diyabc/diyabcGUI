@@ -218,6 +218,7 @@ genetic_loci_server <- function(input, output, session,
     # init output values
     out <- reactiveValues(
         locus_description = NULL, 
+        n_group = NULL,
         mss_group_prior = NULL, 
         sex_ratio = NULL,
         valid = FALSE
@@ -361,7 +362,6 @@ genetic_loci_server <- function(input, output, session,
                 mss_config$mss_data_info, datagen_mode = TRUE
             )
         }
-        
     })
     
     # ## debugging
@@ -408,6 +408,29 @@ genetic_loci_server <- function(input, output, session,
         
         # pprint("mss group prior")
         # pprint(out$mss_group_prior)
+    })
+    
+    ## number of groups
+    observe({
+        
+        if(local$locus_type == "snp") {
+            req(local$locus_count)
+            req(is.data.frame(local$locus_count))
+            req(nrow(local$locus_count) > 0)
+            
+            out$n_group <- sum(local$locus_count$count > 0)
+            
+        } else if(local$locus_type == "mss") {
+            req(mss_config$mss_data_info)
+            req(is.data.frame(mss_config$mss_data_info))
+            req(nrow(mss_config$mss_data_info) > 0)
+            
+            out$n_group <- 
+                nrow(mss_config$mss_data_info[,c("mode", "group")] %>% 
+                         distinct())
+        } else {
+            out$n_group <- NULL
+        }
     })
     
     ## get sex ratio
