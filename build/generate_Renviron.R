@@ -1,11 +1,5 @@
 # generate Renviron file for build scripts
 
-# project directory
-proj_dir <- system("git rev-parse --show-toplevel", intern = TRUE)
-
-# build directory
-build_dir <- file.path(proj_dir, "build")
-
 # R lib directory
 R_lib <- file.path(build_dir, ".R_libs")
 if(!dir.exists(R_lib)) dir.create(R_lib, recursive = TRUE)

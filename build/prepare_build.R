@@ -11,7 +11,7 @@ if(!file.exists(".Renviron"))
 
 # dev requirements
 pkg_list <- c("devtools", "fs", "stringr", "gtools")
-install_pkg(pkg_list, force_update)
+install_pkg(pkg_list, force_update, R_lib = Sys.getenv("R_LIBS_USER"))
 
 # package dependencies
 library(devtools)
