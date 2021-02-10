@@ -313,6 +313,12 @@ datagen_model_param_server <- function(
         sample_time = NULL
     )
     
+    # # debugging
+    # observe({
+    #     pprint("scenario param")
+    #     pprint(local$scenario_param)
+    # })
+    
     # get input
     observe({
         local$scenario_cond = scenario_cond()
@@ -694,7 +700,7 @@ datagen_hist_model_param_server <- function(
         rate_param_ind <- local$param_df$type == "A"
         req(sum(rate_param_ind) > 0)
         tmp_param_df <- local$param_df[rate_param_ind,]
-        output$time_param_values <- renderUI({
+        output$rate_param_values <- renderUI({
             render_model_param(
                 session, tmp_param_df,
                 "Admixture rate parameter(s)",
