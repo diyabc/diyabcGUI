@@ -8,7 +8,7 @@
 #' @author Ghislain Durif
 #' @importFrom fs path_home dir_copy dir_delete file_copy file_delete
 #' @importFrom ggplot2 ggplot ggtitle geom_point geom_segment geom_label 
-#' geom_text geom_vline geom_density
+#' geom_text geom_vline geom_density aes aes_string
 #' theme_void theme element_text margin scale_x_continuous scale_y_continuous 
 #' unit xlim ylim
 #' theme_bw xlab ylab
