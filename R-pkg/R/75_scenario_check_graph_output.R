@@ -42,6 +42,8 @@ scenario_check_graph_ouptut <- function(proj_dir, graph_dir,
 #' @importFrom ggplot2 geom_density
 pca_coordinate_graph <- function(proj_dir, prefix = "pcaloc1_", 
                                  comp = 1:2) {
+    # init output
+    g1 <- NULL
     # PCA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, "ACP.txt"))
     # header
@@ -50,37 +52,50 @@ pca_coordinate_graph <- function(proj_dir, prefix = "pcaloc1_",
     exp_var <- header[-(1:2)]
     # file content
     pca_coord <- read.csv(file_name, header = FALSE, sep = " ", skip = 1)
-    # preprocessing
-    colnames(pca_coord) <- c("id", str_c("comp", 1:(ncol(pca_coord)-1)))
-    # tagging
-    pca_coord$id <- as.factor(pca_coord$id)
-    pca_coord$tag <- c("observations", 
-                       rep("simulations", length = nrow(pca_coord) - 1))
-    pca_coord$simulation <- c("observed data",
-                              str_c("scenario", pca_coord$id[-1], sep = " "))
-    # PCA latent space first two axes: observation vs simulation coordinates
-    g1 <- ggplot(pca_coord) +
-        geom_point(
-            data = subset(pca_coord, pca_coord$tag == "simulations"),
-            aes_string(x=str_c("comp", comp[1]), 
-                       y=str_c("comp", comp[2]), 
-                       col="simulation"), 
-            alpha = 0.1, size = 1
-        ) +
-        geom_point(
-            data = subset(pca_coord, pca_coord$tag == "observations"),
-            aes_string(x=str_c("comp", comp[1]), 
-                       y=str_c("comp", comp[2]), 
-                       col="simulation"), 
-            alpha = 1, size = 2
-        ) +
-        xlab(str_c("axis", comp[1], 
-                   str_c("(", exp_var[comp[1]] * 100, "%)"), 
-                   sep = " ")) +
-        ylab(str_c("axis", comp[2], 
-                   str_c("(", exp_var[comp[2]] * 100, "%)"), 
-                   sep = " ")) +
-        theme_bw(base_size = 12)
+    # check for number of PCA components
+    if(ncol(pca_coord) < (max(comp) + 1)) {
+        txt <- str_c(
+            "Not enough (<", max(comp), 
+            ") PCA components\n to create a PCA plot"
+        )
+        g1 <- ggplot() + 
+            annotate("text", x = 4, y = 25, size=8, label = txt) + 
+            theme_void()
+    } else {
+        # preprocessing
+        colnames(pca_coord) <- c("id", str_c("comp", 1:(ncol(pca_coord)-1)))
+        # tagging
+        pca_coord$id <- as.factor(pca_coord$id)
+        pca_coord$tag <- c("observations", 
+                           rep("simulations", length = nrow(pca_coord) - 1))
+        pca_coord$simulation <- c(
+            "observed data",
+            str_c("scenario", pca_coord$id[-1], sep = " ")
+        )
+        # PCA latent space first two axes: observation vs simulation coordinates
+        g1 <- ggplot(pca_coord) +
+            geom_point(
+                data = subset(pca_coord, pca_coord$tag == "simulations"),
+                aes_string(x=str_c("comp", comp[1]), 
+                           y=str_c("comp", comp[2]), 
+                           col="simulation"), 
+                alpha = 0.45, size = 1
+            ) +
+            geom_point(
+                data = subset(pca_coord, pca_coord$tag == "observations"),
+                aes_string(x=str_c("comp", comp[1]), 
+                           y=str_c("comp", comp[2]), 
+                           col="simulation"), 
+                alpha = 1, size = 3
+            ) +
+            xlab(str_c("axis", comp[1], 
+                       str_c("(", exp_var[comp[1]] * 100, "%)"), 
+                       sep = " ")) +
+            ylab(str_c("axis", comp[2], 
+                       str_c("(", exp_var[comp[2]] * 100, "%)"), 
+                       sep = " ")) +
+            theme_bw(base_size = 12)
+    }
     # output
     return(g1)
 }

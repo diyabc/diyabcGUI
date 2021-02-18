@@ -137,25 +137,52 @@ model_choice_graph_ouptut <- function(proj_dir, graph_dir,
 #' @keywords internal
 #' @author Ghislain Durif
 lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
+    # init output
+    g1 <- NULL
     # LDA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
-    lda_out <- read.table(file_name, skip = 1)
-    # tagging
-    lda_out$tag <- c("observations", 
-                     rep("simulations", length = nrow(lda_out) - 1))
-    # LDA latent space first two axes: observation vs simulation coordinates
-    g1 <- ggplot(lda_out) +
-        geom_point(
-            data = subset(lda_out, lda_out$tag == "simulations"),
-            aes(x=V1, y=V2, col=tag), alpha = 0.1
-        ) +
-        geom_point(
-            data = subset(lda_out, lda_out$tag == "observations"),
-            aes(x=V1, y=V2, col=tag), alpha = 1, size = 2
-        ) +
-        xlab("axis 1") +
-        ylab("axis 2") +
-        theme_bw(base_size = 12)
+    lda_coord <- read.table(file_name, skip = 1)
+    # check for number of LDA components
+    if(ncol(lda_coord) < 3) {
+        txt <- "Not enough (<2) LDA axes\n to create a LDA plot"
+        g1 <- ggplot() + 
+            annotate("text", x = 4, y = 25, size=8, label = txt) + 
+            theme_void()
+    } else {
+        # colnames
+        colnames(lda_coord) <- c(
+            str_c("axis", 1:(ncol(lda_coord)-1)),
+            "id"
+        )
+        # tagging
+        lda_coord$tag <- c(
+            "observations", 
+            rep("simulations", length = nrow(lda_coord) - 1)
+        )
+        lda_coord$simulation <- c(
+            "observed data",
+            str_c("scenario", lda_coord$id[-1], sep = " ")
+        )
+        # LDA latent space first two axes: observation vs simulation coordinates
+        g1 <- ggplot(lda_coord) +
+            geom_point(
+                data = subset(lda_coord, lda_coord$tag == "simulations"),
+                aes_string(
+                    x="axis1", y="axis2", col="simulation"
+                ),
+                alpha = 0.45, size = 1
+            ) +
+            geom_point(
+                data = subset(lda_coord, lda_coord$tag == "observations"),
+                aes_string(
+                    x="axis1", y="axis2", col="simulation"
+                ), 
+                alpha = 1, size = 3
+            ) +
+            xlab("axis 1") +
+            ylab("axis 2") +
+            theme_bw(base_size = 12)
+    }
     # output
     return(g1)
 }
