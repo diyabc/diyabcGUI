@@ -320,10 +320,10 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
         }
         ## filtering locus
         if(valid) {
-            locus_details <- filter_snp_indseq(
+            filtered_locus <- filter_snp_indseq(
                 content, indiv_info, snp_type, locus_details, maf
             )
-            if(is.null(locus_details)) {
+            if(is.null(filtered_locus)) {
                 err <- append(
                     err, 
                     str_c(
@@ -336,7 +336,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                 valid <- FALSE
             } else {
                 locus <- unname(unlist(lapply(
-                    split(locus_details, seq(nrow(locus_details))), 
+                    split(filtered_locus, seq(nrow(filtered_locus))), 
                     function(item) {
                         if(item$count > 0)
                             return(str_c(item$count - item$filter, 
@@ -346,7 +346,7 @@ check_indseq_snp_data_file <- function(data_file, data_dir,
                     }
                 )))
                 locus_msg <- unname(unlist(lapply(
-                    split(locus_details, seq(nrow(locus_details))), 
+                    split(filtered_locus, seq(nrow(filtered_locus))), 
                     function(item) {
                         if(item$count > 0) {
                             item_type <- str_c("<", item$type, ">")
@@ -482,10 +482,18 @@ indseq_locus_filter <- function(snp_data, sex_data, locus_type, maf) {
         }
     }
     
+    # filtering
+    # TODO check > or >= for maf filter
+    filter_ind <- !((af >= maf) & ((1 - af) >= maf))
+    mono_ind <- !((af > 0) & ((1 - af) > 0))
+    if(maf == 0) {
+        filter_ind <- mono_ind
+    }
+    
     # filter
     return(data.frame(
-        filter = !((af >= maf) & ((1 - af) >= maf)),
-        mono = !((af > 0) & ((1 - af) > 0)),
+        filter = filter_ind,
+        mono = mono_ind,
         issue = issue,
         stringsAsFactors = FALSE
     ))
