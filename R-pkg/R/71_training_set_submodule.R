@@ -1461,24 +1461,40 @@ locus_setup_server <- function(input, output, session,
     ## update output
     observe({
         if(local$locus_type == "snp") {
-            out$locus <- lapply(
-                local$data_info$locus,
-                function(item) {
+            req(length(local$data_info$locus) > 0)
+            tmp <- unlist(lapply(
+                1:length(local$data_info$locus),
+                function(ind) {
+                    item <- local$data_info$locus[ind]
                     locus <- str_extract(item, pattern = "(A|H|X|Y|M)")
                     n_loci <- input[[ str_c("num_", locus) ]]
                     start_loci <- input[[ str_c(locus, "_from") ]]
                     return(str_c(
                         n_loci,
                         str_c("<", locus, ">"),
-                        "G1",
+                        str_c("G", ind),
                         "from", start_loci,
                         sep = " "
                     ))
                 }
-            )
-            # # debugging
-            # pprint("locus setup")
-            # pprint(out$locus)
+            ))
+            
+            # FIXME
+            if(length(tmp) > 1) {
+                out$locus <- str_c(
+                    str_c(
+                        str_extract(tmp, pattern = ".*>"),
+                        collapse = " "
+                    ),
+                    "G1 from 1", sep = " "
+                )
+            } else {
+                out$locus <- tmp
+            }
+            
+            # debugging
+            pprint("locus setup")
+            pprint(out$locus)
         } else if(local$locus_type == "mss") {
             req(!is.null(mss_group$raw_locus))
             req(!is.null(mss_prior$raw_group_prior_list))
