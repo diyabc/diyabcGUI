@@ -394,7 +394,8 @@ genetic_loci_server <- function(input, output, session,
     mss_prior <- callModule(
         mss_group_prior_server,
         "mss_prior",
-        group_info = reactive(local$mss_group_info)
+        group_info = reactive(local$mss_group_info),
+        datagen_mode = TRUE
     )
     
     # output
@@ -565,22 +566,6 @@ parse_mss_locus <- function(locus_count) {
     return(out)
 }
 
-#' MSS setup for data generation module ui
-#' @keywords internal
-#' @author Ghislain Durif
-mss_setup_ui <- function(id) {
-    ns <- NS(id)
-    tagList(
-        mss_config_setup_ui(ns("mss_config"))
-    )
-}
-
-#' MSS setup for data generation module server
-#' @keywords internal
-#' @author Ghislain Durif
-mss_setup_server <- function(input, output, session) {
-
-}
 
 #' MSS locus confguration setup ui
 #' @keywords internal

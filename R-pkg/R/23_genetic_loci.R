@@ -638,61 +638,7 @@ group_prior_ui <- function(id) {
             ),
             column(
                 width = 8,
-                fluidRow(
-                    column(
-                        width = 3,
-                        splitLayout(
-                            tags$h5(
-                                "Min.", 
-                                style="text-align:right;margin-right:1em;vertical-align:middle;"
-                            ),
-                            textInput(
-                                ns("min"), label = NULL, value = "1e-05"
-                            ),
-                            cellWidths = c("40%", "60%")
-                        )
-                    ),
-                    column(
-                        width = 3,
-                        splitLayout(
-                            tags$h5(
-                                "Max.", 
-                                style="text-align:right;margin-right:1em;vertical-align:middle;"
-                            ),
-                            textInput(
-                                ns("max"), label = NULL, value = "1e-03"
-                            ),
-                            cellWidths = c("40%", "60%")
-                        )
-                    ),
-                    column(
-                        width = 3,
-                        splitLayout(
-                            tags$h5(
-                                "Mean", 
-                                style="text-align:right;margin-right:1em;vertical-align:middle;"
-                            ),
-                            textInput(
-                                ns("mean"), label = NULL, value = "1e-04"
-                            ),
-                            cellWidths = c("40%", "60%")
-                        )
-                    ),
-                    column(
-                        width = 3,
-                        splitLayout(
-                            tags$h5(
-                                "Shape", 
-                                style="text-align:right;margin-right:1em;vertical-align:middle;"
-                            ),
-                            numericInput(
-                                ns("shape"), label = NULL,
-                                value = 2, step = 0.0001, min = 0
-                            ),
-                            cellWidths = c("40%", "60%")
-                        )
-                    )
-                )
+                uiOutput(ns("param_value"))
             )
         ),
         hr()
@@ -706,7 +652,6 @@ group_prior_server <- function(input, output, session,
                                gamma = reactive({FALSE}), 
                                group_name = reactive({NULL}),
                                locus_mode = reactive({NULL}),
-                               mean_value = reactive({NULL}),
                                min_def_value = reactive({NULL}),
                                max_def_value = reactive({NULL}),
                                mean_def_value = reactive({NULL}),
@@ -723,7 +668,6 @@ group_prior_server <- function(input, output, session,
         gamma = FALSE,
         group_name = NULL,
         locus_mode = NULL,
-        mean_value = NA,
         min_def_value = NULL,
         max_def_value = NULL,
         mean_def_value = NULL,
@@ -736,7 +680,6 @@ group_prior_server <- function(input, output, session,
         local$gamma <- gamma()
         local$group_name <- group_name()
         local$locus_mode <- locus_mode()
-        local$mean_value <- mean_value()
         local$min_def_value <- min_def_value()
         local$max_def_value <- max_def_value()
         local$mean_def_value <- mean_def_value()
@@ -751,8 +694,6 @@ group_prior_server <- function(input, output, session,
     #     pprint(local$param_name)
     #     pprint("gamma :")
     #     pprint(local$gamma)
-    #     pprint("mean value =")
-    #     pprint(local$mean_value)
     #     pprint("mean def value =")
     #     pprint(local$mean_def_value)
     #     pprint("min def value =")
@@ -802,6 +743,71 @@ group_prior_server <- function(input, output, session,
         }
     })
     
+    # update param value input
+    output$param_value <- renderUI({
+        req(local$min_def_value)
+        req(local$max_def_value)
+        req(local$mean_def_value)
+        fluidRow(
+            column(
+                width = 3,
+                splitLayout(
+                    tags$h5(
+                        "Min.", 
+                        style="text-align:right;margin-right:1em;vertical-align:middle;"
+                    ),
+                    textInput(
+                        ns("min"), label = NULL, 
+                        value = local$min_def_value
+                    ),
+                    cellWidths = c("40%", "60%")
+                )
+            ),
+            column(
+                width = 3,
+                splitLayout(
+                    tags$h5(
+                        "Max.", 
+                        style="text-align:right;margin-right:1em;vertical-align:middle;"
+                    ),
+                    textInput(
+                        ns("max"), label = NULL, 
+                        value = local$max_def_value
+                    ),
+                    cellWidths = c("40%", "60%")
+                )
+            ),
+            column(
+                width = 3,
+                splitLayout(
+                    tags$h5(
+                        "Mean", 
+                        style="text-align:right;margin-right:1em;vertical-align:middle;"
+                    ),
+                    textInput(
+                        ns("mean"), label = NULL, 
+                        value = local$mean_def_value
+                    ),
+                    cellWidths = c("40%", "60%")
+                )
+            ),
+            column(
+                width = 3,
+                splitLayout(
+                    tags$h5(
+                        "Shape", 
+                        style="text-align:right;margin-right:1em;vertical-align:middle;"
+                    ),
+                    numericInput(
+                        ns("shape"), label = NULL,
+                        value = 2, step = 0.0001, min = 0
+                    ),
+                    cellWidths = c("40%", "60%")
+                )
+            )
+        )
+    })
+    
     # update min input
     observe({
         # pprint("test update min")
@@ -827,26 +833,12 @@ group_prior_server <- function(input, output, session,
     # update mean input
     observe({
         # pprint("test update mean")
-        # pprint(local$mean_value)
         # pprint(local$mean_def_value)
-        req(!is.null(local$mean_value))
-        if(is.na(local$mean_value)) {
-            shinyjs::enable("mean")
-            req(!is.null(local$mean_def_value))
-            req(!is.na(local$mean_def_value))
-            updateTextInput(
-                session, "mean", 
-                value = local$mean_def_value
-            )
-        } else {
-            req(!is.null(local$mean_value))
-            req(!is.na(local$mean_value))
-            updateTextInput(
-                session, "mean", 
-                value = local$mean_value
-            )
-            shinyjs::disable("mean")
-        }
+        req(!is.null(local$mean_def_value))
+        updateTextInput(
+            session, "mean", 
+            value = local$mean_def_value
+        )
     })
     
     ## check for min
@@ -904,12 +896,13 @@ group_prior_server <- function(input, output, session,
     ## check for min/max
     observe({
         req(local$param_name)
-        req(!is.null(input$min))
+        
+        req(as.numeric(input$min))
         tmp_min <- as.numeric(input$min)
-        req(!is.na(tmp_min))
-        req(!is.null(input$max))
+        
+        req(as.numeric(input$max))
         tmp_max <- as.numeric(input$max)
-        req(!is.na(tmp_max))
+        
         if(tmp_min >= tmp_max) {
             out$valid <- FALSE
             showNotification(
@@ -930,8 +923,9 @@ group_prior_server <- function(input, output, session,
         }
     })
     
-    ## disable mean if gamma
+    ## disable mean if gamma prior prior
     observeEvent(local$gamma, {
+        # FIXME
         req(!is.null(local$gamma))
         if(local$gamma) {
             shinyjs::disable("mean")
@@ -942,7 +936,6 @@ group_prior_server <- function(input, output, session,
     
     ## disable mean and shape if uniform or log-uniform
     observeEvent(input$prior_type, {
-        req(!is.null(local$gamma))
         req(input$prior_type)
         if(input$prior_type %in% c("UN", "LU")) {
             shinyjs::disable("mean")
@@ -955,23 +948,22 @@ group_prior_server <- function(input, output, session,
         }
     })
     
-    ## check for gamma parameter setting
+    ## check for gamma prior on mu parameter setting
     observe({
+        req(!is.null(local$gamma))
         req(!local$gamma)
+        
         req(local$param_name)
         req(input$prior_type)
         
-        req(is.na(local$mean_value))
-        
-        req(!is.null(input$min))
+        req(as.numeric(input$min))
         tmp_min <- as.numeric(input$min)
-        req(!is.na(tmp_min))
-        req(!is.null(input$max))
+        
+        req(as.numeric(input$max))
         tmp_max <- as.numeric(input$max)
-        req(!is.na(tmp_max))
-        req(!is.null(input$mean))
+        
+        req(as.numeric(input$mean))
         tmp_mean <- as.numeric(input$mean)
-        req(!is.na(tmp_mean))
         
         if(input$prior_type %in% c("GA")) {
             if(tmp_mean < tmp_min | tmp_mean > tmp_max) {
@@ -1007,16 +999,128 @@ group_prior_server <- function(input, output, session,
     observe({
         req(local$param_name)
         req(input$prior_type)
-        req(!is.null(input$min))
-        req(!is.null(input$max))
-        req(!is.null(input$mean))
-        req(is.numeric(input$shape))
+        req(input$mean)
+        req(input$min)
+        req(input$max)
+        req(input$shape)
         out$raw <- str_c(local$param_name, " ",
                          input$prior_type, "[",
                          input$min, ",", input$max, ",",
                          input$mean, ",", input$shape, "]")
         # logging("raw prior def = ", out$raw)
     })
+    ## output
+    return(out)
+}
+
+#' Parameter value ui
+#' @keywords internal
+#' @author Ghislain Durif
+param_value_ui <- function(id) {
+    ns <- NS(id)
+    
+    tagList(
+        tags$h5(textOutput(ns("param_name"))),
+        fluidRow(
+            column(
+                width = 8, offset = 4,
+                uiOutput(ns("param_value"))
+            )
+        ),
+        hr()
+    )
+}
+
+#' Parameter value server
+#' @keywords internal
+#' @author Ghislain Durif
+param_value_server <- function(input, output, session,
+                               def_value = reactive({NULL}),
+                               group_name = reactive({NULL}),
+                               param_name = reactive({NULL}),
+                               param_desc = reactive({NULL}))  {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        # input
+        def_value = NULL,
+        group_name = NULL,
+        param_name = NULL,
+        param_desc = NULL
+    )
+    
+    # get input
+    observe({
+        local$def_value <- def_value()
+        local$group_name <- group_name()
+        local$param_name <- param_name()
+        local$param_desc <- param_desc()
+    })
+    
+    # init output
+    out <- reactiveValues(
+        group = NULL,
+        raw = NULL, 
+        valid = TRUE
+    )
+    
+    # update group name
+    observe({
+        out$group <- local$group_name
+    })
+    
+    # update param name output
+    output$param_name <- renderText({
+        req(local$param_desc)
+        local$param_desc
+    })
+    
+    # update param value input
+    output$param_value <- renderUI({
+        req(local$def_value)
+        fluidRow(
+            column(
+                width = 3,
+                splitLayout(
+                    tags$h5(
+                        "Value", 
+                        style="text-align:right;margin-right:1em;vertical-align:middle;"
+                    ),
+                    textInput(
+                        ns("value"), label = NULL, 
+                        value = local$def_value
+                    ),
+                    cellWidths = c("40%", "60%")
+                )
+            )
+        )
+    })
+    
+    # update value input
+    observe({
+        req(local$def_value)
+        updateTextInput(
+            session, "value", 
+            value = local$def_value
+        )
+    })
+    
+    ## validity
+    observe({
+        out$valid <- isTruthy(input$value)
+    })
+    
+    ## encode output
+    observe({
+        req(local$param_name)
+        req(input$value)
+        out$raw <- str_c(local$param_name, " ", input$value)
+        # logging("raw prior def = ", out$raw)
+    })
+    
     ## output
     return(out)
 }
@@ -1043,7 +1147,8 @@ mss_group_prior_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 mss_group_prior_server <- function(input, output, session,
-                                   group_info = reactive({NULL})) {
+                                   group_info = reactive({NULL}),
+                                   datagen_mode = FALSE) {
     # namespace
     ns <- session$ns
     
@@ -1064,8 +1169,9 @@ mss_group_prior_server <- function(input, output, session,
             gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
             min_def_value = c("1e-4", "1e-5", "1e-1", "1e-2", "1e-8", "1e-9"),
             max_def_value = c("1e-3", "1e-2", "3e-1", "9e-1", "1e-5", "1e-4"),
-            mean_def_value = c("5e-4", NA, "2.2e-1", NA, "1e-7", NA),
-            mean_value = c(NA, "Mean_u", NA, "Mean_P", NA, "Mean_u_SNI"),
+            mean_def_value = c(
+                "5e-4", "Mean_u", "2.2e-1", "Mean_P", "1e-7", "Mean_u_SNI"
+            ),
             note = c(NA, 1, 2, 1, 3, 1),
             stringsAsFactors = FALSE
         ),
@@ -1087,8 +1193,9 @@ mss_group_prior_server <- function(input, output, session,
             gamma = c(FALSE, TRUE, FALSE, TRUE, FALSE, TRUE),
             min_def_value = c("1e-9", "1e-9", "0.05", "0.05", "0.05", "0.05"),
             max_def_value = c("1e-7", "1e-6", "20", "20", "20", "20"),
-            mean_def_value = c("5e-9", NA, "10", NA, "10", NA),
-            mean_value = c(NA, "Mean_u", NA, "Mean_k1", NA, "Mean_k2"),
+            mean_def_value = c(
+                "5e-9", "Mean_u", "10", "Mean_k1", "10", "Mean_k2"
+            ),
             stringsAsFactors = FALSE
         ),
         seq_param_group = list(),
@@ -1177,10 +1284,17 @@ mss_group_prior_server <- function(input, output, session,
                         split(local$microsat_param, 
                               seq(nrow(local$microsat_param))),
                         function(item1) {
-                            group_prior_ui(
-                                ns(str_c("M_group_", item, "_", 
-                                         item1$param, "_prior"))
-                            )
+                            if(!datagen_mode || item1$gamma) {
+                                group_prior_ui(
+                                    ns(str_c("M_group_", item, "_", 
+                                             item1$param, "_prior"))
+                                )
+                            } else {
+                                param_value_ui(
+                                    ns(str_c("M_group_", item, "_", 
+                                             item1$param, "_prior"))
+                                )
+                            }
                         }
                     )
                     tagList(
@@ -1199,20 +1313,32 @@ mss_group_prior_server <- function(input, output, session,
             split(local$microsat_param_group, 
                   seq(nrow(local$microsat_param_group))),
             function(item) {
-                callModule(
-                    group_prior_server, 
-                    str_c("M_group_", item$group, "_", item$param, "_prior"),
-                    gamma = reactive(item$gamma), 
-                    group_name = reactive(item$group),
-                    locus_mode = reactive({"[M]"}),
-                    mean_value = reactive(item$mean_value),
-                    min_def_value = reactive(item$min_def_value),
-                    max_def_value = reactive(item$max_def_value),
-                    mean_def_value = reactive(item$mean_def_value),
-                    note = reactive(item$note),
-                    param_name = reactive(item$param),
-                    param_desc = reactive(item$meaning)
-                )
+                if(!datagen_mode || item$gamma) {
+                    callModule(
+                        group_prior_server, 
+                        str_c("M_group_", item$group, "_", 
+                              item$param, "_prior"),
+                        gamma = reactive(item$gamma), 
+                        group_name = reactive(item$group),
+                        locus_mode = reactive({"[M]"}),
+                        min_def_value = reactive(item$min_def_value),
+                        max_def_value = reactive(item$max_def_value),
+                        mean_def_value = reactive(item$mean_def_value),
+                        note = reactive(item$note),
+                        param_name = reactive(item$param),
+                        param_desc = reactive(item$meaning)
+                    )
+                } else {
+                    callModule(
+                        param_value_server, 
+                        str_c("M_group_", item$group, "_", 
+                              item$param, "_prior"),
+                        group_name = reactive(item$group),
+                        def_value = reactive(item$mean_def_value),
+                        param_name = reactive(item$param),
+                        param_desc = reactive(item$meaning)
+                    )
+                }
             }
         )
     })
@@ -1310,7 +1436,6 @@ mss_group_prior_server <- function(input, output, session,
                     gamma = reactive(item$gamma), 
                     group_name = reactive(item$group),
                     locus_mode = reactive({"[S]"}),
-                    mean_value = reactive(item$mean_value),
                     min_def_value = reactive(item$min_def_value),
                     max_def_value = reactive(item$max_def_value),
                     mean_def_value = reactive(item$mean_def_value),
