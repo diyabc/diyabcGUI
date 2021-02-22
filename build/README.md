@@ -4,6 +4,14 @@ This folder and its contents are only usefull for the standalone app developpers
 
 If you are a DIYABC-RF GUI user, please refer to README file at project root for installation and use instructions.
 
+## Build preparation (for any platform)
+
+1. Update `DESCRIPTION` file with version number and date: `Rscript prebuild.R`
+
+2. Generate local `.Renviron` file: `Rscript generate_Renviron.R`
+
+3. Install (or update) dependencies: `Rscript prepare_build.R`
+
 ## Windows standalone
 
 Please read dedicated [README file](DesktopDeployrR/README.md) to setup environment.
