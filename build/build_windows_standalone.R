@@ -35,11 +35,6 @@ fs::file_copy(
     overwrite = TRUE
 )
 
-# Rcpp sources (temporary fix for R-Portable 4.0.0)
-Rcpp_src <- file.path(ddr_dir, "src", "Rcpp")
-if(!dir.exists(Rcpp_src))
-    system(str_c("git clone https://github.com/RcppCore/Rcpp ", Rcpp_src))
-
 # Environment setup
 setwd(ddr_dir)
 on.exit(setwd(cwd))
