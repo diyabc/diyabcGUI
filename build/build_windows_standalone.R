@@ -27,8 +27,16 @@ fs::file_copy(
     overwrite = TRUE
 )
 
+# version
+pkg_version <- readLines(file.path(dist_dir, "version"))
+fs::file_copy(
+    file.path(dist_dir, "version"),
+    file.path(ddr_dir, "src", "version"),
+    overwrite = TRUE
+)
+
 # diyabcGUI windows source
-win_zip <- tail(sort(list.files(dist_dir, pattern = "diyabcGUI*")), 1)
+win_zip <- paste0("diyabcGUI_", pkg_version, ".zip")
 fs::file_copy(
     file.path(dist_dir, win_zip),
     file.path(ddr_dir, "src", win_zip),

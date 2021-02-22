@@ -51,10 +51,13 @@ library(diyabcGUI)
 diyabcGUI::dl_all_latest_bin()
 
 # version
-Version <- as.character(packageVersion("diyabcGUI"))
+pkg_version <- as.character(packageVersion("diyabcGUI"))
+
+# write package version
+writeLines(pkg_version, file.path(dist_dir, "version"))
 
 # zip local install of package
-zipfile <- file.path(dist_dir, str_c("diyabcGUI_", Version, ".zip"))
+zipfile <- file.path(dist_dir, str_c("diyabcGUI_", pkg_version, ".zip"))
 if(file.exists(zipfile)) fs::file_delete(zipfile)
 setwd(dirname(system.file(package = "diyabcGUI")))
 on.exit(setwd(cwd))
