@@ -263,8 +263,10 @@ rf_parameter_ui <- function(id) {
             condition = "input.run_mode == 'model_choice'", ns = ns,
             textInput(
                 ns("group"),
-                label = "Model group"
-            ),
+                label = "Scenario grouping and selection"
+            ) %>% 
+                helper(type = "markdown", 
+                       content = "scenario_grouping_selection"),
             uiOutput(ns("help_group")),
             uiOutput(ns("feedback_group"))
         ),
@@ -551,15 +553,17 @@ rf_parameter_server <- function(input, output, session,
         
         # possible groups
         output$help_group <- renderUI({
-            helpText(
-                "You may 'group' your models in several splitted groups.",
-                "For example if you have six models, labeled from 1 to 6,",
-                "you can specify '1,2,3;4,5,6' to make 2 groups of 3.",
-                "Here you have", 
-                tags$b(as.character(length(file_check$raw_scenario_list))),
-                "scenarii.",
-                "Leave blank to not group scenarii."
-            )
+            if(isTruthy(length(file_check$raw_scenario_list))) {
+                helpText(
+                    "Here you have", 
+                    tags$b(as.character(length(file_check$raw_scenario_list))),
+                    "scenarii.",
+                    "Leave blank to use all available scenarii without groups."
+                )
+            } else {
+                "Leave blank to use all available scenarii without groups."
+            }
+            
         })
     })
     
