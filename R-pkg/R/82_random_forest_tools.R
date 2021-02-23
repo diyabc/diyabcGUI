@@ -130,7 +130,9 @@ parse_abcranger_group <- function(txt, n_scenario) {
                 msg,
                 str_c(
                     "Issue with group formating. Use only",
-                    "numbers, commas (,) and semi-colons (;).", sep = " "
+                    "numbers, commas (,) and semi-colons (;).", 
+                    "Example: '1,2;3' (if you have 3 or more scenarii).", 
+                    sep = " "
                 )
             )
         } else {
@@ -154,14 +156,17 @@ parse_abcranger_group <- function(txt, n_scenario) {
             scenario_list <- as.numeric(
                 str_extract_all(tmp, pttrn, simplify = TRUE)
             )
-            if(!all((1:n_scenario) %in% scenario_list)) {
+            if(length(scenario_list) != length(unique(scenario_list))) {
+                count_scenarii <- table(scenario_list)
+                duplicated_scenarii <- names(count_scenarii[count_scenarii>1])
                 valid <- FALSE
                 msg <- append(
                     msg,
                     str_c(
-                        "Some scenarii are missing in scenario grouping:", 
+                        "Some scenarii listed in scenario grouping",
+                        "are duplicated:",
                         str_c(
-                            (1:n_scenario)[!(1:n_scenario) %in% scenario_list],
+                            duplicated_scenarii,
                             collapse = ", "
                         ),
                         sep = " "
