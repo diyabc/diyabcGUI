@@ -1344,6 +1344,7 @@ locus_setup_server <- function(input, output, session,
         req(local$locus_type)
         req(local$seq_mode)
         req(!is.null(local$data_info$locus))
+        req(!is.null(local$data_info$n_loci))
         
         if(local$locus_type == "snp") {
             tag_list <- lapply(
@@ -1378,29 +1379,43 @@ locus_setup_server <- function(input, output, session,
                                                     pattern = "^[0-9]+")
                                     )
                                 )
-                            ),
-                            column(
-                                width = 4,
-                                numericInput(
-                                    inputId = ns(str_c(
-                                        str_extract(item,
-                                                    pattern = "(A|H|X|Y|M)"),
-                                        "_from"
-                                    )),
-                                    label = "from",
-                                    min = 1,
-                                    max = as.numeric(
-                                        str_extract(item,
-                                                    pattern = "^[0-9]+")
-                                    ),
-                                    value = 1
-                                )
                             )
                         )
                     )
                 }
             )
-            do.call(tagList, tag_list)
+            names(tag_list) <- NULL
+            tagList(
+                do.call(tagList, tag_list),
+                br(),
+                fluidRow(
+                    column(
+                        width = 4,
+                        numericInput(
+                            inputId = ns("locus_id_from"),
+                            label = "from",
+                            min = 1,
+                            max = local$data_info$n_loci,
+                            value = 1
+                        ) %>% 
+                            helper(
+                                type = "inline", 
+                                content = paste(
+                                    "Index of the first locus in the data file",
+                                    "to be included in the analysis.",
+                                    "For instance,", 
+                                    "if the data file contains a total of",
+                                    "10 loci (whatever their type),",
+                                    "and you choose to use 5 loci,",
+                                    "if you set up `from = 4`",
+                                    "the loci from 4 to 9 (out of 10)",
+                                    "will be used in the analysis.",
+                                    sep = " "
+                                )
+                            )
+                    )
+                )
+            )
         } else if(local$locus_type == "mss") {
             # FIXME
             
@@ -1468,33 +1483,25 @@ locus_setup_server <- function(input, output, session,
                     item <- local$data_info$locus[ind]
                     locus <- str_extract(item, pattern = "(A|H|X|Y|M)")
                     n_loci <- input[[ str_c("num_", locus) ]]
-                    start_loci <- input[[ str_c(locus, "_from") ]]
                     return(str_c(
                         n_loci,
                         str_c("<", locus, ">"),
-                        str_c("G", ind),
-                        "from", start_loci,
                         sep = " "
                     ))
                 }
             ))
+            # start loci
+            start_locus <- input$locus_id_from
             
-            # FIXME
-            if(length(tmp) > 1) {
-                out$locus <- str_c(
-                    str_c(
-                        str_extract(tmp, pattern = ".*>"),
-                        collapse = " "
-                    ),
-                    "G1 from 1", sep = " "
-                )
-            } else {
-                out$locus <- tmp
-            }
+            # locus number encoding
+            out$locus <- str_c(
+                str_c(tmp, collapse = " "),
+                "G1 from", start_locus, sep = " "
+            )
             
-            # debugging
-            pprint("locus setup")
-            pprint(out$locus)
+            # # debugging
+            # pprint("locus setup")
+            # pprint(out$locus)
         } else if(local$locus_type == "mss") {
             req(!is.null(mss_group$raw_locus))
             req(!is.null(mss_prior$raw_group_prior_list))
