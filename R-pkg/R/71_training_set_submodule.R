@@ -2024,11 +2024,14 @@ training_set_action_server <- function(input, output, session,
                 local$log_file_content,
                 length(local$log_file_content) - local$log_start_line
             )
-            find_iter <- str_detect(last_message, "^[0-9]+$")
+            find_iter <- str_detect(last_message, "^n simu data = [0-9]+$")
             
             if(any(find_iter)) {
-                current_iter <- tail(last_message[find_iter], 1)
-                # logging("Iteration:", 
+                current_iter <- str_extract(
+                    tail(last_message[find_iter], 1),
+                    "[0-9]+"
+                )
+                # logging("Iteration:",
                 #         str(current_iter, "/", local$n_rec_final))
                 
                 updateProgressBar(
