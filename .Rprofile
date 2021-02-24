@@ -14,9 +14,19 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL,
     message("---------------------------------")
     
     # current installed packages
-    cur_pkg_list <- installed.packages(lib.loc = R_lib)[,1]
+    cur_pkg_list <- NULL
+    if(missing(R_lib)) {
+        cur_pkg_list <- installed.packages()[,1]
+    } else {
+        cur_pkg_list <- installed.packages(lib.loc = R_lib)[,1]
+    }
     # current installed and out-dated packages
-    old_pkg_list <- old.packages(lib.loc = R_lib)[,1]
+    old_pkg_list <- NULL
+    if(missing(R_lib)) {
+        old_pkg_list <- old.packages()[,1]
+    } else {
+        old_pkg_list <- old.packages(lib.loc = R_lib)[,1]
+    }
     
     # package up-to-date
     pkg_ok_list <- pkg_list[(pkg_list %in% cur_pkg_list) & 
@@ -36,7 +46,11 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL,
         message(paste(pkg2update_list, collapse = "\n"))
         message("--> updating")
         Sys.sleep(2)
-        install.packages(pkg2update_list, lib = R_lib, type = type)
+        if(missing(R_lib)) {
+            install.packages(pkg2update_list, type = type)
+        } else {
+            install.packages(pkg2update_list, lib = R_lib, type = type)
+        }
         message("---------------------------------")
     }
     
@@ -48,7 +62,11 @@ install_pkg <- function(pkg_list, force_update = TRUE, R_lib = NULL,
         message(paste(missing_pkg_list, collapse = "\n"))
         message("--> installing")
         Sys.sleep(2)
-        install.packages(missing_pkg_list, lib = R_lib, type = type)
+        if(missing(R_lib)) {
+            install.packages(missing_pkg_list, type = type)
+        } else {
+            install.packages(missing_pkg_list, lib = R_lib, type = type)
+        }
         message("---------------------------------")
     }
 }
