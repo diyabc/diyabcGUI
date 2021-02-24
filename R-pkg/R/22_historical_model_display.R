@@ -365,6 +365,7 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                         if(any(is.na(c(parent_node$child1_id, 
                                        parent_node$child2_id)))) {
                             fact <- 0
+                            orient <- 0
                         } else {
                             # standard merge
                             fact <- (node_id == parent_node$child2_id) - 
