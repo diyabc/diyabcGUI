@@ -24,4 +24,4 @@ pkg_list <- c(
     "stringr",
     "tibble")
 
-install.packages(pkg_list)
+install_pkg(pkg_list)
