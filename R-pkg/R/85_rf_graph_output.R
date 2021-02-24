@@ -139,30 +139,56 @@ model_choice_graph_ouptut <- function(proj_dir, graph_dir,
 lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
     # init output
     g1 <- NULL
+    
     # LDA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
     lda_coord <- read.table(file_name, skip = 1)
+    
     # check for number of LDA components
-    if(ncol(lda_coord) < 3) {
-        txt <- "Not enough (<2) LDA axes\n to create a LDA plot"
+    if(ncol(lda_coord) < 2) {
+        txt <- "No LDA axis,\n impossible to create\n a LDA plot"
         g1 <- ggplot() + 
             annotate("text", x = 4, y = 25, size=8, label = txt) + 
             theme_void()
+        # output
+        return(g1)
+    }
+    
+    # colnames
+    colnames(lda_coord) <- c(
+        str_c("axis", 1:(ncol(lda_coord)-1)),
+        "id"
+    )
+    # tagging
+    lda_coord$tag <- c(
+        "observations", 
+        rep("simulations", length = nrow(lda_coord) - 1)
+    )
+    lda_coord$simulation <- c(
+        "observed data",
+        str_c("scenario", lda_coord$id[-1], sep = " ")
+    )
+    
+    # single LDA axes (in case of two scenarii)
+    if(ncol(lda_coord) == 2) {
+        g1 <- ggplot(lda_coord) +
+            geom_density(
+                data = subset(lda_coord, lda_coord$tag == "simulations"),
+                aes_string(
+                    x="axis1", col="simulation", fill="simulation"
+                ), alpha = 0.2
+            ) +
+            suppressWarnings(geom_vline(
+                data = subset(lda_coord, lda_coord$tag == "observations"),
+                aes_string(
+                    xintercept="axis1", col="simulation", fill="simulation"
+                ), linetype="dashed"
+            )) +
+            xlab("axis 1") +
+            ylab("Density") +
+            theme_bw(base_size = 12)
     } else {
-        # colnames
-        colnames(lda_coord) <- c(
-            str_c("axis", 1:(ncol(lda_coord)-1)),
-            "id"
-        )
-        # tagging
-        lda_coord$tag <- c(
-            "observations", 
-            rep("simulations", length = nrow(lda_coord) - 1)
-        )
-        lda_coord$simulation <- c(
-            "observed data",
-            str_c("scenario", lda_coord$id[-1], sep = " ")
-        )
+        # at least two LDA axis
         # LDA latent space first two axes: observation vs simulation coordinates
         g1 <- ggplot(lda_coord) +
             geom_point(
@@ -183,6 +209,7 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
             ylab("axis 2") +
             theme_bw(base_size = 12)
     }
+    
     # output
     return(g1)
 }
