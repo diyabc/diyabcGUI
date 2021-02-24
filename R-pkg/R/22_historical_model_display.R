@@ -412,7 +412,40 @@ tree2node_coordinate <- function(tree_df, rev_tree_df, parsed_scenario,
                     
                 } else {
                     # same timing
-                    x_coord <- parent_x_coord
+                    if(parent_node$event == "merge" && 
+                       current_node$event == "merge") {
+                        fact <- NA
+                        # case of merging into ghost pop
+                        if(any(is.na(c(parent_node$child1_id, 
+                                       parent_node$child2_id)))) {
+                            fact <- 0
+                            orient <- 0
+                        } else {
+                            # standard merge
+                            fact <- (node_id == parent_node$child2_id) - 
+                                (node_id == parent_node$child1_id)
+                            
+                            if(fact > 0) {
+                                orient <- 1
+                            } else if(fact < 0) {
+                                orient <- 0
+                            }
+                        }
+                        
+                        parent_orient <- parent_node$orient
+                        if(!is.na(parent_orient)) {
+                            if(parent_orient != orient) {
+                                grid_unit_fact <- grid_unit / 
+                                    sqrt(existing_pop[[ current_node$time ]])
+                            }
+                        }
+                        
+                        x_coord <- parent_x_coord + fact * grid_unit_fact * 
+                            abs(which(timing_list == current_node$time) - 
+                                    which(timing_list == parent_node$time))
+                    } else {
+                        x_coord <- parent_x_coord
+                    }
                 }
             } else {
                 # split (node between the two parents)
