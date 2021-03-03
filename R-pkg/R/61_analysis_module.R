@@ -1,7 +1,7 @@
-#' Analysis page ui
+#' Analysis module ui
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_page_ui <- function(id) {
+analysis_module_ui <- function(id) {
     ns <- NS(id)
     tagList(
         tags$style(HTML(".box-header{text-align: center;}")),
@@ -38,101 +38,28 @@ analysis_page_ui <- function(id) {
     )
 }
 
-#' Analysis page server
+#' Analysis module server
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_page_server <- function(input, output, session) {
-    # namespace
-    ns <- session$ns
-    # init local
-    local <- reactiveValues(
-        locus_type = NULL,
-        seq_mode = NULL,
-        new_proj = NULL,
-        proj_dir = NULL,
-        proj_header = NULL,
-        scenario_list = NULL
-    )
-    # init output
-    out <- reactiveValues(
-        setting = NULL,
-        scenario = NULL,
-        reset = NULL
-    )
+analysis_module_server <- function(input, output, session) {
+    
     ## project setting
     proj_set <- callModule(analysis_proj_set_server, "proj_set")
-    # # output: 
-    # data_file = NULL,
-    # data_info = NULL,
-    # locus_type = NULL,
-    # seq_mode = NULL,
-    # new_proj = NULL,
-    # proj_dir = mk_proj_dir(),
-    # proj_file_list = character(0),
-    # proj_header_content = list(),
-    # proj_name = NULL,
-    # valid_data_file = FALSE
-    # valid_proj = FALSEvalid_proj = FALSE
-    
-    # # debugging
-    # observe({
-    #     pprint("#### Project settings ####")
-    #     pprint(reactiveValuesToList(proj_set))
-    # })
-    
-    
-    # FIXME
-    # update local
-    observe({
-        # FIXME obsolete
-        local$proj_dir <- proj_set$proj_dir
-        local$proj_name <- proj_set$proj_name
-    })
     
     ## Training set sub-module
-    training_set <- callModule(
-        training_set_server, "train_set",
-        data_file = reactive(proj_set$data_file),
-        data_info = reactive(proj_set$data_info),
-        locus_type = reactive(proj_set$locus_type),
-        seq_mode = reactive(proj_set$seq_mode),
-        new_proj = reactive(proj_set$new_proj),
-        proj_dir = reactive(proj_set$proj_dir),
-        proj_file_list = reactive({NULL}), 
-        valid_proj = reactive(proj_set$valid_proj)
-    )
+    # training_set <- callModule(training_set_server, "train_set")
     
-    # # debugging
-    # observe({
-    #     pprint("training set valid proj")
-    #     pprint(training_set$valid_proj)
-    # })
-    
-    ## random forest module
-    rf <- callModule(
-        rf_module_server, "rf",
-        locus_type = reactive(proj_set$locus_type),
-        proj_dir = reactive(proj_set$proj_dir),
-        # proj_file_list = reactive(proj_set$proj_file_list),
-        valid_proj = reactive(proj_set$valid_proj)
-    )
+    ## random forest sub-module
+    # rf <- callModule(rf_module_server, "rf")
     
     ## action
-    proj_admin <- callModule(
-        proj_admin_server, "proj_admin",
-        proj_dir = reactive(proj_set$proj_dir),
-        proj_name = reactive(proj_set$proj_name)
-    )
+    proj_admin <- callModule(proj_admin_server, "proj_admin", tag = "ap")
     
     ## reset
     observeEvent(proj_admin$reset, {
         req(proj_admin$reset)
-        out$reset <- proj_admin$reset
         session$reload()
     })
-    
-    # output
-    return(out)
 }
 
 #' Analysis project setting ui

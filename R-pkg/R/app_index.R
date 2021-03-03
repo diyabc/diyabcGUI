@@ -43,7 +43,7 @@ app_body <- function() {
             ),
             tabItem(
                 tabName = "analysis_tab",
-                # analysis_module_ui("analysis_module")
+                analysis_module_ui("analysis_module")
             ),
             tabItem(
                 tabName = "datagen_tab",
@@ -118,7 +118,7 @@ index_server <- function(input, output, session) {
     })
     
     ## analysis page
-    # analysis_module <- callModule(analysis_module_server, "analysis_module")
+    analysis_module <- callModule(analysis_module_server, "analysis_module")
     
     ## datagen page
     # datagen_module <- callModule(datagen_module_server, "datagen_module")
