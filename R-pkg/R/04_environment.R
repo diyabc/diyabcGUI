@@ -121,7 +121,11 @@ init_datagen_env <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 debug_ap <- function() {
-    pprint(reactiveValuesToList(env$ap))
+    if(is.reactivevalues(env$ap)) {
+        pprint(reactiveValuesToList(env$ap))
+    } else {
+        pprint(env$ap)
+    }
 }
 
 #' Print content of metadata inside diyabc-rf project sub-environment 
@@ -129,7 +133,11 @@ debug_ap <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 debug_ap_metadata <- function() {
-    pprint(reactiveValuesToList(env$ap$metadata))
+    if(is.reactivevalues(env$ap$metadata)) {
+        pprint(reactiveValuesToList(env$ap$metadata))
+    } else {
+        pprint(env$ap$metadata)
+    }
 }
 
 #' Print content of training set simulation setup inside diyabc-rf project 
@@ -137,7 +145,11 @@ debug_ap_metadata <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 debug_ap_ts <- function() {
-    pprint(reactiveValuesToList(env$ap$ts))
+    if(is.reactivevalues(env$ap)) {
+        pprint(reactiveValuesToList(env$ap$ts))
+    } else {
+        pprint(env$ap$ts)
+    }
 }
 
 #' Print content of random forest setup inside diyabc-rf project 
@@ -145,7 +157,11 @@ debug_ap_ts <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 debug_ap_rf <- function() {
-    pprint(reactiveValuesToList(env$ap$rf))
+    if(is.reactivevalues(env$ap$rf)) {
+        pprint(reactiveValuesToList(env$ap$rf))
+    } else {
+        pprint(env$ap$rf)
+    }
 }
 
 #' Print content of data generation project sub-environment for debugging 
@@ -153,7 +169,11 @@ debug_ap_rf <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 debug_dp <- function() {
-    pprint(reactiveValuesToList(env$dp))
+    if(is.reactivevalues(env$ap)) {
+        pprint(reactiveValuesToList(env$dp))
+    } else {
+        pprint(env$dp)
+    }
 }
 
 
