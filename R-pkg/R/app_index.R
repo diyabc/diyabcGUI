@@ -80,18 +80,22 @@ app_body <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 index_server <- function(input, output, session) {
+    
+    # home page
     home_page <- callModule(simplified_home_page_server, "home_page")
     
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
         req(home_page$new_analysis_project)
         updateTabItems(session, "app_menu", selected = "analysis_tab")
+        init_diyabcrf_env()
     })
     
     ## new data generation project
     observeEvent(home_page$new_datagen_project, {
         req(home_page$new_datagen_project)
         updateTabItems(session, "app_menu", selected = "datagen_tab")
+        init_datagen_env()
     })
     
     ## analysis page
