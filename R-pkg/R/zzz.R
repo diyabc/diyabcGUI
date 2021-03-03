@@ -1,3 +1,5 @@
+env <- new.env(parent = emptyenv())
+
 .onLoad <- function(libname, pkgname) {
     # set up options
     set_diyabcGUI_options(ncore = parallel::detectCores())
@@ -17,6 +19,8 @@
             "'diyabcGUI::dl_all_latest_bin()'"
         )
     }
+    # setup package global environment
+    init_diyabc_env()
 }
 
 # .onAttach <- function() {
