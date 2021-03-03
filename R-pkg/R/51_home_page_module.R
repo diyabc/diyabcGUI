@@ -1,7 +1,7 @@
 #' Simplified home page ui
 #' @keywords internal
 #' @author Ghislain Durif
-simplified_home_page_ui <- function(id) {
+home_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
         fluidRow(
@@ -98,7 +98,7 @@ simplified_home_page_ui <- function(id) {
 #' Simlified home page server
 #' @keywords internal
 #' @author Ghislain Durif
-simplified_home_page_server <- function(input, output, session) {
+home_page_server <- function(input, output, session) {
     # init output
     out <- reactiveValues(
         new_analysis_project = NULL,

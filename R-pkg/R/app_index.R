@@ -39,7 +39,7 @@ app_body <- function() {
         tabItems(
             tabItem(
                 tabName = "home_tab",
-                simplified_home_page_ui("home_page")
+                home_page_ui("home_page")
             ),
             tabItem(
                 tabName = "analysis_tab",
@@ -75,7 +75,7 @@ app_body <- function() {
 index_server <- function(input, output, session) {
     
     # home page
-    home_page <- callModule(simplified_home_page_server, "home_page")
+    home_page <- callModule(home_page_server, "home_page")
     
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
