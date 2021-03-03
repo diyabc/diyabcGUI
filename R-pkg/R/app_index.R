@@ -43,11 +43,11 @@ app_body <- function() {
             ),
             tabItem(
                 tabName = "analysis_tab",
-                # analysis_page_ui("analysis_page")
+                # analysis_module_ui("analysis_module")
             ),
             tabItem(
                 tabName = "datagen_tab",
-                # datagen_page_ui("datagen_page")
+                # datagen_module_ui("datagen_module")
             ),
             tabItem(
                 tabName = "pref_tab",
@@ -118,22 +118,10 @@ index_server <- function(input, output, session) {
     })
     
     ## analysis page
-    # analysis_page <- callModule(analysis_page_server, "analysis_page")
-    # # reset
-    # observeEvent(analysis_page$reset, {
-    #     req(analysis_page$reset)
-    #     session$reload()
-    #     updateTabItems(session, "app_menu", selected = "analysis_tab")
-    # })
+    # analysis_module <- callModule(analysis_module_server, "analysis_module")
     
     ## datagen page
-    # datagen_page <- callModule(datagen_page_server, "datagen_page")
-    # # reset
-    # observeEvent(datagen_page$reset, {
-    #     req(datagen_page$reset)
-    #     session$reload()
-    #     updateTabItems(session, "app_menu", selected = "datagen_tab")
-    # })
+    # datagen_module <- callModule(datagen_module_server, "datagen_module")
     
     ## preferences
     callModule(pref_page_server, "pref_page")
