@@ -1,7 +1,8 @@
 #' App dashboard simplified sidebar
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
+#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu 
+#' sidebarMenuOutput
 app_sidebar <- function() {
     dashboardSidebar(
         sidebarMenu(
@@ -11,16 +12,7 @@ app_sidebar <- function() {
                 tabName = "home_tab", 
                 icon = icon("home")
             ),
-            menuItem(
-                "DIYABC-RF main pipeline", 
-                tabName = "analysis_tab", 
-                icon = icon("flask")
-            ),
-            menuItem(
-                "Synthetic data file generation", 
-                tabName = "datagen_tab", 
-                icon = icon("dna")
-            ),
+            sidebarMenuOutput("menu_tabs"),
             menuItem(
                 "Preferences", 
                 tabName = "pref_tab", 
@@ -79,6 +71,7 @@ app_body <- function() {
 #' App simplified dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinydashboard renderMenu
 index_server <- function(input, output, session) {
     
     # home page
@@ -87,14 +80,40 @@ index_server <- function(input, output, session) {
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
         req(home_page$new_analysis_project)
+        # rendering sidebar menu
+        output$menu_tabs <- renderMenu({
+            sidebarMenu(
+                id = "dynamic_tabs",
+                menuItem(
+                    "DIYABC-RF main pipeline", 
+                    tabName = "analysis_tab", 
+                    icon = icon("flask")
+                )
+            )
+        })
+        # update tab item
         updateTabItems(session, "app_menu", selected = "analysis_tab")
+        # init env
         init_diyabcrf_env()
     })
     
     ## new data generation project
     observeEvent(home_page$new_datagen_project, {
         req(home_page$new_datagen_project)
+        # rendering sidebar menu
+        output$menu_tabs <- renderMenu({
+            sidebarMenu(
+                id = "dynamic_tabs",
+                menuItem(
+                    "Synthetic data file generation", 
+                    tabName = "datagen_tab", 
+                    icon = icon("dna")
+                )
+            )
+        })
+        # update tab item
         updateTabItems(session, "app_menu", selected = "datagen_tab")
+        # init env
         init_datagen_env()
     })
     
