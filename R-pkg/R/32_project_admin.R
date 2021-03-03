@@ -37,55 +37,49 @@ proj_admin_ui <- function(id) {
 #' Project administration server
 #' @keywords internal
 #' @author Ghislain Durif
-proj_admin_server <- function(input, output, session,
-                              proj_dir = reactive({NULL}),
-                              proj_name = reactive({NULL})) {
-    # init local
-    local <- reactiveValues(
-        proj_dir = NULL,
-        proj_name = NULL
-    )
-    # get input
-    observe({
-        local$proj_dir <- proj_dir()
-        local$proj_name <- proj_name()
-    })
+#' @param tag character string, type of project identified by `"ap"` 
+#' (for diyabc-rf analysis project) or `"dp"` (data generation project).
+proj_admin_server <- function(input, output, session, tag = NULL) {
+    
     # init output
     out <- reactiveValues(reset = NULL)
-    # save
-    output$save <- downloadHandler(
-        filename = function() {
-            file_name <- "project_name.zip"
-            if(!is.null(local$proj_name)) {
-                if(str_length(local$proj_name) > 0) {
-                    file_name <- str_c(local$proj_name, ".zip")
-                }
-            }
-            return(file_name)
-        },
-        content = function(file) {
-            wd <- getwd()
-            on.exit(setwd(wd))
-            setwd(local$proj_dir)
-            cleanup_diyabc_run(local$proj_dir)
-            cleanup_abcranger_run(local$proj_dir)
-            zip::zip(file, list.files(local$proj_dir))
-        }
-    )
     
-    ## reset
-    observeEvent(input$reset, {
-        ask_confirmation(
-            inputId = "reset_confirmation",
-            title = "Want to confirm ?"
+    # check input
+    if(isTruthy(tag)) {
+        
+        # save
+        output$save <- downloadHandler(
+            filename = function() {
+                file_name <- "project_name.zip"
+                if(isTruthy(env[[tag]]$proj_name)) {
+                    file_name <- str_c(env[[tag]]$proj_name, ".zip")
+                }
+                return(file_name)
+            },
+            content = function(file) {
+                req(env[[tag]]$proj_dir)
+                wd <- getwd()
+                on.exit(setwd(wd))
+                setwd(env[[tag]]$proj_dir)
+                cleanup_diyabc_run(env[[tag]]$proj_dir)
+                cleanup_abcranger_run(env[[tag]]$proj_dir)
+                zip::zip(file, list.files(env[[tag]]$proj_dir))
+            }
         )
-    })
-    observeEvent(input$reset_confirmation, {
-        req(!is.null(input$reset_confirmation))
-        if(isTRUE(input$reset_confirmation)) {
+        
+        ## reset
+        observeEvent(input$reset, {
+            ask_confirmation(
+                inputId = "reset_confirmation",
+                title = "Want to confirm ?"
+            )
+        })
+        
+        observeEvent(input$reset_confirmation, {
+            req(input$reset_confirmation)
             out$reset <- ifelse(!is.null(out$reset), out$reset, 0) + 1
-        }
-    })
+        })
+    }
     
     ## output
     return(out)
