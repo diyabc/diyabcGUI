@@ -18,8 +18,8 @@ init_diyabcrf_env <- function() {
     # clean environment
     tmp <- reactiveValues(
         ## project setup
-        name = NULL,            # project name
-        dir = NULL,             # project directory
+        proj_name = NULL,            # project name
+        proj_dir = NULL,             # project directory
         locus_type = NULL,      # "SNP" or "MSS"
         seq_mode = NULL,        # "IndSeq" or "PoolSeq"
         ## observed data
@@ -81,7 +81,7 @@ init_diyabcrf_env <- function() {
     )
     
     # init project directory
-    tmp$dir <- mk_proj_dir("diyabc_rf")
+    tmp$proj_dir <- mk_proj_dir("diyabc_rf")
     
     # init env
     assign("ap", tmp, env)
@@ -95,8 +95,8 @@ init_datagen_env <- function() {
     # clean environment
     tmp <- reactiveValues(
         ## project setup
-        name = NULL,            # project name
-        dir = NULL,             # project directory
+        proj_name = NULL,            # project name
+        proj_dir = NULL,             # project directory
         locus_type = NULL,      # "SNP" or "MSS"
         seq_mode = NULL,        # "IndSeq" or "PoolSeq"
         ## data description
@@ -111,7 +111,7 @@ init_datagen_env <- function() {
     )
     
     # init project directory
-    tmp$dir <- mk_proj_dir("diyabc_datagen")
+    tmp$proj_dir <- mk_proj_dir("diyabc_datagen")
     
     # init env
     assign("dp", tmp, env)
