@@ -76,7 +76,7 @@ init_diyabcrf_env <- function() {
             #   estimation)
             parameter = NULL, 
             # subset and/or groups of models
-            groups
+            groups = NULL
         )
     )
     
