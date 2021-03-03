@@ -87,7 +87,6 @@ init_diyabcrf_env <- function() {
     assign("ap", tmp, env)
 }
 
-
 #' Initialize environment for data generation pipeline
 #' @keywords internal
 #' @author Ghislain Durif
@@ -116,6 +115,45 @@ init_datagen_env <- function() {
     
     # init env
     assign("dp", tmp, env)
+}
+
+#' Print content of diyabc-rf project sub-environment for debugging purpose
+#' @keywords internal
+#' @author Ghislain Durif
+debug_ap <- function() {
+    pprint(reactiveValuesToList(env$ap))
+}
+
+#' Print content of metadata inside diyabc-rf project sub-environment 
+#' for debugging purpose
+#' @keywords internal
+#' @author Ghislain Durif
+debug_ap_metadata <- function() {
+    pprint(reactiveValuesToList(env$ap$metadata))
+}
+
+#' Print content of training set simulation setup inside diyabc-rf project 
+#' sub-environment for debugging purpose
+#' @keywords internal
+#' @author Ghislain Durif
+debug_ap_ts <- function() {
+    pprint(reactiveValuesToList(env$ap$ts))
+}
+
+#' Print content of random forest setup inside diyabc-rf project 
+#' sub-environment for debugging purpose
+#' @keywords internal
+#' @author Ghislain Durif
+debug_ap_rf <- function() {
+    pprint(reactiveValuesToList(env$ap$rf))
+}
+
+#' Print content of data generation project sub-environment for debugging 
+#' purpose
+#' @keywords internal
+#' @author Ghislain Durif
+debug_dp <- function() {
+    pprint(reactiveValuesToList(env$dp))
 }
 
 
