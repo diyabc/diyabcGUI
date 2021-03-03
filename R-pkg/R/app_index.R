@@ -43,11 +43,11 @@ app_body <- function() {
             ),
             tabItem(
                 tabName = "analysis_tab",
-                analysis_page_ui("analysis_page")
+                # analysis_page_ui("analysis_page")
             ),
             tabItem(
                 tabName = "datagen_tab",
-                datagen_page_ui("datagen_page")
+                # datagen_page_ui("datagen_page")
             ),
             tabItem(
                 tabName = "pref_tab",
@@ -118,7 +118,7 @@ index_server <- function(input, output, session) {
     })
     
     ## analysis page
-    analysis_page <- callModule(analysis_page_server, "analysis_page")
+    # analysis_page <- callModule(analysis_page_server, "analysis_page")
     # # reset
     # observeEvent(analysis_page$reset, {
     #     req(analysis_page$reset)
@@ -127,7 +127,7 @@ index_server <- function(input, output, session) {
     # })
     
     ## datagen page
-    datagen_page <- callModule(datagen_page_server, "datagen_page")
+    # datagen_page <- callModule(datagen_page_server, "datagen_page")
     # # reset
     # observeEvent(datagen_page$reset, {
     #     req(datagen_page$reset)
