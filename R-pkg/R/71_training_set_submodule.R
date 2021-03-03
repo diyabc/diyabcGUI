@@ -636,12 +636,13 @@ training_set_def_server <- function(input, output, session,
             req(!is.null(local$raw_cond_list))
             req(!is.null(local$locus_type))
             req(!is.null(local$seq_mode))
-            req(!is.null(locus_setup$locus))
             
             if(local$locus_type == "mss") {
                 req(!is.null(locus_setup$mss_locus))
                 req(!is.null(locus_setup$mss_group_prior))
                 req(!is.null(locus_setup$mss_rf_col_name))
+            } else {
+                req(!is.null(locus_setup$locus))
             }
             
             write_header(local$proj_dir, local$data_file, 
