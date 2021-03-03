@@ -19,8 +19,8 @@ app_header <- function() {
 diyabc_ui <- function() {
     dashboardPage(
         app_header(),
-        app_simplified_sidebar(),
-        app_simplified_body(),
+        app_sidebar(),
+        app_body(),
         skin = "black"
     )
 }

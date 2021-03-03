@@ -15,6 +15,5 @@ diyabc_server <- function(input, output, session) {
     ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
     ## index server function
-    simplified_index_server(input, output, session)
-    # index_server(input, output, session)
+    index_server(input, output, session)
 }

@@ -2,7 +2,7 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
-app_simplified_sidebar <- function() {
+app_sidebar <- function() {
     dashboardSidebar(
         sidebarMenu(
             id = "app_menu",
@@ -40,7 +40,7 @@ app_simplified_sidebar <- function() {
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardBody tabItems tabItem
 #' @importFrom shinyjs useShinyjs
-app_simplified_body <- function() {
+app_body <- function() {
     dashboardBody(
         useShinyjs(),
         add_busy_spinner(spin = "fading-circle", margins = c(0, 10)),
@@ -79,7 +79,7 @@ app_simplified_body <- function() {
 #' App simplified dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
-simplified_index_server <- function(input, output, session) {
+index_server <- function(input, output, session) {
     home_page <- callModule(simplified_home_page_server, "home_page")
     
     ## new analysis project
