@@ -33,8 +33,8 @@ init_diyabcrf_env <- function() {
         ## project setup
         proj_name = NULL,       # project name
         proj_dir = NULL,        # project directory
-        locus_type = NULL,      # "SNP" or "MSS"
-        seq_mode = NULL,        # "IndSeq" or "PoolSeq"
+        locus_type = "snp",     # "snp" or "mss"
+        seq_mode = "indseq",    # "indseq" or "poolseq"
         ## observed data
         data_file = NULL        # observed data file name
     )
