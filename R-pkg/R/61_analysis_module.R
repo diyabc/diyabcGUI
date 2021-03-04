@@ -60,6 +60,11 @@ analysis_module_server <- function(input, output, session) {
         req(proj_admin$reset)
         session$reload()
     })
+    
+    ## clean on exit
+    session$onSessionEnded(function() {
+        isolate(tryCatch(fs::dir_delete(env$ap$proj_dir)))
+    })
 }
 
 #' Analysis project setting ui
@@ -68,7 +73,7 @@ analysis_module_server <- function(input, output, session) {
 analysis_proj_set_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        proj_name_ui(ns("proj_name_setup")),
+        proj_name_ui(ns("proj_name")),
         hr(),
         h3("Data type"),
         data_type_ui(ns("data_type")),
@@ -179,66 +184,45 @@ analysis_proj_set_ui <- function(id) {
 #' @importFrom dplyr distinct
 #' @importFrom fs file_copy file_delete
 analysis_proj_set_server <- function(input, output, session) {
-    # namespace
-    ns <- session$ns
+    
+    
     # init local
     local <- reactiveValues(
-        data_file = NULL,
-        file_input = NULL,
-        valid_proj_name = FALSE,
-        existing_proj_zip = FALSE,
-        # data.frame with 4 columns:
-        # name (chr), size (int), type (chr), datapath (chr)
-        header_data_file = NULL
+        # data_file = NULL,
+        # file_input = NULL,
+        # valid_proj_name = FALSE,
+        # existing_proj_zip = FALSE,
+        # # data.frame with 4 columns:
+        # # name (chr), size (int), type (chr), datapath (chr)
+        # header_data_file = NULL
     )
     # init output
     out <- reactiveValues(
-        data_file = NULL,
-        data_info = NULL,
-        locus_type = NULL,
-        seq_mode = NULL,
-        new_proj = TRUE,
-        proj_dir = mk_proj_dir("diyabc_rf"),
-        proj_file_list = character(0),
-        proj_header_content = list(),
-        proj_name = NULL,
-        valid_data_file = FALSE,
-        valid_proj = FALSE
+        # data_file = NULL,
+        # data_info = NULL,
+        # locus_type = NULL,
+        # seq_mode = NULL,
+        # new_proj = TRUE,
+        # proj_dir = mk_proj_dir("diyabc_rf"),
+        # proj_file_list = character(0),
+        # proj_header_content = list(),
+        # proj_name = NULL,
+        # valid_data_file = FALSE,
+        # valid_proj = FALSE
     )
     
-    # clean on exit
-    session$onSessionEnded(function() {
-        isolate(tryCatch(fs::dir_delete(out$proj_dir)))
-    })
+    ## project name
+    proj_name <- callModule(proj_name_server, "proj_name", tag = "ap")
+    
+    ## data type
+    data_type <- callModule(data_type_server, "data_type", tag = "ap")
     
     # debugging
     observe({
-        logging("project directory:", out$proj_dir)
+        logging("locus type:", env$ap$locus_type)
+        logging("seq mode:", env$ap$seq_mode)
     })
     
-    ## project name
-    proj_name_setup <- callModule(proj_name_server, "proj_name_setup", 
-                                  tag = "ap")
-    
-    # observeEvent(proj_name_setup$proj_name, {
-    #     req(proj_name_setup$proj_name)
-    #     out$proj_name <- proj_name_setup$proj_name
-    # })
-    # 
-    # observeEvent(proj_name_setup$valid_proj_name, {
-    #     req(!is.null(proj_name_setup$valid_proj_name))
-    #     local$valid_proj_name <- proj_name_setup$valid_proj_name
-    # })
-    # 
-    # ## data type
-    # data_type <- callModule(data_type_server, "data_type")
-    # observe({
-    #     req(data_type$locus_type)
-    #     req(data_type$seq_mode)
-    #     out$locus_type <- data_type$locus_type
-    #     out$seq_mode <- data_type$seq_mode
-    # })
-    # 
     # ## new or existing project
     # observe({
     #     req(input$proj_type)
