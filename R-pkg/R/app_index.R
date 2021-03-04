@@ -82,6 +82,7 @@ index_server <- function(input, output, session) {
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
         req(home_page$new_analysis_project)
+        
         # rendering sidebar menu
         output$menu_tabs <- renderMenu({
             sidebarMenu(
@@ -93,16 +94,24 @@ index_server <- function(input, output, session) {
                 )
             )
         })
+        
         # update tab item
         updateTabItems(session, "app_menu", selected = "analysis_tab")
+        
         # init env
         init_diyabcrf_env()
         reset_diyabcrf_env()
+        
+        # verbosity
+        observe({
+            logging("analysis project directory:", env$ap$proj_dir)
+        })
     })
     
     ## new data generation project
     observeEvent(home_page$new_datagen_project, {
         req(home_page$new_datagen_project)
+        
         # rendering sidebar menu
         output$menu_tabs <- renderMenu({
             sidebarMenu(
@@ -114,11 +123,18 @@ index_server <- function(input, output, session) {
                 )
             )
         })
+        
         # update tab item
         updateTabItems(session, "app_menu", selected = "datagen_tab")
+        
         # init env
         init_datagen_env()
         reset_datagen_env()
+        
+        # verbosity
+        observe({
+            logging("data generation project directory:", env$dp$proj_dir)
+        })
     })
     
     ## analysis page
