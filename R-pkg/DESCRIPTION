@@ -63,7 +63,7 @@ Imports:
     rlang,
     shiny, 
     shinybusy (>= 0.2.2), 
-    shinydashboard, shinyFiles, 
+    shinydashboard, shinyFeedback, shinyFiles, 
     shinyhelper, shinyjs, shinyWidgets, 
     stringr, 
     tibble,

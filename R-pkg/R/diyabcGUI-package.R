@@ -19,6 +19,7 @@
 #' @import shiny
 #' @importFrom shinybusy add_busy_spinner
 #' @importFrom shinydashboard box updateTabItems
+#' @importFrom shinyFeedback feedbackWarning
 #' @importFrom shinyhelper helper
 #' @importFrom shinyjs disable enable hidden hide reset show
 #' @importFrom shinyWidgets actionBttn actionGroupButtons ask_confirmation progressBar 
