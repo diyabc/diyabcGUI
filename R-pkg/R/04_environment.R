@@ -6,85 +6,111 @@
 #' (diyabc-rf analysis and data generation) inside `diyabcGUI` global 
 #' environment.
 init_diyabc_env <- function() {
-    assign("ap", NULL, env) # diyabc-rf analysis project
-    assign("dp", NULL, env) # data generation project
+    # diyabc-rf analysis project
+    assign("ap", reactiveValues(), env)
+    
+    # diyabc-rf dataset metadata
+    assign("md", reactiveValues(), env)
+    
+    # diyabc-rf training set simulation sub-module
+    assign("ts", reactiveValues(), env)
+    
+    # diyabc-rf random forest sub-module
+    assign("rf", reactiveValues(), env)
+    
+    # data generation project
+    assign("dp", reactiveValues(), env)
 }
 
 #' Initialize environment for DIYABC-RF pipeline
 #' @keywords internal
 #' @author Ghislain Durif
 init_diyabcrf_env <- function() {
+    ## environment attributes
     
-    # clean environment
-    tmp <- reactiveValues(
+    # analysis project
+    tmp_ap <- list(
         ## project setup
-        proj_name = NULL,            # project name
-        proj_dir = NULL,             # project directory
+        proj_name = NULL,       # project name
+        proj_dir = NULL,        # project directory
         locus_type = NULL,      # "SNP" or "MSS"
         seq_mode = NULL,        # "IndSeq" or "PoolSeq"
         ## observed data
-        data_file = NULL,       # observed data file name
-        metadata = reactiveValues(
-            # number of loci in the data file
-            n_loci = NULL,
-            # table of locus description: name, type, number
-            locus_des = NULL    
-        ),
-        ## training set simulation
-        ts = reactiveValues(
-            # list of historical models
-            hist_model = NULL,
-            # list number of parameters per model
-            n_param = NULL,
-            # list of model priors (discrete probabilities)
-            model_prior = NULL,
-            # table of historical model parameters (name, type, priors)
-            param = NULL,
-            # list of conditions on historical parameters
-            cond = NULL,
-            # table of loci description
-            loci_des = NULL,
-            # number of loci group
-            n_group = NULL,
-            # list of group priors for MSS data
-            mss_prior = NULL,
-            # specific ref table column names for MSS data
-            mss_reftab_colname = NULL
-        ),
-        ## random forest analysis
-        rf = reactiveValues(
-            # analysis mode: "param_estim" or "model_choice"
-            mode = NULL,
-            # number of samples
-            n_ref = NULL,
-            # minimal node size
-            min_node_size = NULL, 
-            # number of tree
-            n_tree = NULL, 
-            # number of noise columns
-            noise_columns = NULL, 
-            # boolean: if TRUE, disable LDA for model choice or PLS for 
-            #   parameter estimation
-            no_linear = NULL, 
-            # percentage of maximum explained Y-variance for retaining pls axis
-            pls_max_var = NULL, 
-            # Chosen scenario (mandatory for parameter estimation)
-            chosen_scenario = NULL, 
-            # number of oob testing samples (mandatory for parameter estimation)
-            noob = NULL, 
-            # name of the parameter of interest (mandatory for parameter 
-            #   estimation)
-            parameter = NULL, 
-            # subset and/or groups of models
-            groups = NULL
-        )
+        data_file = NULL        # observed data file name
     )
     
-    # init project directory
-    tmp$proj_dir <- mk_proj_dir("diyabc_rf")
+    # dataset metadata
+    tmp_md <- list(
+        # number of loci in the data file
+        n_loci = NULL,
+        # table of locus description: name, type, number
+        locus_des = NULL
+    )
     
-    # init env
-    assign("ap", tmp, env)
+    # training set simulation
+    tmp_ts <-list(
+        # list of historical models
+        hist_model = NULL,
+        # list number of parameters per model
+        n_param = NULL,
+        # list of model priors (discrete probabilities)
+        model_prior = NULL,
+        # table of historical model parameters (name, type, priors)
+        param = NULL,
+        # list of conditions on historical parameters
+        cond = NULL,
+        # table of loci description
+        loci_des = NULL,
+        # number of loci group
+        n_group = NULL,
+        # list of group priors for MSS data
+        mss_prior = NULL,
+        # specific ref table column names for MSS data
+        mss_reftab_colname = NULL
+    )
+        
+    # random forest analysis
+    tmp_rf <- list(
+        # analysis mode: "param_estim" or "model_choice"
+        mode = NULL,
+        # number of samples
+        n_ref = NULL,
+        # minimal node size
+        min_node_size = NULL, 
+        # number of tree
+        n_tree = NULL, 
+        # number of noise columns
+        noise_columns = NULL, 
+        # boolean: if TRUE, disable LDA for model choice or PLS for 
+        #   parameter estimation
+        no_linear = NULL, 
+        # percentage of maximum explained Y-variance for retaining pls axis
+        pls_max_var = NULL, 
+        # Chosen scenario (mandatory for parameter estimation)
+        chosen_scenario = NULL, 
+        # number of oob testing samples (mandatory for parameter estimation)
+        noob = NULL, 
+        # name of the parameter of interest (mandatory for parameter 
+        #   estimation)
+        parameter = NULL, 
+        # subset and/or groups of models
+        groups = NULL
+    )
+    
+    
+    ## clean up and define environment
+    list2reactiveValues(tmp_ap, ap)
+    list2reactiveValues(tmp_md, md)
+    list2reactiveValues(tmp_ts, ts)
+    list2reactiveValues(tmp_rf, rf)
+}
+
+#' Reset environment for DIYABC-RF pipeline
+#' @keywords internal
+#' @author Ghislain Durif
+reset_diyabcrf_env <- function() {
+    # proj dir
+    env$ap$proj_dir <- mk_proj_dir("diyabc_rf")
 }
 
 #' Initialize environment for data generation pipeline
@@ -93,12 +119,12 @@ init_diyabcrf_env <- function() {
 init_datagen_env <- function() {
     
     # clean environment
-    tmp <- reactiveValues(
+    tmp_dp <- reactiveValues(
         ## project setup
-        proj_name = NULL,            # project name
-        proj_dir = NULL,             # project directory
-        locus_type = NULL,      # "SNP" or "MSS"
-        seq_mode = NULL,        # "IndSeq" or "PoolSeq"
+        proj_name = NULL,        # project name
+        proj_dir = NULL,         # project directory
+        locus_type = NULL,       # "SNP" or "MSS"
+        seq_mode = NULL,         # "IndSeq" or "PoolSeq"
         ## data description
         model = NULL,            # historical model
         param = NULL,           # list of parameter values
@@ -110,12 +136,18 @@ init_datagen_env <- function() {
         sex_ratio = NULL        # sex ratio in the simulation
     )
     
-    # init project directory
-    tmp$proj_dir <- mk_proj_dir("diyabc_datagen")
-    
-    # init env
-    assign("dp", tmp, env)
+    ## clean up and define environment
+    list2reactiveValues(tmp_dp, dp)
 }
+
+#' Reset environment for data generation pipeline
+#' @keywords internal
+#' @author Ghislain Durif
+reset_datagen_env <- function() {
+    # proj dir
+    env$dp$proj_dir <- mk_proj_dir("diyabc_datagen")
+}
+
 
 #' Print content of diyabc-rf project sub-environment for debugging purpose
 #' @keywords internal
@@ -173,6 +205,27 @@ debug_dp <- function() {
         pprint(reactiveValuesToList(env$dp))
     } else {
         pprint(env$dp)
+    }
+}
+
+#' Fill reactiveValues from package global environment with named list elements
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param named_list list of named elements to fill the reactiveValues `rval`
+#' input arguments.
+#' @param tag `reactiveValues` variable from package global environment to be  
+#' filled with named elements from `named_list` input arguments.
+list2reactiveValues <- function(named_list, tag) {
+    # check
+    if(length(names(named_list)) != length(named_list)) {
+        stop("'named_list' input arg should be a named list.")
+    }
+    # elements names
+    name_vec <- names(named_list)
+    # fill
+    for(ind in 1:length(named_list)) {
+        env[[as.character(substitute(tag))]][[name_vec[ind]]] <<-
+            named_list[[ind]]
     }
 }
 
