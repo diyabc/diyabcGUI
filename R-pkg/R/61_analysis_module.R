@@ -78,6 +78,56 @@ analysis_proj_set_ui <- function(id) {
         h3("Data type"),
         data_type_ui(ns("data_type")),
         hr(),
+        proj_type_ui(ns("proj_type")),
+        hr(),
+        uiOutput(ns("feedback"))
+    )
+}
+
+#' Analysis project setting server
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom dplyr distinct
+#' @importFrom fs file_copy file_delete
+analysis_proj_set_server <- function(input, output, session) {
+    
+    
+    # init local
+    local <- reactiveValues()
+    
+    # init output
+    out <- reactiveValues()
+    
+    ## project name
+    proj_name <- callModule(proj_name_server, "proj_name", tag = "ap")
+    
+    ## data type
+    data_type <- callModule(data_type_server, "data_type", tag = "ap")
+    
+    ## project type
+    proj_type <- callModule(proj_type_server, "proj_type")
+    
+    # output$proj_is_ready <- renderUI({
+    #     if(!(out$valid_proj & out$valid_data_file)) {
+    #         h3(icon("warning"), "Project set up is not ready.", 
+    #            style="color:red;text-align:center;")
+    #     } else {
+    #         h4(icon("check"), "Project set up is ok.",
+    #            style="text-align:center;")
+    #     }
+    # })
+    # 
+    
+    ## output
+    return(out)
+}
+
+#' Project type setting ui
+#' @keywords internal
+#' @author Ghislain Durif
+proj_type_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
         h3("Project type") %>% 
             helper(
                 type = "inline", 
@@ -102,7 +152,41 @@ analysis_proj_set_ui <- function(id) {
         conditionalPanel(
             condition = "input.proj_type == 'existing'",
             ns = ns,
-            h4(tags$b("Project files")),
+            h4(tags$b("Project files")) %>%
+                helper(
+                    type = "inline",
+                    content = as.character(tagList(
+                        tags$ul(
+                            tags$li(
+                                "You can", tags$b("either"), "upload:",
+                                "a project", tags$code("zip"), 
+                                "file generated in a previous run",
+                                tags$b("or"),
+                                "single project-related files, including",
+                                tags$code("headerRF.txt"), ", ",
+                                tags$code("reftableRF.bin"), ", ", 
+                                tags$code("statobsRF.txt"), "."
+                            ),
+                            tags$li(
+                                "You", tags$b("cannot"), "upload",
+                                "both a project", 
+                                tags$code("zip"), "file",
+                                "and single project-related files."
+                            ),
+                            tags$li(
+                                "If you re-upload a file, it will over-write",
+                                "the corresponding file",
+                                "that you previously uploaded."
+                            ),
+                            tags$li(
+                                "If some project files are missing",
+                                "or have formating issues", 
+                                "you will be able to (re)configure",
+                                "the corresponding settings below."
+                            )
+                        )
+                    ))
+                ),
             helpText(
                 "Use ctrl+click to select more than one file."
             ),
@@ -116,37 +200,6 @@ analysis_proj_set_ui <- function(id) {
                     ".bin",
                     ".zip"
                 )
-            ),
-            helpText(
-                tags$ul(
-                    tags$li(
-                        "You can", tags$b("either"), "upload:",
-                        "a project", tags$code("zip"), 
-                        "file generated in a previous run",
-                        tags$b("or"),
-                        "single project-related files, including",
-                        tags$code("headerRF.txt"), ", ",
-                        tags$code("reftableRF.bin"), ", ", 
-                        tags$code("statobsRF.txt"), "."
-                    ),
-                    tags$li(
-                        "You", tags$b("cannot"), "upload both a project", 
-                        tags$code("zip"), "file",
-                        "and single project-related files."
-                    ),
-                    tags$li(
-                        "If you re-upload a file, it will over-write the",
-                        "corresponding file that you previously uploaded."
-                    )
-                )
-            ),
-            br(),
-            uiOutput(ns("file_check")),
-            helpText(
-                "If some files are missing or have formating issues", 
-                "(identified with a", icon("times"),")", 
-                "you will be able to (re)configure the corresponding", 
-                "settings below."
             )
         ),
         conditionalPanel(
@@ -170,58 +223,24 @@ analysis_proj_set_ui <- function(id) {
         conditionalPanel(
             condition = "input.proj_type !== 'example'",
             ns = ns,
-            input_data_ui(ns("input_data_file"))
+            input_data_ui(ns("input_data_file")),
         ),
         check_data_ui(ns("check_data_file")),
         hr(),
-        uiOutput(ns("proj_is_ready"))
+        uiOutput(ns("feedback"))
     )
 }
 
-#' Analysis project setting ui
+#' Project type setting server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom dplyr distinct
 #' @importFrom fs file_copy file_delete
-analysis_proj_set_server <- function(input, output, session) {
+proj_type_server <- function(input, output, session) {
     
     
     # init local
-    local <- reactiveValues(
-        # data_file = NULL,
-        # file_input = NULL,
-        # valid_proj_name = FALSE,
-        # existing_proj_zip = FALSE,
-        # # data.frame with 4 columns:
-        # # name (chr), size (int), type (chr), datapath (chr)
-        # header_data_file = NULL
-    )
-    # init output
-    out <- reactiveValues(
-        # data_file = NULL,
-        # data_info = NULL,
-        # locus_type = NULL,
-        # seq_mode = NULL,
-        # new_proj = TRUE,
-        # proj_dir = mk_proj_dir("diyabc_rf"),
-        # proj_file_list = character(0),
-        # proj_header_content = list(),
-        # proj_name = NULL,
-        # valid_data_file = FALSE,
-        # valid_proj = FALSE
-    )
-    
-    ## project name
-    proj_name <- callModule(proj_name_server, "proj_name", tag = "ap")
-    
-    ## data type
-    data_type <- callModule(data_type_server, "data_type", tag = "ap")
-    
-    # debugging
-    observe({
-        logging("locus type:", env$ap$locus_type)
-        logging("seq mode:", env$ap$seq_mode)
-    })
+    local <- reactiveValues()
     
     # ## new or existing project
     # observe({
@@ -516,10 +535,6 @@ analysis_proj_set_server <- function(input, output, session) {
     #            style="text-align:center;")
     #     }
     # })
-    # 
-    
-    ## output
-    return(out)
 }
 
 #' Existing project related file check
