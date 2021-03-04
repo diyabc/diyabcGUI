@@ -29,13 +29,10 @@ data_type_ui <- function(id) {
 #' Data type module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinyjs disable enable
-data_type_server <- function(input, output, session) {
-    # init output
-    out <- reactiveValues(
-        locus_type = NULL,
-        seq_mode = NULL
-    )
+#' @param tag character string, type of project identified by `"ap"` 
+#' (for diyabc-rf analysis project) or `"dp"` (data generation project).
+data_type_server <- function(input, output, session, tag = "ap") {
+    
     # disable seq mode if relevant
     observeEvent(input$locus_type, {
         req(input$locus_type)
@@ -47,22 +44,16 @@ data_type_server <- function(input, output, session) {
             shinyjs::enable("seq_mode")
         }
     })
-    # react
+    
+    # update env
     observeEvent(input$locus_type, {
         req(input$locus_type)
-        out$locus_type <- input$locus_type
+        env[[tag]]$locus_type <<- input$locus_type
     })
     observeEvent(input$seq_mode, {
         req(input$seq_mode)
-        out$seq_mode <- input$seq_mode
+        env[[tag]]$seq_mode <<- input$seq_mode
     })
-    # # debugging
-    # observe({
-    #     logging("locus type:", out$locus_type)
-    #     logging("seq mode:", out$seq_mode)
-    # })
-    # output
-    return(out)
 }
 
 
