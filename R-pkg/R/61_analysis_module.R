@@ -73,12 +73,18 @@ analysis_proj_set_ui <- function(id) {
         h3("Data type"),
         data_type_ui(ns("data_type")),
         hr(),
-        h3("Project type"),
-        helpText(
-            "You can either: (i) start with a new project;", 
-            "(ii) open one of your own an existing project;", 
-            "or (iii) open one of the included examples."
-        ),
+        h3("Project type") %>% 
+            helper(
+                type = "inline", 
+                content = as.character(tagList(
+                    "You can either:",
+                    tags$ol(
+                        tags$li("start with a new project;"),
+                        tags$li("open one of your own an existing project;"),
+                        tags$li("open one of the included examples.")
+                    )
+                ))
+            ),
         radioGroupButtons(
             ns("proj_type"),
             label = NULL,
