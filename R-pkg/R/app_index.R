@@ -31,10 +31,12 @@ app_sidebar <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardBody tabItems tabItem
+#' @importFrom shinyFeedback useShinyFeedback
 #' @importFrom shinyjs useShinyjs
 app_body <- function() {
     dashboardBody(
         useShinyjs(),
+        useShinyFeedback(),
         add_busy_spinner(spin = "fading-circle", margins = c(0, 10)),
         tabItems(
             tabItem(
@@ -95,6 +97,7 @@ index_server <- function(input, output, session) {
         updateTabItems(session, "app_menu", selected = "analysis_tab")
         # init env
         init_diyabcrf_env()
+        reset_diyabcrf_env()
     })
     
     ## new data generation project
@@ -115,6 +118,7 @@ index_server <- function(input, output, session) {
         updateTabItems(session, "app_menu", selected = "datagen_tab")
         # init env
         init_datagen_env()
+        reset_datagen_env()
     })
     
     ## analysis page
