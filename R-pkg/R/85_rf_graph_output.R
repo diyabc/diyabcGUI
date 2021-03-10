@@ -143,9 +143,10 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
     # LDA latent space coordinates
     file_name <- file.path(proj_dir, str_c(prefix, ".lda"))
     lda_coord <- read.table(file_name, skip = 1)
+    lda_dim <- ncol(lda_coord)
     
     # check for number of LDA components
-    if(ncol(lda_coord) < 2) {
+    if(lda_dim < 2) {
         txt <- "No LDA axis,\n impossible to create\n a LDA plot"
         g1 <- ggplot() + 
             annotate("text", x = 4, y = 25, size=8, label = txt) + 
@@ -170,7 +171,7 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
     )
     
     # single LDA axes (in case of two scenarii)
-    if(ncol(lda_coord) == 2) {
+    if(lda_dim == 2) {
         g1 <- ggplot(lda_coord) +
             geom_density(
                 data = subset(lda_coord, lda_coord$tag == "simulations"),
