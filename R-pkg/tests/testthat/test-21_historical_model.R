@@ -282,4 +282,18 @@ test_that("parse_scenario", {
         )
     )
     
+    # scenario with ghost pop
+    text <- str_c(
+        "N1 N2 N3 Nbc3",
+        "0 sample 1",
+        "50 sample 2",
+        "0 sample 3",
+        "t3-DB3 VarNe 3 NF3",
+        "t3 merge 4 3",
+        "t3lb merge 1 4",
+        "t2 merge 1 2",
+        sep = "\n"
+    )
+    out <- parse_scenario(text)
+    expect_true(out$valid)
 })
