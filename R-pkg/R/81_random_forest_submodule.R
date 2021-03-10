@@ -210,6 +210,17 @@ rf_parameter_ui <- function(id) {
                 ns("possible_parameters")
             )
         ),
+        conditionalPanel(
+            condition = "input.run_mode == 'model_choice'", ns = ns,
+            textInput(
+                ns("group"),
+                label = "Scenario grouping and selection"
+            ) %>% 
+                helper(type = "markdown", 
+                       content = "scenario_grouping_selection"),
+            uiOutput(ns("help_group")),
+            uiOutput(ns("feedback_group"))
+        ),
         numericInput(
             ns("n_rec"),
             label = "Number of samples in the training set to consider",
@@ -258,17 +269,6 @@ rf_parameter_ui <- function(id) {
             ) %>% 
                 helper(type = "markdown", 
                        content = "noob_parameter")
-        ),
-        conditionalPanel(
-            condition = "input.run_mode == 'model_choice'", ns = ns,
-            textInput(
-                ns("group"),
-                label = "Scenario grouping and selection"
-            ) %>% 
-                helper(type = "markdown", 
-                       content = "scenario_grouping_selection"),
-            uiOutput(ns("help_group")),
-            uiOutput(ns("feedback_group"))
         ),
         numericInput(
             ns("n_tree"),
@@ -682,7 +682,7 @@ rf_parameter_server <- function(input, output, session,
     })
     
     # check and feedback groups
-    observe({
+    observeEvent(input$group, {
         req(input$group)
         req(local$proj_header_content)
         
@@ -695,7 +695,7 @@ rf_parameter_server <- function(input, output, session,
         )
         
         # save check
-        local$param_ready <- local$param_ready & group_check$valid
+        local$param_ready <- group_check$valid
         
         # feedback
         output$feedback_group <- renderUI({
@@ -799,6 +799,14 @@ rf_parameter_server <- function(input, output, session,
     # observe({
     #     pprint("------- run mode = ")
     #     pprint(out$run_mode)
+    # })
+    
+    # # debugging
+    # observe({
+    #     pprint("--------------------------")
+    #     pprint("RF param")
+    #     pprint(reactiveValuesToList(out))
+    #     pprint("--------------------------")
     # })
     
     ## output
