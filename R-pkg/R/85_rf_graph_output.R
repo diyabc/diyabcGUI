@@ -187,7 +187,8 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
             )) +
             xlab("axis 1") +
             ylab("Density") +
-            theme_bw(base_size = 12)
+            theme_bw(base_size = 12) +
+            theme(legend.title = element_blank())
     } else {
         # at least two LDA axis
         # LDA latent space first two axes: observation vs simulation coordinates
@@ -208,7 +209,8 @@ lda_coordinate_graph <- function(proj_dir, prefix = "modelchoice_out") {
             ) +
             xlab("axis 1") +
             ylab("axis 2") +
-            theme_bw(base_size = 12)
+            theme_bw(base_size = 12) +
+            theme(legend.title = element_blank())
     }
     
     # output

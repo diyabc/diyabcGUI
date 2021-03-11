@@ -94,7 +94,8 @@ pca_coordinate_graph <- function(proj_dir, prefix = "pcaloc1_",
             ylab(str_c("axis", comp[2], 
                        str_c("(", exp_var[comp[2]] * 100, "%)"), 
                        sep = " ")) +
-            theme_bw(base_size = 12)
+            theme_bw(base_size = 12) +
+            theme(legend.title = element_blank())
     }
     # output
     return(g1)
