@@ -16,14 +16,14 @@ library(stringr)
 cwd <- getwd()
 
 # DesktopDeployR directory
-ddr_dir <- file.path(build_dir, "DIYABC-RF_GUI_windows")
-if(!dir.exists(ddr_dir))
+dist_dir <- file.path(build_dir, "DIYABC-RF_GUI_windows")
+if(!dir.exists(dist_dir))
     stop("Missing submodule DesktopDeployR, please init Git submodules")
 
 # dependencies
 fs::file_copy(
     file.path(dist_dir, "requirements.txt"),
-    file.path(ddr_dir, "app", "packages.txt"),
+    file.path(dist_dir, "app", "packages.txt"),
     overwrite = TRUE
 )
 
@@ -31,20 +31,28 @@ fs::file_copy(
 pkg_version <- readLines(file.path(dist_dir, "version"))
 fs::file_copy(
     file.path(dist_dir, "version"),
-    file.path(ddr_dir, "src", "version"),
+    file.path(dist_dir, "src", "version"),
     overwrite = TRUE
+)
+
+# clean standalone source dir
+fs::file_delete(
+    list.files(
+        file.path(dist_dir, "src"), pattern = "diyabcGUI_", 
+        full.names = TRUE
+    )
 )
 
 # diyabcGUI windows source
 win_zip <- paste0("diyabcGUI_", pkg_version, ".zip")
 fs::file_copy(
     file.path(dist_dir, win_zip),
-    file.path(ddr_dir, "src", win_zip),
+    file.path(dist_dir, "src", win_zip),
     overwrite = TRUE
 )
 
 # Environment setup
-setwd(ddr_dir)
+setwd(dist_dir)
 on.exit(setwd(cwd))
 system("cmd.exe /c prepare.bat")
 setwd(cwd)
@@ -53,15 +61,15 @@ Sys.sleep(2)
 
 # standalone name
 app_version <- as.character(packageVersion(
-    "diyabcGUI", lib.loc = file.path(ddr_dir, "app", "library")
+    "diyabcGUI", lib.loc = file.path(dist_dir, "app", "library")
 ))
 app_name <- "DIYABC-RF_GUI"
 full_app_name <- str_c(app_name, "_", app_version)
 
 # zip standalone
 zip_dir <- file.path(build_dir, full_app_name)
-file.rename(ddr_dir, zip_dir)
-on.exit(file.rename(zip_dir, ddr_dir))
+file.rename(dist_dir, zip_dir)
+on.exit(file.rename(zip_dir, dist_dir))
 setwd(build_dir)
 on.exit(setwd(cwd))
 zipfile <- file.path(dist_dir, str_c(full_app_name, "_windows.zip"))
@@ -70,4 +78,4 @@ zip(
     zipfile = zipfile, 
     files = basename(zip_dir)
 )
-file.rename(zip_dir, ddr_dir)
+file.rename(zip_dir, dist_dir)
