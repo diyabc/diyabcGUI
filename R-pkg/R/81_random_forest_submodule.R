@@ -293,6 +293,7 @@ rf_parameter_server <- function(input, output, session,
     local <- reactiveValues(
         valid_proj_name = FALSE,
         param_ready = TRUE,
+        valid_group = FALSE,
         param_list = list(),
         proj_header_content = NULL,
         ref_table_size = 0,
@@ -492,7 +493,7 @@ rf_parameter_server <- function(input, output, session,
                         "means using the full training data set,",
                         "i.e.", tags$code("0"), 
                         "is equivalent to the total number of",
-                        "simulated datasets available for the chosen scenario:", 
+                        "simulated datasets available for the chosen scenario:",
                         tags$b(local$n_rec_per_scenario[
                             as.integer(out$chosen_scenario)
                             ])
@@ -507,7 +508,27 @@ rf_parameter_server <- function(input, output, session,
                     )
                 }
             } else {
-                if(isTruthy(local$ref_table_size) && 
+                if(isTruthy(input$group) && local$valid_group &&
+                   isTruthy(local$n_rec_per_scenario)) {
+                    
+                    group_id <- as.integer(unlist(str_extract_all(
+                        input$group, "[0-9]+"
+                    )))
+                    
+                    n_simu <- sum(as.numeric(
+                        local$n_rec_per_scenario[group_id]
+                    ))
+                    
+                    txt <- tagList(
+                        tags$code("0"), 
+                        "means using the full training data set,",
+                        "i.e.", tags$code("0"), 
+                        "is equivalent to the total number of",
+                        "simulated datasets available for the chosen scenario:",
+                        tags$b(as.character(n_simu))
+                    )
+                    
+                } else if(isTruthy(local$ref_table_size) && 
                    (local$ref_table_size > 0)) {
                     txt <- tagList(
                         tags$code("0"), 
@@ -693,6 +714,7 @@ rf_parameter_server <- function(input, output, session,
             input$group,
             length(file_check$raw_scenario_list)
         )
+        local$valid_group <- group_check$valid
         
         # save check
         local$param_ready <- group_check$valid
