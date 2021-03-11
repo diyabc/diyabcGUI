@@ -590,6 +590,26 @@ rf_parameter_server <- function(input, output, session,
     
     # possible parameters
     output$possible_parameters <- renderUI({
+        
+        tmp_param_list <- local$param_list
+        
+        if(isTruthy(local$proj_header_content) &&
+           isTruthy(local$proj_header_content$raw_scenario_list) &&
+           isTruthy(input$chosen_scenario) &&
+           (input$chosen_scenario <= 
+                length(local$proj_header_content$raw_scenario_list))) {
+            
+            raw_scenario_list <- local$proj_header_content$raw_scenario_list
+            chosen_scenario <- input$chosen_scenario
+            
+            which_param <- Reduce("rbind", lapply(
+                tmp_param_list,
+                function(param) str_detect(raw_scenario_list, param)
+            ))
+            
+            tmp_param_list <- tmp_param_list[which_param[,chosen_scenario]]
+        }
+        
         helpText(
             "You can use one of the following parameter",
             "or an arithmetic combination of them, such",
@@ -597,13 +617,7 @@ rf_parameter_server <- function(input, output, session,
             "two existing parameters. like 't/N' or 't1+t2'.",
             tags$div(
                 style = "column-count:2;",
-                do.call(
-                    tags$ul,
-                    lapply(
-                        local$param_list,
-                        tags$li
-                    )
-                )
+                do.call(tags$ul, lapply(tmp_param_list, tags$li))
             )
         )
     })
