@@ -527,7 +527,7 @@ rf_parameter_server <- function(input, output, session,
                 }
             } else {
                 if(isTruthy(input$group) && local$valid_group &&
-                   isTruthy(local$n_rec_per_scenario)) {
+                   isTruthy(length(local$n_rec_per_scenario) > 0)) {
                     
                     group_id <- as.integer(unlist(str_extract_all(
                         input$group, "[0-9]+"
