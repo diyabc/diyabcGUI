@@ -199,6 +199,7 @@ rf_parameter_ui <- function(id) {
                 value = 1,
                 min = 1
             ),
+            uiOutput(ns("feedback_chosen_scenario")),
             textInput(
                 ns("parameter"),
                 label = "Parameter to estimate"
@@ -330,6 +331,22 @@ rf_parameter_server <- function(input, output, session,
         pls_max_var = NULL,
         run_mode = NULL
     )
+    
+    # output
+    observe({
+        out$group <- input$group
+        out$linear <- input$linear
+        out$chosen_scenario <- input$chosen_scenario
+        out$run_mode <- input$run_mode
+        out$min_node_size <- 0
+        out$n_rec <- input$n_rec
+        out$n_tree <- input$n_tree
+        out$noise_columns <- input$noise_columns
+        out$noob <- input$noob
+        out$parameter <- input$parameter
+        out$pls_max_var <- input$pls_max_var
+        local$param_ready <- TRUE
+    })
     
     ## project name
     proj_name_setup <- callModule(proj_name_server, "proj_name_setup")
@@ -589,6 +606,31 @@ rf_parameter_server <- function(input, output, session,
         })
     })
     
+    # check chosen scenario
+    output$feedback_chosen_scenario <- renderUI({
+        
+        if(!isTruthy(input$chosen_scenario)) {
+            local$param_ready <- FALSE
+        }
+        
+        req(local$proj_header_content)
+        req(local$proj_header_content$raw_scenario_list)
+        req(input$chosen_scenario)
+        
+        max_scenario <- length(local$proj_header_content$raw_scenario_list)
+        
+        if(input$chosen_scenario > max_scenario) {
+            local$param_ready <- FALSE
+            helpText(
+                icon("warning"), "You should choose between scenarii",
+                "from", tags$b("1"), "to", 
+                tags$b(as.character(max_scenario)), "."
+            )
+        } else {
+            NULL
+        }
+    })
+    
     # possible parameters
     output$possible_parameters <- renderUI({
         
@@ -721,82 +763,93 @@ rf_parameter_server <- function(input, output, session,
     
     # check and feedback groups
     observeEvent(input$group, {
-        req(input$group)
-        req(local$proj_header_content)
-        
-        file_check <- local$proj_header_content
-        
-        # check
-        group_check <- parse_abcranger_group(
-            input$group,
-            length(file_check$raw_scenario_list)
-        )
-        local$valid_group <- group_check$valid
-        
-        # save check
-        local$param_ready <- group_check$valid
-        
-        # feedback
-        output$feedback_group <- renderUI({
+        req(input$run_mode)
+        if(input$run_mode == "model_choice") {
+            req(input$group)
+            req(local$proj_header_content)
+            
+            file_check <- local$proj_header_content
+            
+            # check
+            group_check <- parse_abcranger_group(
+                input$group,
+                length(file_check$raw_scenario_list)
+            )
+            local$valid_group <- group_check$valid
+            
+            # save check
             if(!group_check$valid) {
-                helpText(
-                    icon("warning"), "Issue with scenario grouping:",
-                    do.call(
-                        tags$ul,
-                        lapply(group_check$msg, tags$li)
-                    )
-                )
-            } else {
-                NULL
+                local$param_ready <- FALSE
             }
-        })
+            
+            # feedback
+            output$feedback_group <- renderUI({
+                if(!group_check$valid) {
+                    helpText(
+                        icon("warning"), "Issue with scenario grouping:",
+                        do.call(
+                            tags$ul,
+                            lapply(group_check$msg, tags$li)
+                        )
+                    )
+                } else {
+                    NULL
+                }
+            })
+        }
     })
     
     # check parameter input
     output$missing_parameter <- renderUI({
-        if(is.null(input$parameter)) {
-            helpText(
-                icon("warning"), "Missing parameter."
-            )
-        } else {
-            if(str_length(input$parameter) == 0) {
+        req(input$run_mode)
+        if(input$run_mode == "param_estim") {
+            if(is.null(input$parameter)) {
+                local$param_ready <- FALSE
                 helpText(
                     icon("warning"), "Missing parameter."
                 )
             } else {
-                if(length(local$updated_param_list) > 0) {
-                    possible_param <- str_c(
-                        "(",
-                        str_c(
-                            unlist(local$updated_param_list), 
-                            collapse = "|"
-                        ),
-                        ")"
+                if(str_length(input$parameter) == 0) {
+                    local$param_ready <- FALSE
+                    helpText(
+                        icon("warning"), "Missing parameter."
                     )
-                        
-                    pttrn <- str_c(
-                        "^", possible_param, 
-                        "([\\+\\-\\*/]", possible_param, ")?$"
-                    )
-                    
-                    if(!str_detect(input$parameter, pttrn)) {
-                        local$param_ready <- FALSE
-                        helpText(
-                            icon("warning"),
-                            "Issue with provided parameter",
-                            "or combination of parameters."
-                        )
-                    } else {
-                        local$param_ready <- TRUE
-                        helpText(
-                            icon("check"),
-                            "Parameter to estimate is ok."
-                        )
-                    }
                 } else {
-                    NULL
+                    if(length(local$updated_param_list) > 0) {
+                        possible_param <- str_c(
+                            "(",
+                            str_c(
+                                unlist(local$updated_param_list), 
+                                collapse = "|"
+                            ),
+                            ")"
+                        )
+                            
+                        pttrn <- str_c(
+                            "^", possible_param, 
+                            "([\\+\\-\\*/]", possible_param, ")?$"
+                        )
+                        
+                        if(!str_detect(input$parameter, pttrn)) {
+                            local$param_ready <- FALSE
+                            helpText(
+                                icon("warning"),
+                                "Issue with provided parameter",
+                                "or combination of parameters."
+                            )
+                        } else {
+                            helpText(
+                                icon("check"),
+                                "Parameter to estimate is ok."
+                            )
+                        }
+                    } else {
+                        NULL
+                    }
                 }
             }
+        } else {
+            NULL
         }
     })
     
@@ -808,11 +861,7 @@ rf_parameter_server <- function(input, output, session,
                 local$param_ready <- FALSE
             } else if(str_length(input$parameter) == 0) {
                 local$param_ready <- FALSE
-            } else {
-                local$param_ready <- TRUE
             }
-        } else {
-            local$param_ready <- TRUE
         }
     })
     
@@ -820,21 +869,6 @@ rf_parameter_server <- function(input, output, session,
         req(!is.null(local$param_ready))
         req(!is.null(local$valid_proj_name))
         out$param_ready <- local$param_ready & local$valid_proj_name
-    })
-    
-    # output
-    observe({
-        out$group <- input$group
-        out$linear <- input$linear
-        out$chosen_scenario <- input$chosen_scenario
-        out$run_mode <- input$run_mode
-        out$min_node_size <- 0
-        out$n_rec <- input$n_rec
-        out$n_tree <- input$n_tree
-        out$noise_columns <- input$noise_columns
-        out$noob <- input$noob
-        out$parameter <- input$parameter
-        out$pls_max_var <- input$pls_max_var
     })
     
     # observe({
