@@ -294,7 +294,8 @@ rf_parameter_server <- function(input, output, session,
         valid_proj_name = FALSE,
         param_ready = TRUE,
         valid_group = FALSE,
-        param_list = list(),
+        param_list = NULL,
+        updated_param_list = NULL,
         proj_header_content = NULL,
         ref_table_size = 0,
         n_rec_per_scenario = list(),
@@ -610,6 +611,8 @@ rf_parameter_server <- function(input, output, session,
             tmp_param_list <- tmp_param_list[which_param[,chosen_scenario]]
         }
         
+        local$updated_param_list <- tmp_param_list
+        
         helpText(
             "You can use one of the following parameter",
             "or an arithmetic combination of them, such",
@@ -761,11 +764,11 @@ rf_parameter_server <- function(input, output, session,
                     icon("warning"), "Missing parameter."
                 )
             } else {
-                if(length(local$param_list) > 0) {
+                if(length(local$updated_param_list) > 0) {
                     possible_param <- str_c(
                         "(",
                         str_c(
-                            unlist(local$param_list), 
+                            unlist(local$updated_param_list), 
                             collapse = "|"
                         ),
                         ")"
@@ -777,12 +780,14 @@ rf_parameter_server <- function(input, output, session,
                     )
                     
                     if(!str_detect(input$parameter, pttrn)) {
+                        local$param_ready <- FALSE
                         helpText(
                             icon("warning"),
                             "Issue with provided parameter",
                             "or combination of parameters."
                         )
                     } else {
+                        local$param_ready <- TRUE
                         helpText(
                             icon("check"),
                             "Parameter to estimate is ok."
