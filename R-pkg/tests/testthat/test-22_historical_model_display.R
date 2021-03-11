@@ -872,4 +872,34 @@ test_that("display_hist_model", {
     parsed_scenario <- parse_scenario(text)
     data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
     g1 <- display_hist_model(data2plot)
+    
+    # more complicated scenario with ghost pop
+    text <- str_c(
+        "N1 NKo NKa NJ12 N2 N3 N4 Na",
+        "0 sample 1",
+        "0 sample 2",
+        "0 sample 3",
+        "0 sample 4",
+        "0 sample 5",
+        "0 sample 6",
+        "0 sample 7",
+        "tJ12-DBJ12 varNe 4 NJ12B",
+        "tJ12 VarNe 4 NgJ12",
+        "tgJ12 merge 8 4",
+        "tKa-DBKa varNe 3 NKaB",
+        "tKa VarNe 3 NgKa",
+        "tgKa merge 8 3",
+        "tKo-DBKo varNe 2 NKoB",
+        "tKo VarNe 2 NgKo",
+        "tgKo merge 8 2",
+        "t1 merge 8 1",
+        "t2 merge 8 5",
+        "t3 merge 8 6",
+        "t4 merge 8 7",
+        "ta VarNe 8 Naold",
+        sep = "\n"
+    )
+    parsed_scenario <- parse_scenario(text)
+    data2plot <- prepare_hist_model_display(parsed_scenario, grid_unit)
+    g1 <- display_hist_model(data2plot)
 })
