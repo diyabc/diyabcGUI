@@ -35,14 +35,6 @@ fs::file_copy(
     overwrite = TRUE
 )
 
-# clean standalone source dir
-fs::file_delete(
-    list.files(
-        file.path(win_dir, "src"), pattern = "diyabcGUI_", 
-        full.names = TRUE
-    )
-)
-
 # diyabcGUI windows source
 win_zip <- paste0("diyabcGUI_", pkg_version, ".zip")
 fs::file_copy(
@@ -58,6 +50,14 @@ system("cmd.exe /c prepare.bat")
 setwd(cwd)
 
 Sys.sleep(2)
+
+# clean standalone source dir before zipping
+fs::file_delete(
+    list.files(
+        file.path(win_dir, "src"), pattern = "diyabcGUI_", 
+        full.names = TRUE
+    )
+)
 
 # standalone name
 app_version <- as.character(packageVersion(
