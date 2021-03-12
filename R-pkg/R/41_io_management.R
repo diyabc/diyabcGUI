@@ -823,6 +823,7 @@ check_poolseq_snp_data_file <- function(data_file, data_dir,
                     # loci
                     if(valid) {
                         # filtering locus
+                        # TODO check (> or >=) and (& or |) for mrc filter
                         allele1_count <- apply(
                             content[,rep(c(TRUE,FALSE), n_pop)], 1, sum
                         )
