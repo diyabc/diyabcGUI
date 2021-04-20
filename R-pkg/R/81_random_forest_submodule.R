@@ -511,7 +511,7 @@ rf_parameter_server <- function(input, output, session,
                         "means using the full training data set,",
                         "i.e.", tags$code("0"), 
                         "is equivalent to the total number of",
-                        "simulated datasets available for the chosen scenario:",
+                        "simulated datasets available for the chosen scenarii:",
                         tags$b(local$n_rec_per_scenario[
                             as.integer(out$chosen_scenario)
                             ])
@@ -542,7 +542,7 @@ rf_parameter_server <- function(input, output, session,
                         "means using the full training data set,",
                         "i.e.", tags$code("0"), 
                         "is equivalent to the total number of",
-                        "simulated datasets available for the chosen scenario:",
+                        "simulated datasets available for the chosen scenarii:",
                         tags$b(as.character(n_simu))
                     )
                     
