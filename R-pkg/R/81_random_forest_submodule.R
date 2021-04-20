@@ -656,13 +656,24 @@ rf_parameter_server <- function(input, output, session,
         local$updated_param_list <- tmp_param_list
         
         helpText(
-            "You can use one of the following parameter",
-            "or an arithmetic combination of them, such",
-            "as division, addition or multiplication of",
-            "two existing parameters. like 't/N' or 't1+t2'.",
-            tags$div(
-                style = "column-count:2;",
-                do.call(tags$ul, lapply(tmp_param_list, tags$li))
+            tags$p(
+                "You can use one of the following parameter",
+                "or an arithmetic combination of them, such",
+                "as division, addition or multiplication of",
+                "two existing parameters:", 
+            ),
+            tags$p(
+                tags$div(
+                    style = "column-count:2;",
+                    do.call(tags$ul, lapply(tmp_param_list, tags$li))
+                )
+            ),
+            tags$p(
+                tags$i("Example of arithmetic possible combinations:"),
+                tags$code("t/N"), "or", tags$code("t1+t2"),
+                "or", tags$code("N*µmic_1"), 
+                "(to be adapted with the name of the parameters", 
+                "in your model)."
             )
         )
     })
