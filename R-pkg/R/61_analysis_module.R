@@ -156,21 +156,22 @@ proj_type_ui <- function(id) {
                 style = "margin-top: 10px;"
             ),
             tags$li(
-                "When uploading single project-related files,",
+                "When uploading", tags$b("single project-related files"),
                 "you", tags$b("should"), "upload all required files", 
                 "at the same time (use", tags$code("CTRL+click"), 
-                "to select multiple files).",
+                "to select multiple files in the file chooser window).",
                 style = "margin-top: 10px;"
             ),
             tags$li(
-                "If you re-upload a file or a group of files, ",
-                "it will delete any previous upload.",
+                "If you", tags$b("re-upload"), "a file or a group of files,",
+                "it will", tags$b("delete"), "and", tags$b("replace"), 
+                "any previous upload.",
                 style = "margin-top: 10px;"
             ),
             tags$li(
                 "If some project files are missing or have formating issues", 
                 "you will be able to (re)configure",
-                "the corresponding settings below.",
+                "the corresponding settings in the next panel.",
                 style = "margin-top: 10px;"
             )
         )
@@ -588,201 +589,6 @@ proj_type_server <- function(input, output, session) {
     #            style="text-align:center;")
     #     }
     # })
-}
-
-#' Manage uploading of existing project related files
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param file_input data.frame with fields name (chr), size (int), 
-#' type (chr), datapath (chr) storing new uploaded files.
-#' @param proj_dir character string, path to project directory.
-manage_existing_proj_file <- function(file_input, proj_dir) {
-    
-    # init output
-    out <- list(msg = list(), valid = FALSE)
-    
-    # # debugging
-    # pprint("file input")
-    # pprint(file_input)
-    
-    # check if project zip files was provided
-    check4zip <- manage_proj_zip_file(file_input)
-    out$msg <- append(out$msg, check4zip$msg)
-    
-    if(check4zip$zip_file) {
-        if(!check4zip$valid) {
-            out$valid <- FALSE
-            return(out)
-        }
-        file_input <- check4zip$file_input
-    }
-    
-    # # debugging
-    # pprint("file input")
-    # pprint(file_input)
-    
-    # manage new uploaded project files
-    if(nrow(file_input) > 0) {
-        
-        # empty project directory
-        fs::dir_delete(list.dirs(proj_dir, recursive = FALSE))
-        fs::file_delete(list.files(proj_dir, full.names = TRUE))
-        
-        # copy files to project directory
-        lapply(
-            split(file_input, seq(nrow(file_input))),
-            function(item) {
-                if(item$type == "diyabc_dir") {
-                    fs::dir_copy(
-                        item$datapath,
-                        file.path(proj_dir, item$name),
-                        overwrite = TRUE
-                    )
-                    if(dir.exists(item$datapath)) {
-                        # logging("deleting:", item$datapath)
-                        fs::dir_delete(item$datapath)
-                    }
-                } else {
-                    fs::file_copy(item$datapath,
-                                  file.path(proj_dir, item$name),
-                                  overwrite = TRUE)
-                    if(file.exists(item$datapath)) {
-                        # logging("deleting:", item$datapath)
-                        fs::file_delete(item$datapath)
-                    }
-                }
-            }
-        )
-        
-        # valid upload ?
-        out$valid <- TRUE
-    }
-    
-    # output
-    return(out)
-}
-
-#' Manage existing project zip file
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param file_input data.frame with fields name (chr), size (int), 
-#' type (chr), datapath (chr) storing new uploaded files.
-manage_proj_zip_file <- function(file_input) {
-    
-    # init output
-    out <- list(
-        file_input = NULL, msg = list(), zip_file = FALSE, valid = FALSE
-    )
-    
-    # any uploaded zip file ?
-    zip_file_ind <- (file_input$type == "application/zip")
-    
-    ## IF NOT
-    if(!any(zip_file_ind)) {
-        return(out)
-    }
-    
-    ## ELSE
-    out$zip_file <- TRUE
-    
-    # a single or multiple zip files ?
-    if(sum(zip_file_ind) > 1) {
-        msg <- tagList(
-            "You provided more than", tags$b("one"), "project", 
-            tags$code("zip"), "files."
-        )
-        out$msg <- append(out$msg, list(msg))
-        out$valid <- FALSE
-        return(out)
-    }
-    
-    # a zip file and other files ?
-    if(nrow(file_input) > 1) {
-        msg <- tagList(
-            "You provided a project", tags$code("zip"), "file",
-            tags$b("and"), "other file(s)."
-        )
-        out$msg <- append(out$msg, list(msg))
-        out$valid <- FALSE
-        return(out)
-    }
-    
-    ## READY TO EXTRACT PROJECT FILES
-    out$valid <- TRUE
-    
-    # temp data dir
-    tmp_data_dir <- dirname(file_input$datapath[1])
-    
-    # extract project files
-    unzip(
-        file_input$datapath[1], 
-        exdir = dirname(file_input$datapath[1])
-    )
-    
-    # remove zip file
-    fs::file_delete(file_input$datapath[1])
-    
-    # list content of zip file
-    tmp_file_list <- list.files(tmp_data_dir)
-    
-    if(length(tmp_file_list) > 0) {
-        
-        # modify file_input with extracted files
-        #   data.frame with 4 columns:
-        #       name (chr), size (int), type (chr), datapath (chr)
-        out$file_input <- Reduce(
-            "rbind",
-            lapply(
-                tmp_file_list,
-                function(tmp_file) {
-                    tmp_file_info <- file.info(
-                        file.path(tmp_data_dir, tmp_file)
-                    )
-                    return(
-                        data.frame(
-                            name = tmp_file,
-                            size = tmp_file_info$size,
-                            type = ifelse(
-                                tmp_file_info$isdir,
-                                "diyabc_dir",
-                                "diyabc_file"
-                            ),
-                            datapath = file.path(tmp_data_dir, tmp_file),
-                            stringsAsFactors = FALSE
-                        )
-                    )
-                }
-            )
-        )
-        
-        ## specific file type
-        ind <- which(out$file_input$name == "headerRF.txt")
-        out$file_input$type[ind] <- "text/plain"
-        ind <- which(out$file_input$name == "reftableRF.bin")
-        out$file_input$type[ind] <- "application/octet-stream"
-        ind <- which(out$file_input$name == "statObsRF.txt")
-        out$file_input$type[ind] <- "text/plain"
-        
-    } else {
-        out$file_input <- head(file_input, 0)
-        out$valid <- FALSE
-        msg <- tagList(
-            "You provided an empty project", tags$code("zip"), "file.",
-        )
-        out$msg <- append(out$msg, list(msg))
-    }
-    
-    # output
-    return(out)
-}
-
-#' Check existing project related files
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param file_input data.frame with fields name (chr), size (int), 
-#' @param proj_dir character string, path to project directory.
-check_proj_file <- function(proj_dir) {
-    # WRITEME
 }
 
 #' Input data ui
