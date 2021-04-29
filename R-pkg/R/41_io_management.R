@@ -3,10 +3,8 @@
 #' @author Ghislain Durif
 check_file_name <- function(file_name) {
     valid <- TRUE
-    if(!is.character(file_name))
-        valid <- FALSE
-    else if(!file.exists(file_name))
-        valid <- FALSE
+    if((length(file_name) != 1) || !is.character(file_name) || 
+       !file.exists(file_name)) valid <- FALSE
     return(valid)
 }
 
@@ -1718,6 +1716,39 @@ check_header_loci_des <- function(strng, type = "mss") {
     valid <- str_detect(strng, pttrn)
     ## output
     return(valid)
+}
+
+#' Parse diyabc statobsRF.txt file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Content: see doc
+#' @param file_name string, (server-side) path to a headersim file.
+#' @param file_type string, MIME file type.
+#' @param n_stat integer, number of summary statistics in reftable.
+parse_diyabc_statobs <- function(file_name, file_type, n_stat) {
+    
+    # init output
+    out <- list(msg = list(), valid = FALSE)
+    
+    # check file_name
+    tmp <- check_file_name(file_name)
+    
+    # check file_type
+    if(file_type != "text/plain") {
+        out$valid <- FALSE
+        msg <- tagList("Wrong file type.")
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    
+    
+    # try reading it
+    tmp <- tryCatch(
+        read.table(file_name)
+    )
+    
 }
 
 #' Parse diyabc simulation header file
