@@ -14,15 +14,15 @@ proj_file_input <- function(file_input, proj_dir) {
     # pprint(file_input)
     
     # check if project zip files was provided
-    check4zip <- manage_proj_zip_file(file_input)
-    out$msg <- append(out$msg, check4zip$msg)
+    is_zip <- proj_zip_file_input(file_input)
+    out$msg <- append(out$msg, is_zip$msg)
     
-    if(check4zip$zip_file) {
-        if(!check4zip$valid) {
+    if(is_zip$zip_file) {
+        if(!is_zip$valid) {
             out$valid <- FALSE
             return(out)
         }
-        file_input <- check4zip$file_input
+        file_input <- is_zip$file_input
     }
     
     # # debugging
@@ -64,6 +64,13 @@ proj_file_input <- function(file_input, proj_dir) {
         
         # valid upload ?
         out$valid <- TRUE
+    
+    } else {
+        msg <- tagList(
+            "No file was provided."
+        )
+        out$msg <- append(out$msg, list(msg))
+        out$valid <- FALSE
     }
     
     # output
