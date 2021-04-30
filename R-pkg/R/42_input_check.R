@@ -15,8 +15,6 @@ check_file_name <- function(file_name) {
 #' Content: see doc
 #' @param cstrng string, prior description.
 check_header_prior <- function(strng) {
-    # init output
-    valid <- TRUE
     # check
     pttrn <- str_c(single_param_regex(), " ",
                    "(N|T|A)", " ",
@@ -35,9 +33,6 @@ check_header_prior <- function(strng) {
 #' Content: see doc
 #' @param strng string, prior description.
 check_header_cond <- function(strng) {
-    # init output
-    issues <- list()
-    valid <- TRUE
     # check
     pttrn <- str_c("^", single_param_regex(), "(<|=<|>|>=)",
                    single_param_regex(),  "$")
@@ -55,7 +50,7 @@ check_header_cond <- function(strng) {
 #' @param type string, `"mss"` or `"snp"`
 check_header_loci_desc <- function(strng, type = "mss") {
     # init output
-    valid <- TRUE
+    valid <- FALSE
     # Microsat/Sequence
     if(type == "mss") {
         # Locus_M_A_1_ <A> [M] G1 2 40
