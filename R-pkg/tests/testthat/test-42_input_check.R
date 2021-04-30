@@ -43,3 +43,47 @@ test_that("check_header_cond", {
     expect_false(check_header_cond("<t2"))
 })
 
+test_that("check_header_loci_desc", {
+    ## MSS
+    expect_true(check_header_loci_desc(
+        "Locus_xxx <A> [M] G1 2 40", type = "mss"
+    ))
+    expect_true(check_header_loci_desc(
+        "Locus_yyy <M> [S] G2 1000", type = "mss"
+    ))
+    
+    expect_false(check_header_loci_desc(
+        "Locus_xxx <A> [M G1 2 40", type = "mss"
+    ))
+    expect_false(check_header_loci_desc(
+        "<A> [M] G1 2 40", type = "mss"
+    ))
+    expect_false(check_header_loci_desc(
+        "Locus_xxx <A> [M] G1 2", type = "mss"
+    ))
+    expect_false(check_header_loci_desc(
+        "Locus_yyy <M [S] G2 1000", type = "mss"
+    ))
+    expect_false(check_header_loci_desc(
+        "Locus_yyy <M [S] G2 1000 3000", type = "mss"
+    ))
+    
+    ## SNP
+    expect_true(check_header_loci_desc(
+        "5000 <A> G1 from 1", type = "snp"
+    ))
+    expect_true(check_header_loci_desc(
+        "5000 <X> G2 from 10", type = "snp"
+    ))
+    
+    expect_false(check_header_loci_desc(
+        "<X> G2 from 10", type = "snp"
+    ))
+    expect_false(check_header_loci_desc(
+        "5000 <X> G2 from ", type = "snp"
+    ))
+    expect_false(check_header_loci_desc(
+        "5000 <X> G from 10", type = "snp"
+    ))
+})
+
