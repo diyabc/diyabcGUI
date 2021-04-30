@@ -20,3 +20,15 @@ test_that("check_file_name", {
     file_name <- 19
     expect_false(check_file_name(file_name))
 })
+
+
+test_that("check_header_prior", {
+    expect_true(check_header_prior("N N UN[100,10000,0.0,0.0]"))
+    expect_true(check_header_prior("ra A UN[0.05,0.95,0.0,0.0]"))
+    expect_true(check_header_prior("t T UN[10,1000,0.0,0.0]"))
+    
+    expect_false(check_header_prior("N N UN[100,10000,0.0]"))
+    expect_false(check_header_prior("ra A [0.05,0.95,0.0,0.0]"))
+    expect_false(check_header_prior("T UN[10,1000,0.0,0.0]"))
+})
+

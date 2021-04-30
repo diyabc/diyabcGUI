@@ -7,3 +7,23 @@ check_file_name <- function(file_name) {
        !file.exists(file_name)) valid <- FALSE
     return(valid)
 }
+
+#' Check header file prior definition
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Content: see doc
+#' @param cstrng string, prior description.
+check_header_prior <- function(strng) {
+    # init output
+    valid <- TRUE
+    # check
+    pttrn <- str_c(single_param_regex(), " ",
+                   "(N|T|A)", " ",
+                   "(UN|LU|NO|LN)", "\\[",
+                   str_c(rep(num_regex(), 4), collapse = ","),
+                   "\\]")
+    valid <- str_detect(strng, pttrn)
+    ## output
+    return(valid)
+}
