@@ -95,7 +95,7 @@ test_that("check_header_group_prior", {
         "MEANMU UN[1.00E-004,1.00E-3,0.0005,2]",
         "GAMMU GA[1.00E-005,1.00E-002,Mean_u,2]",
         "MEANP UN[1.00E-001,3.00E-001,0.22,2]",
-        "GAMP GA[1.00E-002,9.00E-001,Mean_P,2]",
+        "GAMP GA[1.00e-002,9.00E-001,Mean_P,2]",
         "MEANSNI LU[1.00E-008,1.00E-005,1.00E-007,2]",
         "GAMSNI GA[1.00E-009,1.00E-004,Mean_u_SNI,2]"
     )
@@ -133,7 +133,7 @@ test_that("check_header_group_prior", {
     
     ## SNP
     content <- c(
-        "MEANMU UN[1.00E-9,1.00E-7,5E-9,2]",
+        "MEANMU UN[1.00e-9,1.00E-7,5E-9,2]",
         "GAMMU GA[1.00E-9,1.00E-6,Mean_u,2]",
         "MEANK1 UN[0.050,20,10,2]",
         "GAMK1 GA[0.050,20,Mean_k1,2]",
