@@ -142,10 +142,11 @@ check_header_group_prior <- function(content, type = "M") {
     }
     
     # check all pattern
-    valid <- all(unlist(lapply(
+    check_pttrn <- unlist(lapply(
         1:length(content),
         function(ind) return(str_detect(content[ind], prior_regex_list[ind]))
-    )))
+    ))
+    valid <- all(check_pttrn)
     
     ## output
     return(valid)
