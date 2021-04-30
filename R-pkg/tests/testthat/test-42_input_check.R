@@ -32,3 +32,14 @@ test_that("check_header_prior", {
     expect_false(check_header_prior("T UN[10,1000,0.0,0.0]"))
 })
 
+test_that("check_header_cond", {
+    expect_true(check_header_cond("t1>t2"))
+    expect_true(check_header_cond("t1>=t2"))
+    expect_true(check_header_cond("t1<t2"))
+    expect_true(check_header_cond("t1=<t2"))
+    
+    expect_false(check_header_cond("t1>"))
+    expect_false(check_header_cond("t1>"))
+    expect_false(check_header_cond("<t2"))
+})
+

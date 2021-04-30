@@ -27,3 +27,21 @@ check_header_prior <- function(strng) {
     ## output
     return(valid)
 }
+
+#' Check header file condition definition
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Content: see doc
+#' @param strng string, prior description.
+check_header_cond <- function(strng) {
+    # init output
+    issues <- list()
+    valid <- TRUE
+    # check
+    pttrn <- str_c("^", single_param_regex(), "(<|=<|>|>=)",
+                   single_param_regex(),  "$")
+    valid <- str_detect(strng, pttrn)
+    ## output
+    return(valid)
+}
