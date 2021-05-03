@@ -211,7 +211,8 @@ proj_type_ui <- function(id) {
                     ".zip"
                 )
             ),
-            uiOutput(ns("feedbak_existing"))
+            uiOutput(ns("feedbak_existing")),
+            uiOutput(ns("proj_file_list"))
         ),
         conditionalPanel(
             condition = "input.proj_type == 'example'",
@@ -278,22 +279,66 @@ proj_type_server <- function(input, output, session) {
         req(input$proj_type == "existing")
         req(input$file_input)
         
-        tmp <- manage_existing_proj_file(input$file_input, env$ap$proj_dir)
-        
-        print(tmp)
+        input_check <- tryCatch(
+            proj_file_input(input$file_input, env$ap$proj_dir),
+            error = function(e) return(NULL)
+        )
         
         output$feedbak_existing <- renderUI({
-            if(length(tmp$msg) > 0) {
+            if(is.null(input_check) || !input_check$valid) {
                 msg <- "Issue(s) with uploaded file(s)."
-                feedbackWarning("file_input", length(tmp$msg) > 0, msg)
-                tags$div(
-                    do.call(tags$ul, lapply(tmp$msg, tags$li)), 
-                    style = "color: #F89406; margin-top: -15px;"
+                feedbackWarning(
+                    "file_input", is.null(input_check) || !input_check$valid, 
+                    msg
                 )
+                if(length(input_check$msg) > 0) {
+                    tags$div(
+                        icon("warning"), "Issue(s) with uploaded file(s):",
+                        do.call(tags$ul, lapply(input_check$msg, tags$li)), 
+                        style = "color: #F89406; margin-top: -15px;"
+                    )
+                } else {
+                    NULL
+                }
             } else {
                 NULL
             }
         })
+    })
+    
+    # list of uploaded project files
+    observeEvent({c(input$proj_type, input$file_input)}, {
+        req(input$proj_type)
+        req(input$proj_type == "existing")
+        
+        output$proj_file_list <- renderUI({
+            proj_file_list <- list.files(env$ap$proj_dir)
+            
+            if(length(proj_file_list) > 0) {
+                helpText(
+                    icon("comment"), "List of upload files:",
+                    tags$div(
+                        do.call(tags$ul, lapply(
+                            list.files(env$ap$proj_dir), 
+                            function(item) return(tags$li(tags$code(item)))
+                        )),
+                        style = "column-count:2;"
+                    )
+                )
+            } else {
+                tags$div(
+                    icon("warning"), "No file was uploaded.",
+                    style = "color: #F89406;"
+                )
+            }
+        })
+    })
+    
+    # reset file upload when another mode is chosen
+    observe({
+        req(input$proj_type)
+        req(input$proj_type != "existing")
+        shinyjs::reset("file_input")
     })
     
     # ## new or existing project
