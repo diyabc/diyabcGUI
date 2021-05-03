@@ -1,18 +1,5 @@
 context("41_input_read")
 
-# test_that("header_reader", {
-#     
-#     # existing file
-#     test_proj <- "IndSeq_SNP_model_choice"
-#     test_dir <- file.path(data4test_dir(), test_proj)
-#     file_name <- file.path(test_dir, "headerRF.txt")
-#     file_type <- "text/plain"
-#     
-#     tmp <- header_reader(file_name, file_type)
-#     expect_true(tmp$valid)
-# 
-# })
-
 test_that("read_header", {
     
     ## SNP IndSeq
