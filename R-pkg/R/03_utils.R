@@ -42,21 +42,6 @@ find_bin <- function(prog = "diyabc") {
     return(bin_file)
 }
 
-#' Clean binary directory
-#' @keywords internal
-#' @author Ghislain Durif
-clean_bin_dir <- function() {
-    # bin directory
-    path <- bin_dir()
-    # existing binary file
-    existing_bin_files <- list.files(path)
-    existing_bin_files <- existing_bin_files[str_detect(existing_bin_files, 
-                                                        "diyabc|abcranger|dll")]
-    # delete diyabc/abcranger files
-    if(length(existing_bin_files) > 0) {
-        fs::file_delete(file.path(path, existing_bin_files))
-    }
-}
 
 #' Find which OS is running
 #' @keywords internal

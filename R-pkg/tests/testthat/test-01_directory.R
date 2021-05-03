@@ -54,3 +54,11 @@ test_that("clean_proj_dir", {
     expect_equal(length(list.files(tmp_dir)), 0)
     
 })
+
+test_that("clean_bin_dir", {
+    # test cleaning
+    clean_bin_dir()
+    expect_true(all(list.files(bin_dir()) %in% c("LICENSE", "README.md")))
+    # dl latest bin
+    dl_all_latest_bin()
+})

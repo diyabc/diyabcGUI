@@ -22,14 +22,6 @@ test_that("find_bin", {
     expect_true(file.exists(path))
 })
 
-test_that("clean_bin_dir", {
-    # test cleaning
-    clean_bin_dir()
-    expect_true(all(list.files(bin_dir()) %in% c("LICENSE", "README.md")))
-    # dl latest bin
-    dl_all_latest_bin()
-})
-
 test_that("get_os", {
     expect_true(is.character(get_os("abcranger")))
 })
