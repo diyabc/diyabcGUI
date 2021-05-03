@@ -35,6 +35,10 @@ init_diyabcrf_env <- function() {
         proj_dir = NULL,        # project directory
         locus_type = "snp",     # "snp" or "mss"
         seq_mode = "indseq",    # "indseq" or "poolseq"
+        proj_file_list = NULL,  # content of the project
+        header_check = NULL,    # result of header file check
+        reftable_check = NULL,  # result of reftable file check
+        statobs_check = NULL,   # result of statobs file check
         ## observed data
         data_file = NULL        # observed data file name
     )
@@ -125,6 +129,7 @@ init_datagen_env <- function() {
         proj_dir = NULL,         # project directory
         locus_type = NULL,       # "SNP" or "MSS"
         seq_mode = NULL,         # "IndSeq" or "PoolSeq"
+        proj_file_list = NULL,  # content of the project
         ## data description
         model = NULL,            # historical model
         param = NULL,           # list of parameter values
