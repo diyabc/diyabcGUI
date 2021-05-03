@@ -262,3 +262,14 @@ getter <- function(var1, var2, env = diyabc_env) {
 setter <- function(val, var1, var2, env = diyabc_env) {
     env[[ as.character(substitute(var1)) ]][[ as.character(substitute(var2)) ]] <<- val
 }
+
+#' Update project files
+#' @keywords internal
+#' @author Ghislain Durif
+update_proj_file <- function(tag = "ap") {
+    # increment file modification counter
+    env[[tag]]$file_modif <- 
+        ifelse(!is.null(env[[tag]]$file_modif), env[[tag]]$file_modif, 0) + 1
+    # file list
+    env[[tag]]$proj_file_list <- list.files(env[[tag]]$proj_dir)
+}
