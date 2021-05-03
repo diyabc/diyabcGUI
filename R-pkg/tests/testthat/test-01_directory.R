@@ -35,3 +35,22 @@ test_that("mk_proj_dir", {
     expect_true(dir.exists(path))
     expect_error(fs::dir_delete(path), NA)
 })
+
+test_that("clean_proj_dir", {
+    # test dir
+    tmp_dir <- mk_proj_dir("test_clean_proj_dir")
+    # setup test
+    fs::file_create(file.path(tmp_dir, "file1"))
+    fs::file_create(file.path(tmp_dir, "file2"))
+    fs::dir_create(file.path(tmp_dir, "subdir1"))
+    fs::file_create(file.path(tmp_dir, "subdir1", "file1"))
+    fs::file_create(file.path(tmp_dir, "subdir1", "file1"))
+    fs::dir_create(file.path(tmp_dir, "subdir1", "subdir2"))
+    fs::file_create(file.path(tmp_dir, "subdir1", "subdir2", "file1"))
+    fs::file_create(file.path(tmp_dir, "subdir1", "subdir2", "file1"))
+    # run
+    clean_proj_dir(tmp_dir)
+    # check
+    expect_equal(length(list.files(tmp_dir)), 0)
+    
+})
