@@ -36,6 +36,8 @@ init_diyabcrf_env <- function() {
         locus_type = "snp",     # "snp" or "mss"
         seq_mode = "indseq",    # "indseq" or "poolseq"
         proj_file_list = NULL,  # content of the project
+        file_modif = NULL,      # counter for project file modification 
+                                # (upload, new header, ...)
         header_check = NULL,    # result of header file check
         reftable_check = NULL,  # result of reftable file check
         statobs_check = NULL,   # result of statobs file check
@@ -130,6 +132,8 @@ init_datagen_env <- function() {
         locus_type = NULL,       # "SNP" or "MSS"
         seq_mode = NULL,         # "IndSeq" or "PoolSeq"
         proj_file_list = NULL,  # content of the project
+        file_modif = NULL,      # counter for project file modification 
+                                # (upload, new header, ...)
         ## data description
         model = NULL,            # historical model
         param = NULL,           # list of parameter values
