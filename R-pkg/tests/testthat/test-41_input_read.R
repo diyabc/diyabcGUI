@@ -279,3 +279,57 @@ test_that("read_statobs", {
     expect_false(tmp$valid)
     expect_true(length(tmp$msg) == 2)
 })
+
+
+test_that("read_reftable", {
+    
+    ## SNP estim param
+    test_proj <- "IndSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "reftableRF.bin")
+    file_type <- "application/octet-stream"
+    res <- read_reftable(file_name, file_type)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_equal(res$n_rec, 12000)
+    expect_equal(res$n_scen, 1)
+    expect_equal(res$n_rec_scen, 12000)
+    expect_equal(res$n_param, 8)
+    expect_equal(res$n_stat, 130)
+    
+    ## SNP model choice
+    test_proj <- "IndSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "reftableRF.bin")
+    file_type <- "application/octet-stream"
+    res <- read_reftable(file_name, file_type)
+    expect_equal(length(res$msg), 0)
+    expect_equal(res$n_rec, 12000)
+    expect_equal(res$n_scen, 6)
+    expect_equal(res$n_rec_scen, c(1942L, 1950L, 2028L, 2001L, 1994L, 2085L))
+    expect_equal(res$n_param, c(8L, 8L, 8L, 7L, 7L, 7L))
+    expect_equal(res$n_stat, 130)
+    
+    ## wrong file type
+    test_proj <- "IndSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "reftableRF.bin")
+    file_type <- "text/plain"
+    res <- read_reftable(file_name, file_type)
+    expect_false(res$valid)
+    expect_true(length(res$msg) == 1)
+    
+    ## unexisting file
+    file_name <- file.path(test_dir, "toto.txt")
+    file_type <- "application/octet-stream"
+    res <- read_reftable(file_name, file_type)
+    expect_false(res$valid)
+    expect_true(length(res$msg) == 1)
+    
+    ## unexisting file and wrong file type
+    file_name <- file.path(test_dir, "toto.txt")
+    file_type <- "toto"
+    res <- read_reftable(file_name, file_type)
+    expect_false(res$valid)
+    expect_true(length(res$msg) == 2)
+})

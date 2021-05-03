@@ -687,6 +687,7 @@ read_statobs <- function(file_name, file_type, n_stat) {
 #' Read and parse reftableRF.bin file
 #' @keywords internal
 #' @author Ghislain Durif
+#' @author François-David Collin
 #' @description
 #' Content: see doc
 #' @param file_name string, (server-side) path to a headersim file.
@@ -694,7 +695,11 @@ read_statobs <- function(file_name, file_type, n_stat) {
 read_reftable <- function(file_name, file_type) {
     
     # init output
-    out <- list(msg = list(), valid = TRUE)
+    out <- list(
+        msg = list(), valid = TRUE, 
+        n_rec = NULL, n_scen = NULL, n_rec_scen = NULL, n_param = NULL, 
+        n_stat = NULL
+    )
     
     # check file_name
     tmp <- check_file_name(file_name)
@@ -715,6 +720,26 @@ read_reftable <- function(file_name, file_type) {
     if(!out$valid) {
         return(out)
     }
+    
+    
+    ## Reftable feed
+    # Stream from reftable file
+    to_read = file(file_name,"rb")
+    # number of records
+    out$n_rec <- readBin(to_read, integer(), endian = "little")
+    # number of scenarios
+    out$n_scen = readBin(to_read, integer(), endian = "little")
+    # number of records for each scenario
+    out$n_rec_scen = readBin(to_read, integer(), n = out$n_scen, 
+                             endian = "little")
+    # number of used parameters (non constant)
+    out$n_param = readBin(to_read, integer(), n = out$n_scen, 
+                          endian = "little")
+    # number of stats
+    out$n_stat = readBin(to_read, integer(), endian = "little")
+    
+    # close stream
+    close(to_read)
     
     # output
     return(out)
