@@ -279,11 +279,13 @@ proj_type_server <- function(input, output, session) {
         req(input$proj_type == "existing")
         req(input$file_input)
         
+        # upload
         input_check <- tryCatch(
             proj_file_input(input$file_input, env$ap$proj_dir),
             error = function(e) return(NULL)
         )
         
+        # feedback
         output$feedbak_existing <- renderUI({
             if(is.null(input_check) || !input_check$valid) {
                 msg <- "Issue(s) with uploaded file(s)."
@@ -314,21 +316,52 @@ proj_type_server <- function(input, output, session) {
         output$proj_file_list <- renderUI({
             proj_file_list <- list.files(env$ap$proj_dir)
             
+            expected_files1 <- c("headerRF.txt", "header.txt")
+            expected_files2 <- c("statobsRF.txt", "reftableRF.bin")
+            missing_files <- NULL
+            
+            missing_header <- !any(expected_files1 %in% proj_file_list)
+            if(missing_header) {
+                missing_files <- c(missing_files, "headerRF.txt")
+            }
+            
+            missing_files2 <- !(expected_files2 %in% proj_file_list)
+            if(any(missing_files2)) {
+                missing_files <- c(missing_files, 
+                                   expected_files2[missing_files2])
+            }
+            
             if(length(proj_file_list) > 0) {
-                helpText(
-                    icon("comment"), "List of upload files:",
+                item1 <- helpText(
+                    icon("comment"), "List of uploaded files:",
                     tags$div(
                         do.call(tags$ul, lapply(
-                            list.files(env$ap$proj_dir), 
+                            proj_file_list, 
                             function(item) return(tags$li(tags$code(item)))
-                        )),
-                        style = "column-count:2;"
+                        ))
                     )
                 )
+                item2 <- NULL
+                if(length(missing_files) > 0) {
+                    item2 <- tags$div(
+                        icon("warning"), 
+                        "Potentially missing files for an existing project:",
+                        tags$div(
+                            do.call(tags$ul, lapply(
+                                missing_files, 
+                                function(item) return(tags$li(tags$code(item)))
+                            ))
+                        ),
+                        tags$b("Note:"), 
+                        "you will be able to generate them below.",
+                        style = "color: #F89406;"
+                    )
+                }
+                tagList(item1, item2)
             } else {
                 tags$div(
                     icon("warning"), "No file was uploaded.",
-                    style = "color: #F89406;"
+                    style = "color: #F89406; margin-top: -15px;"
                 )
             }
         })
