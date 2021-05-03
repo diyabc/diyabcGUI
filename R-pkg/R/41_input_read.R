@@ -26,7 +26,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file file.")
+        msg <- tagList("Invalid file name.")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -523,7 +523,7 @@ read_statobs <- function(file_name, file_type, n_stat) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file file.")
+        msg <- tagList("Invalid file name.")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -599,7 +599,7 @@ read_reftable <- function(file_name, file_type) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file file.")
+        msg <- tagList("Invalid file name.")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -614,7 +614,6 @@ read_reftable <- function(file_name, file_type) {
     if(!out$valid) {
         return(out)
     }
-    
     
     ## Reftable feed
     # Stream from reftable file
