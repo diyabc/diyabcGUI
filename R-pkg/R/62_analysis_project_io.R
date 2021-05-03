@@ -208,8 +208,97 @@ proj_zip_file_input <- function(file_input) {
 #' Check existing project related files
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param file_input data.frame with fields name (chr), size (int), 
 #' @param proj_dir character string, path to project directory.
-check_proj_file <- function(proj_dir) {
-    # WRITEME
+#' @param locus_type character string, `"snp"` or `"mss"`.
+#' @importFrom mime guess_type
+check_proj_file <- function(proj_dir, locus_type = "snp") {
+    
+    # init output
+    out <- list(
+        msg = list(), valid = TRUE, 
+        header_check = NULL, statobs_check = NULL,
+        reftable_check = NULL
+    )
+    
+    # check project directory
+    if(!dir.exists(proj_dir)) {
+        out$valid <- FALSE
+        msg <- tagList("Input project directory does not exist.")
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # project files
+    proj_file_list <- list.files(proj_dir)
+    
+    # check header
+    if(any(c("header.txt", "headerRF.txt") %in% proj_file_list)) {
+        header_file <- file.path(
+            proj_dir,
+            ifelse(
+                "headerRF.txt" %in% proj_file_list,
+                "headerRF.txt", "header.txt"
+            )
+        )
+        out$header_check <- tryCatch(
+            read_header(
+                file_name = header_file, 
+                file_type = mime::guess_type(header_file),
+                locus_type = locus_type
+            ),
+            error = function(e) return(NULL)
+        )
+        if(is.null(out$header_check)) {
+            out$valid <- FALSE
+            msg <- tagList("Issue when checking project header file.")
+            out$msg <- append(out$msg, list(msg))
+        }
+    }
+    
+    # check reftable
+    if("reftableRF.bin" %in% proj_file_list) {
+        reftable_file <- file.path(proj_dir, "reftableRF.bin")
+        out$reftable_check <- tryCatch(
+            read_reftable(
+                file_name = reftable_file, 
+                file_type = mime::guess_type(reftable_file)
+            ),
+            error = function(e) return(NULL)
+        )
+        if(is.null(out$reftable_check)) {
+            out$valid <- FALSE
+            msg <- tagList("Issue when checking project reftable file.")
+            out$msg <- append(out$msg, list(msg))
+        }
+    }
+    
+    # check statobs
+    if("statobsRF.txt" %in% proj_file_list) {
+        if(!is.null(out$reftable_check) && 
+           !is.null(out$reftable_check$n_stat)) {
+            statobs_file <- file.path(proj_dir, "statobsRF.txt")
+            out$statobs_check <- tryCatch(
+                read_statobs(
+                    file_name = statobs_file, 
+                    file_type = mime::guess_type(statobs_file),
+                    n_stat = out$reftable_check$n_stat
+                ),
+                error = function(e) return(NULL)
+            )
+            if(is.null(out$statobs_check)) {
+                out$valid <- FALSE
+                msg <- tagList("Issue when checking project statobs file.")
+                out$msg <- append(out$msg, list(msg))
+            }
+        } else {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Impossible to check project statobs file", 
+                "because issue with reftable file.")
+            out$msg <- append(out$msg, list(msg))
+        }
+    }
+    
+    # output
+    return(out)
 }

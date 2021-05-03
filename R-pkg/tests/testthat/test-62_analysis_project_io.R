@@ -206,3 +206,96 @@ test_that("proj_zip_file_input", {
     expect_false(zip_proj$valid)
     expect_true(length(zip_proj$msg) == 1)
 })
+
+
+test_that("check_proj_file", {
+    
+    ## SNP IndSeq
+    # estim param
+    test_proj <- "IndSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "snp")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_true(res$reftable_check$valid)
+    expect_true(res$statobs_check$valid)
+    
+    # bad locus type
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "mss")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_false(res$header_check$valid)
+    expect_true(res$reftable_check$valid)
+    expect_true(res$statobs_check$valid)
+    
+    # model choice
+    test_proj <- "IndSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "snp")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_true(res$reftable_check$valid)
+    expect_true(res$statobs_check$valid)
+    
+    ## SNP PoolSeq
+    # estim param
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "snp")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_true(res$reftable_check$valid)
+    expect_true(res$statobs_check$valid)
+    
+    # model choice
+    test_proj <- "PoolSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "snp")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_true(res$reftable_check$valid)
+    expect_true(res$statobs_check$valid)
+    
+    ## MSS
+    # microsat
+    test_proj <- "Microsat"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "mss")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_null(res$reftable_check)
+    expect_null(res$statobs_check)
+    
+    # bad locus type
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "snp")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_false(res$header_check$valid)
+    expect_null(res$reftable_check)
+    expect_null(res$statobs_check)
+    
+    # microsat sequence 1
+    test_proj <- "Microsat_Sequences"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "mss")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_null(res$reftable_check)
+    expect_null(res$statobs_check)
+    
+    # microsat sequence 2
+    test_proj <- "Microsat_Sequences2"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    res <- check_proj_file(proj_dir = test_dir, locus_type = "mss")
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(res$header_check$valid)
+    expect_null(res$reftable_check)
+    expect_null(res$statobs_check)
+})
