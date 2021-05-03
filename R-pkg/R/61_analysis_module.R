@@ -136,46 +136,6 @@ proj_type_ui <- function(id) {
             tags$li("open one of the included examples.")
         )
     )
-    # inline help for proj file input
-    proj_file_help <- tagList(
-        tags$ul(
-            tags$li(
-                "You can", tags$b("either"), "upload:",
-                "a project", tags$code("zip"), 
-                "file generated in a previous run",
-                tags$b("or"),
-                "single project-related files, including",
-                tags$code("headerRF.txt"), ", ",
-                tags$code("reftableRF.bin"), ", ", 
-                tags$code("statobsRF.txt"), "and your observed data file."
-            ),
-            tags$li(
-                "You", tags$b("cannot"), "upload both a project", 
-                tags$code("zip"), "file",
-                "and single project-related files, those will be ignored.",
-                style = "margin-top: 10px;"
-            ),
-            tags$li(
-                "When uploading", tags$b("single project-related files"),
-                "you", tags$b("should"), "upload all required files", 
-                "at the same time (use", tags$code("CTRL+click"), 
-                "to select multiple files in the file chooser window).",
-                style = "margin-top: 10px;"
-            ),
-            tags$li(
-                "If you", tags$b("re-upload"), "a file or a group of files,",
-                "it will", tags$b("delete"), "and", tags$b("replace"), 
-                "any previous upload.",
-                style = "margin-top: 10px;"
-            ),
-            tags$li(
-                "If some project files are missing or have formating issues", 
-                "you will be able to (re)configure",
-                "the corresponding settings in the next panel.",
-                style = "margin-top: 10px;"
-            )
-        )
-    )
     # ui
     tagList(
         h3("Project type") %>% 
@@ -192,39 +152,12 @@ proj_type_ui <- function(id) {
         conditionalPanel(
             condition = "input.proj_type == 'existing'",
             ns = ns,
-            h4(tags$b("Project files")) %>%
-                helper(
-                    type = "inline",
-                    content = as.character(proj_file_help)
-                ),
-            helpText(
-                "Use", tags$code("CTRL+click"), "to select more than one file."
-            ),
-            fileInput(
-                ns("file_input"),
-                label = NULL,
-                buttonLabel = "Select file(s)", 
-                multiple = TRUE,
-                accept = c(
-                    ".txt",
-                    ".bin",
-                    ".zip"
-                )
-            ),
-            uiOutput(ns("feedbak_existing")),
-            uiOutput(ns("proj_file_list"))
+            existing_proj_ui(ns("existing_proj"))
         ),
         conditionalPanel(
             condition = "input.proj_type == 'example'",
             ns = ns,
-            h4(tags$b("Select an example")),
-            selectInput(
-                ns("proj_example"),
-                label = NULL,
-                choices = c("", "Not available at the moment"),
-                selected = NULL,
-                multiple = FALSE
-            ),
+            example_proj_ui(ns("example_proj")),
         ),
         hr(),
         h3("Data file"),
@@ -257,122 +190,10 @@ proj_type_server <- function(input, output, session) {
     )
     
     ## Existing project
-    # file_input = data.frame with fields 'name', 'size', 'type', 'datapath'
-    observe({
-        pprint("file input")
-        print(input$file_input)
-    })
-    
-    # Feedback on file upload
-    observe({
-        req(input$proj_type)
-        req(input$proj_type == "existing")
-        
-        # feedback on missing file
-        feedbackWarning("file_input", !isTruthy(input$file_input),
-                        "Missing file(s).")
-    })
-    
-    # manage file upload (copy to project directory)
-    observe({
-        req(input$proj_type)
-        req(input$proj_type == "existing")
-        req(input$file_input)
-        
-        # upload
-        input_check <- tryCatch(
-            proj_file_input(input$file_input, env$ap$proj_dir),
-            error = function(e) return(NULL)
-        )
-        
-        # feedback
-        output$feedbak_existing <- renderUI({
-            if(is.null(input_check) || !input_check$valid) {
-                msg <- "Issue(s) with uploaded file(s)."
-                feedbackWarning(
-                    "file_input", is.null(input_check) || !input_check$valid, 
-                    msg
-                )
-                if(length(input_check$msg) > 0) {
-                    tags$div(
-                        icon("warning"), "Issue(s) with uploaded file(s):",
-                        do.call(tags$ul, lapply(input_check$msg, tags$li)), 
-                        style = "color: #F89406; margin-top: -15px;"
-                    )
-                } else {
-                    NULL
-                }
-            } else {
-                NULL
-            }
-        })
-    })
-    
-    # list of uploaded project files
-    observeEvent({c(input$proj_type, input$file_input)}, {
-        req(input$proj_type)
-        req(input$proj_type == "existing")
-        
-        output$proj_file_list <- renderUI({
-            proj_file_list <- list.files(env$ap$proj_dir)
-            
-            expected_files1 <- c("headerRF.txt", "header.txt")
-            expected_files2 <- c("statobsRF.txt", "reftableRF.bin")
-            missing_files <- NULL
-            
-            missing_header <- !any(expected_files1 %in% proj_file_list)
-            if(missing_header) {
-                missing_files <- c(missing_files, "headerRF.txt")
-            }
-            
-            missing_files2 <- !(expected_files2 %in% proj_file_list)
-            if(any(missing_files2)) {
-                missing_files <- c(missing_files, 
-                                   expected_files2[missing_files2])
-            }
-            
-            if(length(proj_file_list) > 0) {
-                item1 <- helpText(
-                    icon("comment"), "List of uploaded files:",
-                    tags$div(
-                        do.call(tags$ul, lapply(
-                            proj_file_list, 
-                            function(item) return(tags$li(tags$code(item)))
-                        ))
-                    )
-                )
-                item2 <- NULL
-                if(length(missing_files) > 0) {
-                    item2 <- tags$div(
-                        icon("warning"), 
-                        "Potentially missing files for an existing project:",
-                        tags$div(
-                            do.call(tags$ul, lapply(
-                                missing_files, 
-                                function(item) return(tags$li(tags$code(item)))
-                            ))
-                        ),
-                        tags$b("Note:"), 
-                        "you will be able to generate them below.",
-                        style = "color: #F89406;"
-                    )
-                }
-                tagList(item1, item2)
-            } else {
-                tags$div(
-                    icon("warning"), "No file was uploaded.",
-                    style = "color: #F89406; margin-top: -15px;"
-                )
-            }
-        })
-    })
-    
-    # reset file upload when another mode is chosen
-    observe({
-        req(input$proj_type)
-        req(input$proj_type != "existing")
-        shinyjs::reset("file_input")
-    })
+    callModule(
+        existing_proj_server, "existing_proj", 
+        proj_type = reactive(input$proj_type)
+    )
     
     # ## new or existing project
     # observe({
@@ -667,6 +488,299 @@ proj_type_server <- function(input, output, session) {
     #            style="text-align:center;")
     #     }
     # })
+}
+
+#' Existing project ui
+#' @keywords internal
+#' @author Ghislain Durif
+existing_proj_ui <- function(id) {
+    ns <- NS(id)
+    # inline help for proj file input
+    proj_file_help <- tagList(
+        tags$ul(
+            tags$li(
+                "You can", tags$b("either"), "upload:",
+                "a project", tags$code("zip"), 
+                "file generated in a previous run",
+                tags$b("or"),
+                "single project-related files, including",
+                tags$code("headerRF.txt"), ", ",
+                tags$code("reftableRF.bin"), ", ", 
+                tags$code("statobsRF.txt"), "and your observed data file."
+            ),
+            tags$li(
+                "You", tags$b("cannot"), "upload both a project", 
+                tags$code("zip"), "file",
+                "and single project-related files, those will be ignored.",
+                style = "margin-top: 10px;"
+            ),
+            tags$li(
+                "When uploading", tags$b("single project-related files"),
+                "you", tags$b("should"), "upload all required files", 
+                "at the same time (use", tags$code("CTRL+click"), 
+                "to select multiple files in the file chooser window).",
+                style = "margin-top: 10px;"
+            ),
+            tags$li(
+                "If you", tags$b("re-upload"), "a file or a group of files,",
+                "it will", tags$b("delete"), "and", tags$b("replace"), 
+                "any previous upload.",
+                style = "margin-top: 10px;"
+            ),
+            tags$li(
+                "If some project files are missing or have formating issues", 
+                "you will be able to (re)configure",
+                "the corresponding settings in the next panel.",
+                style = "margin-top: 10px;"
+            )
+        )
+    )
+    # ui
+    tagList(
+        h4(tags$b("Project files")) %>%
+            helper(
+                type = "inline",
+                content = as.character(proj_file_help)
+            ),
+        helpText(
+            "Use", tags$code("CTRL+click"), "to select more than one file."
+        ),
+        fileInput(
+            ns("file_input"),
+            label = NULL,
+            buttonLabel = "Select file(s)", 
+            multiple = TRUE,
+            accept = c(
+                ".txt",
+                ".bin",
+                ".zip"
+            )
+        ),
+        uiOutput(ns("feedback_existing")),
+        uiOutput(ns("feedback_file_list")),
+        uiOutput(ns("feedback_header")),
+        uiOutput(ns("feedback_statobs")),
+        uiOutput(ns("feedback_reftable"))
+    )
+}
+
+#' Existing project server
+#' @keywords internal
+#' @author Ghislain Durif
+existing_proj_server <- function(input, output, session,
+                                 proj_type = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(proj_type = NULL)
+    
+    # get input
+    observe({
+        local$proj_type <- proj_type()
+    })
+    
+    # file_input = data.frame with fields 'name', 'size', 'type', 'datapath'
+    # debugging
+    observe({
+        pprint("file input")
+        print(input$file_input)
+    })
+    
+    # Feedback on file upload
+    observe({
+        req(local$proj_type)
+        req(local$proj_type == "existing")
+        
+        # feedback on missing file
+        feedbackWarning("file_input", !isTruthy(input$file_input),
+                        "Missing file(s).")
+    })
+    
+    
+    # reset file upload when another mode is chosen
+    observe({
+        req(local$proj_type)
+        req(local$proj_type != "existing")
+        shinyjs::reset("file_input")
+    })
+    
+    # manage file upload (copy to project directory)
+    observe({
+        req(local$proj_type)
+        req(local$proj_type == "existing")
+        req(input$file_input)
+        
+        # clean before upload
+        clean_proj_dir(env$ap$proj_dir)
+        
+        # upload
+        input_check <- tryCatch(
+            proj_file_input(input$file_input, env$ap$proj_dir),
+            error = function(e) return(NULL)
+        )
+        
+        # feedback
+        output$feedback_existing <- renderUI({
+            
+            if(is.null(input_check) || !input_check$valid) {
+                msg <- "Issue(s) with uploaded file(s)."
+                feedbackWarning(
+                    "file_input", is.null(input_check) || !input_check$valid, 
+                    msg
+                )
+                if(length(input_check$msg) > 0) {
+                    tags$div(
+                        icon("warning"), "Issue(s) with uploaded file(s):",
+                        do.call(tags$ul, lapply(input_check$msg, tags$li)), 
+                        style = "color: #F89406; margin-top: -15px;"
+                    )
+                } else {
+                    NULL
+                }
+            } else {
+                NULL
+            }
+        })
+        
+        # update project file list and check files
+        if(!is.null(input$check) && input_check$valid) {
+            # file list
+            env$ap$proj_file_list <- list.files(proj_dir)
+            # file check
+            file_check <- check_proj_file(
+                env$ap$proj_dir, env$ap$locus_type
+            )
+            # header ?
+            if(!is.null(file_check$header_check)) {
+                # FIXME
+            }
+        } else {
+            env$ap$proj_file_list <- NULL
+            env$ap$header_check <- NULL
+            env$ap$reftable_check <- NULL
+            env$ap$statobs_check <- NULL
+        }
+    })
+    
+    # list of uploaded project files
+    observeEvent({c(local$proj_type, input$file_input)}, {
+        req(local$proj_type)
+        req(local$proj_type == "existing")
+        
+        # list of files
+        proj_file_list <- list.files(env$ap$proj_dir)
+        
+        # expected files
+        expected_files1 <- c("headerRF.txt", "header.txt")
+        expected_files2 <- c("statobsRF.txt", "reftableRF.bin")
+        expected_files <- c(expected_files1, expected_files2)
+        
+        # important project files that are present
+        important_files <- expected_files[expected_files %in% proj_file_list]
+        
+        # additional files
+        additional_files <- proj_file_list[!proj_file_list %in% 
+                                               important_files]
+        
+        # missing files ?
+        missing_files <- NULL
+        
+        missing_header <- !any(expected_files1 %in% proj_file_list)
+        if(missing_header) {
+            missing_files <- c(missing_files, "headerRF.txt")
+        }
+        
+        missing_files2 <- !(expected_files2 %in% proj_file_list)
+        if(any(missing_files2)) {
+            missing_files <- c(missing_files, 
+                               expected_files2[missing_files2])
+        }
+        
+        # output
+        output$feedback_file_list <- renderUI({
+            if(length(proj_file_list) > 0) {
+                # project core files
+                subitem1 <- NULL
+                if(length(important_files) > 0) {
+                    subitem1 <- tags$div(
+                        do.call(tags$ul, lapply(
+                            important_files, 
+                            function(item) return(tags$li(tags$code(item)))
+                        ))
+                    )
+                } else {
+                    subitem1 <- tags$b("none")
+                }
+                # additional files
+                subitem2 <- NULL
+                if(length(additional_files) > 0) {
+                    subitem2 <- tags$div(
+                        do.call(tags$ul, lapply(
+                            additional_files, 
+                            function(item) return(tags$li(tags$code(item)))
+                        ))
+                    )
+                } else {
+                    subitem2 <- tags$b("none")
+                }
+                item1 <- helpText(
+                    h5(icon("comment"), "Uploaded files"),
+                    fluidRow(
+                        column(
+                            width = 6,
+                            tagList(
+                                "Project core files:", subitem1
+                            )
+                        ),
+                        column(
+                            width = 6,
+                            tagList(
+                                "Additional files:", subitem2
+                            )
+                        )
+                    )
+                )
+                # missing files
+                item2 <- NULL
+                if(length(missing_files) > 0) {
+                    item2 <- tags$div(
+                        icon("warning"), 
+                        "Potentially missing files for an existing project:",
+                        tags$div(
+                            do.call(tags$ul, lapply(
+                                missing_files, 
+                                function(item) return(tags$li(tags$code(item)))
+                            ))
+                        ),
+                        tags$b("Note:"), 
+                        "you will be able to generate them below.",
+                        style = "color: #F89406;"
+                    )
+                }
+                tagList(item1, item2)
+            } else {
+                tags$div(
+                    icon("warning"), "No file was uploaded.",
+                    style = "color: #F89406; margin-top: -15px;"
+                )
+            }
+        })
+    })
+}
+
+#' Example project ui
+#' @keywords internal
+#' @author Ghislain Durif
+example_proj_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h4(tags$b("Select an example")),
+        selectInput(
+            ns("proj_example"),
+            label = NULL,
+            choices = c("", "Not available at the moment"),
+            selected = NULL,
+            multiple = FALSE
+        )
+    )
 }
 
 #' Input data ui
