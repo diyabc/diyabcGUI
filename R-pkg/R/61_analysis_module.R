@@ -63,7 +63,9 @@ analysis_module_server <- function(input, output, session) {
     
     ## clean on exit
     session$onSessionEnded(function() {
-        isolate(tryCatch(fs::dir_delete(env$ap$proj_dir)))
+        isolate(tryCatch(function() {
+            if(isTruthy(env$ap$proj_dir)) fs::dir_delete(env$ap$proj_dir)
+        }))
     })
 }
 
@@ -159,6 +161,12 @@ proj_type_ui <- function(id) {
             ns = ns,
             example_proj_ui(ns("example_proj")),
         ),
+        conditionalPanel(
+            condition = "input.proj_type !== 'new'",
+            ns = ns,
+            proj_file_list_ui(ns("proj_file_list")),
+            proj_file_check_ui(ns("proj_file_check"))
+        ),
         hr(),
         h3("Data file"),
         helpText(
@@ -192,6 +200,15 @@ proj_type_server <- function(input, output, session) {
     ## Existing project
     callModule(
         existing_proj_server, "existing_proj", 
+        proj_type = reactive(input$proj_type)
+    )
+    
+    ## Example project
+    # TODO
+    
+    ## File list for existing or example project
+    callModule(
+        proj_file_list_server, "proj_file_list", 
         proj_type = reactive(input$proj_type)
     )
     
@@ -490,6 +507,184 @@ proj_type_server <- function(input, output, session) {
     # })
 }
 
+#' Feedback on project file list ui
+#' @keywords internal
+#' @author Ghislain Durif
+proj_file_list_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        helpText(
+            uiOutput(ns("feedback_proj_file"))
+        )
+    )
+}
+
+#' Feedback on project file list server
+#' @keywords internal
+#' @author Ghislain Durif
+proj_file_list_server <- function(input, output, session,
+                                  proj_type = reactive({NULL})) {
+    # init local
+    local <- reactiveValues(proj_type = NULL)
+    
+    # get input
+    observe({
+        local$proj_type <- proj_type()
+    })
+    
+    # # debugging
+    # observe({
+    #     req(env$ap$file_modif)
+    #     req(env$ap$proj_file_list)
+    #     pprint("file modif")
+    #     pprint(env$ap$file_modif)
+    #     pprint("file list")
+    #     pprint(env$ap$proj_file_list)
+    # })
+    
+    # feedback on list of uploaded files
+    observeEvent(
+        {c(env$ap$file_modif, env$ap$proj_file_list, local$proj_type)}, {
+        req(local$proj_type %in% c("existing", "example"))
+        # output
+        output$feedback_proj_file <- renderUI({
+            # default
+            tag_list <- tags$div(
+                icon("warning"), "No file was uploaded.",
+                style = "color: #F89406; margin-top: -15px;"
+            )
+            # else
+            if(isTruthy(env$ap) && isTruthy(env$ap$proj_file_list)) {
+                # project files
+                proj_file_list <- env$ap$proj_file_list
+                
+                if(length(proj_file_list) > 0) {
+                    # expected files
+                    expected_files1 <- c("headerRF.txt", "header.txt")
+                    expected_files2 <- c("statobsRF.txt", "reftableRF.bin")
+                    expected_files <- c(expected_files1, expected_files2)
+                    
+                    # important project files that are present
+                    important_files <- expected_files[expected_files %in%
+                                                          proj_file_list]
+                    
+                    # additional files
+                    additional_files <- proj_file_list[!proj_file_list %in%
+                                                           important_files]
+                    
+                    # missing files ?
+                    missing_files <- NULL
+                    
+                    missing_header <- !any(expected_files1 %in% proj_file_list)
+                    if(missing_header) {
+                        missing_files <- c(missing_files, "headerRF.txt")
+                    }
+                    
+                    missing_files2 <- !(expected_files2 %in% proj_file_list)
+                    if(any(missing_files2)) {
+                        missing_files <- c(missing_files,
+                                           expected_files2[missing_files2])
+                    }
+                    # project core files
+                    subitem1 <- NULL
+                    if(length(important_files) > 0) {
+                        subitem1 <- tags$div(
+                            do.call(tags$ul, lapply(
+                                important_files,
+                                function(item) return(tags$li(tags$code(item)))
+                            ))
+                        )
+                    } else {
+                        subitem1 <- tags$b("none")
+                    }
+                    # additional files
+                    subitem2 <- NULL
+                    if(length(additional_files) > 0) {
+                        subitem2 <- tags$div(
+                            do.call(tags$ul, lapply(
+                                additional_files,
+                                function(item) return(tags$li(tags$code(item)))
+                            ))
+                        )
+                    } else {
+                        subitem2 <- tags$b("none")
+                    }
+                    item1 <- helpText(
+                        h5(icon("comment"), tags$b("Uploaded files")),
+                        fluidRow(
+                            column(
+                                width = 6,
+                                tagList(
+                                    tags$p("Project core files:", subitem1)
+                                )
+                            ),
+                            column(
+                                width = 6,
+                                tagList(
+                                    tags$p("Additional files:", subitem2)
+                                )
+                            )
+                        )
+                    )
+                    # missing files
+                    item2 <- NULL
+                    if(length(missing_files) > 0) {
+                        item2 <- tags$div(
+                            tags$p(
+                                icon("warning"),
+                                "Potentially missing files", 
+                                "for an existing project:",
+                                tags$div(
+                                    do.call(tags$ul, lapply(
+                                        missing_files,
+                                        function(item) 
+                                            return(tags$li(tags$code(item)))
+                                    ))
+                                ),
+                                tags$b("Note:"),
+                                "you will be able to generate them below."
+                            ),
+                            style = "color: #F89406;"
+                        )
+                    }
+                    tag_list <- tagList(item1, item2)
+                }
+            }
+            # output
+            tag_list
+        })
+    })
+}
+
+#' Project file check ui
+#' @keywords internal
+#' @author Ghislain Durif
+proj_file_check_ui <- function(id) {
+    ns <- NS(id)
+    tagList()
+}
+
+#' Project file check server
+#' @keywords internal
+#' @author Ghislain Durif
+proj_file_check_server <- function(input, output, session) {
+    # TODO 
+    
+    ## file check
+    observe({c(env$ap$file_modif, env$ap$proj_file_list)}, {
+        req(env$ap$proj_dir)
+        req(env$ap$locus_type)
+        # file check
+        file_check <- check_proj_file(
+            env$ap$proj_dir, env$ap$locus_type
+        )
+        # header ?
+        if(!is.null(file_check$header_check)) {
+            # FIXME
+        }
+    })
+}
+
 #' Existing project ui
 #' @keywords internal
 #' @author Ghislain Durif
@@ -556,11 +751,7 @@ existing_proj_ui <- function(id) {
                 ".zip"
             )
         ),
-        uiOutput(ns("feedback_existing")),
-        uiOutput(ns("feedback_file_list")),
-        uiOutput(ns("feedback_header")),
-        uiOutput(ns("feedback_statobs")),
-        uiOutput(ns("feedback_reftable"))
+        uiOutput(ns("feedback_existing"))
     )
 }
 
@@ -577,12 +768,12 @@ existing_proj_server <- function(input, output, session,
         local$proj_type <- proj_type()
     })
     
-    # file_input = data.frame with fields 'name', 'size', 'type', 'datapath'
-    # debugging
-    observe({
-        pprint("file input")
-        print(input$file_input)
-    })
+    # # file_input = data.frame with fields 'name', 'size', 'type', 'datapath'
+    # # debugging
+    # observe({
+    #     pprint("file input")
+    #     print(input$file_input)
+    # })
     
     # Feedback on file upload
     observe({
@@ -603,10 +794,11 @@ existing_proj_server <- function(input, output, session,
     })
     
     # manage file upload (copy to project directory)
-    observe({
+    observeEvent({c(local$proj_type, input$file_input)}, {
         req(local$proj_type)
         req(local$proj_type == "existing")
         req(input$file_input)
+        req(env$ap$proj_dir)
         
         # clean before upload
         clean_proj_dir(env$ap$proj_dir)
@@ -619,7 +811,6 @@ existing_proj_server <- function(input, output, session,
         
         # feedback
         output$feedback_existing <- renderUI({
-            
             if(is.null(input_check) || !input_check$valid) {
                 msg <- "Issue(s) with uploaded file(s)."
                 feedbackWarning(
@@ -641,128 +832,15 @@ existing_proj_server <- function(input, output, session,
         })
         
         # update project file list and check files
-        if(!is.null(input$check) && input_check$valid) {
-            # file list
-            env$ap$proj_file_list <- list.files(proj_dir)
-            # file check
-            file_check <- check_proj_file(
-                env$ap$proj_dir, env$ap$locus_type
-            )
-            # header ?
-            if(!is.null(file_check$header_check)) {
-                # FIXME
-            }
+        if(!is.null(input_check) && input_check$valid) {
+            # file modification
+            update_proj_file("ap")
         } else {
-            env$ap$proj_file_list <- NULL
-            env$ap$header_check <- NULL
-            env$ap$reftable_check <- NULL
-            env$ap$statobs_check <- NULL
+            # clean after failed upload
+            clean_proj_dir(env$ap$proj_dir)
+            # file modification
+            update_proj_file("ap")
         }
-    })
-    
-    # list of uploaded project files
-    observeEvent({c(local$proj_type, input$file_input)}, {
-        req(local$proj_type)
-        req(local$proj_type == "existing")
-        
-        # list of files
-        proj_file_list <- list.files(env$ap$proj_dir)
-        
-        # expected files
-        expected_files1 <- c("headerRF.txt", "header.txt")
-        expected_files2 <- c("statobsRF.txt", "reftableRF.bin")
-        expected_files <- c(expected_files1, expected_files2)
-        
-        # important project files that are present
-        important_files <- expected_files[expected_files %in% proj_file_list]
-        
-        # additional files
-        additional_files <- proj_file_list[!proj_file_list %in% 
-                                               important_files]
-        
-        # missing files ?
-        missing_files <- NULL
-        
-        missing_header <- !any(expected_files1 %in% proj_file_list)
-        if(missing_header) {
-            missing_files <- c(missing_files, "headerRF.txt")
-        }
-        
-        missing_files2 <- !(expected_files2 %in% proj_file_list)
-        if(any(missing_files2)) {
-            missing_files <- c(missing_files, 
-                               expected_files2[missing_files2])
-        }
-        
-        # output
-        output$feedback_file_list <- renderUI({
-            if(length(proj_file_list) > 0) {
-                # project core files
-                subitem1 <- NULL
-                if(length(important_files) > 0) {
-                    subitem1 <- tags$div(
-                        do.call(tags$ul, lapply(
-                            important_files, 
-                            function(item) return(tags$li(tags$code(item)))
-                        ))
-                    )
-                } else {
-                    subitem1 <- tags$b("none")
-                }
-                # additional files
-                subitem2 <- NULL
-                if(length(additional_files) > 0) {
-                    subitem2 <- tags$div(
-                        do.call(tags$ul, lapply(
-                            additional_files, 
-                            function(item) return(tags$li(tags$code(item)))
-                        ))
-                    )
-                } else {
-                    subitem2 <- tags$b("none")
-                }
-                item1 <- helpText(
-                    h5(icon("comment"), "Uploaded files"),
-                    fluidRow(
-                        column(
-                            width = 6,
-                            tagList(
-                                "Project core files:", subitem1
-                            )
-                        ),
-                        column(
-                            width = 6,
-                            tagList(
-                                "Additional files:", subitem2
-                            )
-                        )
-                    )
-                )
-                # missing files
-                item2 <- NULL
-                if(length(missing_files) > 0) {
-                    item2 <- tags$div(
-                        icon("warning"), 
-                        "Potentially missing files for an existing project:",
-                        tags$div(
-                            do.call(tags$ul, lapply(
-                                missing_files, 
-                                function(item) return(tags$li(tags$code(item)))
-                            ))
-                        ),
-                        tags$b("Note:"), 
-                        "you will be able to generate them below.",
-                        style = "color: #F89406;"
-                    )
-                }
-                tagList(item1, item2)
-            } else {
-                tags$div(
-                    icon("warning"), "No file was uploaded.",
-                    style = "color: #F89406; margin-top: -15px;"
-                )
-            }
-        })
     })
 }
 
@@ -781,6 +859,14 @@ example_proj_ui <- function(id) {
             multiple = FALSE
         )
     )
+}
+
+#' Example project server
+#' @keywords internal
+#' @author Ghislain Durif
+example_proj_server <- function(input, output, session) {
+    # TODO 
+    # update_proj_file("ap")
 }
 
 #' Input data ui
