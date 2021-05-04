@@ -8,13 +8,13 @@ test_that("read_header", {
     test_dir <- file.path(data4test_dir(), test_proj)
     file_name <- file.path(test_dir, "headerRF.txt")
     file_type <- "text/plain"
-    locus_type = "snp"
+    locus_type <- "snp"
     res <- read_header(file_name, file_type, locus_type)
     expect_true(res$valid)
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "indseq_SNP_sim_dataset_4POP_001.snp")
     expect_equal(res$n_param, 8)
-    expect_equal(res$n_sumstat, 130)
+    expect_equal(res$n_stat, 130)
     expect_equal(res$n_scenario, 1)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 2)
@@ -46,7 +46,7 @@ test_that("read_header", {
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "indseq_SNP_sim_dataset_4POP_001.snp")
     expect_equal(res$n_param, 13)
-    expect_equal(res$n_sumstat, 130)
+    expect_equal(res$n_stat, 130)
     expect_equal(res$n_scenario, 6)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 6)
@@ -69,7 +69,7 @@ test_that("read_header", {
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "poolseq_SNP_sim_dataset_4POP_cov100_001.snp")
     expect_equal(res$n_param, 8)
-    expect_equal(res$n_sumstat, 130)
+    expect_equal(res$n_stat, 130)
     expect_equal(res$n_scenario, 1)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 2)
@@ -91,7 +91,7 @@ test_that("read_header", {
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "poolseq_SNP_sim_dataset_4POP_cov100_001.snp")
     expect_equal(res$n_param, 13)
-    expect_equal(res$n_sumstat, 130)
+    expect_equal(res$n_stat, 130)
     expect_equal(res$n_scenario, 6)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 6)
@@ -117,7 +117,7 @@ test_that("read_header", {
         "simu_dataset_microsat_one_pop_bottleneck_multisamples_001.mss"
     )
     expect_equal(res$n_param, 6)
-    expect_equal(res$n_sumstat, 40)
+    expect_equal(res$n_stat, 40)
     expect_equal(res$n_scenario, 2)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 0)
@@ -141,7 +141,7 @@ test_that("read_header", {
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "mss_example_001.mss")
     expect_equal(res$n_param, 9)
-    expect_equal(res$n_sumstat, 2)
+    expect_equal(res$n_stat, 2)
     expect_equal(res$n_scenario, 1)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 2)
@@ -175,7 +175,7 @@ test_that("read_header", {
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "toytest2_micro_seq_complexe_001.mss")
     expect_equal(res$n_param, 22)
-    expect_equal(res$n_sumstat, 85)
+    expect_equal(res$n_stat, 85)
     expect_equal(res$n_scenario, 2)
     expect_equal(res$n_scenario, length(res$scenario_list))
     expect_equal(res$n_cond, 2)
@@ -199,14 +199,11 @@ test_that("parse_header_scenario", {
     
     content <- header[5:13]
     res <- parse_header_scenario(content)
-    
-    expect_equal(
-        res,
-        list(
-            valid=TRUE, id=1, n_param=8, prior=0.16667,
-            scenario=str_c(content[6:13], collapse = "\n")
-        )
-    )
+    expect_true(res$valid)
+    expect_equal(res$id, 1)
+    expect_equal(res$n_param, 8)
+    expect_equal(res$prior, 0.16667)
+    expect_equal(res$scenario, str_c(header[6:13], collapse = "\n"))
     
     content <- header[6:13]
     res <- parse_header_scenario(content)
@@ -320,3 +317,4 @@ test_that("read_reftable", {
     expect_false(res$valid)
     expect_true(length(res$msg) == 2)
 })
+

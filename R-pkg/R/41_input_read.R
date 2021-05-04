@@ -13,7 +13,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     out <- list(
         msg = list(), valid = TRUE,
         data_file = NULL, loci_desc = NULL, 
-        n_param = NULL, n_prior = NULL, n_sumstat = NULL, 
+        n_param = NULL, n_prior = NULL, n_stat = NULL, 
         cond_list = NULL, prior_list = NULL, 
         n_group = NULL, group_prior_list = NULL, 
         n_scenario = NULL, scenario_list = NULL,
@@ -69,7 +69,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     pttrn <- "[0-9]+(?= parameters)"
     out$n_param <- as.integer(str_extract(strng, pttrn))
     pttrn <- "[0-9]+(?= summary statistics)"
-    out$n_sumstat <- as.integer(str_extract(strng, pttrn))
+    out$n_stat <- as.integer(str_extract(strng, pttrn))
     
     ## empty line
     strng <- header[1]
@@ -390,9 +390,9 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     
     # number of summary stats
     pttrn <- "(?<=^group summary statistics \\()[0-9]+"
-    tmp_n_sumstat <- sum(as.integer(str_extract(strng, pttrn)), na.rm = TRUE)
+    tmp_n_stat <- sum(as.integer(str_extract(strng, pttrn)), na.rm = TRUE)
     # check
-    if(out$n_sumstat != tmp_n_sumstat) {
+    if(out$n_stat != tmp_n_stat) {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
