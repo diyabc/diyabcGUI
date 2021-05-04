@@ -16,7 +16,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         n_param = NULL, n_prior = NULL, n_stat = NULL, 
         cond_list = NULL, prior_list = NULL, 
         n_group = NULL, group_prior_list = NULL, 
-        n_scenario = NULL, scenario_list = NULL,
+        n_scen = NULL, scenario_list = NULL,
         simu_mode = NULL
     )
     
@@ -103,7 +103,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     
     ## scenario config
     pttrn <- "[0-9]+(?= scenarios:)"
-    out$n_scenario <- as.integer(str_extract(strng, pttrn))
+    out$n_scen <- as.integer(str_extract(strng, pttrn))
     pttrn <- "(?<= )[0-9]+"
     nrow_per_scenario <- as.integer(unlist(str_extract_all(strng, pttrn)))
     ## extract scenarii
