@@ -98,8 +98,7 @@ index_server <- function(input, output, session) {
         # update tab item
         updateTabItems(session, "app_menu", selected = "analysis_tab")
         
-        # init env
-        init_diyabcrf_env()
+        # reset env
         reset_diyabcrf_env()
         
         # verbosity
@@ -127,8 +126,7 @@ index_server <- function(input, output, session) {
         # update tab item
         updateTabItems(session, "app_menu", selected = "datagen_tab")
         
-        # init env
-        init_datagen_env()
+        # reset env
         reset_datagen_env()
         
         # verbosity

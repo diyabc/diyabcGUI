@@ -125,7 +125,7 @@ reset_diyabcrf_env <- function() {
 init_datagen_env <- function() {
     
     # clean environment
-    tmp_dp <- reactiveValues(
+    tmp_dp <- list(
         ## project setup
         proj_name = NULL,        # project name
         proj_dir = NULL,         # project directory
