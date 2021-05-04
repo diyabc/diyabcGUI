@@ -17,7 +17,8 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         cond_list = NULL, prior_list = NULL, 
         n_group = NULL, group_prior_list = NULL, 
         n_scen = NULL, scenario_list = NULL,
-        simu_mode = NULL
+        simu_mode = NULL,
+        header_file = NULL
     )
     
     current_line <- 0
@@ -41,6 +42,9 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     if(!out$valid) {
         return(out)
     }
+    
+    ## HEADER FILE NAME
+    out$header_file <- basename(file_name)
     
     ## HEADER FILE CONTENT
     # read whole file in one string and split it by new line

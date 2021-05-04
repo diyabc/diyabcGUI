@@ -24,6 +24,7 @@ test_that("read_header", {
     expect_equal(res$n_loci_desc, length(res$loci_desc))
     expect_equal(res$n_prior, 8)
     expect_equal(res$n_prior, length(res$prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     # indeseq -> bad header file
     test_proj <- "bad_files"
@@ -56,6 +57,7 @@ test_that("read_header", {
     expect_equal(res$n_loci_desc, length(res$loci_desc))
     expect_equal(res$n_prior, 13)
     expect_equal(res$n_prior, length(res$prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     ## SNP PoolSeq
     # estim param
@@ -79,6 +81,7 @@ test_that("read_header", {
     expect_equal(res$n_loci_desc, length(res$loci_desc))
     expect_equal(res$n_prior, 8)
     expect_equal(res$n_prior, length(res$prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     # model choice
     test_proj <- "PoolSeq_SNP_model_choice"
@@ -101,6 +104,7 @@ test_that("read_header", {
     expect_equal(res$n_loci_desc, length(res$loci_desc))
     expect_equal(res$n_prior, 13)
     expect_equal(res$n_prior, length(res$prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     ## MSS
     # microsat
@@ -129,6 +133,7 @@ test_that("read_header", {
     expect_equal(res$n_prior, length(res$prior_list))
     expect_equal(res$n_group, 1)
     expect_equal(res$n_group, length(res$group_prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     # microsat sequence 1
     test_proj <- "Microsat_Sequences"
@@ -153,6 +158,7 @@ test_that("read_header", {
     expect_equal(res$n_prior, length(res$prior_list))
     expect_equal(res$n_group, 2)
     expect_equal(res$n_group, length(res$group_prior_list))
+    expect_equal(res$header_file, basename(file_name))
     
     # microsat sequence 1 -> bad header file
     test_proj <- "bad_files"
@@ -187,6 +193,7 @@ test_that("read_header", {
     expect_equal(res$n_prior, length(res$prior_list))
     expect_equal(res$n_group, 5)
     expect_equal(res$n_group, length(res$group_prior_list))
+    expect_equal(res$header_file, basename(file_name))
 })
 
 
