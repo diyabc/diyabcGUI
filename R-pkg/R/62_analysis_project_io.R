@@ -270,12 +270,46 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
             msg <- tagList("Issue when checking project reftable file.")
             out$msg <- append(out$msg, list(msg))
         }
+        
+        # check agreement between header file (if any and reftable file)
+        if(isTruthy(out$header_check$valid) && 
+           isTruthy(out$reftable_check$valid)) {
+            if(out$header_check$n_scen != out$reftable_check$n_scen) {
+                out$reftable_check$valid <- FALSE
+                msg <- tagList(
+                    "Different number of scenarii configured in files",
+                    tags$code(out$header_check$header_file), "and",
+                    tags$code("reftableRF.bin"), "."
+                )
+                out$reftable_check$msg <- append(out$msg, list(msg))
+            }
+            if(any(out$header_check$n_param_scen != 
+                   out$reftable_check$n_param_scen)) {
+                out$reftable_check$valid <- FALSE
+                msg <- tagList(
+                    "Different number of parameters per scenario",
+                    "configured in files",
+                    tags$code(out$header_check$header_file), "and",
+                    tags$code("reftableRF.bin"), "."
+                )
+                out$reftable_check$msg <- append(out$msg, list(msg))
+            }
+            if(out$header_check$n_stat != out$reftable_check$n_stat) {
+                out$reftable_check$valid <- FALSE
+                msg <- tagList(
+                    "Different number of summary statistics", 
+                    "configured in files",
+                    tags$code(out$header_check$header_file), "and",
+                    tags$code("reftableRF.bin"), "."
+                )
+                out$reftable_check$msg <- append(out$msg, list(msg))
+            }
+        }
     }
     
     # check statobs
     if("statobsRF.txt" %in% proj_file_list) {
-        if(!is.null(out$reftable_check) && 
-           !is.null(out$reftable_check$n_stat)) {
+        if(isTruthy(out$reftable_check$n_stat)) {
             statobs_file <- file.path(proj_dir, "statobsRF.txt")
             out$statobs_check <- tryCatch(
                 read_statobs(
