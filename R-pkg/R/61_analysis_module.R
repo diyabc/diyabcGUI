@@ -472,7 +472,7 @@ proj_file_check_server <- function(input, output, session) {
                     tags$code("reftableRF.bin"), "file is ok",
                     "with",
                     tags$b(as.character(env$ap$reftable_check$n_stat)),
-                    "summary statistics over",
+                    "summary statistics computed over",
                     tags$b(as.character(env$ap$reftable_check$n_rec)),
                     "simulations in the training set."
                 ))))
@@ -991,7 +991,7 @@ input_data_file_server <- function(input, output, session) {
     # Feedback on file upload
     observe({
         # feedback on missing file
-        feedbackWarning("file_input", !isTruthy(input$data_file),
+        feedbackWarning("data_file", !isTruthy(input$data_file),
                         "Missing data file.")
     })
 
@@ -1006,6 +1006,8 @@ input_data_file_server <- function(input, output, session) {
            isTruthy(env$ap$header_check$data_file)) {
             req(input$data_file$name == env$ap$header_check$data_file)
         }
+        # save data file name
+        env$ap$data_file <- input$data_file$name
         # copy to project directory
         fs::file_copy(input$data_file$datapath,
                       file.path(local$proj_dir, out$name),
@@ -1018,30 +1020,28 @@ input_data_file_server <- function(input, output, session) {
     })
     
     ## feedback
-    observeEvent(input$data_file, {
-        output$feedback <- renderUI({
-            if(isTruthy(nrow(input$data_file) == 1)) {
-                if(isTruthy(env$ap$header_check$valid) &&
-                   isTruthy(env$ap$header_check$data_file) &&
-                   input$data_file$name != env$ap$header_check$data_file) {
-                    tags$div(
-                        icon("warning"), 
-                        "Provided data file name does not match",
-                        "expected data file name from", 
-                        tags$code(env$ap$header_check$header_file), "file.",
-                        style = "color: #F89406;"
-                    )
-                } else {
-                    NULL
-                }
-            } else {
+    output$feedback <- renderUI({
+        if(isTruthy(nrow(input$data_file) == 1)) {
+            if(isTruthy(env$ap$header_check$valid) &&
+               isTruthy(env$ap$header_check$data_file) &&
+               input$data_file$name != env$ap$header_check$data_file) {
                 tags$div(
                     icon("warning"), 
-                    "Missing data file.",
+                    "Provided data file name does not match",
+                    "expected data file name from", 
+                    tags$code(env$ap$header_check$header_file), "file.",
                     style = "color: #F89406;"
                 )
+            } else {
+                NULL
             }
-        })
+        } else {
+            tags$div(
+                icon("warning"), 
+                "Missing data file.",
+                style = "color: #F89406;"
+            )
+        }
     })
 
     ## output
@@ -1054,7 +1054,7 @@ input_data_file_server <- function(input, output, session) {
 check_data_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        uiOutput(ns("missing_file")),
+        uiOutput(ns("feedback")),
         uiOutput(ns("data_info"))
     )
 }
@@ -1062,119 +1062,61 @@ check_data_ui <- function(id) {
 #' check data server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param data_file string as a `reactive`, data file uploaded by the user.
-#' @param expected_data_file string as a `reactive`, expected data file if a
-#' header file is provided (NULL otherwise).
-#' @param locus_type string as a `reactive`, `"mss"` or `"snp"`.
-#' @param seq_mode string as a `reactive`, `"indseq"` or `"poolseq"`.
-#' @param proj_dir string as a `reactive`, project directory.
-check_data_server <- function(input, output, session,
-                              data_file = reactive({NULL}),
-                              expected_data_file = reactive({NULL}),
-                              locus_type = reactive({"snp"}),
-                              seq_mode = reactive({"indseq"}),
-                              proj_dir = reactive({NULL})) {
-    # init local
-    local <- reactiveValues(
-        file_check = NULL,
-        data_info = NULL,
-        # input
-        data_file = NULL,
-        exp_data_file = NULL,
-        locus_type = NULL,
-        seq_mode = NULL,
-        proj_dir = NULL
-    )
-    # get input
-    observe({
-        local$data_file <- data_file()
-        local$exp_data_file <- expected_data_file()
-        local$locus_type <- locus_type()
-        local$seq_mode <- seq_mode()
-        local$proj_dir <- proj_dir()
+check_data_server <- function(input, output, session) {
 
-        # # debugging
-        # pprint(paste0("input data file = ", local$data_file))
-        # pprint(paste0("expected data file = ", local$exp_data_file))
-        # pprint(paste0("input locus type = ", local$locus_type))
-        # pprint(paste0("input seq mode = ", local$seq_mode))
-        # pprint(paste0("input proj dir = ", local$proj_dir))
-    })
-    # init output
-    out <- reactiveValues(
-        data_file = NULL,
-        data_info = NULL,
-        valid = FALSE
-    )
-    # # debugging
+    # # data check
     # observe({
-    #     logging("data file = ", out$file)
+    #     req(!is.null(local$data_file))
+    #     req(!is.null(local$proj_dir))
+    #     req(!is.null(local$locus_type))
+    #     req(!is.null(local$seq_mode))
+    #     # check
+    #     local$file_check <- check_data_file(
+    #         local$data_file, local$proj_dir,
+    #         local$locus_type, local$seq_mode,
+    #         local$exp_data_file
+    #     )
+    #     # data info
+    #     req(!is.null(local$file_check))
+    #     req(!is.null(local$file_check$valid))
+    #     # valid data
+    #     out$valid <- local$file_check$valid
+    #     # data spec
+    #     req(!is.null(local$file_check$spec))
+    #     out$info <- local$file_check$spec
     # })
-
-    ## message if missing file
-    output$missing_file <- renderUI({
-        if(is.null(local$data_file)) {
-            helpText(
-                icon("warning"), "Missing data file"
-            )
-        } else {
-            NULL
-        }
-    })
-
-    # data check
-    observe({
-        req(!is.null(local$data_file))
-        req(!is.null(local$proj_dir))
-        req(!is.null(local$locus_type))
-        req(!is.null(local$seq_mode))
-        # check
-        local$file_check <- check_data_file(
-            local$data_file, local$proj_dir,
-            local$locus_type, local$seq_mode,
-            local$exp_data_file
-        )
-        # data info
-        req(!is.null(local$file_check))
-        req(!is.null(local$file_check$valid))
-        # valid data
-        out$valid <- local$file_check$valid
-        # data spec
-        req(!is.null(local$file_check$spec))
-        out$info <- local$file_check$spec
-    })
-
-    # user feedback
-    output$data_info <- renderUI({
-        req(!is.null(local$file_check))
-        # show data info
-        if(local$file_check$valid) {
-            req(local$file_check$msg)
-            helpText(
-                icon("comment"), "Data file info",
-                do.call(
-                    tags$ul,
-                    lapply(local$file_check$msg, function(item) {
-                        return(tags$li(item))
-                    })
-                )
-            )
-        } else {
-            tmp_msg <- NULL
-            if(!is.null(local$file_check$err)) {
-                tmp_msg <- do.call(
-                    tags$ul,
-                    lapply(local$file_check$err, function(item) {
-                        return(tags$li(item))
-                    })
-                )
-            }
-            helpText(
-                icon("warning"), "Issue with data file.",
-                tmp_msg
-            )
-        }
-    })
+    # 
+    # # user feedback
+    # output$data_info <- renderUI({
+    #     req(!is.null(local$file_check))
+    #     # show data info
+    #     if(local$file_check$valid) {
+    #         req(local$file_check$msg)
+    #         helpText(
+    #             icon("comment"), "Data file info",
+    #             do.call(
+    #                 tags$ul,
+    #                 lapply(local$file_check$msg, function(item) {
+    #                     return(tags$li(item))
+    #                 })
+    #             )
+    #         )
+    #     } else {
+    #         tmp_msg <- NULL
+    #         if(!is.null(local$file_check$err)) {
+    #             tmp_msg <- do.call(
+    #                 tags$ul,
+    #                 lapply(local$file_check$err, function(item) {
+    #                     return(tags$li(item))
+    #                 })
+    #             )
+    #         }
+    #         helpText(
+    #             icon("warning"), "Issue with data file.",
+    #             tmp_msg
+    #         )
+    #     }
+    # })
 
     # output
     return(out)

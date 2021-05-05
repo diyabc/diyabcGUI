@@ -42,7 +42,8 @@ init_diyabcrf_env <- function() {
         reftable_check = NULL,  # result of reftable file check
         statobs_check = NULL,   # result of statobs file check
         ## observed data
-        data_file = NULL        # observed data file name
+        data_file = NULL,       # observed data file name
+        data_check = NULL       # result of data file check
     )
     
     # dataset metadata
