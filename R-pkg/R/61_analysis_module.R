@@ -883,11 +883,7 @@ data_file_ui <- function(id) {
             icon("clock"),
             "Loading and checking the data file may take some time."
         ),
-        conditionalPanel(
-            condition = "input.proj_type !== 'example'",
-            ns = ns,
-            input_data_ui(ns("input_data_file")),
-        ),
+        uiOutput(ns("input_data")),
         check_data_ui(ns("check_data_file")),
         hr(),
         uiOutput(ns("feedback_data"))
@@ -898,6 +894,43 @@ data_file_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 data_file_server <- function(input, output, session) {
+    
+    ns <- session$ns
+    
+    # input data file
+    output$input_data <- renderUI({
+        if(isTruthy(env$ap$header_check$valid) &&
+           isTruthy(env$ap$proj_file_list) &&
+           (env$ap$header_check$data_file %in% env$ap$proj_file_list)) {
+            helpText(
+                icon("comment"),
+                "Data file was already provided."
+            )
+        } else {
+            input_data_file_ui(ns("input_data_file"))
+        }
+    })
+    # observeEvent({c(env$ap$proj_file_list, env$ap$file_modif)}, {
+    #     
+    #     pprint("toto")
+    #     
+    #     output$input_data <- renderUI({
+    #         if(isTruthy(env$ap$header_check$valid) &&
+    #            isTruth(env$ap$proj_file_list) &&
+    #            (env$ap$header_check$data_file %in% env$ap$proj_file_list)) {
+    #             helpText(
+    #                 icon("comment"),
+    #                 "Data file was already provided."
+    #             )
+    #         } else {
+    #             input_data_file_ui(ns("input_data_file"))
+    #         }
+    #     })
+    # }, ignoreNULL = TRUE)
+    
+    callModule(input_data_file_server, "input_data_file")
+    
+    
     
     # ## Data file file
     # data_file <- callModule(
@@ -933,73 +966,46 @@ data_file_server <- function(input, output, session) {
     # )
 }
 
-#' Input data ui
+#' Input data file ui
 #' @keywords internal
 #' @author Ghislain Durif
-input_data_ui <- function(id) {
+input_data_file_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        uiOutput(ns("feedback")),
         fileInput(
             ns("data_file"),
             label = NULL,
             buttonLabel = "Select file",
             multiple = FALSE
-        )
+        ),
+        uiOutput(ns("feedback"))
     )
 }
 
-#' Input data server
+#' Input data file server
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param proj_dir string as a `reactive`, project directory.
-input_data_server <- function(input, output, session,
-                              proj_dir = reactive({NULL}),
-                              existing_proj_zip = reactive({NULL})) {
-    ## init local
-    local <- reactiveValues(
-        # input
-        proj_dir = NULL,
-        existing_proj_zip = NULL
-    )
-    ## get input
+input_data_file_server <- function(input, output, session) {
+    
+    # Feedback on file upload
     observe({
-        local$proj_dir <- proj_dir()
-        local$existing_proj_zip <- existing_proj_zip()
-        # # debugging
-        # pprint(paste0("input proj dir = ", local$proj_dir))
-    })
-    ## init output
-    out <- reactiveValues(
-        name = NULL
-    )
-
-    ## feedback
-    output$feedback <- renderUI({
-        if(!is.null(local$existing_proj_zip)) {
-            if(local$existing_proj_zip) {
-                helpText(
-                    icon("comment"),
-                    "Data file was already extracted from project zip file."
-                )
-            } else {
-                NULL
-            }
-        } else {
-            NULL
-        }
+        # feedback on missing file
+        feedbackWarning("file_input", !isTruthy(input$data_file),
+                        "Missing data file.")
     })
 
     ## get data file
     observeEvent(input$data_file, {
         # input$data_file = data.frame with 4 columns:
         # name (chr), size (int), type (chr), datapath (chr)
-        req(local$proj_dir)
-        req(input$data_file)
-        req(is.data.frame(input$data_file))
-        req(nrow(input$data_file) > 0)
-        # data file
-        out$name <- input$data_file$name
+        req(env$ap$proj_dir)
+        req(nrow(input$data_file) == 1)
+        # check data file name (if header exists)
+        if(isTruthy(env$ap$header_check$valid) &&
+           isTruthy(env$ap$header_check$data_file)) {
+            req(input$data_file$name == env$ap$header_check$data_file)
+        }
         # copy to project directory
         fs::file_copy(input$data_file$datapath,
                       file.path(local$proj_dir, out$name),
@@ -1010,10 +1016,33 @@ input_data_server <- function(input, output, session,
             fs::file_delete(input$data_file$datapath)
         }
     })
-    # # debugging
-    # observe({
-    #     logging("data file = ", out$file)
-    # })
+    
+    ## feedback
+    observeEvent(input$data_file, {
+        output$feedback <- renderUI({
+            if(isTruthy(nrow(input$data_file) == 1)) {
+                if(isTruthy(env$ap$header_check$valid) &&
+                   isTruthy(env$ap$header_check$data_file) &&
+                   input$data_file$name != env$ap$header_check$data_file) {
+                    tags$div(
+                        icon("warning"), 
+                        "Provided data file name does not match",
+                        "expected data file name from", 
+                        tags$code(env$ap$header_check$header_file), "file.",
+                        style = "color: #F89406;"
+                    )
+                } else {
+                    NULL
+                }
+            } else {
+                tags$div(
+                    icon("warning"), 
+                    "Missing data file.",
+                    style = "color: #F89406;"
+                )
+            }
+        })
+    })
 
     ## output
     return(out)
