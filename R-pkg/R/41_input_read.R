@@ -12,7 +12,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     # init output
     out <- list(
         msg = list(), valid = TRUE,
-        data_file = NULL, loci_desc = NULL, 
+        data_file = NULL, locus_desc = NULL, 
         n_param = NULL, n_prior = NULL, n_stat = NULL, 
         cond_list = NULL, prior_list = NULL, 
         n_group = NULL, group_prior_list = NULL, 
@@ -280,22 +280,22 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     
     # number of loci description
     pttrn <- "(?<=^loci description \\()[0-9]+"
-    out$n_loci_desc <- as.integer(str_extract(strng, pttrn))
+    out$n_locus_desc <- as.integer(str_extract(strng, pttrn))
     
     # extract loci description
-    out$loci_desc <- header[1:out$n_loci_desc]
-    header <- header[-(1:out$n_loci_desc)]
-    current_line <- current_line + out$n_loci_desc
+    out$locus_desc <- header[1:out$n_locus_desc]
+    header <- header[-(1:out$n_locus_desc)]
+    current_line <- current_line + out$n_locus_desc
     # check extracted loci description
-    loci_desc_check <- unlist(lapply(
-        out$loci_desc, 
-        check_header_loci_desc, type = locus_type
+    locus_desc_check <- unlist(lapply(
+        out$locus_desc, 
+        check_header_locus_desc, type = locus_type
     ))
-    if(!all(loci_desc_check)) {
+    if(!all(locus_desc_check)) {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with format of locus description at lines:", 
-            str_c(which(!loci_desc_check) + current_line, collapse = ", "), 
+            str_c(which(!locus_desc_check) + current_line, collapse = ", "), 
             "."
         )
         out$msg <- append(out$msg, list(msg))

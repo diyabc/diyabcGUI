@@ -48,7 +48,7 @@ check_header_cond <- function(strng) {
 #' Content: see doc
 #' @param strng string, prior description.
 #' @param type string, `"mss"` or `"snp"`
-check_header_loci_desc <- function(strng, type = "mss") {
+check_header_locus_desc <- function(strng, type = "mss") {
     # init output
     valid <- FALSE
     # Microsat/Sequence
