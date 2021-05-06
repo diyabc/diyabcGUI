@@ -48,7 +48,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     
     ## HEADER FILE CONTENT
     # read whole file in one string and split it by new line
-    header <- str_split(read_file(file_name), "\n", simplify = TRUE)
+    header <- unlist(str_split(read_file(file_name), "\n"))
     
     ## data file
     out$data_file <- header[1]
