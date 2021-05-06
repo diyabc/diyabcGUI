@@ -587,8 +587,6 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
 #' @param data_file string, data file name.
 #' @param data_dir string, path to directory where data file is stored.
 #' @importFrom tools file_ext
-#' @importFrom parallel makeCluster stopCluster
-#' @importFrom pbapply pblapply
 read_poolseq_snp_data <- function(data_file, data_dir) {
     
     # init output
@@ -819,3 +817,492 @@ check_snp_poolseq <- function(content, mrc = 1) {
     return(out)
 }
 
+#' Check Microsat/Sequence (GenePop) data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @param expected_data_file string, expected data file name for 
+#' existing project, default is NULL.
+#' @importFrom tools file_ext
+#' @importFrom readr read_file
+read_mss_data <- function(data_file, data_dir) {
+    
+    # init output
+    out <- list(
+        msg = list(), valid = TRUE,
+        data_file = NULL, n_loci = NULL, locus_count = NULL, 
+        n_pop = NULL, n_indiv = NULL, pop_size = NULL,
+        sex_ratio = NULL
+    )
+    
+    # ## init output
+    # locus <- NULL
+    # locus_mode <- NULL
+    # locus_name <- NULL
+    # seq_length <- NULL
+    # n_loci <- NULL
+    # n_pop <- NULL
+    # n_indiv <- NULL
+    # pop_size <- NULL
+    
+    # full path
+    file_name <- file.path(data_dir, data_file)
+    
+    # check file_name
+    tmp <- check_file_name(file_name)
+    if(!tmp) {
+        out$valid <- FALSE
+        msg <- tagList("Invalid data file name.")
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # check file content
+    if(file.info(file_name)$size == 0) {
+        out$valid <- FALSE
+        msg <- tagList("Data file is empty.")
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # check file_type
+    if(tools::file_ext(file_name) != "mss") {
+        out$valid <- FALSE
+        msg <- tagList(
+            "IndSeq SNP files should have an extension",
+            tags$code(".mss"), "."
+        )
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # continue ?
+    if(!out$valid) {
+        return(out)
+    }
+    
+    # data file name
+    out$data_file <- data_file
+    
+    ## DATA FILE CONTENT
+    
+    ## HEADER 1
+    header1 <- readLines(file_name, n = 1, warn = FALSE)
+    
+    # sex ratio
+    pttrn <- "(?i)NM=[0-9]+\\.?[0-9]*NF(?-i)"
+    if(!str_detect(header1, pttrn)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Missing", tags$b("sex ratio"), "in first line header."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    out$sex_ratio <- str_extract(header1, pttrn)
+    
+    ## FILE CONTENT
+    file_content <- unlist(str_split(read_file(file_name), "\n"))
+    
+    ## locus description
+    pttrn <- "(?<=<)(A|H|X|Y|M)(?=>)"
+    locus_pttrn_match <- str_extract(file_content, pttrn)
+    # check if present
+    if(all(is.na(locus_pttrn_match))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Missing locus description, see manual"
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check if description follows title line
+    locus_match_ind <- which(!is.na(locus_pttrn_match))
+    if(!all(locus_match_ind == 2:tail(locus_match_ind, 1))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Locus description should be located",
+            "at beginning of data file, after title line,", 
+            "with a single locus per line, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check locus description format
+    pttrn <- "^[A-Za-z0-9\\s_\\-]+ <(A|H|X|Y|M)>$"
+    locus_desc_match_ind <- which(str_detect(file_content, pttrn))
+    if(!all(locus_desc_match_ind == locus_match_ind)) {
+        out$valid <- FALSE
+        issue_line <- locus_match_ind[!locus_match_ind %in% 
+                                          locus_desc_match_ind]
+        msg <- tagList(
+            "Issue with Microsat/Sequence locus description format at rows:",
+            tags$code(str_c(issue_line, collapse = ",")), ".", br(),
+            "You can use the following character to specify",
+            "locus names:",
+            tags$code("A-Z"), tags$code("a-z"), tags$code("0-9"),
+            tags$code("_"), tags$code("-"), "and", tags$code(" "), "."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## number of locus
+    out$n_loci <- length(locus_desc_match_ind)
+    
+    ## locus description
+    pttrn <- "(?<=<)(A|H|X|Y|M)(?=>$)"
+    locus_desc <- str_extract(file_content[locus_match_ind], pttrn)
+    
+    ## locus name
+    pttrn <- "^[A-Za-z0-9\\s_\\-]+(?= <)"
+    locus_name <- str_extract(file_content[locus_match_ind], pttrn)
+    locus_name <- str_replace_all(locus_name, " +", "_")
+    # check
+    if(length(unique(locus_name)) != length(locus_name)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with locus description",
+            "each locus should have a unique name, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## population
+    pttrn <- "^(?i)pop(?-i)$"
+    pop_match_ind <- which(str_detect(file_content, pttrn))
+    # check
+    if(length(pop_match_ind) == 0) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Keyword", tags$code("POP"), "is missing, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## remove unnecessary space
+    file_content <- str_replace_all(
+        str_trim(file_content), " +", " "
+    )
+    
+    ## remove final empty line (if any)
+    if(tail(file_content, 1) == "") {
+        file_content <- head(file_content, length(file_content) - 1)
+    }
+    
+    ## number of pop
+    out$n_pop <- length(pop_match_ind)
+    
+    ## pop size
+    out$pop_size <- diff(c(pop_match_ind, length(file_content))) - 
+        c(rep(1, out$n_pop - 1), 0)
+    
+    ## number of individuals
+    out$n_indiv <- sum(out$pop_size)
+    
+    ## population id
+    pop_id <- unlist(lapply(
+        1:out$n_pop, 
+        function(ind) return(rep(ind, each = out$pop_size[ind]))
+    ))
+    
+    ## EXTRACT DATA
+    data_ind <- head(pop_match_ind, 1):length(file_content)
+    data_ind <- data_ind[!data_ind %in% pop_match_ind]
+    data_content <- file_content[data_ind]
+    
+    # write data content to a temporary file
+    data_content <- str_replace_all(
+        str_replace_all(data_content, ",", " "),
+        " +",  ";"
+    )
+    tmp_file <- file.path(data_dir, "tmp_data_file.csv")
+    tmp <- writeLines(data_content, tmp_file)
+    on.exit({
+        if(file.exists(tmp_file))
+            fs::file_delete(tmp_file)
+    })
+    
+    # read data as data.frame
+    data_content <- tryCatch(
+        read.table(tmp_file, sep = ";", stringsAsFactors = FALSE,
+                   colClasses = "character"), 
+        error = function(e) e
+    )
+    if("error" %in% class(data_content)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with Microsat/Sequences data file format, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ##### CHECK DATA
+    ## check number of loci
+    if(ncol(data_content) != out$n_loci + 1) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Number of declared loci at beginning of file", 
+            "does not correspond to number of actual loci", 
+            "in the data, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## format data.frame
+    colnames(data_content) <- c("indiv", str_c("locus", 1:out$n_loci))
+    data_content$pop <- as.character(pop_id)
+    
+    ## indiv name first column
+    if(!all(str_detect(data_content$indiv, "[A-Za-z0-9_-]+"))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "First column should provide individual names,",
+            "you can use the following character to specify",
+            "such names:",
+            tags$code("A-Z"), tags$code("a-z"), tags$code("0-9"),
+            tags$code("_"), tags$code("-"), "and", tags$code(" "), "."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## check locus encoding
+    microsat_hap_encoding <- "^[0-9]{3}$"
+    microsat_dip_encoding <- "^[0-9]{6}$"
+    microsat_x_encoding <- "^([0-9]{3}|[0-9]{6})$"
+    nucleotid_encoding <- "[ATCG]*"
+    seq_hap_encoding <- str_c("^<\\[", nucleotid_encoding, "\\]>")
+    seq_dip_encoding <- str_c(
+        "^<\\[", nucleotid_encoding, "\\]\\[", nucleotid_encoding, "\\]>"
+    )
+    seq_x_encoding <- str_c(
+        "^<\\[", nucleotid_encoding, "\\](\\[", nucleotid_encoding, "\\])?>"
+    )
+    
+    ## locus data
+    locus_data <- data_content[,!colnames(data_content) %in% c("indiv", "pop")]
+    # issue when a single locus
+    if(ncol(data_content) == 3) {
+        locus_data <- data.frame(locus1 = locus_data)
+    }
+    
+    ### microsat locus
+    microsat_hap_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, microsat_hap_encoding)))
+            }
+        ) & (locus_desc %in% c("H", "Y", "M"))
+    )
+    microsat_dip_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, microsat_dip_encoding)))
+            }
+        ) & (locus_desc == "A")
+    )
+    microsat_x_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, microsat_x_encoding)))
+            }
+        ) & (locus_desc == "X")
+    )
+    
+    ### seq locus
+    seq_hap_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, seq_hap_encoding)))
+            }
+        ) & (locus_desc %in% c("H", "Y", "M"))
+    )
+    seq_dip_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, seq_dip_encoding)))
+            }
+        ) & (locus_desc == "A")
+    )
+    seq_x_locus <- which(
+        apply(
+            locus_data, 2, function(loc) {
+                return(all(str_detect(loc, seq_x_encoding)))
+            }
+        ) & (locus_desc == "X")
+    )
+    
+    ## check that A are diploid locus
+    if(!all(which(locus_desc == "A") %in% 
+            c(microsat_dip_locus, seq_dip_locus))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Autosomal diploid (i.e. identified by a", tags$code("A"), ")",
+            "should all be diploid loci."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## check that H, M and Y are haploid locus
+    if(!all(which(locus_desc %in% c("H", "M", "Y")) %in% 
+            c(microsat_hap_locus, seq_hap_locus))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Autosomal haploid loci",
+            "(i.e. identified by a", tags$code("H"), ")", 
+            "Y-linked loci (i.e. identified by a", tags$code("Y"), ")",
+            "and Mitochondrial loci", 
+            "(i.e. identified by a", tags$code("M"), ")",
+            "should all be haploid loci."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ### check if other issue with formating
+    if(!all(sort(c(microsat_hap_locus, microsat_dip_locus,
+                   microsat_x_locus,
+                   seq_hap_locus, seq_dip_locus,
+                   seq_x_locus)) == 
+            1:out$n_loci)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with data content of columns:",
+            tags$code(str_c(
+                (1:n_loci)[!(1:n_loci) %in% 
+                               c(microsat_hap_locus, 
+                                 microsat_dip_locus,
+                                 microsat_x_locus,
+                                 seq_hap_locus, 
+                                 seq_dip_locus,
+                                 seq_x_locus)],
+                collapse = ", "
+            )), br(),
+            "See manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## locus mode (microsat or sequence, hap or dip)
+    tmp_locus_mode <- data.frame(
+        mode = c(
+            rep("M", length(microsat_hap_locus) + length(microsat_dip_locus) +
+                length(microsat_x_locus)), 
+            rep("S", length(seq_hap_locus) + length(seq_dip_locus) +
+                    length(seq_x_locus))
+        ),
+        index = c(microsat_hap_locus, microsat_dip_locus,
+                  microsat_x_locus,
+                  seq_hap_locus, seq_dip_locus,
+                  seq_x_locus)
+    )
+    locus_mode <- tmp_locus_mode$mode[order(tmp_locus_mode$index)]
+    
+    ## check seq locus length
+    seq_length <- unlist(lapply(
+        which(locus_mode == "S"),
+        function(col_ind) {
+            tmp <- unlist(lapply(
+                1:out$n_indiv,
+                function(row_ind) {
+                    return(
+                        str_length(str_extract_all(
+                            locus_data[row_ind,col_ind],
+                            "\\[[ATCG]*\\]", 
+                            simplify = TRUE
+                        )) - 2
+                    )
+                }
+            ))
+            
+            out <- max(tmp)
+            if(!all(unique(tmp) %in% c(0, out))) {
+                return(-100)
+            } else {
+                return(out)
+            }
+        }
+    ))
+    
+    if(any(seq_length == -100)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Non-missing sequence data attached to following loci",
+            tags$code(str_c(which(seq_length == -100), collapse = ", ")),
+            "do not have the same length in all",
+            "individuals."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## check for missing data in microsat locus
+    microsat_missing_encoding <- "^(0{3}|0{6})$"
+    missing_microsat <- apply(
+        locus_data[,which(locus_mode == "M")], c(1,2),
+        function(item) return(str_detect(item, microsat_missing_encoding))
+    )
+    
+    missing_pop <- apply(
+        missing_microsat, 2,
+        function(item) {
+            return(any(unlist(tapply(item, pop_id, sum)) == out$pop_size))
+        }
+    )
+    
+    if(any(missing_pop)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with missing data for entire population(s)",
+            "regarding microsat locus:",
+            tags$code(str_c(which(missing_pop), collapse = ", ")), br(),
+            "Remove this locus (these loci) from your dataset."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## check for missing data in seq locus
+    seq_missing_encoding <- "^<\\[\\](\\[\\])?>$"
+    missing_seq <- apply(
+        locus_data[,which(locus_mode == "S")], c(1,2),
+        function(item) return(str_detect(item, seq_missing_encoding))
+    )
+    
+    missing_pop <- apply(
+        missing_seq, 2,
+        function(item) {
+            return(any(unlist(tapply(item, pop_id, sum)) == out$pop_size))
+        }
+    )
+    
+    if(any(missing_pop)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with missing data for entire population(s)",
+            "regarding sequence locus:",
+            tags$code(str_c(which(missing_pop), collapse = ", ")), br(),
+            "Remove this locus (these loci) from your dataset."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## locus count
+    out$locus_count <- as.data.frame(table(locus_desc, locus_mode))
+    colnames(out$locus_count) <- c("type", "mode", "count")
+    
+    ## save locus description and mode
+    out$locus_desc <- locus_desc
+    out$locus_mode <- locus_mode
+    
+    ## output
+    return(out)
+}
