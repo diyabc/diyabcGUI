@@ -102,6 +102,16 @@ analysis_proj_set_server <- function(input, output, session) {
 
     ## data type
     callModule(data_type_server, "data_type", tag = "ap")
+    
+    ## reset project when data type change
+    observeEvent({c(env$ap$locus_type, env$ap$seq_mode)}, {
+        req(env$ap$proj_dir)
+        
+        # clean before upload
+        clean_proj_dir(env$ap$proj_dir)
+        # file modification
+        update_proj_file("ap")
+    })
 
     ## project type
     callModule(proj_type_server, "proj_type")
@@ -110,7 +120,7 @@ analysis_proj_set_server <- function(input, output, session) {
     callModule(proj_config_server, "proj_config")
     
     ## data file
-    callModule(data_file_server, "data_file")
+    # callModule(data_file_server, "data_file")
 
     # output$proj_is_ready <- renderUI({
     #     if(!(out$valid_proj & out$valid_data_file)) {
@@ -122,9 +132,6 @@ analysis_proj_set_server <- function(input, output, session) {
     #     }
     # })
     #
-
-    ## output
-    return(out)
 }
 
 #' Project type setting ui
@@ -378,7 +385,8 @@ proj_file_check_ui <- function(id) {
 proj_file_check_server <- function(input, output, session) {
 
     ## file check
-    observeEvent({c(env$ap$file_modif, env$ap$proj_file_list)}, {
+    observeEvent({c(env$ap$file_modif, env$ap$proj_file_list,
+                    env$ap$proj_dir, env$ap$locus_type)}, {
         req(env$ap$proj_dir)
         req(env$ap$locus_type)
         # file check
@@ -665,9 +673,7 @@ existing_proj_server <- function(input, output, session,
     })
 
     # reset file upload when another mode is chosen
-    observe({
-        req(local$proj_type)
-        req(local$proj_type != "existing")
+    observeEvent({c(local$proj_type, env$ap$locus_type, env$ap$seq_mode)}, {
         shinyjs::reset("file_input")
     })
     
@@ -774,7 +780,7 @@ example_proj_server <- function(input, output, session,
     })
 
     # update possible input
-    observeEvent(local$proj_type, {
+    observeEvent({c(local$proj_type, env$ap$locus_type, env$ap$seq_mode)}, {
         req(local$proj_type)
         req(local$proj_type == "example")
         req(env$ap$locus_type)
@@ -884,9 +890,7 @@ data_file_ui <- function(id) {
             "Loading and checking the data file may take some time."
         ),
         uiOutput(ns("input_data")),
-        check_data_ui(ns("check_data_file")),
-        hr(),
-        uiOutput(ns("feedback_data"))
+        check_data_ui(ns("check_data_file"))
     )
 }
 
@@ -902,6 +906,9 @@ data_file_server <- function(input, output, session) {
         if(isTruthy(env$ap$header_check$valid) &&
            isTruthy(env$ap$proj_file_list) &&
            (env$ap$header_check$data_file %in% env$ap$proj_file_list)) {
+            # update data file in env
+            env$ap$data_file <- env$ap$header_check$data_file
+            # output
             helpText(
                 icon("comment"),
                 "Data file was already provided."
@@ -910,60 +917,12 @@ data_file_server <- function(input, output, session) {
             input_data_file_ui(ns("input_data_file"))
         }
     })
-    # observeEvent({c(env$ap$proj_file_list, env$ap$file_modif)}, {
-    #     
-    #     pprint("toto")
-    #     
-    #     output$input_data <- renderUI({
-    #         if(isTruthy(env$ap$header_check$valid) &&
-    #            isTruth(env$ap$proj_file_list) &&
-    #            (env$ap$header_check$data_file %in% env$ap$proj_file_list)) {
-    #             helpText(
-    #                 icon("comment"),
-    #                 "Data file was already provided."
-    #             )
-    #         } else {
-    #             input_data_file_ui(ns("input_data_file"))
-    #         }
-    #     })
-    # }, ignoreNULL = TRUE)
     
+    # input data file (if necessary)
     callModule(input_data_file_server, "input_data_file")
     
-    
-    
-    # ## Data file file
-    # data_file <- callModule(
-    #     input_data_server, "input_data_file",
-    #     proj_dir = reactive(out$proj_dir),
-    #     existing_proj_zip = reactive(local$existing_proj_zip)
-    # )
-    #
-    # # update local if data file upload
-    # observe({
-    #     req(!is.null(data_file$name))
-    #     local$data_file <- data_file$name
-    # })
-    #
-    # # data file extracted from existing project zip file
-    # observe({
-    #     req(!is.null(local$existing_proj_zip))
-    #     req(!is.null(local$header_data_file))
-    #
-    #     if(local$existing_proj_zip) {
-    #         local$data_file <- local$header_data_file
-    #     }
-    # })
-    #
-    # ## Data file check
-    # check_data <- callModule(
-    #     check_data_server, "check_data_file",
-    #     data_file = reactive(local$data_file),
-    #     expected_data_file = reactive(local$header_data_file),
-    #     locus_type = reactive(out$locus_type),
-    #     seq_mode = reactive(out$seq_mode),
-    #     proj_dir = reactive(out$proj_dir)
-    # )
+    # check data
+    callModule(check_data_server, "check_data_file")
 }
 
 #' Input data file ui
@@ -1059,65 +1018,81 @@ check_data_ui <- function(id) {
     )
 }
 
-#' check data server
+#' Check data server
 #' @keywords internal
 #' @author Ghislain Durif
 check_data_server <- function(input, output, session) {
-
-    # # data check
-    # observe({
-    #     req(!is.null(local$data_file))
-    #     req(!is.null(local$proj_dir))
-    #     req(!is.null(local$locus_type))
-    #     req(!is.null(local$seq_mode))
-    #     # check
-    #     local$file_check <- check_data_file(
-    #         local$data_file, local$proj_dir,
-    #         local$locus_type, local$seq_mode,
-    #         local$exp_data_file
-    #     )
-    #     # data info
-    #     req(!is.null(local$file_check))
-    #     req(!is.null(local$file_check$valid))
-    #     # valid data
-    #     out$valid <- local$file_check$valid
-    #     # data spec
-    #     req(!is.null(local$file_check$spec))
-    #     out$info <- local$file_check$spec
-    # })
-    # 
-    # # user feedback
-    # output$data_info <- renderUI({
-    #     req(!is.null(local$file_check))
-    #     # show data info
-    #     if(local$file_check$valid) {
-    #         req(local$file_check$msg)
-    #         helpText(
-    #             icon("comment"), "Data file info",
-    #             do.call(
-    #                 tags$ul,
-    #                 lapply(local$file_check$msg, function(item) {
-    #                     return(tags$li(item))
-    #                 })
-    #             )
-    #         )
-    #     } else {
-    #         tmp_msg <- NULL
-    #         if(!is.null(local$file_check$err)) {
-    #             tmp_msg <- do.call(
-    #                 tags$ul,
-    #                 lapply(local$file_check$err, function(item) {
-    #                     return(tags$li(item))
-    #                 })
-    #             )
-    #         }
-    #         helpText(
-    #             icon("warning"), "Issue with data file.",
-    #             tmp_msg
-    #         )
-    #     }
-    # })
-
-    # output
-    return(out)
+    
+    ## data check
+    observeEvent({c(env$ap$file_modif, env$ap$proj_file_list,
+                    env$ap$data_file)}, {
+        req(env$ap$proj_dir)
+        req(env$ap$locus_type)
+        req(env$ap$seq_mode)
+        req(env$ap$data_file)
+        # user feedback regarding wait
+        output$feedback <- renderUI({
+            helpText(
+                icon("spinner", class = "fa-spin"), "Data check is running."
+            )
+        })
+        # data file check
+        env$ap$data_check <- check_data_file(
+            env$ap$data_file, env$ap$proj_dir, 
+            env$ap$locus_type, env$ap$seq_mode
+        )
+        # user feedback regarding wait
+        output$feedback <- renderUI({
+            NULL
+        })
+    })
+    
+    ## feedback
+    output$data_info <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$seq_mode)
+        # data case
+        tmp_data_case <- NULL
+        if(env$ap$locus_type == "mss") {
+            tmp_data_case <- "Microsat/Sequence"
+        ## snp locus / indseq
+        } else if((env$ap$locus_type == "snp") && 
+                  (env$ap$seq_mode == "indseq")) {
+            tmp_data_case <- "SNP IndSeq"
+        ## snp locus / poolseq
+        } else if((env$ap$locus_type == "snp") && 
+                  (env$ap$seq_mode == "poolseq")) {
+            tmp_data_case <- "SNP PoolSeq"
+        }
+        
+        # output
+        if(isTruthy(env$ap$data_check)) {
+            if(isTruthy(env$ap$data_check$valid)) {
+                format_data_info(
+                    env$ap$data_check, env$ap$locus_type, env$ap$seq_mode
+                )
+            } else if(isTruthy(env$ap$data_check$msg)) {
+                tags$div(
+                    tags$p(
+                        icon("warning"), 
+                        "Issue with your", tags$b(tmp_data_case), "data file:",
+                        do.call(
+                            tags$ul, lapply(env$ap$data_check$msg, tags$li)
+                        )
+                    ),
+                    style = "color: #F89406;"
+                )
+            } else {
+                tags$div(
+                    tags$p(
+                        icon("warning"), 
+                        "Issue with your", tags$b(tmp_data_case), "data file."
+                    ),
+                    style = "color: #F89406;"
+                )
+            }
+        } else {
+            NULL
+        }
+    })
 }
