@@ -459,7 +459,7 @@ process_indseq_locus <- function(snp_data, sex_data, pop_data, snp_type, maf) {
     
     # filter
     return(data.frame(
-        valid = local$valid, filt = local$filt, mono = local$mono,
+        valid = local$valid, filter = local$filter, mono = local$mono,
         missing_pop = local$missing_pop, 
         issue_X = local$issue_X, issue_Y = local$issue_Y, af = local$af,
         maf = maf, hudson = local$hudson,
@@ -467,38 +467,39 @@ process_indseq_locus <- function(snp_data, sex_data, pop_data, snp_type, maf) {
     ))
 }
 
-#' Filter IndSeq SNP data based on MAF
+#' Check (for missing values) and filter (based on MAF) IndSeq SNP data
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param content data.frame with data file content, with columns
-#' `IND` (individual id), `SEX` (female or male), `POP` (population id),
-#' and remaining columns corresponding to SNPs where each entry encode the
-#' number of ancestral allele for the loci, i.e. `0`, `1` and `2` for 
-#' autosome (`A`) and X-chromosome (`X`) in female, or `0` and `1` for 
-#' haploid locus (`H`), Y-chromosome (`Y`) in male and 
+#' @param content data.frame with columns corresponding to SNPs 
+#' where each entry encode the number of ancestral allele for the loci, 
+#' i.e. `0`, `1` and `2` for autosome (`A`) and X-chromosome (`X`) in female, 
+#' or `0` and `1` for  haploid locus (`H`), Y-chromosome (`Y`) in male and 
 #' mitochondrial locus (`M`). 
 #' Note : missing values are encoded by a `9`.
-#' @param snp_type vector of column header, being `IND`, `SEX`, `POP` followed
-#' by each locus type (among `A`, `H`, `X`, `Y`, `M`).
-#' @param locus_details data.frame with two columns, `count` being the number 
+#' @param indiv_info data.frame with columns `IND` (individual id), 
+#' `SEX` (female or male), `POP` (population id).
+#' Note : missing values are encoded by a `9`.
+#' @param snp_type vector of locus type (among `A`, `H`, `X`, `Y`, `M`).
+#' @param locus_cout data.frame with two columns, `count` being the number 
 #' of locus for each type in the data, and `type` being the corresponding locus 
 #' type (among `A`, `H`, `X`, `Y`, `M`).
 #' @importFrom dplyr bind_rows
-filter_snp_indseq <- function(content, indiv_info, snp_type, locus_details, 
-                              maf=0.05) {
+check_snp_indseq <- function(content, indiv_info, snp_type, locus_count, 
+                             maf=0.05) {
+    
+    # init output
+    out <- list(
+        valid = TRUE, locus_count = NULL, msg = list()
+    )
     
     ncore <- getOption("diyabcGUI")$ncore
-    snp_filter <- NULL
     
-    if(is.null(maf)) maf <- 0
-    
-    snp_filter <- pblapply(
+    snp_list <- pblapply(
         1:nrow(content),
         function(ind) {
-            out <- indseq_locus_filter(
-                snp_data = content[ind,], 
-                sex_data = indiv_info$SEX, 
-                locus_type = snp_type[ind], 
+            out <- process_indseq_locus(
+                snp_data = content[ind,], sex_data = indiv_info$SEX,
+                pop_data = indiv_info$POP, snp_type = snp_type[ind],
                 maf = maf
             )
         },
@@ -506,63 +507,141 @@ filter_snp_indseq <- function(content, indiv_info, snp_type, locus_details,
     )
     
     seek_error <- unlist(lapply(
-        snp_filter, 
-        function(item) "try-error" %in% class(item)
+        snp_list, function(item) "try-error" %in% class(item)
     ))
     if(any(seek_error)) {
         error_msg <- attributes(
-            snp_filter[[ which(seek_error[1]) ]]
+            snp_list[[ which(seek_error)[1] ]]
         )$condition$message
         err <- str_c(
-            "Issue when checking IndSeq SNP data file",
-            "content:",
-            error_msg,
-            sep = " "
+            "Issue when checking IndSeq SNP data file content:",
+            error_msg, sep = " "
         )
+        out$valid <- FALSE
+        msg <- tagList("Error when checking data file content.")
+        out$msg <- append(out$msg, list(msg))
         pprint(err)
-        return(NULL)
-    } else {
-        # no error
-        snp_filter <- Reduce("bind_rows", snp_filter)
-        
-        # extract number of filtered loci by type
-        tmp_filter <- tapply(
-            snp_filter$filter, 
-            snp_type, 
-            sum
-        )
-        tmp_filter <- data.frame(
-            filter=tmp_filter, type=names(tmp_filter), 
-            row.names=NULL, stringsAsFactors = FALSE
-        )
-        
-        # extract number of monomorphic loci by type
-        tmp_mono <- tapply(
-            snp_filter$mono, 
-            snp_type, 
-            sum
-        )
-        tmp_mono <- data.frame(
-            mono=tmp_mono, type=names(tmp_mono), 
-            row.names=NULL, stringsAsFactors = FALSE
-        )
-        
-        # extract number of loci with issue regarding sex by type
-        tmp_issue <- tapply(
-            snp_filter$issue, 
-            snp_type, 
-            sum
-        )
-        tmp_issue <- data.frame(
-            issue=tmp_issue, type=names(tmp_issue), 
-            row.names=NULL, stringsAsFactors = FALSE
-        )
-        
-        # merge all results into locos_details table
-        locus_details <- merge(locus_details, tmp_filter)
-        locus_details <- merge(locus_details, tmp_mono)
-        locus_details <- merge(locus_details, tmp_issue)
+        return(out)
     }
     
-    return(locus_details)
+    # no error
+    snp_tab <- Reduce("bind_rows", snp_list)
+    rm("snp_list")
+    
+    # check for unvalid locus
+    if(any(!snp_tab$valid)) {
+        # missing pop
+        is_missing_pop <- !is.na(snp_tab$missing_pop)
+        if(any(is_missing_pop)) {
+            out$valid <- FALSE
+            missing_pop <- snp_tab$missing_pop[is_missing_pop]
+            snp_issue <- which(is_missing_pop)
+            msg <- tagList(
+                "Issue with missing data for entire population(s)",
+                "regarding SNP:",
+                tags$div(
+                    do.call(
+                        tags$ul, 
+                        lapply(
+                            1:length(snp_issue),
+                            function(ind) {
+                                tags$li(
+                                    tags$b(snp_issue[ind]),
+                                    "(for population(s)", 
+                                    tags$code(missing_pop[ind]), ")"
+                                )
+                            }
+                        )
+                    ),
+                    style = "column-count:2;"
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+        }
+        
+        # X chromosome
+        is_issue_X <- !is.na(snp_tab$issue_X)
+        if(any(is_issue_X)) {
+            out$valid <- FALSE
+            issue_X <- snp_tab$issue_X[is_issue_X]
+            snp_issue <- which(is_issue_X)
+            msg <- tagList(
+                "Issue with data for SNP on X chromosome (see manual)",
+                "regarding SNP:",
+                tags$div(
+                    do.call(
+                        tags$ul, 
+                        lapply(
+                            1:length(snp_issue),
+                            function(ind) {
+                                tags$li(
+                                    tags$b(snp_issue[ind]),
+                                    "(for individuals", 
+                                    tags$code(issue_X[ind]), ")"
+                                )
+                            }
+                        )
+                    )
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+        }
+        # Y chromosome
+        is_issue_Y <- !is.na(snp_tab$issue_Y)
+        if(any(is_issue_Y)) {
+            out$valid <- FALSE
+            issue_Y <- snp_tab$issue_Y[is_issue_Y]
+            snp_issue <- which(is_issue_Y)
+            msg <- tagList(
+                "Issue with data for SNP on Y chromosome (see manual)",
+                "regarding SNP:",
+                tags$div(
+                    do.call(
+                        tags$ul, 
+                        lapply(
+                            1:length(snp_issue),
+                            function(ind) {
+                                tags$li(
+                                    tags$b(snp_issue[ind]),
+                                    "(for individuals", 
+                                    tags$code(issue_Y[ind]), ")"
+                                )
+                            }
+                        )
+                    )
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+        }
+    }
+    
+    # continue ?
+    if(!out$valid) {
+        return(out)
+    }
+    
+    # extract number of filtered loci by type
+    tmp_filter <- tapply(
+        snp_tab$filter, snp_type, sum
+    )
+    tmp_filter <- data.frame(
+        filt=tmp_filter, type=names(tmp_filter), 
+        row.names=NULL, stringsAsFactors = FALSE
+    )
+    
+    # extract number of monomorphic loci by type
+    tmp_mono <- tapply(
+        snp_tab$mono, snp_type, sum
+    )
+    tmp_mono <- data.frame(
+        mono=tmp_mono, type=names(tmp_mono), 
+        row.names=NULL, stringsAsFactors = FALSE
+    )
+    
+    # merge all results into locos_details table
+    out$locus_count <- merge(locus_count, tmp_filter)
+    out$locus_count <- merge(out$locus_count, tmp_mono)
+    
+    # output
+    return(out)
 }

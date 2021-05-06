@@ -127,14 +127,14 @@ test_that("process_indseq_locus", {
     expect_equal(res$valid, c(FALSE, TRUE, FALSE, FALSE, TRUE))
 })
 
-test_that("filter_snp_indseq", {
+test_that("check_snp_indseq", {
     ## generate simulated test data
     n_indiv <- 100
     n_pop <- 5
     indiv_id <- str_c("ind", 1:n_indiv)
     indiv_sex <- sample(c("F", "M"), size = n_indiv, replace = TRUE)
     indiv_pop <- sample(1:n_pop, size = n_indiv, replace = TRUE)
-    content <- data.frame(
+    data_tab <- data.frame(
         IND = str_c("ind", 1:n_indiv),
         SEX = indiv_sex,
         POP = indiv_pop,
@@ -154,37 +154,75 @@ test_that("filter_snp_indseq", {
         stringsAsFactors = FALSE
     )
     
-    col_type <- colnames(content)
+    indiv_info <- data_tab[,1:3]
+    content <- t(data_tab[,-(1:3)])
+    snp_type <- rownames(content)
     
-    locus_details <- data.frame(
-        count = rep(1, 5),
-        type = tail(col_type, 5),
+    locus_count <- data.frame(
+        count = rep(1, 5), type = snp_type,
         stringsAsFactors = FALSE
     )
     
     maf <- 0.05
     
     # test on simulated data
-    out <- filter_snp_indseq(content, col_type, locus_details, maf)
+    res <- check_snp_indseq(content, indiv_info, snp_type, locus_count, maf)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_true(is.data.frame(res$locus_count))
     
-    expect_true(is.data.frame(out))
-    expect_true(all(colnames(out) %in% c("type", "mono", "count", "filter", "issue")))
+    ## test missing pop and missing values for X and Y chromosome
+    # generate test data
+    n_indiv <- 100
+    n_pop <- 5
+    indiv_id <- str_c("ind", 1:n_indiv)
+    indiv_sex <- sort(rep(c("F", "M"), length.out = n_indiv))
+    indiv_pop <- sort(rep(str_c("pop", 1:n_pop), length.out = n_indiv))
+    data_tab <- data.frame(
+        IND = str_c("ind", 1:n_indiv),
+        SEX = indiv_sex,
+        POP = as.character(indiv_pop),
+        A = c(rep(9, sum(indiv_pop == "pop1")), 
+              sample(0:2, size = n_indiv - sum(indiv_pop == "pop1"), 
+                     replace = TRUE)),
+        H = sample(0:1, size = n_indiv, replace = TRUE),
+        X = sample(0:2, size = n_indiv, replace = TRUE),
+        Y = sample(0:1, size = n_indiv, replace = TRUE),
+        M = sample(0:1, size = n_indiv, replace = TRUE),
+        stringsAsFactors = FALSE
+    )
+    
+    indiv_info <- data_tab[,1:3]
+    content <- t(data_tab[,-(1:3)])
+    snp_type <- rownames(content)
+    
+    locus_count <- data.frame(
+        count = rep(1, 5), type = snp_type,
+        stringsAsFactors = FALSE
+    )
+    
+    maf <- 0.05
+    
+    # test on simulated data
+    res <- check_snp_indseq(content, indiv_info, snp_type, locus_count, maf)
+    expect_false(res$valid)
+    expect_equal(length(res$msg), 3)
     
     ## test on SNP data file
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(example_dir(), 
+    data_dir <- file.path(data4test_dir(), 
                           "IndSeq_SNP_estim_param")
     data_path <- file.path(data_dir, data_file)
     
     # header
-    col_type <- unname(unlist(
+    header <- unname(unlist(
         read.table(file = data_path, skip = 1, nrows = 1)
     ))
     
     # locus type
     candidate_locus <- c("A", "H", "X", "Y", "M")
     locus_encoding <- str_c(header[-(1:3)], collapse = " ")
-    locus_details <- Reduce("rbind", lapply(
+    locus_count <- Reduce("rbind", lapply(
         candidate_locus, 
         function(pttrn) {
             count <- str_count(locus_encoding, pttrn)
@@ -199,13 +237,18 @@ test_that("filter_snp_indseq", {
     # data
     content <- read.table(file = data_path, skip = 2)
     
+    snp_type <- header[-(1:3)]
+    indiv_info <- content[,1:3]
+    colnames(indiv_info) <- header[1:3]
+    content <- t(content[,-(1:3)])
+    
     # test on data
-    out <- filter_snp_indseq(content, col_type, locus_details, maf)
-    
-    expect_true(is.data.frame(out))
-    expect_true(all(colnames(out) %in% c("type", "mono", "count", "filter", "issue")))
-    
-    
+    res <- check_snp_indseq(content, indiv_info, snp_type, locus_count, maf)
+    expect_true(res$valid)
+    expect_true(is.data.frame(res$locus_count))
+    expect_equal(res$locus_count$count, 30000)
+    expect_equal(res$locus_count$filt, 13046)
+    expect_equal(res$locus_count$mono, 0)
 })
 
 
