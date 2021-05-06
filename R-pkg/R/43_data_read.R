@@ -11,7 +11,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     # init output
     out <- list(
         msg = list(), valid = TRUE,
-        data_file = NULL, n_loci = NULL, locus_count = NULL, locus_desc = NULL, 
+        data_file = NULL, n_loci = NULL, locus_count = NULL, 
         n_pop = NULL, n_indiv = NULL,
         sex_ratio = NULL, maf = NULL
     )
@@ -143,7 +143,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     # locus type
     candidate_locus <- c("A", "H", "X", "Y", "M")
     locus_encoding <- str_c(header2[-(1:3)], collapse = " ")
-    out$locus_count <- Reduce("rbind", lapply(
+    locus_count <- Reduce("rbind", lapply(
         candidate_locus, 
         function(pttrn) {
             count <- str_count(locus_encoding, pttrn)
@@ -262,85 +262,19 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         return(out)
     }
     
-    
-    
-    
-    
-    
-    
-    
-    #     ## filtering locus
-    #     if(valid) {
-    #         filtered_locus <- filter_snp_indseq(
-    #             content, indiv_info, snp_type, locus_details, maf
-    #         )
-    #         if(is.null(filtered_locus)) {
-    #             err <- append(
-    #                 err,
-    #                 str_c(
-    #                     "Issue with IndSeq SNP file data content:",
-    #                     "error during SNP filtering, ",
-    #                     "probable issue with SNP data encoding (see manual).",
-    #                     sep = " "
-    #                 )
-    #             )
-    #             valid <- FALSE
-    #         } else {
-    #             locus <- unname(unlist(lapply(
-    #                 split(filtered_locus, seq(nrow(filtered_locus))),
-    #                 function(item) {
-    #                     if(item$count > 0)
-    #                         return(str_c(item$count - item$filter,
-    #                                      " <", item$type, ">"))
-    #                     else
-    #                         return(NULL)
-    #                 }
-    #             )))
-    #             locus_msg <- unname(unlist(lapply(
-    #                 split(filtered_locus, seq(nrow(filtered_locus))),
-    #                 function(item) {
-    #                     if(item$count > 0) {
-    #                         item_type <- str_c("<", item$type, ">")
-    #                         txt <- str_c(
-    #                             item$count - item$filter, item_type, sep = " "
-    #                         )
-    #                         if(item$filter > 0) {
-    #                             txt <- str_c(
-    #                                 item$count - item$filter, item_type,
-    #                                 "(note:", item$filter, item_type,
-    #                                 "loci are filtered out",
-    #                                 "based on MAF criterion)", sep = " "
-    #                             )
-    #                         }
-    #                         if(item$mono > 0) {
-    #                             str_c(
-    #                                 item$count - item$filter, item_type,
-    #                                 "(note:", item$filter, item_type,
-    #                                 "loci, including ",
-    #                                 item$mono, item_type,
-    #                                 "monomorphic loci, are filtered out",
-    #                                 "based on MAF criterion)", sep = " "
-    #                             )
-    #                         }
-    #                         return(txt)
-    #                     } else
-    #                         return(NULL)
-    #                 }
-    #             )))
-    #             msg <- append(
-    #                 msg,
-    #                 str_c("Total number of loci =", n_loci, sep = " ")
-    #             )
-    #             msg <- append(
-    #                 msg,
-    #                 str_c("Available loci:", str_c(locus_msg, collapse =  "; "),
-    #                       sep = " ")
-    #             )
-    #         }
-    #     }
-    #     ## output
-    #     spec <- lst(locus, n_indiv, n_loci, n_pop)
-    # }
+    ## LOCUS FILTERING
+    # run
+    snp_check <- check_snp_indseq(
+        content, indiv_info, snp_type, locus_count, out$maf
+    )
+    # check
+    if(!snp_check$valid) {
+        out$valid <- FALSE
+        out$msg <- append(out$msg, snp_check$msg)
+        return(out)
+    }
+    # results
+    out$locus_count <- snp_check$locus_count
 
     ## output
     return(out)
@@ -554,7 +488,8 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
                         )
                     ),
                     style = "column-count:2;"
-                )
+                ),
+                "Remove this locus (these loci) from your dataset."
             )
             out$msg <- append(out$msg, list(msg))
         }
@@ -582,7 +517,8 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
                             }
                         )
                     )
-                )
+                ),
+                "Remove this locus (these loci) from your dataset."
             )
             out$msg <- append(out$msg, list(msg))
         }

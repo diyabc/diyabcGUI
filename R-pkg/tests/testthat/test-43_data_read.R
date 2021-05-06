@@ -4,18 +4,26 @@ test_that("read_indseq_snp_data", {
     
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
     data_dir <- file.path(data4test_dir(), "IndSeq_SNP_estim_param")
-    out <- read_indseq_snp_data(
-        data_file, data_dir, expected_data_file = NULL
-    )
-    expect_true(out$valid)
+    res <- read_indseq_snp_data(data_file, data_dir)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_equal(res$data_file, data_file)
+    expect_equal(res$n_loci, 30000)
+    expect_true(is.data.frame(res$locus_count))
+    expect_equal(res$locus_count$count, 30000)
+    expect_equal(res$locus_count$filt, 13046)
+    expect_equal(res$locus_count$mono, 0)
+    expect_equal(res$n_pop, 4)
+    expect_equal(res$n_indiv, 40)
+    expect_equal(res$sex_ratio, "NM=1NF")
+    expect_equal(res$maf, 0.05)
     
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
-    data_dir <- file.path(example_dir(), 
+    data_dir <- file.path(data4test_dir(), 
                           "PoolSeq_SNP_estim_param")
-    out <- read_indseq_snp_data(
-        data_file, data_dir, expected_data_file = NULL
-    )
-    expect_false(out$valid)
+    res <- read_indseq_snp_data(data_file, data_dir)
+    expect_false(res$valid)
+    expect_true(length(res$msg) > 0)
 })
 
 test_that("process_indseq_locus", {
@@ -210,8 +218,7 @@ test_that("check_snp_indseq", {
     
     ## test on SNP data file
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    data_dir <- file.path(data4test_dir(), 
-                          "IndSeq_SNP_estim_param")
+    data_dir <- file.path(data4test_dir(), "IndSeq_SNP_estim_param")
     data_path <- file.path(data_dir, data_file)
     
     # header
