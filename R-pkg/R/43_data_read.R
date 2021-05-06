@@ -16,8 +16,6 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         sex_ratio = NULL, maf = NULL
     )
     
-    current_line <- 0
-    
     # full path
     file_name <- file.path(data_dir, data_file)
     
@@ -64,7 +62,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     if(!str_detect(header1, pttrn)) {
         out$valid <- FALSE
         msg <- tagList(
-            "Missing", tags$b("sex ratio"), "in header1 first line."
+            "Missing", tags$b("sex ratio"), "in first line header."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -77,7 +75,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Missing", tags$b("Minimum Allele Frequency"), 
-            "(MAF) in header1 first line.",
+            "(MAF) in first line header.",
             "MAF should be a real number between 0 and 1", 
             "or the keyword", tags$code("hudson"),
             ", see manual."
@@ -126,8 +124,9 @@ read_indseq_snp_data <- function(data_file, data_dir) {
        !all(header2[-(1:3)] %in% c("A", "H", "X", "Y", "M"))) {
         out$valid <- FALSE
         msg <- tagList(
-            "Formatting issue with header second line, see manual.",
-            "Required column titles are", tags$code("IND SEX POP"), 
+            "Formatting issue with header second line.",
+            "Required column titles are", tags$code("IND"), 
+            tags$code("SEX"), tags$code("POP"), 
             "followed by a letter indicator among", 
             tags$code("A"), tags$code("H"), tags$code("X"), 
             tags$code("Y"), tags$code("M"),
@@ -166,7 +165,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Formatting issue with data, ",
-            "impossible to read them, see manual."
+            "impossible to read the file, see manual."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -300,7 +299,7 @@ process_indseq_locus <- function(snp_data, sex_data, pop_data, snp_type, maf) {
     
     # init local
     local <- list(
-        valid = TRUE, filt = FALSE, mono = FALSE,
+        valid = TRUE, filter = FALSE, mono = FALSE,
         missing_pop = NA, issue_X = NA, issue_Y = NA, af = 0,
         hudson = FALSE
     )
@@ -426,8 +425,8 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
         valid = TRUE, locus_count = NULL, msg = list()
     )
     
+    # process SNPs
     ncore <- getOption("diyabcGUI")$ncore
-    
     snp_list <- pblapply(
         1:nrow(content),
         function(ind) {
@@ -561,7 +560,7 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
         snp_tab$filter, snp_type, sum
     )
     tmp_filter <- data.frame(
-        filt=tmp_filter, type=names(tmp_filter), 
+        filter=tmp_filter, type=names(tmp_filter), 
         row.names=NULL, stringsAsFactors = FALSE
     )
     
@@ -574,10 +573,249 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
         row.names=NULL, stringsAsFactors = FALSE
     )
     
-    # merge all results into locos_details table
+    # merge all results into locus_count table
     out$locus_count <- merge(locus_count, tmp_filter)
     out$locus_count <- merge(out$locus_count, tmp_mono)
     
     # output
     return(out)
 }
+
+#' Read and parse PoolSeq SNP data file
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @importFrom tools file_ext
+#' @importFrom parallel makeCluster stopCluster
+#' @importFrom pbapply pblapply
+read_poolseq_snp_data <- function(data_file, data_dir) {
+    
+    # init output
+    out <- list(
+        msg = list(), valid = TRUE,
+        data_file = NULL, n_loci = NULL, locus_count = NULL, 
+        n_pop = NULL, sex_ratio = NULL, mrc = NULL
+    )
+    
+    # full path
+    file_name <- file.path(data_dir, data_file)
+    
+    # check file_name
+    tmp <- check_file_name(file_name)
+    if(!tmp) {
+        out$valid <- FALSE
+        msg <- tagList("Invalid data file name.")
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # check file content
+    if(file.info(file_name)$size == 0) {
+        out$valid <- FALSE
+        msg <- tagList("Data file is empty.")
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # check file_type
+    if(tools::file_ext(file_name) != "snp") {
+        out$valid <- FALSE
+        msg <- tagList(
+            "IndSeq SNP files should have an extension",
+            tags$code(".snp"), "."
+        )
+        out$msg <- append(out$msg, list(msg))
+    }
+    
+    # continue ?
+    if(!out$valid) {
+        return(out)
+    }
+    
+    # data file name
+    out$data_file <- data_file
+    
+    ## DATA FILE CONTENT
+    
+    ## HEADER 1
+    header1 <- readLines(file_name, n = 1, warn = FALSE)
+    
+    # sex ratio
+    pttrn <- "(?i)NM=[0-9]+\\.?[0-9]*NF(?-i)"
+    if(!str_detect(header1, pttrn)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Missing", tags$b("sex ratio"), "in first line header."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    out$sex_ratio <- str_extract(header1, pttrn)
+    
+    # MRC
+    pttrn <- "(?i)(?<=MRC=)[0-9]+(?-i)"
+    if(!str_detect(header1, pttrn)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Missing", tags$b("Minimum Read Count"), 
+            "(MRC) in first line header.",
+            "MRC should be a positive or null integer,", 
+            "see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    out$mrc <- as.integer(str_extract(header1, pttrn))
+    
+    ## HEADER 2
+    header2 <- tryCatch(
+        unname(unlist(read.table(file = file_name, skip = 1, nrows = 1))), 
+        error = function(e) return(e)
+    )
+    if("error" %in% class(header2)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Formatting issue with second line header, ",
+            "impossible to read it, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # upper case
+    header2 <- str_to_upper(header2)
+    
+    # header 2 content
+    if(header2[1] != "POOL" &
+       header2[2] != "POP_NAME:HAPLOID_SAMPLE_SIZE" & 
+       !all(str_detect(header2[-(1:2)], "POP[0-9]+:[0-9]+"))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Formatting issue with header second line.",
+            "Required column titles are", tags$code("POOL"), 
+            tags$code("POP_NAME:HAPLOID_SAMPLE_SIZE"),
+            "followed by a character string", 
+            tags$code("POP<pop_id>:<sample_size>"),
+            "for each population in the file (see manual)."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## number of population
+    out$n_pop <- length(header2) - 2
+    
+    ## DATA FILE CONTENT
+    content <- tryCatch(
+        read.table(file_name, skip = 2), error = function(e) return(e)
+    )
+    if("error" %in% class(content)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Formatting issue with data, ",
+            "impossible to read the file, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check number of population
+    if(ncol(content) %% 2 != 0) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Formatting issue with data:",
+            "number of column should be even,",
+            "providing pair of counts for reference",
+            "and alternate alleles at each locus",
+            "in each popultation, see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    } 
+    if(ncol(content) != 2*out$n_pop) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Formatting issue with data:",
+            "number of population indicated in file second-line header",
+            "does not correspond to number of columns in file content,",
+            "see manual."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # nb of locus
+    out$n_loci <- nrow(content)
+    
+    # check data encoding
+    check_snp_encoding <- apply(content, 1, is.integer)
+    if(!all(unlist(check_snp_encoding))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Issue with data encoding at lines",
+            tags$code(str_c(which(check_snp_encoding, collapse = ", "))), ".",
+            "Expecting read counts, i.e. positive or null integer",
+            "(see manual)."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    if(any(is.na(content))) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Missing values (i.e.", tags$code("NA"), ")",
+            "are not allowed (see manual)."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## FILTERING LOCUS
+    snp_check <- check_snp_poolseq(content, mrc = out$mrc)
+    out$locus_count <- snp_check$locus_count
+    
+    ## output
+    return(out)
+}
+
+#' Check (for missing values) and filter (based on MRC) IndSeq SNP data
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param content data.frame with columns corresponding to couples of 
+#' PoolSeq encoding.
+check_snp_poolseq <- function(content, mrc = 1) {
+    
+    # init output
+    out <- list(locus_count = NULL)
+    
+    # number of pop
+    n_pop <- ncol(content) / 2
+    
+    # count per allele
+    allele1_count <- apply(
+        content[,rep(c(TRUE,FALSE), n_pop)], 1, sum
+    )
+    allele2_count <- apply(
+        content[,rep(c(FALSE,TRUE), n_pop)], 1, sum
+    )
+    
+    # extract number of filtered loci by type
+    tmp_filter <- (allele1_count < mrc) | (allele2_count < mrc)
+    
+    # extract number of monomorphic loci by type
+    tmp_mono <- (allele1_count < 1) | (allele2_count < 1)
+    
+    # merge all results into locus_count table
+    out$locus_count <- data.frame(
+        type = "A",
+        count = nrow(content),
+        filter = sum(tmp_filter),
+        mono = sum(tmp_mono),
+        stringsAsFactors = FALSE
+    )
+    
+    # output
+    return(out)
+}
+

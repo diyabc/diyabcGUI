@@ -2,6 +2,7 @@ context("43_data_read")
 
 test_that("read_indseq_snp_data", {
     
+    # good file
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
     data_dir <- file.path(data4test_dir(), "IndSeq_SNP_estim_param")
     res <- read_indseq_snp_data(data_file, data_dir)
@@ -11,16 +12,16 @@ test_that("read_indseq_snp_data", {
     expect_equal(res$n_loci, 30000)
     expect_true(is.data.frame(res$locus_count))
     expect_equal(res$locus_count$count, 30000)
-    expect_equal(res$locus_count$filt, 13046)
+    expect_equal(res$locus_count$filter, 13046)
     expect_equal(res$locus_count$mono, 0)
     expect_equal(res$n_pop, 4)
     expect_equal(res$n_indiv, 40)
     expect_equal(res$sex_ratio, "NM=1NF")
     expect_equal(res$maf, 0.05)
     
+    # bad file
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
-    data_dir <- file.path(data4test_dir(), 
-                          "PoolSeq_SNP_estim_param")
+    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
     res <- read_indseq_snp_data(data_file, data_dir)
     expect_false(res$valid)
     expect_true(length(res$msg) > 0)
@@ -72,7 +73,7 @@ test_that("process_indseq_locus", {
     
     res <- process_indseq_locus(snp_data, sex_data, pop_data, snp_type, maf)
     expect_true(res$valid)
-    expect_false(res$filt)
+    expect_false(res$filter)
     expect_false(res$mono)
     expect_true(is.na(res$missing_pop))
     expect_true(is.na(res$issue_X))
@@ -254,8 +255,59 @@ test_that("check_snp_indseq", {
     expect_true(res$valid)
     expect_true(is.data.frame(res$locus_count))
     expect_equal(res$locus_count$count, 30000)
-    expect_equal(res$locus_count$filt, 13046)
+    expect_equal(res$locus_count$filter, 13046)
     expect_equal(res$locus_count$mono, 0)
 })
 
+
+test_that("read_poolseq_snp_data", {
+    
+    # good file
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    res <- read_poolseq_snp_data(data_file, data_dir)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_equal(res$data_file, data_file)
+    expect_equal(res$n_loci, 30000)
+    expect_true(is.data.frame(res$locus_count))
+    expect_equal(res$locus_count$count, 30000)
+    expect_equal(res$locus_count$filter, 15612)
+    expect_equal(res$locus_count$mono, 5918)
+    expect_equal(res$n_pop, 4)
+    expect_equal(res$sex_ratio, "NM=1NF")
+    expect_equal(res$mrc, 5)
+    
+    # bad file
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- file.path(data4test_dir(), "IndSeq_SNP_estim_param")
+    res <- read_poolseq_snp_data(data_file, data_dir)
+    expect_false(res$valid)
+    expect_true(length(res$msg) > 0)
+})
+
+
+test_that("check_snp_poolseq", {
+    
+    ## test on SNP data file
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
+    data_path <- file.path(data_dir, data_file)
+    
+    # header
+    header <- unname(unlist(
+        read.table(file = data_path, skip = 1, nrows = 1)
+    ))
+    
+    # data
+    content <- read.table(file = data_path, skip = 2)
+    
+    # test on data
+    mrc <- 5
+    res <- check_snp_poolseq(content, mrc)
+    expect_true(is.data.frame(res$locus_count))
+    expect_equal(res$locus_count$count, 30000)
+    expect_equal(res$locus_count$filter, 15612)
+    expect_equal(res$locus_count$mono, 5918)
+})
 
