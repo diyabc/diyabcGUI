@@ -336,3 +336,138 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
     # output
     return(out)
 }
+
+#' Format data info for user output
+#' @keywords internal
+#' @author Ghislain Durif
+format_data_info <- function(data_check, locus_type, seq_mode) {
+    
+    out <- NULL
+    
+    ## microsat/sequence
+    if(locus_type == "mss") {
+        out <- tagList(
+            tags$ul(
+                tags$li(
+                    "Data file:", tags$code(data_check$data_file)
+                ),
+                tags$li(
+                    "Number of populations =", 
+                    as.character(data_check$n_pop)
+                ),
+                tags$li(
+                    "Number of individuals =", 
+                    as.character(data_check$n_indiv)
+                ),
+                tags$li(
+                    "Total number of loci =", as.character(data_check$n_loci), 
+                    ", including", 
+                    tags$b(as.character(sum(data_check$locus_mode == "M"))),
+                    "microsat locus, and",
+                    tags$b(as.character(sum(data_check$locus_mode == "S"))),
+                    "sequence locus."
+                ),
+                tags$li(
+                    "Sex ratio in the dataset:", 
+                    tags$code(data_check$sex_ratio)
+                )
+            )
+        )
+        ## snp locus / indseq
+    } else if((locus_type == "snp") && (seq_mode == "indseq")) {
+        out <- tagList(
+            tags$ul(
+                tags$li(
+                    "Data file:", tags$code(data_check$data_file)
+                ),
+                tags$li(
+                    "Number of population pools =", 
+                    as.character(data_check$n_pop)
+                ),
+                tags$li(
+                    "Filtering with Minimun Allele Frequency (MAF) =", 
+                    as.character(data_check$maf)
+                ),
+                tags$li(
+                    "Total number of loci =", 
+                    as.character(data_check$n_loci), br(),
+                    do.call(
+                        tags$ul,
+                        lapply(
+                            split(
+                                data_check$locus_count, 
+                                seq(nrow(data_check$locus_count))
+                            ),
+                            function(item) {
+                                return(tags$li(
+                                    "Number of ", 
+                                    tags$code(as.character(item$type)), 
+                                    "loci =", as.character(item$count), br(), 
+                                    "Number of excluded loci (with MAF <", 
+                                    as.character(data_check$maf), ") =",
+                                    as.character(item$filter), 
+                                    ", including", as.character(item$mono),
+                                    "monomorphic loci.", br(),
+                                    tags$b(
+                                        "Number of",
+                                        tags$code(as.character(item$type)),
+                                        "available of loci =", 
+                                        as.character(
+                                            item$count - item$filter
+                                        )
+                                    )
+                                ))
+                            }
+                        )
+                    )
+                ),
+                tags$li(
+                    "Sex ratio in the dataset:", 
+                    tags$code(data_check$sex_ratio)
+                )
+            )
+        )
+        ## snp locus / poolseq
+    } else if((locus_type == "snp") && (seq_mode == "poolseq")) {
+        out <- tagList(
+            tags$ul(
+                tags$li(
+                    "Data file:", tags$code(data_check$data_file)
+                ),
+                tags$li(
+                    "Number of population pools =", 
+                    as.character(data_check$n_pop)
+                ),
+                tags$li(
+                    "Filtering with Minimum Read Count (MRC) =", 
+                    as.character(data_check$mrc)
+                ),
+                tags$li(
+                    "Total number of loci =", as.character(data_check$n_loci),
+                ),
+                tags$li(
+                    "Number of excluded loci (with MRC <", 
+                    as.character(data_check$n_loci), ") =",
+                    as.character(data_check$locus_count$filter), 
+                    ", including", as.character(data_check$locus_count$mono),
+                    "monomorphic loci."
+                ),
+                tags$li(
+                    tags$b(
+                        "Total number available of loci =", 
+                        as.character(
+                            data_check$n_loci - data_check$locus_count$filter
+                        )
+                    )
+                ),
+                tags$li(
+                    "Sex ratio in the dataset:", 
+                    tags$code(data_check$sex_ratio)
+                )
+            )
+        )
+    }
+    
+    ## output
+    return(out)
+}
