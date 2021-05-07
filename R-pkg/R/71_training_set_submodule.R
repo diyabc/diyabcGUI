@@ -16,6 +16,60 @@ train_set_simu_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
     
+    ## update environment if existing proj
+    observeEvent({
+        c(env$ap$proj_dir, env$ap$proj_type, 
+          env$ap$locus_type, env$ap$seq_mode, 
+          env$ap$file_upload, env$ap$data_check, env$ap$header_check)
+    },{
+        ### RESET
+        # list of historical models
+        env$ts$scenario_list <- NULL
+        # list number of parameters per model
+        env$ts$n_param <- NULL
+        # list of model priors (discrete probabilities)
+        env$ts$model_prior <- NULL
+        # list of historical model parameters (name, type, priors)
+        env$ts$prior_list <- NULL
+        # list of conditions on historical parameters
+        env$ts$cond_list <- NULL
+        # table of loci description
+        env$ts$loci_desc <- NULL
+        # number of loci group
+        env$ts$n_group <- NULL
+        # list of group priors for MSS data
+        env$ts$group_prior_list <- NULL
+        # specific ref table column names for MSS data
+        env$ts$mss_reftab_colname <- NULL
+        ### requirements
+        req(env$ap$proj_dir)
+        req(env$ap$proj_type)
+        req(env$ap$locus_type)
+        req(env$ap$seq_mode)
+        req(env$ap$proj_name)
+        req(env$ap$header_check)
+        req(env$ap$header_check$valid)
+        ### UPDATE ENV
+        # list of historical models
+        env$ts$scenario_list <- env$ap$header_check$scenario_list
+        # list number of parameters per model
+        env$ts$n_param <- env$ap$header_check$n_param
+        # list of model priors (discrete probabilities)
+        env$ts$model_prior <- NULL
+        # table of historical model parameters (name, type, priors)
+        env$ts$prior_list <- env$ap$header_check$prior_list
+        # list of conditions on historical parameters
+        env$ts$cond_list <- env$ap$header_check$cond_list
+        # table of loci description
+        env$ts$loci_desc <- env$ap$header_check$loci_desc
+        # number of loci group
+        env$ts$n_group <- env$ap$header_check$n_group
+        # list of group priors for MSS data
+        env$ts$group_prior_list <- env$ap$header_check$group_prior_list
+        # specific ref table column names for MSS data
+        env$ts$mss_reftab_colname <- NULL
+    })
+    
     # panel output
     observeEvent({
         c(env$ap$proj_dir, env$ap$proj_type, 
@@ -168,12 +222,10 @@ train_set_setup_server <- function(input, output, session) {
     
     ## edition mode
     output$edition <- renderUI({
-        if(local$new || local$edit) {
-            train_set_config_ui(ns("train_set_config"))
-        } else {
-            NULL
-        }
+        req(local$new || local$edit)
+        train_set_config_ui(ns("train_set_config"))
     })
+    callModule(train_set_config_server, "train_set_config")
     
     ## Training set simulation run
     callModule(train_set_simu_run_server, "simu_run")
@@ -358,7 +410,7 @@ train_set_config_ui <- function(id) {
 train_set_config_server <- function(input, output, session) {
     
     # historical model setup
-    # callModule(hist_model_panel_server, "hist_model_panel")
+    callModule(hist_model_panel_server, "hist_model_panel")
 }
 
 #' Training set simulation run module ui
