@@ -366,6 +366,31 @@ check_data_file <- function(data_file, data_dir, locus_type, seq_mode) {
     return(out)
 }
 
+#' Check data file in background
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param data_file string, data file name.
+#' @param data_dir string, path to directory where data file is stored.
+#' @param locus_type string, locus type `"mss"` or `"snp"`.
+#' @param seq_mode string, `"indseq"` or `"poolseq"`.
+#' @importFrom future plan multisession future
+check_data_file_bg <- function(data_file, data_dir, locus_type, seq_mode) {
+    
+    # FIXME
+    
+    # setup background run
+    oplan <- plan(multisession)
+    on.exit(plan(oplan))
+    
+    # setup future
+    out <- future({
+        check_data_file_bg(data_file, data_dir, locus_type, seq_mode)
+    })
+    
+    ## output
+    return(out)
+}
+
 #' Format data info for user output
 #' @keywords internal
 #' @author Ghislain Durif
