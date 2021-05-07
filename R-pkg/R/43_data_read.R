@@ -461,7 +461,7 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
     snp_tab <- Reduce("bind_rows", snp_list)
     rm("snp_list")
     
-    # check for unvalid locus
+    # check for invalid locus
     if(any(!snp_tab$valid)) {
         # missing pop
         is_missing_pop <- !is.na(snp_tab$missing_pop)

@@ -74,7 +74,7 @@ hist_model_server <- function(input, output, session,
         updateTextAreaInput(session, "scenario", value = local$raw_scenario)
     })
     
-    # unvalidate if scenario is edited
+    # invalidate if scenario is edited
     observeEvent(input$scenario, {
         local$validated <- FALSE
     })
