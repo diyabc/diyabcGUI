@@ -392,9 +392,15 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                     "Total number of loci =", as.character(data_check$n_loci), 
                     ", including", 
                     tags$b(as.character(sum(data_check$locus_mode == "M"))),
-                    "microsat locus, and",
+                    "microsat", 
+                    ifelse(
+                        sum(data_check$locus_mode == "M") > 1, "loci", "locus"
+                    ), "and",
                     tags$b(as.character(sum(data_check$locus_mode == "S"))),
-                    "sequence locus."
+                    "sequence",
+                    ifelse(
+                        sum(data_check$locus_mode == "S") > 1, "loci", "locus"
+                    ), "."
                 ),
                 tags$li(
                     "Sex ratio in the dataset:", 
@@ -404,13 +410,14 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
         )
         ## snp locus / indseq
     } else if((locus_type == "snp") && (seq_mode == "indseq")) {
+        pprint(data_check$locus_count)
         out <- tagList(
             tags$ul(
                 tags$li(
                     "Data file:", tags$code(data_check$data_file)
                 ),
                 tags$li(
-                    "Number of population pools =", 
+                    "Number of populations =", 
                     as.character(data_check$n_pop)
                 ),
                 tags$li(
@@ -422,32 +429,40 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                     as.character(data_check$n_loci), br(),
                     do.call(
                         tags$ul,
-                        lapply(
+                        unname(Reduce("c", lapply(
                             split(
                                 data_check$locus_count, 
                                 seq(nrow(data_check$locus_count))
                             ),
                             function(item) {
-                                return(tags$li(
-                                    "Number of ", 
-                                    tags$code(as.character(item$type)), 
-                                    "loci =", as.character(item$count), br(), 
-                                    "Number of excluded loci (with MAF <", 
-                                    as.character(data_check$maf), ") =",
-                                    as.character(item$filter), 
-                                    ", including", as.character(item$mono),
-                                    "monomorphic loci.", br(),
-                                    tags$b(
+                                return(list(
+                                    tags$li(
+                                        "Number of ", 
+                                        tags$code(as.character(item$type)), 
+                                        "loci =", as.character(item$count)
+                                    ), 
+                                    tags$ul(
+                                    tags$li(
+                                        "Number of excluded loci", 
+                                        "(with MAF <", 
+                                        as.character(data_check$maf), 
+                                        ") =",
+                                        as.character(item$filter), 
+                                        ", including", as.character(item$mono),
+                                        "monomorphic loci."
+                                    ),
+                                    tags$li(tags$b(
                                         "Number of",
                                         tags$code(as.character(item$type)),
                                         "available of loci =", 
                                         as.character(
                                             item$count - item$filter
                                         )
+                                    ))
                                     )
                                 ))
                             }
-                        )
+                        )))
                     )
                 ),
                 tags$li(

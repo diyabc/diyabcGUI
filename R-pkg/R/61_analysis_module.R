@@ -254,7 +254,7 @@ proj_file_list_server <- function(input, output, session) {
                     style = "color: #F89406; margin-top: -15px;"
                 )
                 # else
-                if(isTruthy(env$ap) && isTruthy(env$ap$proj_file_list)) {
+                if(isTruthy(env$ap$proj_file_list)) {
                     # project files
                     proj_file_list <- env$ap$proj_file_list
                     
@@ -514,7 +514,7 @@ proj_file_check_server <- function(input, output, session) {
                         "file:",
                         do.call(
                             tags$ul,
-                            lapply(env$ap$header_check$msg, tags$li)
+                            lapply(env$ap$statobs_check$msg, tags$li)
                         )
                     ),
                     style = "color: #F89406;"
@@ -860,7 +860,9 @@ data_file_server <- function(input, output, session) {
     
     # input data file
     output$input_data <- renderUI({
-        if(isTruthy(env$ap$header_check$valid) &&
+        if(isTruthy(env$ap$header_check) && 
+           isTruthy(env$ap$header_check$valid) &&
+           isTruthy(env$ap$header_check$data_file) &&
            isTruthy(env$ap$proj_file_list) &&
            (env$ap$header_check$data_file %in% env$ap$proj_file_list)) {
             # update data file in env
@@ -918,7 +920,8 @@ input_data_file_server <- function(input, output, session) {
         req(env$ap$proj_dir)
         req(nrow(input$data_file) == 1)
         # check data file name (if header exists)
-        if(isTruthy(env$ap$header_check$valid) &&
+        if(isTruthy(env$ap$header_check) &&
+           isTruthy(env$ap$header_check$valid) &&
            isTruthy(env$ap$header_check$data_file)) {
             req(input$data_file$name == env$ap$header_check$data_file)
         }
@@ -926,7 +929,7 @@ input_data_file_server <- function(input, output, session) {
         env$ap$data_file <- input$data_file$name
         # copy to project directory
         fs::file_copy(input$data_file$datapath,
-                      file.path(local$proj_dir, out$name),
+                      file.path(env$ap$proj_dir, input$data_file$name),
                       overwrite = TRUE)
         
         if(file.exists(input$data_file$datapath)) {
@@ -938,9 +941,10 @@ input_data_file_server <- function(input, output, session) {
     ## feedback
     output$feedback <- renderUI({
         if(isTruthy(nrow(input$data_file) == 1)) {
-            if(isTruthy(env$ap$header_check$valid) &&
+            if(isTruthy(env$ap$header_check) &&
+               isTruthy(env$ap$header_check$valid) &&
                isTruthy(env$ap$header_check$data_file) &&
-               input$data_file$name != env$ap$header_check$data_file) {
+               (input$data_file$name != env$ap$header_check$data_file)) {
                 tags$div(
                     icon("warning"), 
                     "Provided data file name does not match",
@@ -986,6 +990,7 @@ check_data_ui <- function(id) {
                 uiOutput(ns("feedback_check"))
             )
         ),
+        br(),
         uiOutput(ns("feedback")),
         uiOutput(ns("data_info"))
     )
@@ -1033,11 +1038,6 @@ check_data_server <- function(input, output, session) {
         req(env$ap$proj_dir)
         req(env$ap$locus_type)
         req(env$ap$seq_mode)
-        
-        pprint(env$ap$data_file)
-        pprint(env$ap$proj_dir)
-        pprint(env$ap$locus_type)
-        pprint(env$ap$seq_mode)
 
         # data file check
         env$ap$data_check <- check_data_file(
@@ -1067,36 +1067,34 @@ check_data_server <- function(input, output, session) {
             tmp_data_case <- "SNP PoolSeq"
         }
 
-        # # output
-        # if(isTruthy(env$ap$data_check)) {
-        #     if(isTruthy(env$ap$data_check$valid)) {
-        #         # format_data_info(
-        #         #     env$ap$data_check, env$ap$locus_type, env$ap$seq_mode
-        #         # )
-        #         NULL
-        #     } else if(isTruthy(env$ap$data_check$msg)) {
-        #         tags$div(
-        #             tags$p(
-        #                 icon("warning"),
-        #                 "Issue with your", tags$b(tmp_data_case), "data file:",
-        #                 do.call(
-        #                     tags$ul, lapply(env$ap$data_check$msg, tags$li)
-        #                 )
-        #             ),
-        #             style = "color: #F89406;"
-        #         )
-        #     } else {
-        #         tags$div(
-        #             tags$p(
-        #                 icon("warning"),
-        #                 "Issue with your", tags$b(tmp_data_case), "data file."
-        #             ),
-        #             style = "color: #F89406;"
-        #         )
-        #     }
-        # } else {
-        #     NULL
-        # }
-        NULL
+        # output
+        if(isTruthy(env$ap$data_check)) {
+            if(isTruthy(env$ap$data_check$valid)) {
+                format_data_info(
+                    env$ap$data_check, env$ap$locus_type, env$ap$seq_mode
+                )
+            } else if(isTruthy(env$ap$data_check$msg)) {
+                tags$div(
+                    tags$p(
+                        icon("warning"),
+                        "Issue with your", tags$b(tmp_data_case), "data file:",
+                        do.call(
+                            tags$ul, lapply(env$ap$data_check$msg, tags$li)
+                        )
+                    ),
+                    style = "color: #F89406;"
+                )
+            } else {
+                tags$div(
+                    tags$p(
+                        icon("warning"),
+                        "Issue with your", tags$b(tmp_data_case), "data file."
+                    ),
+                    style = "color: #F89406;"
+                )
+            }
+        } else {
+            NULL
+        }
     })
 }
