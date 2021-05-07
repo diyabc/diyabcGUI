@@ -35,10 +35,11 @@ init_diyabcrf_env <- function() {
         proj_dir = NULL,        # project directory
         locus_type = "snp",     # "snp" or "mss"
         seq_mode = "indseq",    # "indseq" or "poolseq"
-        proj_type = "new",       # "new", "existing" or "example"
+        proj_type = "new",      # "new", "existing" or "example"
         proj_file_list = NULL,  # content of the project
         file_modif = NULL,      # counter for project file modification 
                                 # (upload, new header, ...)
+        file_upload = NULL,     # counter for project file upload
         header_check = NULL,    # result of header file check
         reftable_check = NULL,  # result of reftable file check
         statobs_check = NULL,   # result of statobs file check
@@ -138,6 +139,7 @@ reset_diyabcrf_env <- function() {
     env$ap$proj_type <- "new"
     # proj files
     update_proj_file("ap")
+    upload_proj_file("ap")
 }
 
 #' Initialize environment for data generation pipeline
@@ -293,4 +295,13 @@ update_proj_file <- function(tag = "ap") {
         ifelse(!is.null(env[[tag]]$file_modif), env[[tag]]$file_modif, 0) + 1
     # file list
     env[[tag]]$proj_file_list <- list.files(env[[tag]]$proj_dir)
+}
+
+#' Upload project files
+#' @keywords internal
+#' @author Ghislain Durif
+upload_proj_file <- function(tag = "ap") {
+    # increment file upload counter
+    env[[tag]]$file_upload <- 
+        ifelse(!is.null(env[[tag]]$file_upload), env[[tag]]$file_upload, 0) + 1
 }

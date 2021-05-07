@@ -18,7 +18,7 @@ analysis_module_ui <- function(id) {
                 width = 12,
                 status = "info", solidHeader = TRUE,
                 collapsible = TRUE, collapsed = TRUE,
-                training_set_ui(ns("train_set"))
+                train_set_simu_ui(ns("train_set"))
             ),
             box(
                 title = "Random Forest Analyses",
@@ -47,7 +47,7 @@ analysis_module_server <- function(input, output, session) {
     proj_set <- callModule(analysis_proj_set_server, "proj_set")
     
     ## Training set sub-module
-    # training_set <- callModule(training_set_server, "train_set")
+    callModule(train_set_simu_server, "train_set")
     
     ## random forest sub-module
     # rf <- callModule(rf_module_server, "rf")
@@ -115,6 +115,7 @@ analysis_proj_set_server <- function(input, output, session) {
         reset_ap()
         # file modification
         update_proj_file("ap")
+        upload_proj_file("ap")
     })
     
     ## project type
@@ -555,6 +556,7 @@ new_proj_server <- function(input, output, session) {
         reset_ap()
         # file modification
         update_proj_file("ap")
+        upload_proj_file("ap")
     })
 }
 
@@ -665,6 +667,7 @@ existing_proj_server <- function(input, output, session) {
         reset_ap()
         # file modification
         update_proj_file("ap")
+        upload_proj_file("ap")
     })
     
     # manage file upload (copy to project directory)
@@ -704,6 +707,7 @@ existing_proj_server <- function(input, output, session) {
         if(!is.null(input_check) && isTruthy(input_check$valid)) {
             # file modification
             update_proj_file("ap")
+            upload_proj_file("ap")
         } else {
             # clean before upload
             clean_proj_dir(env$ap$proj_dir)
@@ -711,6 +715,7 @@ existing_proj_server <- function(input, output, session) {
             reset_ap()
             # file modification
             update_proj_file("ap")
+            upload_proj_file("ap")
         }
     })
 }
@@ -748,6 +753,7 @@ example_proj_server <- function(input, output, session) {
         reset_ap()
         # file modification
         update_proj_file("ap")
+        upload_proj_file("ap")
     })
     
     # update possible input
@@ -817,6 +823,7 @@ example_proj_server <- function(input, output, session) {
         
         # file modification
         update_proj_file("ap")
+        upload_proj_file("ap")
     })
 }
 
@@ -936,6 +943,10 @@ input_data_file_server <- function(input, output, session) {
             # logging("deleting:", input$data_file$datapath)
             fs::file_delete(input$data_file$datapath)
         }
+        
+        # file modification
+        update_proj_file("ap")
+        upload_proj_file("ap")
     })
     
     ## feedback
