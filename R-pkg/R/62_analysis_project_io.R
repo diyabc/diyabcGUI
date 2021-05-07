@@ -410,7 +410,6 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
         )
         ## snp locus / indseq
     } else if((locus_type == "snp") && (seq_mode == "indseq")) {
-        pprint(data_check$locus_count)
         out <- tagList(
             tags$ul(
                 tags$li(
