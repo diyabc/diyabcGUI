@@ -59,21 +59,21 @@ init_diyabcrf_env <- function() {
     # training set simulation
     tmp_ts <-list(
         # list of historical models
-        hist_model = NULL,
+        scenario_list = NULL,
         # list number of parameters per model
         n_param = NULL,
         # list of model priors (discrete probabilities)
         model_prior = NULL,
-        # table of historical model parameters (name, type, priors)
-        param = NULL,
+        # list of historical model parameters (name, type, priors)
+        prior_list = NULL,
         # list of conditions on historical parameters
-        cond = NULL,
+        cond_list = NULL,
         # table of loci description
-        loci_des = NULL,
+        loci_desc = NULL,
         # number of loci group
         n_group = NULL,
         # list of group priors for MSS data
-        mss_prior = NULL,
+        group_prior = NULL,
         # specific ref table column names for MSS data
         mss_reftab_colname = NULL
     )
@@ -154,13 +154,13 @@ init_datagen_env <- function() {
         proj_dir = NULL,         # project directory
         locus_type = NULL,       # "SNP" or "MSS"
         seq_mode = NULL,         # "IndSeq" or "PoolSeq"
-        proj_file_list = NULL,  # content of the project
-        file_modif = NULL,      # counter for project file modification 
-                                # (upload, new header, ...)
+        proj_file_list = NULL,   # content of the project
+        file_modif = NULL,       # counter for project file modification 
+                                 # (upload, new header, ...)
         ## data description
-        model = NULL,            # historical model
+        model = NULL,           # historical model
         param = NULL,           # list of parameter values
-        loci_des = NULL,        # table of loci description
+        loci_desc = NULL,       # table of loci description
         n_group = NULL,         # number of loci group
         mss_prior = NULL,       # list of group priors for MSS data
         sample_sizes = NULL,    # table of sample sizes
