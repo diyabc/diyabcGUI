@@ -35,6 +35,7 @@ init_diyabcrf_env <- function() {
         proj_dir = NULL,        # project directory
         locus_type = "snp",     # "snp" or "mss"
         seq_mode = "indseq",    # "indseq" or "poolseq"
+        proj_type = "new",       # "new", "existing" or "example"
         proj_file_list = NULL,  # content of the project
         file_modif = NULL,      # counter for project file modification 
                                 # (upload, new header, ...)
@@ -112,12 +113,31 @@ init_diyabcrf_env <- function() {
     list2reactiveValues(tmp_rf, rf)
 }
 
+#' Project env reset
+#' @keywords internal
+#' @author Ghislain Durif
+reset_ap <- function() {
+    env$ap$header_check <- NULL
+    env$ap$reftable_check <- NULL
+    env$ap$statobs_check <- NULL
+    env$ap$data_file <- NULL
+    env$ap$data_check <- NULL
+}
+
 #' Reset environment for DIYABC-RF pipeline
 #' @keywords internal
 #' @author Ghislain Durif
 reset_diyabcrf_env <- function() {
     # proj dir
     env$ap$proj_dir <- mk_proj_dir("diyabc_rf")
+    # ap reset
+    reset_ap()
+    # reset specific var
+    env$ap$locus_type <- "snp"
+    env$ap$seq_mode <- "indseq"
+    env$ap$proj_type <- "new"
+    # proj files
+    update_proj_file("ap")
 }
 
 #' Initialize environment for data generation pipeline
