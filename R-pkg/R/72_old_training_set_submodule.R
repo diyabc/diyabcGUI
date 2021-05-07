@@ -217,170 +217,6 @@ training_set_server <- function(input, output, session,
     return(out)
 }
 
-#' Show existing project set up module ui
-#' @keywords internal
-#' @author Ghislain Durif
-show_existing_proj_ui <- function(id) {
-    ns <- NS(id)
-    
-    tagList(
-        actionButton(
-            ns("edit"),
-            label = "Edit configuration",
-            icon = icon("edit")
-        ),
-        helpText(
-            "By editing the training set simulation configuration,", 
-            "it will", tags$b("erase"), "the corresponding training set file",
-            "(", tags$code("reftableRF.bin"), ")", 
-            "if existing."
-        ),
-        hr(),
-        h3(icon("history"), "Historical models"),
-        helpText(
-            "Historical scenarii defined in the provided header file."
-        ),
-        uiOutput(ns("show_scenarii")),
-        hr(),
-        h3(icon("chart-bar"), "Priors and conditions"),
-        helpText(
-            "Priors defined in the provided header file."
-        ),
-        uiOutput(ns("show_priors")),
-        hr(),
-        h4("Condition setting"),
-        helpText(
-            "Conditions defined in the provided header file."
-        ),
-        uiOutput(ns("show_conditions")),
-        hr(),
-        h3(icon("dna"), "Number of loci to simulate"),
-        helpText(
-            "Locus settings defined in the provided header file."
-        ),
-        uiOutput(ns("show_loci")),
-        hr()
-    )
-}
-
-#' Show existing project set up module server
-#' @keywords internal
-#' @author Ghislain Durif
-show_existing_proj_server <- function(input, output, session,
-                                      proj_header_content = reactive({NULL}),
-                                      valid_proj = reactive({FALSE})) {
-    # namespace
-    ns <- session$ns
-    # init local
-    local <- reactiveValues(
-        # input
-        proj_header_content = NULL,
-        valid_proj = NULL
-    )
-    # get input
-    observe({
-        local$proj_header_content <- proj_header_content()
-        local$valid_proj <- valid_proj()
-    })
-    
-    ## edit
-    observeEvent(input$edit, {
-        show_alert(
-            title = "Not available",
-            text = "This functionality will be soon available.",
-            type = "error"
-        )
-    })
-    
-    # show historical model
-    output$show_scenarii <- renderUI({
-        req(!is.null(local$valid_proj))
-        req(!is.null(local$proj_header_content$raw_scenario_list))
-        
-        if(local$valid_proj & 
-           length(local$proj_header_content$raw_scenario_list) > 0) {
-            tagList(
-                do.call(
-                    flowLayout,
-                    lapply(
-                        local$proj_header_content$raw_scenario_list, 
-                        function(item) tags$pre(item)
-                    )
-                )
-            )
-        } else {
-            NULL
-        }
-    })
-    
-    # show priors
-    output$show_priors <- renderUI({
-        req(!is.null(local$valid_proj))
-        req(!is.null(local$proj_header_content$raw_prior_list))
-        
-        if(local$valid_proj & 
-           length(local$proj_header_content$raw_prior_list) > 0) {
-            tagList(
-                do.call(
-                    tags$ul,
-                    lapply(
-                        local$proj_header_content$raw_prior_list,
-                        function(item) tags$li(tags$code(item))
-                    )
-                )
-            )
-        } else {
-            NULL
-        }
-    })
-    
-    # show conditions
-    output$show_conditions <- renderUI({
-        req(!is.null(local$valid_proj))
-        req(!is.null(local$proj_header_content$raw_cond_list))
-        
-        if(local$valid_proj) { 
-            if(length(local$proj_header_content$raw_cond_list) > 0) {
-                tagList(
-                    do.call(
-                        tags$ul,
-                        lapply(
-                            local$proj_header_content$raw_cond_list, 
-                            function(item) tags$li(tags$code(item))
-                        )
-                    )
-                )
-            } else {
-                helpText("No condition in header file.")
-            }
-        } else {
-            NULL
-        }
-    })
-    
-    # show locus description
-    output$show_loci <- renderUI({
-        req(!is.null(local$valid_proj))
-        req(!is.null(local$proj_header_content$loci_description))
-        
-        if(local$valid_proj & 
-           length(local$proj_header_content$loci_description) > 0) {
-            tagList(
-                do.call(
-                    tags$ul,
-                    lapply(
-                        local$proj_header_content$loci_description, 
-                        function(item) tags$li(tags$code(item))
-                    )
-                )
-            )
-        } else {
-            NULL
-        }
-    })
-    
-}
-
 #' Training set sub-module ui
 #' @keywords internal
 #' @author Ghislain Durif
@@ -711,7 +547,7 @@ training_set_def_server <- function(input, output, session,
 #' Historical model input panel module ui
 #' @keywords internal
 #' @author Ghislain Durif
-hist_model_panel_ui <- function(id) {
+old_hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("history"), "Define historical models"),
@@ -740,7 +576,7 @@ hist_model_panel_ui <- function(id) {
 #' @importFrom shinyjs onclick
 #' @importFrom shinyWidgets actionBttn
 #' @importFrom stringr str_c
-hist_model_panel_server <- function(input, output, session,
+old_hist_model_panel_server <- function(input, output, session,
                                     project_dir = reactive({NULL}), 
                                     raw_scenario_list = reactive({NULL})) {
     # namespace
