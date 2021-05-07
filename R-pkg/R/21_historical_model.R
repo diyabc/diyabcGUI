@@ -47,8 +47,7 @@ hist_model_server <- function(input, output, session,
         parser_msg = NULL,
         project_dir = NULL,
         raw_scenario = NULL,
-        scenario_id = NULL,
-        validated = FALSE
+        scenario_id = NULL
     )
     
     # init output reactive values
@@ -57,7 +56,8 @@ hist_model_server <- function(input, output, session,
         raw = NULL,
         param = NULL,
         trigger = NULL,
-        valid = FALSE
+        valid = FALSE,
+        validated = FALSE
     )
     
     # get input
@@ -65,7 +65,7 @@ hist_model_server <- function(input, output, session,
         local$project_dir = project_dir()
         local$raw_scenario = raw_scenario()
         local$scenario_id = scenario_id()
-        # logging("input raw scenario = ", local$raw_scenario)
+        logging("input raw scenario = ", local$raw_scenario)
     })
     
     # update if input provided
@@ -76,12 +76,12 @@ hist_model_server <- function(input, output, session,
     
     # invalidate if scenario is edited
     observeEvent(input$scenario, {
-        local$validated <- FALSE
+        out$validated <- FALSE
     })
     
     # parse and check input scenario
     observeEvent(input$validate, {
-        local$validated <- TRUE
+        out$validated <- TRUE
         # input (remove empty final line)
         out$raw <- str_replace(string = input$scenario, 
                                pattern = "\\n$", 
@@ -125,6 +125,13 @@ hist_model_server <- function(input, output, session,
         }
     })
     
+    # if not valid then is not validated
+    observeEvent(out$valid, {
+        if(!out$valid) {
+            out$validated <- FALSE
+        }
+    })
+    
     # update local
     observeEvent(out$raw, {
         local$raw_scenario <- out$raw
@@ -132,8 +139,8 @@ hist_model_server <- function(input, output, session,
     
     # update parser message
     output$parser_msg <- renderUI({
-        req(!is.null(local$validated))
-        if(!local$validated) {
+        req(!is.null(out$validated))
+        if(!out$validated) {
             helpText(
                 icon("warning"), "Scenario is not validated"
             )
