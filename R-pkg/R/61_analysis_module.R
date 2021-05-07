@@ -863,6 +863,14 @@ data_file_server <- function(input, output, session) {
     
     ns <- session$ns
     
+    # invalidate check in case of upload
+    observeEvent({
+        c(env$ap$proj_type, env$ap$locus_type, env$ap$seq_mode, 
+          env$ap$file_upload)
+    }, {
+        env$ap$data_check <- NULL
+    })
+    
     # input data file
     output$input_data <- renderUI({
         if(isTruthy(env$ap$header_check) && 
