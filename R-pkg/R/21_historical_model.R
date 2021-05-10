@@ -695,3 +695,16 @@ default_param_prior <- function(scen_list) {
     }
     
 }
+
+#' Extract numeric value for prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+#' importFrom dplyr distinct
+get_prior_num_val <- function(prior) {
+    value <- as.numeric(unlist(str_extract_all(
+        prior, 
+        str_c("(?<=[\\[,])", numexp_regex(), "(?=[\\],])")
+    )))
+    if(length(value) != 4) value <- NULL
+    return(value)
+}

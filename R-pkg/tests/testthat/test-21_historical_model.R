@@ -389,3 +389,11 @@ test_that("default_param_prior", {
     res <- default_param_prior(scen_list)
     expect_equal(length(res), 10)
 })
+
+test_that("get_prior_num_val", {
+    prior <- "N1 N [10,10000,0.0,0.0]"
+    expect_equal(get_prior_num_val(prior), c(10, 10000, 0, 0))
+    
+    prior <- "N1 N [10,10000,0.0,]"
+    expect_null(get_prior_num_val(prior))
+})
