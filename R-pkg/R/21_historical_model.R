@@ -678,11 +678,11 @@ default_param_prior <- function(scen_list) {
             function(item) {
                 if(item$type == "A") {
                     return(str_c(
-                        item$param, item$type, "[0,1,0.0,0.0]", sep = " "
+                        item$param, item$type, "UN[0,1,0.0,0.0]", sep = " "
                     ))
                 } else {
                     return(str_c(
-                        item$param, item$type, "[10,10000,0.0,0.0]", sep = " "
+                        item$param, item$type, "UN[10,10000,0.0,0.0]", sep = " "
                     ))
                 }
             }
@@ -696,7 +696,32 @@ default_param_prior <- function(scen_list) {
     
 }
 
-#' Extract numeric value for prior encoding
+#' Extract parameter name from prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+#' importFrom dplyr distinct
+get_param_name <- function(prior) {
+    value <- str_extract(
+        prior, str_c("^", single_param_regex(), "(?= )")
+    )
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract distribution from prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+#' importFrom dplyr distinct
+get_prior_distrib <- function(prior) {
+    value <- str_extract(
+        prior, 
+        str_c("(?<= )", "(UN|LU|NO|LN|GA)", "(?=\\[)")
+    )
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract numeric values from prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
 #' importFrom dplyr distinct
@@ -705,6 +730,6 @@ get_prior_num_val <- function(prior) {
         prior, 
         str_c("(?<=[\\[,])", numexp_regex(), "(?=[\\],])")
     )))
-    if(length(value) != 4) value <- NULL
+    if(length(value) != 4 || any(is.na(value))) value <- NULL
     return(value)
 }

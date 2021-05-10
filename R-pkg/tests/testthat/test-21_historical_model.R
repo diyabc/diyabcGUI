@@ -390,10 +390,29 @@ test_that("default_param_prior", {
     expect_equal(length(res), 10)
 })
 
-test_that("get_prior_num_val", {
+test_that("get_param_name", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
+    expect_equal(get_param_name(prior), "N1")
+    
+    prior <- " N [10,10000,0.0,0.0]"
+    expect_null(get_param_name(prior))
+})
+
+test_that("get_prior_distrib", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
+    expect_equal(get_prior_distrib(prior), "UN")
+    
+    prior <- "N1 N UNUN[10,10000,0.0,0.0]"
+    expect_null(get_prior_distrib(prior))
+    
     prior <- "N1 N [10,10000,0.0,0.0]"
+    expect_null(get_prior_distrib(prior))
+})
+
+test_that("get_prior_num_val", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
     expect_equal(get_prior_num_val(prior), c(10, 10000, 0, 0))
     
-    prior <- "N1 N [10,10000,0.0,]"
+    prior <- "N1 N UN[10,10000,0.0,]"
     expect_null(get_prior_num_val(prior))
 })
