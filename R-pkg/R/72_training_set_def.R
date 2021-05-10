@@ -138,6 +138,8 @@ hist_model_panel_server <- function(input, output, session) {
     # edit a scenario
     observeEvent(input$edit, {
         req(!local$lock)
+        req(is.numeric(local$scen_id))
+        req(local$scen_id > 0)
         # edt scenario
         local$edit <- TRUE
         local$lock <- TRUE
@@ -220,4 +222,53 @@ hist_model_panel_server <- function(input, output, session) {
             )
         }
     })
+    
+    # update default parameter priors
+    observe({
+        req(!isTruthy(env$ts$prior_list))
+        env$ts$prior_list <- default_param_prior(env$ts$scenario_list)
+    })
+}
+
+#' Parameter prior setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+param_prior_panel_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h3(icon("chart-bar"), "Priors and conditions"),
+        uiOutput(ns("param_prior_def")),
+        hr()
+    )
+}
+
+#' Parameter prior setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+param_prior_panel_server <- function(input, output, session,
+                                     prior_list = reactive({NULL})) {
+    
+    # init local
+    local <- reactiveValues(
+        prior_list = NULL, param_name = NULL, param_type = NULL
+    )
+    
+    # get input and set default prior if no input
+    observeEvent(env$ts$prior_list, {
+        req(env$ts$prior_list)
+        # existing pior list
+        local$prior_list <- env$ts$prior_list
+        # param name
+        local$param_name <- str_extract(
+            local$prior_list, str_c("^", single_param_regex(), "(?= )")
+        )
+        # param type
+        local$param_type <- str_extract(local$prior_list, str_c("(N|T|A)"))
+    })
+    
+    # get parameter name
+    observe({
+        
+    })
+    
 }
