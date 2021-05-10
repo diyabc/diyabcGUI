@@ -610,3 +610,88 @@ parse_varNe <- function(event) {
     }
     return(lst(event_type, event_param, event_pop, event_check))
 }
+
+#' Generate default priors for a list of parameters
+#' @keywords internal
+#' @author Ghislain Durif
+#' importFrom dplyr distinct
+default_param_prior <- function(scen_list) {
+    
+    # no parameter
+    if(length(scen_list) == 0) {
+        return(NULL)
+    }
+    
+    # parse each scenario in the list
+    parsed_scen_list <- lapply(scen_list, parse_scenario)
+    
+    # table of parameters
+    param_tab <- Reduce("rbind", lapply(
+        1:length(parsed_scen_list), 
+        function(ind) {
+            item <- parsed_scen_list[[ind]]
+            if(!item$valid) return(NULL)
+            Ne_param <- NULL
+            time_param <- NULL
+            rate_param <- NULL
+            # Ne param
+            if(length(item$Ne_param) > 0) {
+                Ne_param <- data.frame(
+                    param = item$Ne_param,
+                    type = "N",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # time param
+            if(length(item$time_param) > 0) {
+                time_param <- data.frame(
+                    param = item$time_param,
+                    type = "T",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # rate param
+            if(length(item$rate_param) > 0) {
+                rate_param <- data.frame(
+                    param = item$rate_param,
+                    type = "A",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # output
+            return(rbind(Ne_param, time_param, rate_param))
+        }
+    ))
+    
+    # any parameter ?
+    if(length(param_tab) > 0) {
+        # distinct
+        param_tab <- param_tab %>% distinct()
+        
+        # order by type
+        o_type <- order(param_tab$type)
+        param_tab <- param_tab[o_type,]
+        
+        # default prior
+        out <- unlist(lapply(
+            split(param_tab, seq(nrow(param_tab))),
+            function(item) {
+                if(item$type == "A") {
+                    return(str_c(
+                        item$param, item$type, "[0,1,0.0,0.0]", sep = " "
+                    ))
+                } else {
+                    return(str_c(
+                        item$param, item$type, "[10,10000,0.0,0.0]", sep = " "
+                    ))
+                }
+            }
+        ))
+        
+        # output
+        return(out)
+    } else {
+        return(NULL)
+    }
+    
+}

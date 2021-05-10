@@ -326,3 +326,66 @@ test_that("parse_scenario", {
     out <- parse_scenario(text)
     expect_true(out$valid)
 })
+
+test_that("default_param_prior", {
+    
+    expect_null(default_param_prior(NULL))
+    expect_null(default_param_prior(list()))
+    
+    # scenario with issue
+    expect_null(default_param_prior(str_c(
+        "N1 N2", 
+        "0 sample", 
+        "0 sample 2", 
+        "t2 merge 1 2", 
+        sep = "\n"
+    )))
+    
+    # list of scenario
+    scen_list <- c(
+        str_c(
+            "N1 N2", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "t sample 1", 
+            "t2 merge 1 2", 
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t sample 1",
+            "t21 split 3 1 2 ra",
+            "t2 merge 1 2", 
+            "t3 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3 Nbc3",
+            "0 sample 1",
+            "50 sample 2",
+            "0 sample 3",
+            "t3-DB3 VarNe 3 NF3",
+            "t3 merge 4 3",
+            "t3lb merge 1 4",
+            "t2 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3",
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t3 merge 2 3",
+            "t3 varNe 2 N2+N3",
+            "t2 merge 1 2",
+            "t2 varNe 1 N1+N2",
+            sep = "\n"
+        )
+    )
+    
+    res <- default_param_prior(scen_list)
+    expect_equal(length(res), 10)
+})
