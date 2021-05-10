@@ -851,54 +851,6 @@ prior_cond_set_server <- function(input, output, session,
     return(out)
 }
 
-#' Check condition provided by users
-#' @keywords internal
-#' @author Ghislain Durif
-check_cond <- function(input_cond_list, param_list) {
-    # init output
-    msg <- NULL
-    valid <- TRUE
-    # check if input
-    if(length(input_cond_list) > 0 & length(param_list) > 0) {
-        # check condition formatting
-        format_check <- str_detect(
-            string = unlist(input_cond_list),
-            pattern = str_c("^", single_param_regex(), "(<|=<|>|>=)",
-                            single_param_regex(),  "$")
-        )
-        if(!all(format_check)) {
-            msg <- append(
-                msg, 
-                str_c(
-                    "Syntax issue with input conditions of following line(s):", 
-                    str_c(which(!format_check), collapse = " "), 
-                    sep = " "
-                )
-            )
-            valid <- FALSE
-        }
-        # concerned parameters
-        input_param <- str_extract_all(
-            string = unlist(input_cond_list),
-            pattern = single_param_regex()
-        )
-        # check for duplicate
-        # FIXME
-        if(length(unique(input_param)) < length(input_param)) {
-            logging("check for duplicate")
-            msg <- append(
-                msg,
-                "Possible duplicated conditions."
-            )
-            valid <- FALSE
-        }
-        # check for parameter validity
-        # FIXME
-    }
-    # output
-    return(lst(msg, valid))
-}
-
 #' Prior choice module ui
 #' @keywords internal
 #' @author Ghislain Durif

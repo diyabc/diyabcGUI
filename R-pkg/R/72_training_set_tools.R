@@ -396,3 +396,74 @@ cleanup_diyabc_run <- function(project_dir) {
         }
     })
 }
+
+#' Check condition provided by users
+#' @keywords internal
+#' @author Ghislain Durif
+check_cond <- function(cond_list, param_list) {
+    # init output
+    out <- list(
+        msg = list(), valid = TRUE
+    )
+    
+    # check if input is not NULL
+    if(length(cond_list) > 0 && length(param_list) > 0) {
+        
+        # unlist
+        cond_list <- unlist(cond_list)
+        param_list <- unlist(param_list)
+        
+        # check condition formatting
+        format_check <- str_detect(
+            string = unlist(cond_list),
+            pattern = str_c("^", single_param_regex(), "(<|=<|>|>=)",
+                            single_param_regex(),  "$")
+        )
+        if(!all(format_check)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Syntax issue with following conditions:", 
+                do.call(
+                    tags$ul,
+                    lapply(
+                        cond_list[!format_check], 
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        # concerned parameters
+        input_param <- str_extract_all(
+            string = cond_list,
+            pattern = single_param_regex()
+        )
+        # check for duplicate
+        if(length(unique(input_param)) < length(input_param)) {
+            out$valid <- FALSE
+            msg <- tagList("Possible duplicated conditions.")
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        # check for parameter validity
+        input_param <- unique(unlist(input_param))
+        if(!all(input_param %in% param_list)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Following parameter(s) are not in any model:",
+                do.call(
+                    tags$ul,
+                    lapply(
+                        input_param[!input_param %in% param_list], 
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+    }
+    # output
+    return(out)
+}
