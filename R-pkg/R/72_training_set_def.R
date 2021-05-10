@@ -16,8 +16,9 @@ hist_model_panel_ui <- function(id) {
                 width = 6,
                 h4(uiOutput(ns("scen_nb"))),
                 actionGroupButtons(
-                    inputIds = c(ns("add"), ns("remove")),
+                    inputIds = c(ns("edit"), ns("add"), ns("remove")),
                     labels = list(
+                        tags$span(icon("edit"), "Edit"),
                         tags$span(icon("plus"), "Add"),
                         tags$span(icon("minus"), "Remove")
                     ),
@@ -27,7 +28,7 @@ hist_model_panel_ui <- function(id) {
         ),
         br(),
         hr(),
-        hist_model_ui(ns("hist_model_set")),
+        uiOutput(ns("hist_model_setup")),
         hr(),
         uiOutput(ns("hist_model_list"))
     )
@@ -46,21 +47,30 @@ hist_model_panel_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
-        n_scen = 0, scen_id = 1, unlock = TRUE, validated = FALSE,
+        n_scen = 0, scen_id = 1, 
+        new = FALSE, edit = FALSE, lock = FALSE,
         current_scenario = NULL
     )
     
-    # debugging
-    observe({
-        pprint("Current list of scenarii")
-        pprint(env$ts$scenario_list)
-    })
+    # # debugging
+    # observe({
+    #     pprint("Current list of scenarii")
+    #     pprint(env$ts$scenario_list)
+    # })
     
-    # debugging
-    observe({
-        pprint("Current scenario")
-        pprint(local$current_scenario)
-    })
+    # # debugging
+    # observe({
+    #     pprint("Current scenario")
+    #     pprint(local$current_scenario)
+    # })
+    
+    # # debugging
+    # observe({
+    #     pprint("lock")
+    #     pprint(local$lock)
+    #     pprint("validated")
+    #     pprint(local$validated)
+    # })
     
     # update number of scenario
     observeEvent(env$ts$scenario_list, {
@@ -97,14 +107,14 @@ hist_model_panel_server <- function(input, output, session) {
     # update selected scenario
     observeEvent(input$scen_id, {
         req(input$scen_id)
-        req(local$unlock)
+        req(!local$lock)
         local$scen_id <- as.integer(input$scen_id)
+        local$new <- FALSE
+        local$edit <- FALSE
     })
     
     # update current scenario
     observe({
-        pprint(local$scen_id)
-        pprint(local$n_scen)
         if(isTruthy(local$scen_id) && (local$scen_id > 0) && 
            isTruthy(local$n_scen) && (local$n_scen > 0)) {
             local$current_scenario <- env$ts$scenario_list[local$scen_id]
@@ -115,16 +125,33 @@ hist_model_panel_server <- function(input, output, session) {
     
     # add a scenario
     observeEvent(input$add, {
-        req(local$unlock)
+        req(!local$lock)
         # increment scenario counter
         local$n_scen <- ifelse(isTruthy(local$n_scen), local$n_scen, 0) + 1
         # change current selected scenario
         local$scen_id <- max(local$n_scen)
+        # new scenario
+        local$new <- TRUE
+        local$lock <- TRUE
+    })
+    
+    # edit a scenario
+    observeEvent(input$edit, {
+        req(!local$lock)
+        # edt scenario
+        local$edit <- TRUE
+        local$lock <- TRUE
+    })
+    
+    # editor
+    output$hist_model_setup <- renderUI({
+        req(local$new || local$edit)
+        hist_model_ui(ns("hist_model"))
     })
     
     # remove a scenario
     observeEvent(input$remove, {
-        req(local$unlock)
+        req(!local$lock)
         req(is.numeric(local$n_scen))
         req(local$n_scen > 0)
         req(is.numeric(local$scen_id))
@@ -155,17 +182,18 @@ hist_model_panel_server <- function(input, output, session) {
     hist_model <- callModule(
         hist_model_server, "hist_model",
         project_dir = reactive(env$ap$proj_dir),
-        raw_scenario = reactive(local$current_scenario), 
-        scenario_id = reactive(local$scenario_id)
+        raw_scenario = reactive(local$current_scenario),
+        scenario_id = reactive(local$scen_id)
     )
     
     # is current scenario validated
     observeEvent(hist_model$validated, {
+        req(local$new || local$edit)
         if(isTruthy(hist_model$validated) && isTruthy(hist_model$valid)) {
-            local$unlock <- TRUE
+            local$lock <- FALSE
             env$ts$scenario_list[local$scen_id] <- hist_model$raw
         } else {
-            local$unlock <- FALSE
+            local$lock <- TRUE
         }
     })
     
