@@ -499,7 +499,8 @@ prior_def_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
-        prior = NULL, type = NULL, name = NULL, distrib = NULL,
+        prior = NULL, type = NULL, 
+        name = NULL, distrib = NULL,
         min = NULL, max = NULL, mean = NULL, stdev = NULL,
         input_min = NA, input_max = NA, input_step = NA
     )
@@ -578,6 +579,32 @@ prior_def_server <- function(input, output, session,
         # pprint(local$input_max)
         # pprint(local$input_step)
         
+        input_min <- numericInput(
+            ns("min"), label = NULL, value = local$min,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_max <- numericInput(
+            ns("max"), label = NULL, value = local$max,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_mean <- numericInput(
+            ns("mean"), label = NULL, value = local$mean,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_stdev <- numericInput(
+            ns("stdev"), label = NULL, value = local$stdev,
+            min = local$input_min, max = NA, step = local$input_step
+        )
+        
+        title_style <- 
+            "text-align:right;margin-right:1em;vertical-align:middle;"
+        
         tagList(
             tags$h5(local$name),
             fluidRow(
@@ -598,34 +625,16 @@ prior_def_server <- function(input, output, session,
                         column(
                             width = 6,
                             splitLayout(
-                                tags$h5(
-                                    "Min.",
-                                    style="text-align:right;margin-right:1em;vertical-align:middle;"
-                                ),
-                                numericInput(
-                                    ns("min"), label = NULL,
-                                    value = local$min,
-                                    min = local$input_min,
-                                    max = local$input_max,
-                                    step = local$input_step
-                                ),
+                                tags$h5("Min.", style = title_style),
+                                input_min,
                                 cellWidths = c("40%", "60%")
                             )
                         ),
                         column(
                             width = 6,
                             splitLayout(
-                                tags$h5(
-                                    "Max.",
-                                    style="text-align:right;margin-right:1em;vertical-align:middle;"
-                                ),
-                                numericInput(
-                                    ns("max"), label = NULL,
-                                    value = local$max,
-                                    min = local$input_min,
-                                    max = local$input_max,
-                                    step = local$input_step
-                                ),
+                                tags$h5("Max.", style = title_style),
+                                input_max,
                                 cellWidths = c("40%", "60%")
                             )
                         )
@@ -634,34 +643,16 @@ prior_def_server <- function(input, output, session,
                         column(
                             width = 6,
                             splitLayout(
-                                tags$h5(
-                                    "Mean",
-                                    style="text-align:right;margin-right:1em;vertical-align:middle;"
-                                ),
-                                numericInput(
-                                    ns("mean"), label = NULL,
-                                    value = local$mean,
-                                    min = local$input_min,
-                                    max = local$input_max,
-                                    step = local$input_step
-                                ),
+                                tags$h5("Mean", style = title_style),
+                                input_mean,
                                 cellWidths = c("40%", "60%")
                             )
                         ),
                         column(
                             width = 6,
                             splitLayout(
-                                tags$h5(
-                                    "Std. dev.",
-                                    style="text-align:right;margin-right:1em;vertical-align:middle;"
-                                ),
-                                numericInput(
-                                    ns("stdev"), label = NULL,
-                                    value = local$stdev,
-                                    min = local$input_min,
-                                    max = NA,
-                                    step = local$input_step
-                                ),
+                                tags$h5("Std. dev.", style = title_style),
+                                input_stdev,
                                 cellWidths = c("40%", "60%")
                             )
                         )
@@ -671,10 +662,21 @@ prior_def_server <- function(input, output, session,
         )
     })
     
-    ## disable mean and stdev if uniform or log-uniform
-    observeEvent(input$prior_type, {
+    ## distribution
+    observe({
+        req(local$name)
         req(input$prior_type)
-        if(input$prior_type %in% c("UN", "LU")) {
+        if(isTruthy(local$type) && (input$prior_type == local$type)) {
+            req(NULL)
+        }
+        local$type <- input$prior_type
+    })
+    
+    ## disable mean and stdev if uniform or log-uniform
+    observe({
+        req(local$name)
+        req(local$type)
+        if(local$type %in% c("UN", "LU")) {
             updateNumericInput(session, "mean", value = 0)
             updateNumericInput(session, "stdev", value = 0)
             shinyjs::disable("mean")
@@ -687,7 +689,7 @@ prior_def_server <- function(input, output, session,
     
     #### check for missing input
     ## min
-    observeEvent(input$min, {
+    observe({
         req(local$name)
         feedbackWarning(
             "min", !isTruthy(input$min),
@@ -696,7 +698,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## max
-    observeEvent(input$max, {
+    observe({
         req(local$name)
         feedbackWarning(
             "max", !isTruthy(input$max),
@@ -705,7 +707,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## mean
-    observeEvent(input$mean, {
+    observe({
         req(local$name)
         feedbackWarning(
             "mean", !isTruthy(input$mean),
@@ -714,7 +716,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## stdev
-    observeEvent(input$stdev, {
+    observe({
         req(local$name)
         feedbackWarning(
             "stdev", !isTruthy(input$stdev),
@@ -728,14 +730,10 @@ prior_def_server <- function(input, output, session,
         req(input$min)
         req(input$max)
         feedbackWarning(
-            "min", 
-            (input$min >= input$max),
-            str_c("Min should be lower than max.")
+            "min", (input$min >= input$max), "min >= max"
         )
         feedbackWarning(
-            "max", 
-            (input$min >= input$max),
-            str_c("Min should be lower than max.")
+            "max", (input$min >= input$max), "min >= max"
         )
     })
     
@@ -744,27 +742,38 @@ prior_def_server <- function(input, output, session,
         req(local$name)
         req(input$prior_type)
         req(input$min)
+        req(input$mean)
+        feedbackWarning(
+            "mean", 
+            input$prior_type %in% c("NO", "LN") && 
+                (input$mean < input$min),
+            "mean < min"
+        )
+        feedbackWarning(
+            "min", 
+            input$prior_type %in% c("NO", "LN") && 
+                (input$mean < input$min),
+            "mean < min"
+        )
+    })
+    
+    observe({
+        req(local$name)
+        req(input$prior_type)
         req(input$max)
         req(input$mean)
         feedbackWarning(
             "mean", 
             input$prior_type %in% c("NO", "LN") && 
-                (input$mean < input$min || input$mean > input$max),
-            "Mean should be between max and min values."
-        )
-        feedbackWarning(
-            "min", 
-            input$prior_type %in% c("NO", "LN") && 
-                (input$mean < input$min || input$mean > input$max),
-            "Mean should be between max and min values."
+                (input$mean > input$max),
+            "mean > max"
         )
         feedbackWarning(
             "max", 
             input$prior_type %in% c("NO", "LN") && 
-                (input$mean < input$min || input$mean > input$max),
-            "Mean should be between max and min values."
+                (input$mean > input$max),
+            "mean > max"
         )
-        
     })
 
     # observe({
@@ -780,19 +789,19 @@ prior_def_server <- function(input, output, session,
         out$valid <- FALSE
         req(local$name)
         req(local$type)
-        req(input$prior_type)
+        req(local$selected_type)
         req(input$min)
         req(input$max)
         req(input$mean)
         req(input$stdev)
         out$valid <- !((input$min >= input$max) || 
-            ((input$prior_type %in% c("NO", "LN")) &&
+            ((local$selected_type %in% c("NO", "LN")) &&
                  (input$mean < input$min || input$mean > input$max)))
         if(out$valid) {
             out$encoding <- str_c(
                 local$name, " ",
                 local$type, " ",
-                input$prior_type, "[",
+                local$selected_type, "[",
                 input$min, ",", input$max, ",",
                 input$mean, ",", input$stdev, "]"
             )
