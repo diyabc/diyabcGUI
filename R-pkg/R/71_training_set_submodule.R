@@ -388,7 +388,7 @@ train_set_config_ui <- function(id) {
         hist_model_panel_ui(ns("hist_model_panel")),
         br(),
         hr(),
-        prior_cond_set_ui(ns("prior_cond")),
+        param_prior_panel_ui(ns("param_prior")),
         br(),
         hr(),
         locus_setup_ui(ns("locus_setup")),
@@ -411,6 +411,9 @@ train_set_config_server <- function(input, output, session) {
     
     # historical model setup
     callModule(hist_model_panel_server, "hist_model_panel")
+    
+    # prior
+    callModule(param_prior_panel_server, "param_prior")
 }
 
 #' Training set simulation run module ui
