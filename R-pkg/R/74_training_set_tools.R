@@ -400,22 +400,23 @@ cleanup_diyabc_run <- function(project_dir) {
 #' Check condition provided by users
 #' @keywords internal
 #' @author Ghislain Durif
-check_cond <- function(cond_list, param_list) {
+check_cond <- function(cond_list, scen_list) {
+    
     # init output
     out <- list(
         msg = list(), valid = TRUE
     )
     
     # check if input is not NULL
-    if(length(cond_list) > 0 && length(param_list) > 0) {
+    if(length(cond_list) > 0 && length(scen_list) > 0) {
         
         # unlist
         cond_list <- unlist(cond_list)
-        param_list <- unlist(param_list)
+        scen_list <- unlist(scen_list)
         
         # check condition formatting
         format_check <- str_detect(
-            string = unlist(cond_list),
+            string = cond_list,
             pattern = str_c("^", single_param_regex(), "(<|=<|>|>=)",
                             single_param_regex(),  "$")
         )
@@ -446,16 +447,52 @@ check_cond <- function(cond_list, param_list) {
             out$msg <- append(out$msg, list(msg))
             return(out)
         }
+        # parse scenario list to get details about parameters
+        scen_check <- lapply(
+            scen_list, 
+            function(item) return(parse_scenario(item))
+        )
+        scen_valid <- unlist(lapply(
+            scen_check, function(item) return(item$valid)
+        ))
+        # check scenario
+        if(!all(scen_valid)) {
+            out$valid <- FALSE
+            msg <- tagList("Issue with input scenario list.")
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
         # check for parameter validity
-        input_param <- unique(unlist(input_param))
-        if(!all(input_param %in% param_list)) {
+        param_check <- Reduce("rbind", lapply(
+            input_param, 
+            function(item) {
+                tmp_check <- unlist(lapply(
+                    scen_check, 
+                    function(subitem) {
+                        return(c(
+                            (length(subitem$Ne_param) > 0) && 
+                                all(item %in% subitem$Ne_param),
+                            (length(subitem$time_param) > 0) && 
+                                all(item %in% subitem$time_param),
+                            (length(subitem$rate_param) > 0) && 
+                                all(item %in% subitem$rate_param)
+                        ))
+                    }
+                ))
+            }
+        ))
+        param_valid <- (apply(param_check, 1, sum) == 1)
+        if(!all(param_valid)) {
             out$valid <- FALSE
             msg <- tagList(
-                "Following parameter(s) are not in any model:",
+                "Issue with parameter(s) in the following condition(s)",
+                "(parameter(s) of different types,",
+                "parameters from different models,",
+                "or wrong parameters, i.e. not in any model):",
                 do.call(
                     tags$ul,
                     lapply(
-                        input_param[!input_param %in% param_list], 
+                        cond_list[!param_valid], 
                         function(item) tags$li(tags$code(item))
                     )
                 )
@@ -464,6 +501,7 @@ check_cond <- function(cond_list, param_list) {
             return(out)
         }
     }
+    
     # output
     return(out)
 }

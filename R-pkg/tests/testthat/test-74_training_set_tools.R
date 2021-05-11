@@ -108,20 +108,37 @@ test_that("diyabc_run_trainset_simu", {
 
 test_that("check_cond", {
     
-    cond_list <- c("t1>t2", "t2<t3")
-    param_list <- c("N1", "N2", "t1", "t2", "t3")
-    res <- check_cond(cond_list, param_list)
+    cond_list <- c("t1>t2", "t3<t4")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
+                   "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
     expect_true(res$valid)
     
-    cond_list <- c("t1>t2", "t2<")
-    param_list <- c("N1", "N2", "t1", "t2", "t3")
-    res <- check_cond(cond_list, param_list)
+    cond_list <- c("t1>t2", "t3<")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
+                   "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
     expect_false(res$valid)
     expect_equal(length(res$msg), 1)
     
     cond_list <- c("t1>t2", "t2<t4")
-    param_list <- c("N1", "N2", "t1", "t2", "t3")
-    res <- check_cond(cond_list, param_list)
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
+                   "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
+    expect_false(res$valid)
+    expect_equal(length(res$msg), 1)
+    
+    cond_list <- c("t1>t2", "t3<t5")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
+                   "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
+    expect_false(res$valid)
+    expect_equal(length(res$msg), 1)
+    
+    cond_list <- c("t1>t2", "t3<t4")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
+                   "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge")
+    res <- check_cond(cond_list, scen_list)
     expect_false(res$valid)
     expect_equal(length(res$msg), 1)
 })
