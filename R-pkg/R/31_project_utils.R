@@ -40,7 +40,7 @@ proj_name_server <- function(input, output, session, tag = "ap") {
     
     # new input
     observeEvent(input$proj_name, {
-        shinyjs::enable("validate")
+        # shinyjs::enable("validate")
         local$modified <- TRUE
     })
     
@@ -52,7 +52,7 @@ proj_name_server <- function(input, output, session, tag = "ap") {
 
         # check project name
         if(isTruthy(input$proj_name)) {
-            shinyjs::disable("validate")
+            # shinyjs::disable("validate")
             env[[tag]]$proj_name <<- input$proj_name
         }
     })
