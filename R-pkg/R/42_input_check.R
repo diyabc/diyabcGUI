@@ -70,8 +70,8 @@ check_header_locus_desc <- function(strng, type = "mss") {
         valid <- str_detect(strng, pttrn1) || str_detect(strng, pttrn2)
     } else if(type == "snp") {
         # 5000 <A> G1 from 1
-        pttrn <- str_c("^", "[0-9]+", " ",
-                       "<(A|H|X|Y|M)>", " ",
+        pttrn <- str_c("^", "([0-9]+", " ",
+                       "<[AHXYM]> )+",
                        "G[0-9]+", " ", 
                        "from ", "[0-9]+", "$")
         
