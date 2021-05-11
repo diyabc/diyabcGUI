@@ -5,32 +5,40 @@ hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("history"), "Define historical models"),
-        br(),
-        fluidRow(
-            column(
-                width = 6,
-                h4("Select a scenario"),
-                uiOutput(ns("select_scen"))
-            ),
-            column(
-                width = 6,
-                h4(uiOutput(ns("scen_nb"))),
-                actionGroupButtons(
-                    inputIds = c(ns("edit"), ns("add"), ns("remove")),
-                    labels = list(
-                        tags$span(icon("edit"), "Edit"),
-                        tags$span(icon("plus"), "Add"),
-                        tags$span(icon("minus"), "Remove")
+        box(
+            title = "",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,
+            tagList(
+                br(),
+                fluidRow(
+                    column(
+                        width = 6,
+                        h4("Select a scenario"),
+                        uiOutput(ns("select_scen"))
                     ),
-                    fullwidth = TRUE
-                )
+                    column(
+                        width = 6,
+                        h4(uiOutput(ns("scen_nb"))),
+                        actionGroupButtons(
+                            inputIds = c(ns("edit"), ns("add"), ns("remove")),
+                            labels = list(
+                                tags$span(icon("edit"), "Edit"),
+                                tags$span(icon("plus"), "Add"),
+                                tags$span(icon("minus"), "Remove")
+                            ),
+                            fullwidth = TRUE
+                        )
+                    )
+                ),
+                br(),
+                hr(),
+                uiOutput(ns("hist_model_setup")),
+                hr(),
+                uiOutput(ns("hist_model_list"))
             )
-        ),
-        br(),
-        hr(),
-        uiOutput(ns("hist_model_setup")),
-        hr(),
-        uiOutput(ns("hist_model_list"))
+        )
     )
 }
 
@@ -237,8 +245,15 @@ param_prior_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
         h3(icon("chart-bar"), "Priors and conditions"),
-        uiOutput(ns("param_prior_def")),
-        hr()
+        box(
+            title = "",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,
+            tagList(
+                uiOutput(ns("param_prior_def"))
+            )
+        )
     )
 }
 
@@ -851,6 +866,7 @@ param_cond_panel_ui <- function(id) {
     )
     
     tagList(
+        hr(),
         h4("Condition setting") %>%
             helper(type = "inline", content = as.character(cond_help)),
         uiOutput(ns("cond_input")),
