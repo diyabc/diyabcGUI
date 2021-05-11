@@ -481,7 +481,7 @@ check_cond <- function(cond_list, scen_list) {
                 ))
             }
         ))
-        param_valid <- (apply(param_check, 1, sum) == 1)
+        param_valid <- (apply(param_check, 1, sum) > 0)
         if(!all(param_valid)) {
             out$valid <- FALSE
             msg <- tagList(
