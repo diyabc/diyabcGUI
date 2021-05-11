@@ -505,3 +505,124 @@ check_cond <- function(cond_list, scen_list) {
     # output
     return(out)
 }
+
+#' Check locus description provided by users
+#' @keywords internal
+#' @author Ghislain Durif
+check_locus_desc <- function(locus_desc, data_check, locus_type) {
+    # init out
+    out <- list(valid = TRUE, msg = list())
+    # SNP locus
+    if(locus_type == "snp") {
+        
+        # check one group locus desc
+        if(length(locus_desc) > 1) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "The locus description should be", 
+                "a one-line description for SNP data."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
+        # check locus description content
+        desc_check <- check_header_locus_desc(locus_desc, locus_type)
+        if(!desc_check) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Bad format."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
+        # extract locus count
+        pttrn <- str_c("(?<=(^| ))", int_regex(), "(?= <)")
+        count_detail <- as.numeric(unlist(str_extract_all(locus_desc, pttrn)))
+        # extract locus type
+        pttrn <- str_c("(?<=<)(A|H|X|Y|M)(?=>)")
+        type_detail <- unlist(str_extract_all(locus_desc, pttrn))
+        
+        # check length (just in case)
+        if(length(count_detail) != length(type_detail)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Bad format."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
+        # check each type
+        type_check <- (type_detail %in% 
+            data_check$locus_count$type[data_check$locus_count$count > 0])
+        if(!all(type_check)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "The following locus types", 
+                tags$code(str_c(type_detail[!type_check], collapse = ", ")),
+                "are not present in the data."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
+        # check count
+        count_check <- unlist(lapply(
+            1:length(count_detail), 
+            function(ind) {
+                tmp_count <- subset(
+                    data_check$locus_count,
+                    data_check$locus_count$type == type_detail[ind]
+                )
+                valid <- (count_detail[ind] < 
+                              (data_check$locus_count$count - 
+                              data_check$locus_count$filter))
+                return(valid)
+            }
+        ))
+        if(!all(count_check)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "The required number of locus for the following types", 
+                tags$code(str_c(type_detail[!type_check], collapse = ", ")),
+                "are higher than the number of corresponding locus",
+                "in the data."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
+        # starting locus
+        pttrn <- "(?<=from )[0-9]+$"
+        start_detail <- as.numeric(str_extract(locus_desc, pttrn))
+        n_locus <- sum(data_check$locus_count$count) - 
+            sum(data_check$locus_count$filter)
+        if(start_detail + sum(count_detail) > n_locus) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "The required starting locus and number of locus", 
+                "are not compatible with",
+                "the number of number of locus available",
+                "in the data (after filtering)."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        ## MSS locus
+    } else if(locus_type == "mss") {
+        valid <- check_header_locus_desc(locus_desc, locus_type)
+        if(!valid) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Bad format."
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+    }
+    
+    ## output
+    return(out)
+}

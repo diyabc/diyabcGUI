@@ -162,3 +162,150 @@ test_that("check_cond", {
     expect_false(res$valid)
     expect_equal(length(res$msg), 1)
 })
+
+test_that("check_locus_desc", {
+    
+    ## SNP IndSeq
+    locus_type <- "snp"
+    seq_mode <- "indseq"
+    
+    # estim param
+    test_proj <- "IndSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    locus_desc <- "70 <A> 10 <X> 10 <M> 10 <Y> G1 from 1"
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_false(res$valid)
+
+    
+    # model choice
+    test_proj <- "IndSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    ## SNP PoolSeq
+    locus_type <- "snp"
+    seq_mode <- "poolseq"
+    # estim param
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    
+    # model choice
+    test_proj <- "PoolSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    ## MSS
+    locus_type <- "mss"
+    seq_mode <- "indseq"
+    
+    # microsat
+    test_proj <- "Microsat"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "simu_dataset_microsat_one_pop_bottleneck_multisamples_001.mss"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    # microsat sequence 1
+    test_proj <- "Microsat_Sequences"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "mss_example_001.mss"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+    # microsat sequence 2
+    test_proj <- "Microsat_Sequences2"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "toytest2_micro_seq_complexe_001.mss"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_locus_desc(locus_desc, data_check, locus_type)
+    expect_true(res$valid)
+    
+})
