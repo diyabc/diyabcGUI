@@ -14,6 +14,7 @@ test_that("read_indseq_snp_data", {
     expect_equal(res$locus_count$count, 30000)
     expect_equal(res$locus_count$filter, 13046)
     expect_equal(res$locus_count$mono, 0)
+    expect_equal(res$locus_count$available, 16954)
     expect_equal(res$n_pop, 4)
     expect_equal(res$n_indiv, 40)
     expect_equal(res$sex_ratio, "NM=1NF")
@@ -257,6 +258,7 @@ test_that("check_snp_indseq", {
     expect_equal(res$locus_count$count, 30000)
     expect_equal(res$locus_count$filter, 13046)
     expect_equal(res$locus_count$mono, 0)
+    expect_equal(res$locus_count$available, 16954)
 })
 
 
@@ -274,6 +276,7 @@ test_that("read_poolseq_snp_data", {
     expect_equal(res$locus_count$count, 30000)
     expect_equal(res$locus_count$filter, 15612)
     expect_equal(res$locus_count$mono, 5918)
+    expect_equal(res$locus_count$available, 14388)
     expect_equal(res$n_pop, 4)
     expect_equal(res$sex_ratio, "NM=1NF")
     expect_equal(res$mrc, 5)
@@ -309,6 +312,7 @@ test_that("check_snp_poolseq", {
     expect_equal(res$locus_count$count, 30000)
     expect_equal(res$locus_count$filter, 15612)
     expect_equal(res$locus_count$mono, 5918)
+    expect_equal(res$locus_count$available, 14388)
 })
 
 test_that("read_mss_data", {

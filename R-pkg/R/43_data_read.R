@@ -413,7 +413,7 @@ process_indseq_locus <- function(snp_data, sex_data, pop_data, snp_type, maf) {
 #' `SEX` (female or male), `POP` (population id).
 #' Note : missing values are encoded by a `9`.
 #' @param snp_type vector of locus type (among `A`, `H`, `X`, `Y`, `M`).
-#' @param locus_cout data.frame with two columns, `count` being the number 
+#' @param locus_count data.frame with two columns, `count` being the number 
 #' of locus for each type in the data, and `type` being the corresponding locus 
 #' type (among `A`, `H`, `X`, `Y`, `M`).
 #' @importFrom dplyr bind_rows
@@ -576,6 +576,9 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
     # merge all results into locus_count table
     out$locus_count <- merge(locus_count, tmp_filter)
     out$locus_count <- merge(out$locus_count, tmp_mono)
+    
+    out$locus_count$available <- out$locus_count$count - 
+        out$locus_count$filter
     
     # output
     return(out)
@@ -810,6 +813,7 @@ check_snp_poolseq <- function(content, mrc = 1) {
         count = nrow(content),
         filter = sum(tmp_filter),
         mono = sum(tmp_mono),
+        available = nrow(content) - sum(tmp_filter),
         stringsAsFactors = FALSE
     )
     
