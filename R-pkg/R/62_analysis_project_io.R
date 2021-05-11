@@ -441,23 +441,22 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                         "loci =", as.character(item$count)
                                     ), 
                                     tags$ul(
-                                    tags$li(
-                                        "Number of excluded loci", 
-                                        "(with MAF <", 
-                                        as.character(data_check$maf), 
-                                        ") =",
-                                        as.character(item$filter), 
-                                        ", including", as.character(item$mono),
-                                        "monomorphic loci."
-                                    ),
-                                    tags$li(tags$b(
-                                        "Number of",
-                                        tags$code(as.character(item$type)),
-                                        "available of loci =", 
-                                        as.character(
-                                            item$count - item$filter
-                                        )
-                                    ))
+                                        tags$li(
+                                            "Number of excluded loci", 
+                                            "(with MAF <", 
+                                            as.character(data_check$maf), 
+                                            ") =",
+                                            as.character(item$filter), 
+                                            ", including", 
+                                            as.character(item$mono),
+                                            "monomorphic loci."
+                                        ),
+                                        tags$li(tags$b(
+                                            "Number of",
+                                            tags$code(as.character(item$type)),
+                                            "available of loci =", 
+                                            as.character(item$available)
+                                        ))
                                     )
                                 ))
                             }
