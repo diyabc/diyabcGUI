@@ -511,7 +511,9 @@ check_cond <- function(cond_list, scen_list) {
 #' @author Ghislain Durif
 check_locus_desc <- function(locus_desc, data_check, locus_type) {
     # init out
-    out <- list(valid = TRUE, msg = list())
+    out <- list(
+        valid = TRUE, msg = list(), locus_count = NULL, from = NULL
+    )
     # SNP locus
     if(locus_type == "snp") {
         
@@ -576,9 +578,8 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
                     data_check$locus_count,
                     data_check$locus_count$type == type_detail[ind]
                 )
-                valid <- (count_detail[ind] < 
-                              (data_check$locus_count$count - 
-                              data_check$locus_count$filter))
+                valid <- (count_detail[ind] <= 
+                              data_check$locus_count$available)
                 return(valid)
             }
         ))
@@ -596,7 +597,7 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
         
         # starting locus
         pttrn <- "(?<=from )[0-9]+$"
-        start_detail <- as.numeric(str_extract(locus_desc, pttrn))
+        start_detail <- as.integer(str_extract(locus_desc, pttrn))
         n_locus <- sum(data_check$locus_count$count) - 
             sum(data_check$locus_count$filter)
         if(start_detail + sum(count_detail) > n_locus) {
@@ -610,6 +611,17 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
             out$msg <- append(out$msg, list(msg))
             return(out)
         }
+        
+        ## format output
+        out$from <- start_detail
+        out$locus_count <- merge(
+            data.frame(
+                count = count_detail, type = type_detail,
+                stringsAsFactors = FALSE
+            ),
+            data_check$locus_count[,c("available", "type")]
+        )
+        
         ## MSS locus
     } else if(locus_type == "mss") {
         valid <- check_header_locus_desc(locus_desc, locus_type)
