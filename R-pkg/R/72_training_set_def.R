@@ -388,7 +388,7 @@ prior_list_def_ui <- function(id) {
     )
 }
 
-#' Parameter prior setting module ui
+#' Parameter prior setting module server
 #' @keywords internal
 #' @author Ghislain Durif
 prior_list_def_server <- function(input, output, session, 
@@ -815,4 +815,154 @@ prior_def_server <- function(input, output, session,
     
     ## output
     return(out)
+}
+
+#' Parameter condition setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+param_cond_panel_ui <- function(id) {
+    ns <- NS(id)
+    # help page
+    cond_help <- tagList(
+        tags$ul(
+            tags$li(
+                "You might need to impose some", tags$b("conditions"), "on", 
+                "historical parameters",
+                "(e.g. to avoid genealogical inconsistencies)",
+                "or to constraint simulation settings.",
+            ),
+            tags$li(
+                "For instance, there can be two time parameters", 
+                "with overlapping prior distributions.", 
+                "However, you might want",
+                "the first one, say", tags$code("t1"), 
+                ", to always be larger than the second one, say", 
+                tags$code("t2"), ".",
+            ),
+            tags$li(
+                "To do so, you just need to set",
+                tags$code("t1 > t2"), 
+                "in the 'Condition setting' panel.", 
+                "Such a condition should concern",
+                "two parameters of the same type",
+                "(i.e. two effective sizes, two times or two admixture rates)."
+            )
+        )
+    )
+    
+    tagList(
+        h4("Condition setting") %>%
+            helper(type = "inline", content = as.character(cond_help)),
+        uiOutput(ns("cond_input")),
+        fluidRow(
+            column(
+                width = 4,
+                actionButton(
+                    ns("validate"),
+                    label = "Validate",
+                    icon = icon("check"),
+                    width = '100%'
+                )
+            )
+        ),
+        helpText(
+            icon("info-circle"),
+            "Enter a single condition per line.",
+            "Conditions should have the following format:", 
+            tags$code("XX<YY"),
+            "where", tags$code("XX"), "and", tags$code("YY"),
+            "are parameters of the same type from the same model.",
+            "You can use the standard comparison signs:",
+            tags$code(">"), tags$code(">="), tags$code("<"), tags$code("=<"),
+            "."
+        ),
+        uiOutput(ns("feedback"))
+    )
+}
+
+#' Parameter condition setting module server
+#' @keywords internal
+#' @author Ghislain Durif
+param_cond_panel_server <- function(input, output, session) {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        cond_list = NULL, input_cond = NULL, validated = TRUE, 
+        cond_check = NULL
+    )
+    
+    # get current condition list (if existing)
+    observeEvent(env$ts$cond_list, {
+        if(isTruthy(env$ts$cond_list)) {
+            local$cond_list <- str_c(env$ts$cond_list, collapse = "\n")
+        } else {
+            local$cond_list <- NULL
+        }
+    })
+    
+    # condition input
+    output$cond_input <- renderUI({
+        textAreaInput(
+            ns("cond_set"), 
+            value = local$cond_list,
+            label = NULL, 
+            rows = 4,
+            resize = "none"
+        )
+    })
+    
+    # invalidate
+    observeEvent(input$cond_set, {
+        if(isTruthy(input$cond_set)) {
+            local$input_cond <- unlist(str_split(input$cond_set, "\n"))
+            if(length(local$input_cond) != length(env$ts$cond_list) ||
+               any(sort(local$input_cond) != sort(env$ts$cond_list))) {
+                local$validated <- FALSE
+            } else {
+                local$validated <- TRUE
+            }
+        } else {
+            local$validated <- FALSE
+            local$input_cond <- NULL
+        }
+    })
+    
+    # feedback
+    observe({
+        feedbackWarning(
+            "cond_set", !local$validated, "Condition(s) not validated."
+        )
+    })
+    
+    # get user input
+    observeEvent(input$validate, {
+        req(local$input_cond)
+        req(env$ts$scenario_list)
+        # check
+        local$cond_check <- check_cond(local$input_cond, env$ts$scenario_list)
+        # update if valid edition
+        if(local$cond_check$valid) {
+            local$validated <- TRUE
+            env$ts$cond_list <- local$input_cond
+        } else {
+            local$validated <- FALSE
+        }
+    })
+    
+    # feedback
+    output$feedback <- renderUI({
+        req(local$cond_check)
+        req(!local$cond_check$valid)
+        tags$div(
+            icon("warning"), "Issue with input conditions.",
+            do.call(
+                tags$ul,
+                unname(lapply(local$cond_check$msg, tags$li))
+            ),
+            style = "color: #F89406;"
+        )
+    })
 }

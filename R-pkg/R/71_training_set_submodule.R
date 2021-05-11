@@ -390,6 +390,7 @@ train_set_config_ui <- function(id) {
         hr(),
         param_prior_panel_ui(ns("param_prior")),
         br(),
+        param_cond_panel_ui(ns("param_cond")),
         hr(),
         locus_setup_ui(ns("locus_setup")),
         br(),
@@ -414,6 +415,9 @@ train_set_config_server <- function(input, output, session) {
     
     # prior
     callModule(param_prior_panel_server, "param_prior")
+    
+    # conditions
+    callModule(param_cond_panel_server, "param_cond")
 }
 
 #' Training set simulation run module ui
