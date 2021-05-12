@@ -29,7 +29,7 @@ test_that("proj_file_input", {
     )
     
     # specific file type
-    ind <- which(out$file_input$name == "headerRF.txt")
+    ind <- which(file_input$name == "headerRF.txt")
     file_input$type[ind] <- "text/plain"
     ind <- which(file_input$name == "header.txt")
     file_input$type[ind] <- "text/plain"
@@ -336,6 +336,7 @@ test_that("format_data_info", {
     seq_mode <- "indseq"
     data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
     res <- format_data_info(data_check, locus_type, seq_mode)
+    expect_true("shiny.tag.list" %in% class(res))
     
     # snp poolseq
     data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
@@ -344,6 +345,7 @@ test_that("format_data_info", {
     seq_mode <- "poolseq"
     data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
     res <- format_data_info(data_check, locus_type, seq_mode)
+    expect_true("shiny.tag.list" %in% class(res))
     
     # mss
     data_file <- "mss_example_001.mss"
@@ -352,4 +354,5 @@ test_that("format_data_info", {
     seq_mode <- NULL
     data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
     res <- format_data_info(data_check, locus_type, seq_mode)
+    expect_true("shiny.tag.list" %in% class(res))
 })
