@@ -69,7 +69,7 @@ init_diyabcrf_env <- function() {
         # list of conditions on historical parameters
         cond_list = NULL,
         # table of loci description
-        loci_desc = NULL,
+        locus_desc = NULL,
         # number of loci group
         n_group = NULL,
         # list of group priors for MSS data
@@ -160,7 +160,7 @@ init_datagen_env <- function() {
         ## data description
         model = NULL,           # historical model
         param = NULL,           # list of parameter values
-        loci_desc = NULL,       # table of loci description
+        locus_desc = NULL,       # table of loci description
         n_group = NULL,         # number of loci group
         mss_prior = NULL,       # list of group priors for MSS data
         sample_sizes = NULL,    # table of sample sizes
