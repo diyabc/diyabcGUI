@@ -919,15 +919,33 @@ input_data_file_ui <- function(id) {
 #' @param proj_dir string as a `reactive`, project directory.
 input_data_file_server <- function(input, output, session) {
     
+    # init local
+    local <- reactiveValues(upload = FALSE)
+    
+    # File upload ?
+    observeEvent({
+        c(env$ap$proj_type, env$ap$locus_type, env$ap$seq_mode)
+    }, {
+        local$upload <- FALSE
+    })
+    
     # Feedback on file upload
     observe({
         # feedback on missing file
-        feedbackWarning("data_file", !isTruthy(input$data_file),
+        feedbackWarning("data_file", !local$upload,
                         "Missing data file.")
+    })
+    
+    # reset file upload when another mode is chosen
+    observeEvent({
+        c(env$ap$proj_type, env$ap$locus_type, env$ap$seq_mode)
+    }, {
+        shinyjs::reset("data_file")
     })
     
     ## get data file
     observeEvent(input$data_file, {
+        local$upload <- TRUE
         # input$data_file = data.frame with 4 columns:
         # name (chr), size (int), type (chr), datapath (chr)
         req(env$ap$proj_dir)
@@ -957,20 +975,22 @@ input_data_file_server <- function(input, output, session) {
     
     ## feedback
     output$feedback <- renderUI({
-        if(isTruthy(nrow(input$data_file) == 1)) {
-            if(isTruthy(env$ap$header_check) &&
-               isTruthy(env$ap$header_check$valid) &&
-               isTruthy(env$ap$header_check$data_file) &&
-               (input$data_file$name != env$ap$header_check$data_file)) {
-                tags$div(
-                    icon("warning"), 
-                    "Provided data file name does not match",
-                    "expected data file name from", 
-                    tags$code(env$ap$header_check$header_file), "file.",
-                    style = "color: #F89406;"
-                )
-            } else {
-                NULL
+        if(local$upload) {
+            if(isTruthy(nrow(input$data_file) == 1)) {
+                if(isTruthy(env$ap$header_check) &&
+                   isTruthy(env$ap$header_check$valid) &&
+                   isTruthy(env$ap$header_check$data_file) &&
+                   (input$data_file$name != env$ap$header_check$data_file)) {
+                    tags$div(
+                        icon("warning"), 
+                        "Provided data file name does not match",
+                        "expected data file name from", 
+                        tags$code(env$ap$header_check$header_file), "file.",
+                        style = "color: #F89406;"
+                    )
+                } else {
+                    NULL
+                }
             }
         } else {
             tags$div(
@@ -1023,6 +1043,7 @@ check_data_server <- function(input, output, session) {
     
     ## warning
     output$feedback_check <- renderUI({
+        
         if(!isTruthy(env$ap$data_check) && !local$run) {
             tags$p(
                 tags$div(
@@ -1070,6 +1091,7 @@ check_data_server <- function(input, output, session) {
     output$data_info <- renderUI({
         req(env$ap$locus_type)
         req(env$ap$seq_mode)
+        
         # data case
         tmp_data_case <- NULL
         if(env$ap$locus_type == "mss") {
