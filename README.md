@@ -1,8 +1,8 @@
 # ![icon](man/figures/coccicon_32x32.png) Graphical User Interface for DIYABC-RF software
 
-> **IMPORTANT**: an important release is due in the next few days (before May 12th). It will fix numerous ongoing issues. Please wait for this new release before opening new issues.
+### !! **IMPORTANT**: an important release is due in the next few days (before May 21th). It will fix numerous ongoing issues. Please wait for this new release before opening new issues. IT was preivously planned for May 12th, we are really sorry for the delay, the final development step did not go as smoothly as we expected !!
 
-> **Disclaimer:** `DIYABC-RF GUI` is under final development stage and not officially released yet. You may still encounter a few bugs.
+> **Disclaimer:** `DIYABC-RF GUI` is under final development stage. You may still encounter a few bugs with the current release.
 
 We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], called `DIYABC-RF GUI`.
 
