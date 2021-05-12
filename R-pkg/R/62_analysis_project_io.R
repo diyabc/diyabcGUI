@@ -497,9 +497,7 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                 tags$li(
                     tags$b(
                         "Total number available of loci =", 
-                        as.character(
-                            data_check$n_loci - data_check$locus_count$filter
-                        )
+                        as.character(data_check$locus_count$available)
                     )
                 ),
                 tags$li(
