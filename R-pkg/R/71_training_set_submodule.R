@@ -34,7 +34,7 @@ train_set_simu_server <- function(input, output, session) {
         # list of conditions on historical parameters
         env$ts$cond_list <- NULL
         # table of loci description
-        env$ts$loci_desc <- NULL
+        env$ts$locus_desc <- NULL
         # number of loci group
         env$ts$n_group <- NULL
         # list of group priors for MSS data
@@ -61,7 +61,7 @@ train_set_simu_server <- function(input, output, session) {
         # list of conditions on historical parameters
         env$ts$cond_list <- env$ap$header_check$cond_list
         # table of loci description
-        env$ts$loci_desc <- env$ap$header_check$loci_desc
+        env$ts$locus_desc <- env$ap$header_check$locus_desc
         # number of loci group
         env$ts$n_group <- env$ap$header_check$n_group
         # list of group priors for MSS data
@@ -392,7 +392,7 @@ train_set_config_ui <- function(id) {
         br(),
         param_cond_panel_ui(ns("param_cond")),
         hr(),
-        locus_setup_ui(ns("locus_setup")),
+        locus_setup_panel_ui(ns("locus_setup")),
         br(),
         br(),
         actionBttn(
@@ -418,6 +418,9 @@ train_set_config_server <- function(input, output, session) {
     
     # conditions
     callModule(param_cond_panel_server, "param_cond")
+    
+    # locus
+    callModule(locus_setup_panel_server, "locus_setup")
 }
 
 #' Training set simulation run module ui

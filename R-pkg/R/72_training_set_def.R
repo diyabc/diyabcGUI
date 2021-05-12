@@ -11,7 +11,6 @@ hist_model_panel_ui <- function(id) {
             collapsible = TRUE,
             collapsed = FALSE,
             tagList(
-                br(),
                 fluidRow(
                     column(
                         width = 6,
@@ -869,30 +868,39 @@ param_cond_panel_ui <- function(id) {
         hr(),
         h4("Condition setting") %>%
             helper(type = "inline", content = as.character(cond_help)),
-        uiOutput(ns("cond_input")),
-        fluidRow(
-            column(
-                width = 4,
-                actionButton(
-                    ns("validate"),
-                    label = "Validate",
-                    icon = icon("check"),
-                    width = '100%'
-                )
+        box(
+            title = "",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,
+            tagList(
+                uiOutput(ns("cond_input")),
+                fluidRow(
+                    column(
+                        width = 4,
+                        actionButton(
+                            ns("validate"),
+                            label = "Validate",
+                            icon = icon("check"),
+                            width = '100%'
+                        )
+                    )
+                ),
+                helpText(
+                    icon("info-circle"),
+                    "Enter a single condition per line.",
+                    "Conditions should have the following format:", 
+                    tags$code("XX<YY"),
+                    "where", tags$code("XX"), "and", tags$code("YY"),
+                    "are parameters of the same type from the same model.",
+                    "You can use the standard comparison signs:",
+                    tags$code(">"), ",", tags$code(">="), ",", 
+                    tags$code("<"),  ",",
+                    tags$code("=<"), "."
+                ),
+                uiOutput(ns("feedback"))
             )
-        ),
-        helpText(
-            icon("info-circle"),
-            "Enter a single condition per line.",
-            "Conditions should have the following format:", 
-            tags$code("XX<YY"),
-            "where", tags$code("XX"), "and", tags$code("YY"),
-            "are parameters of the same type from the same model.",
-            "You can use the standard comparison signs:",
-            tags$code(">"), tags$code(">="), tags$code("<"), tags$code("=<"),
-            "."
-        ),
-        uiOutput(ns("feedback"))
+        )
     )
 }
 
@@ -955,6 +963,11 @@ param_cond_panel_server <- function(input, output, session) {
     
     # get user input
     observeEvent(input$validate, {
+        if(is.null(local$input_cond) || (local$input_cond == "")) {
+            local$validated <- TRUE
+            env$ts$cond_list <- NULL
+        }
+        # else
         req(local$input_cond)
         req(env$ts$scenario_list)
         # check
@@ -981,4 +994,450 @@ param_cond_panel_server <- function(input, output, session) {
             style = "color: #F89406;"
         )
     })
+}
+
+#' Locus setup panel ui
+#' @keywords internal
+#' @author Ghislain Durif
+locus_setup_panel_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        h3(icon("dna"), "Number of loci to simulate"),
+        box(
+            title = "",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = FALSE,
+            tagList(
+                uiOutput(ns("locus_setup"))
+            )
+        )
+    )
+}
+
+#' Locus setup panel server
+#' @keywords internal
+#' @author Ghislain Durif
+locus_setup_panel_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
+    
+    # render ui
+    output$locus_setup <- renderUI({
+        
+        req(env$ap$locus_type)
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        
+        if(env$ap$locus_type == "snp") {
+            tagList(
+                snp_locus_setup_ui(ns("snp_setup"))
+            )
+        } else if(local$locus_type == "mss") {
+            tagList(
+                mss_locus_setup_ui(ns("mss_setup"))
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    ## server-side
+    callModule(snp_locus_setup_server, "snp_setup")
+    # callModule(mss_locus_setup_server, "mss_setup")
+}
+
+#' Locus SNP setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+snp_locus_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("input_setup")),
+        fluidRow(
+            column(
+                width = 4,
+                actionButton(
+                    ns("validate"),
+                    label = "Validate",
+                    icon = icon("check"),
+                    width = '100%'
+                )
+            )
+        ),
+        uiOutput(ns("feedback"))
+    )
+}
+
+#' Locus SNP setup server
+#' @keywords internal
+#' @author Ghislain Durif
+snp_locus_setup_server <- function(input, output, session) {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        locus_desc = NULL, locus_count = NULL, from = NULL, check = NULL,
+        input_count = NULL, input_from = NULL, input_desc = NULL, 
+        valid = FALSE, validated = FALSE
+    )
+    
+    # get existing locus description if any (and check it)
+    observe({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        
+        pprint("run1")
+        
+        if(isTruthy(env$ts$locus_desc)) {
+            local$locus_desc <- env$ts$locus_desc
+            local$validated <- TRUE
+        } else {
+            local$locus_desc <- NULL
+            local$validated <- FALSE
+        }
+    })
+    
+    # check locus description
+    observe({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(local$locus_desc)
+        
+        pprint("run2")
+        
+        local$check <- check_locus_desc(
+            local$locus_desc, env$ap$data_check,
+            env$ap$locus_type
+        )
+        
+        local$valid <- local$check$valid
+    })
+    
+    ## prepare rendering setup
+    observe({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        
+        pprint("run3")
+        
+        if(isTruthy(local$valid)) {
+            local$locus_count <- local$check$locus_count
+            local$from <- local$check$from
+        } else {
+            local$from <- 1
+            local$locus_count <- subset(
+                env$ap$data_check$locus_count,
+                env$ap$data_check$locus_count$count > 0
+            )
+            local$locus_count$count <- local$locus_count$available
+        }
+    })
+    
+    # render ui
+    output$input_setup <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(local$locus_count)
+        req(nrow(local$locus_count) > 0)
+        req(local$from)
+        
+        pprint("run4")
+        
+        tag_list <- unname(lapply(
+            split(local$locus_count, seq(nrow(local$locus_count))),
+            function(item) {
+                return(
+                    fluidRow(
+                        column(
+                            width = 4,
+                            shinyjs::disabled(textInput(
+                                ns(str_c("type_", item$type)),
+                                label = "SNP loci available",
+                                value = item$type
+                            ))
+                        ),
+                        column(
+                            width = 4,
+                            numericInput(
+                                inputId = ns(str_c("num_", item$type)),
+                                label = "Number of locus",
+                                min = 0, step = 1,
+                                max = as.integer(item$available),
+                                value = as.integer(item$count)
+                            )
+                        )
+                    )
+                )
+            }
+        ))
+        
+        tagList(
+            do.call(tagList, tag_list),
+            br(),
+            fluidRow(
+                column(
+                    width = 4,
+                    numericInput(
+                        inputId = ns("locus_id_from"),
+                        label = "from",
+                        min = 1, step = 1,
+                        max = sum(local$locus_count$available),
+                        value = 1
+                    ) %>% 
+                        helper(
+                            type = "inline", 
+                            content = paste(
+                                "Index of the first locus in the data file",
+                                "to be included in the analysis.",
+                                "For instance,", 
+                                "if the data file contains a total of",
+                                "10 loci (whatever their type),",
+                                "and you choose to use 5 loci,",
+                                "if you set up", tags$code("from = 4"),
+                                "the loci from 4 to 9 (out of 10)",
+                                "will be used in the analysis.",
+                                sep = " "
+                            )
+                        )
+                )
+            )
+        )
+    })
+    
+    # get user input
+    observe({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(local$locus_count)
+        req(nrow(local$locus_count) > 0)
+        req(input$locus_id_from)
+        
+        pprint("run5")
+        
+        local$validated <- FALSE
+        
+        local$input_count <- unlist(lapply(
+            local$locus_count$type,
+            function(item) {
+                req(input[[ str_c("num_", item) ]])
+                n_loci <- input[[ str_c("num_", item) ]]
+                return(str_c(
+                    n_loci,
+                    str_c("<", item, ">"),
+                    sep = " "
+                ))
+            }
+        ))
+        
+        # start loci
+        local$input_from <- input$locus_id_from
+    })
+    
+    ## process input
+    observeEvent(input$validate, {
+        req(local$input_count)
+        req(local$input_from)
+        
+        pprint("run6")
+        
+        # merge
+        local$input_desc <- str_c(
+            str_c(local$input_count, collapse = " "),
+            "G1 from", local$input_from, sep = " "
+        )
+        
+        # check and update
+        local$check <- check_locus_desc(
+            local$input_desc, env$ap$data_check, env$ap$locus_type
+        )
+        local$valid <- local$check$valid
+        
+        # update if valid and if modification
+        if(local$valid) {
+            if((length(env$ts$locus_desc) == length(local$input_desc)) && 
+               all(env$ts$locus_desc == local$input_desc)) {
+                local$validated <- TRUE
+            } else {
+                env$ts$locus_desc <- local$input_desc
+                local$validated <- TRUE
+            }
+        } else {
+            local$validated <- FALSE
+        }
+    })
+    
+    # feedback for locus description check
+    output$feedback <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "snp")
+        
+        pprint("run7")
+        
+        if(!local$valid) {
+            tagList(
+                tags$div(
+                    icon("warning"), "Issue with SNP locus description:",
+                    do.call(
+                        tags$ul,
+                        lapply(local$check$msg, tags$li)
+                    ),
+                    style = "color: #F89406;"
+                )
+            )
+        } else if(!local$validated) {
+            tagList(
+                tags$div(
+                    icon("warning"), "Locus description(s) not validated.",
+                    style = "color: #F89406;"
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+}
+
+#' Locus MSS setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_locus_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        "TODO"
+        # uiOutput(ns("input_setup")),
+        # uiOutput(ns("feedback"))
+    )
+}
+
+#' Locus MSS setup server
+#' @keywords internal
+#' @author Ghislain Durif
+mss_locus_setup_server <- function(input, output, session) {
+    # # init out
+    # out <- reactiveValues(
+    #     locus = NULL,
+    #     mss_locus = NULL,
+    #     mss_group_prior = NULL,
+    #     mss_rf_col_name = NULL
+    # )
+    # 
+    # # render ui
+    # output$locus_setup <- renderUI({
+    #     
+    #     req(env$ap$locus_type)
+    #     req(env$ap$data_check)
+    #     req(env$ap$data_check$valid)
+    #     
+    #     if(env$ap$locus_type == "snp") {
+    #         tagList(
+    #             snp_locus_setup_ui(ns("snp_setup"))
+    #         )
+    #     } else if(local$locus_type == "mss") {
+    #         # FIXME
+    #         
+    #         # pprint("data info")
+    #         # pprint(local$data_info)
+    #         # warning("not supported at the moment")
+    #         
+    #         # microsat locus
+    #         microsat_locus <- str_detect(local$data_info$locus_mode, "microsat")
+    #         microsat_locus_type <- table(local$data_info$locus[microsat_locus])
+    #         
+    #         # seq locus
+    #         seq_locus <- str_detect(local$data_info$locus_mode, "seq")
+    #         seq_locus_type <- table(local$data_info$locus[seq_locus])
+    #         
+    #         tagList(
+    #             tags$ul(
+    #                 tags$li(
+    #                     "Number of Microsat loci:", 
+    #                     as.character(sum(microsat_locus))
+    #                 ),
+    #                 tags$li(
+    #                     "Number of Sequence loci:", 
+    #                     as.character(sum(seq_locus))
+    #                 )
+    #             )
+    #         )
+    #     } else {
+    #         NULL
+    #     }
+    # })
+    # 
+    # ## MSS setup
+    # output$mss_setup <- renderUI({
+    #     if(local$locus_type == "mss") {
+    #         tagList(
+    #             mss_group_setup_ui(ns("mss_group")),
+    #             br(),
+    #             mss_group_prior_ui(ns("mss_prior"))
+    #         )
+    #     } else {
+    #         NULL
+    #     }
+    # })
+    # 
+    # mss_group <- callModule(
+    #     mss_group_setup_server,
+    #     "mss_group",
+    #     data_info = reactive(local$data_info)
+    # )
+    # 
+    # mss_prior <- callModule(
+    #     mss_group_prior_server,
+    #     "mss_prior",
+    #     group_info = reactive(mss_group$group_info)
+    # )
+    # 
+    # ## update output
+    # observe({
+    #     if(local$locus_type == "snp") {
+    #         req(length(local$data_info$locus) > 0)
+    #         tmp <- unlist(lapply(
+    #             1:length(local$data_info$locus),
+    #             function(ind) {
+    #                 item <- local$data_info$locus[ind]
+    #                 locus <- str_extract(item, pattern = "(A|H|X|Y|M)")
+    #                 n_loci <- input[[ str_c("num_", locus) ]]
+    #                 return(str_c(
+    #                     n_loci,
+    #                     str_c("<", locus, ">"),
+    #                     sep = " "
+    #                 ))
+    #             }
+    #         ))
+    #         # start loci
+    #         start_locus <- input$locus_id_from
+    #         
+    #         # locus number encoding
+    #         out$locus <- str_c(
+    #             str_c(tmp, collapse = " "),
+    #             "G1 from", start_locus, sep = " "
+    #         )
+    #         
+    #         # # debugging
+    #         # pprint("locus setup")
+    #         # pprint(out$locus)
+    #     } else if(local$locus_type == "mss") {
+    #         req(!is.null(mss_group$raw_locus))
+    #         req(!is.null(mss_prior$raw_group_prior_list))
+    #         out$mss_locus <- mss_group$raw_locus
+    #         out$mss_group_prior <- mss_prior$raw_group_prior_list
+    #         out$mss_rf_col_name <- mss_prior$rf_col_name
+    #     }
+    # })
+
 }
