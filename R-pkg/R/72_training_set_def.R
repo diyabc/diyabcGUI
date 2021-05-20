@@ -254,9 +254,13 @@ hist_model_panel_server <- function(input, output, session) {
     })
     
     # update default parameter priors
-    observe({
-        req(!isTruthy(env$ts$prior_list))
-        env$ts$prior_list <- default_param_prior(env$ts$scenario_list)
+    observeEvent(env$ts$scenario_list, {
+        if(isTruthy(env$ts$scenario_list)) {
+            req(!isTruthy(env$ts$prior_list))
+            env$ts$prior_list <- default_param_prior(env$ts$scenario_list)
+        } else {
+            env$ts$prior_list <- NULL
+        }
     })
 }
 
@@ -295,14 +299,23 @@ param_prior_panel_server <- function(input, output, session) {
     )
     
     # get input and set default prior if no input
-    observeEvent(env$ts$prior_list, {
-        req(env$ts$prior_list)
-        # existing pior list
-        local$prior_list <- env$ts$prior_list
-        # param type
-        local$param_type <- str_extract(
-            local$prior_list, str_c("(?<= )(N|T|A)(?= )")
-        )
+    observeEvent({
+        c(env$ts$prior_list, env$ts$scenario_list)
+    }, {
+        if(isTruthy(env$ts$prior_list)) {
+            # existing pior list
+            local$prior_list <- env$ts$prior_list
+            # param type
+            local$param_type <- str_extract(
+                local$prior_list, str_c("(?<= )(N|T|A)(?= )")
+            )
+        } else {
+            local$prior_list <- NULL
+            local$param_type <- NULL
+            local$Ne_prior_list <- NULL
+            local$time_prior_list <- NULL
+            local$rate_prior_list <- NULL
+        }
     })
     
     # # debugging
@@ -313,6 +326,7 @@ param_prior_panel_server <- function(input, output, session) {
     # update parameter type-specific prior list
     observeEvent(local$prior_list, {
         req(local$prior_list)
+        req(local$param_type)
         if(any(local$param_type == "N")) {
             local$Ne_prior_list <- local$prior_list[local$param_type == "N"]
         } else {
@@ -332,7 +346,6 @@ param_prior_panel_server <- function(input, output, session) {
     
     # get parameter name
     output$param_prior_def <- renderUI({
-        req(local$prior_list)
         tag_list1 <- NULL
         tag_list2 <- NULL
         tag_list3 <- NULL
@@ -1066,7 +1079,7 @@ locus_setup_panel_server <- function(input, output, session) {
     })
     
     ## server-side
-    callModule(snp_locus_setup_server, "snp_setup")
+    # callModule(snp_locus_setup_server, "snp_setup")
     # callModule(mss_locus_setup_server, "mss_setup")
 }
 
