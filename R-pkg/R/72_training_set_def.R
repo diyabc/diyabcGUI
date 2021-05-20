@@ -120,16 +120,6 @@ hist_model_panel_server <- function(input, output, session) {
         local$edit <- FALSE
     })
     
-    # update current scenario
-    observe({
-        if(isTruthy(local$scen_id) && (local$scen_id > 0) && 
-           isTruthy(local$n_scen) && (local$n_scen > 0)) {
-            local$current_scenario <- env$ts$scenario_list[local$scen_id]
-        } else {
-            local$current_scenario <- NULL
-        }
-    })
-    
     # add a scenario
     observeEvent(input$add, {
         req(!local$lock)
@@ -146,10 +136,15 @@ hist_model_panel_server <- function(input, output, session) {
     observeEvent(input$edit, {
         req(!local$lock)
         req(is.numeric(local$scen_id))
+        req(is.numeric(local$n_scen))
+        req(local$n_scen > 0)
         req(local$scen_id > 0)
-        # edt scenario
+        req(local$scen_id < local$n_scen + 1)
+        # edit scenario
         local$edit <- TRUE
         local$lock <- TRUE
+        # update current scenario
+        local$current_scenario <- env$ts$scenario_list[local$scen_id]
     })
     
     # editor
@@ -160,7 +155,8 @@ hist_model_panel_server <- function(input, output, session) {
     
     # remove a scenario
     observeEvent(input$remove, {
-        req(!local$lock)
+        # possible to remove current scenario without validating it
+        # req(!local$lock)
         req(is.numeric(local$n_scen))
         req(local$n_scen > 0)
         req(is.numeric(local$scen_id))
@@ -176,6 +172,12 @@ hist_model_panel_server <- function(input, output, session) {
         } else {
             local$scen_id <- max(1, local$scen_id - 1)
         }
+        # update current scenario
+        local$current_scenario <- NULL
+        # update status
+        local$new <- FALSE
+        local$edit <- FALSE
+        local$lock <- FALSE
     })
     
     # output number of scenarii
@@ -199,10 +201,31 @@ hist_model_panel_server <- function(input, output, session) {
     observeEvent(hist_model$validated, {
         req(local$new || local$edit)
         if(isTruthy(hist_model$validated) && isTruthy(hist_model$valid)) {
-            local$lock <- FALSE
+            # update scenario list
             env$ts$scenario_list[local$scen_id] <- hist_model$raw
+            # update current scenario
+            local$current_scenario <- NULL
+            # update status
+            local$new <- FALSE
+            local$edit <- FALSE
+            local$lock <- FALSE
         } else {
             local$lock <- TRUE
+        }
+    })
+    
+    # what happen when editing a scenario
+    observeEvent({
+        c(local$lock, input$scen_id, input$edit, input$add)
+    }, {
+        if(local$lock) {
+            shinyjs::disable("scen_id")
+            shinyjs::disable("edit")
+            shinyjs::disable("add")
+        } else {
+            shinyjs::enable("scen_id")
+            shinyjs::enable("edit")
+            shinyjs::enable("add")
         }
     })
     

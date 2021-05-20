@@ -64,6 +64,7 @@ hist_model_server <- function(input, output, session,
         local$project_dir = project_dir()
         local$input_scenario = raw_scenario()
         local$scenario_id = scenario_id()
+        local$validated <- FALSE
         # logging("input raw scenario = ", local$input_scenario)
     })
     
@@ -89,20 +90,16 @@ hist_model_server <- function(input, output, session,
         out$validated <- FALSE
     })
     
-    # get input
+    # get, parse and check input scenario
     observeEvent(input$validate, {
+        # input (remove empty final line)
         local$raw_scenario <- str_replace(
             string = input$scenario, pattern = "\\n$", replacement = ""
         )
-    })
-    
-    # parse and check input scenario
-    observeEvent(local$raw_scenario, {
+        # validated ?
         out$validated <- TRUE
-        # input (remove empty final line)
-        out$raw <- local$raw_scenario
         # parse
-        out$param <- parse_scenario(out$raw)
+        out$param <- parse_scenario(local$raw_scenario)
         # parser message list
         local$parser_msg <- out$param$msg_list
         # if valid
@@ -116,7 +113,6 @@ hist_model_server <- function(input, output, session,
             
             # check for validity
             out$valid <- out$param$valid && data2plot$valid
-            out$param$valid <- data2plot$valid
             
             # potential message
             local$parser_msg <- append(
@@ -125,23 +121,21 @@ hist_model_server <- function(input, output, session,
             )
             
             # if valid
-            if(out$param$valid) {
+            if(out$valid) {
+                # output
+                out$raw <- local$raw_scenario
                 # graphical representation
                 local$graph <- display_hist_model(data2plot)
             } else {
+                out$raw <- NULL
                 local$graph <- NULL
             }
             
         } else {
+            out$raw <- NULL
             local$graph <- NULL
             out$cond <- NULL
             out$valid <- FALSE
-        }
-    })
-    
-    # if not valid then is not validated
-    observeEvent(out$valid, {
-        if(!out$valid) {
             out$validated <- FALSE
         }
     })
