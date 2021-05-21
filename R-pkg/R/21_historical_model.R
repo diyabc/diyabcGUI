@@ -608,7 +608,7 @@ parse_varNe <- function(event) {
 #' Generate default priors for a list of parameters
 #' @keywords internal
 #' @author Ghislain Durif
-#' importFrom dplyr distinct
+#' @importFrom dplyr distinct
 default_param_prior <- function(scen_list) {
     
     # no parameter
@@ -667,7 +667,7 @@ default_param_prior <- function(scen_list) {
         param_tab <- param_tab[o_type,]
         
         # default prior
-        out <- unlist(lapply(
+        out <- unname(unlist(lapply(
             split(param_tab, seq(nrow(param_tab))),
             function(item) {
                 if(item$type == "A") {
@@ -680,14 +680,57 @@ default_param_prior <- function(scen_list) {
                     ))
                 }
             }
-        ))
+        )))
         
         # output
         return(out)
     } else {
         return(NULL)
     }
+}
+
+#' Clean list of priors for a list of parameters (remove unused parameters)
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom dplyr distinct
+clean_param_prior <- function(prior_list, scen_list) {
     
+    # no parameter ?
+    if(length(scen_list) == 0) {
+        return(NULL)
+    }
+    
+    # no prior ?
+    if(length(prior_list) == 0) {
+        return(default_param_prior(scen_list))
+    }
+    
+    # parse each scenario in the list
+    parsed_scen_list <- lapply(scen_list, parse_scenario)
+    
+    # table of parameters
+    param_list <- unname(unique(unlist(lapply(
+        1:length(parsed_scen_list), 
+        function(ind) {
+            item <- parsed_scen_list[[ind]]
+            if(!item$valid) return(NULL)
+            return(c(item$Ne_param, item$time_param, item$rate_param))
+        }
+    ))))
+    
+    # any parameter ?
+    if(length(param_list) > 0) {
+        # current parameters in prior list
+        param_name <- unname(unlist(lapply(prior_list, get_param_name)))
+        
+        # remove from prior list element that are not in the list of parameters
+        prior_list <- prior_list[which(param_name %in% param_list)]
+        
+        # output
+        return(prior_list)
+    } else {
+        return(NULL)
+    }
 }
 
 #' Extract parameter name from prior encoding
