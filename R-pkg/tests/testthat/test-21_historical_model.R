@@ -282,6 +282,19 @@ test_that("parse_scenario", {
         )
     )
     
+    text <- str_c(
+        "N1 N2 N3", 
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t sample 1",
+        "t21 split 3 1 2 ra",
+        "t2 merge 1 2",
+        sep = "\n"
+    )
+    out <- parse_scenario(text)
+    expect_true(out$valid)
+    
     # scenario with ghost pop
     text <- str_c(
         "N1 N2 N3 Nbc3",
@@ -358,8 +371,7 @@ test_that("default_param_prior", {
             "0 sample 3",
             "t sample 1",
             "t21 split 3 1 2 ra",
-            "t2 merge 1 2", 
-            "t3 merge 1 2",
+            "t2 merge 1 2",
             sep = "\n"
         ),
         str_c(
@@ -387,7 +399,14 @@ test_that("default_param_prior", {
     )
     
     res <- default_param_prior(scen_list)
-    expect_equal(length(res), 10)
+    expect_equal(length(res), 12)
+})
+
+test_that("default_prior_num_val", {
+    expect_equal(default_prior_num_val("A", "UN"), c(0.01, 0.99, 0, 0))
+    expect_equal(default_prior_num_val("A", "NO"), c(0.01, 0.99, 0.5, 0.1))
+    expect_equal(default_prior_num_val("N", "UN"), c(10, 10000, 0, 0))
+    expect_equal(default_prior_num_val("N", "NO"), c(10, 10000, 1000, 100))
 })
 
 test_that("clean_param_prior", {

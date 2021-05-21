@@ -609,6 +609,7 @@ parse_varNe <- function(event) {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom dplyr distinct
+#' @importFrom stringr str_trim
 default_param_prior <- function(scen_list) {
     
     # no parameter
@@ -670,15 +671,19 @@ default_param_prior <- function(scen_list) {
         out <- unname(unlist(lapply(
             split(param_tab, seq(nrow(param_tab))),
             function(item) {
-                if(item$type == "A") {
-                    return(str_c(
-                        item$param, item$type, "UN[0,1,0.0,0.0]", sep = " "
-                    ))
-                } else {
-                    return(str_c(
-                        item$param, item$type, "UN[10,10000,0.0,0.0]", sep = " "
-                    ))
-                }
+                return(str_c(
+                    item$param, item$type, 
+                    str_c(
+                        "UN[",
+                        str_c(
+                            str_trim(format(
+                                default_prior_num_val(item$type, "UN"), 
+                                nsmall = 2
+                            )), collapse = ","
+                        ),
+                        "]", sep = ""
+                    ), sep = " "
+                ))
             }
         )))
         
@@ -689,10 +694,30 @@ default_param_prior <- function(scen_list) {
     }
 }
 
+#' Default values for numeric hyper-parameter of scenario parameter prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description Returns of vector of values for min, max, mean, stdev
+default_prior_num_val <- function(type, distrib) {
+    if(type == "A" && distrib %in% c("UN", "LU")) {
+        return(c(0.01,0.99,0,0))
+    }
+    if(type == "A" && distrib %in% c("NO", "LN")) {
+        return(c(0.01,0.99,0.5,0.1))
+    }
+    if(type != "A" && distrib %in% c("UN", "LU")) {
+        return(c(10,10000,0.0,0.0))
+    }
+    if(type != "A" && distrib %in% c("NO", "LN")) {
+        return(c(10,10000,1000,100.0))
+    } else {
+        return(rep(NA,4))
+    }
+}
+
 #' Clean list of priors for a list of parameters (remove unused parameters)
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom dplyr distinct
 clean_param_prior <- function(prior_list, scen_list) {
     
     # no parameter ?
@@ -736,7 +761,6 @@ clean_param_prior <- function(prior_list, scen_list) {
 #' Extract parameter name from prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
-#' importFrom dplyr distinct
 get_param_name <- function(prior) {
     value <- str_extract(
         prior, str_c("^", single_param_regex(), "(?= )")
@@ -748,7 +772,6 @@ get_param_name <- function(prior) {
 #' Extract distribution from prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
-#' importFrom dplyr distinct
 get_prior_distrib <- function(prior) {
     value <- str_extract(
         prior, 
@@ -761,7 +784,6 @@ get_prior_distrib <- function(prior) {
 #' Extract numeric values from prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
-#' importFrom dplyr distinct
 get_prior_num_val <- function(prior) {
     value <- as.numeric(unlist(str_extract_all(
         prior, 
