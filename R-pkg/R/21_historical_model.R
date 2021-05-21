@@ -676,10 +676,10 @@ default_param_prior <- function(scen_list) {
                     str_c(
                         "UN[",
                         str_c(
-                            str_trim(format(
+                            str_trim(unlist(lapply(
                                 default_prior_num_val(item$type, "UN"), 
-                                nsmall = 2
-                            )), collapse = ","
+                                format, nsmall = 1
+                            ))), collapse = ","
                         ),
                         "]", sep = ""
                     ), sep = " "
