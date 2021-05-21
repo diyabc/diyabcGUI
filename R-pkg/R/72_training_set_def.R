@@ -252,16 +252,6 @@ hist_model_panel_server <- function(input, output, session) {
             )
         }
     })
-    
-    # update default parameter priors
-    observeEvent(env$ts$scenario_list, {
-        if(isTruthy(env$ts$scenario_list)) {
-            req(!isTruthy(env$ts$prior_list))
-            env$ts$prior_list <- default_param_prior(env$ts$scenario_list)
-        } else {
-            env$ts$prior_list <- NULL
-        }
-    })
 }
 
 #' Parameter prior setting module ui
@@ -298,17 +288,18 @@ param_prior_panel_server <- function(input, output, session) {
         modified_prior_list = NULL
     )
     
+    # update parameter priors based on scenario list
+    observeEvent(env$ts$scenario_list, {
+        env$ts$prior_list <- clean_param_prior(
+            env$ts$prior_list, env$ts$scenario_list
+        )
+    })
+    
     # get input and set default prior if no input
-    observeEvent({
-        c(env$ts$prior_list, env$ts$scenario_list)
-    }, {
+    observeEvent(env$ts$prior_list, {
         if(isTruthy(env$ts$prior_list)) {
             # existing pior list
             local$prior_list <- env$ts$prior_list
-            # param type
-            local$param_type <- str_extract(
-                local$prior_list, str_c("(?<= )(N|T|A)(?= )")
-            )
         } else {
             local$prior_list <- NULL
             local$param_type <- NULL
@@ -325,27 +316,40 @@ param_prior_panel_server <- function(input, output, session) {
     
     # update parameter type-specific prior list
     observeEvent(local$prior_list, {
-        req(local$prior_list)
-        req(local$param_type)
-        if(any(local$param_type == "N")) {
-            local$Ne_prior_list <- local$prior_list[local$param_type == "N"]
+        if(isTruthy(local$prior_list)) {
+            # param type
+            local$param_type <- str_extract(
+                local$prior_list, str_c("(?<= )(N|T|A)(?= )")
+            )
+            # extract parameter priors by parameter type
+            if(any(local$param_type == "N")) {
+                local$Ne_prior_list <- 
+                    local$prior_list[local$param_type == "N"]
+            } else {
+                local$Ne_prior_list <- NULL
+            }
+            if(any(local$param_type == "T")) {
+                local$time_prior_list <- 
+                    local$prior_list[local$param_type == "T"]
+            } else {
+                local$time_prior_list <- NULL
+            }
+            if(any(local$param_type == "A")) {
+                local$rate_prior_list <- 
+                    local$prior_list[local$param_type == "A"]
+            } else {
+                local$rate_prior_list <- NULL
+            }
         } else {
             local$Ne_prior_list <- NULL
-        }
-        if(any(local$param_type == "T")) {
-            local$time_prior_list <- local$prior_list[local$param_type == "T"]
-        } else {
             local$time_prior_list <- NULL
-        }
-        if(any(local$param_type == "A")) {
-            local$rate_prior_list <- local$prior_list[local$param_type == "A"]
-        } else {
             local$rate_prior_list <- NULL
         }
     })
     
     # get parameter name
     output$param_prior_def <- renderUI({
+        req(req(local$prior_list))
         tag_list1 <- NULL
         tag_list2 <- NULL
         tag_list3 <- NULL
@@ -393,7 +397,6 @@ param_prior_panel_server <- function(input, output, session) {
         c(Ne_prior_list$prior_list, time_prior_list$prior_list, 
           rate_prior_list$prior_list)
     }, {
-        
         if(any(local$param_type == "N")) {
             req(Ne_prior_list$valid)
         }
@@ -420,9 +423,8 @@ param_prior_panel_server <- function(input, output, session) {
         req(env$ts$prior_list)
         
         # update env ?
-        if((length(local$modified_prior_list) == 
-            length(env$ts$prior_list)) &&
-           any(sort(local$modified_prior_list) != sort(env$ts$prior_list))) {
+        if(!all(local$modified_prior_list %in% env$ts$prior_list) &&
+           !all(env$ts$prior_list %in% local$modified_prior_list)) {
             env$ts$prior_list <- local$modified_prior_list
         }
     })
@@ -587,18 +589,24 @@ prior_def_server <- function(input, output, session,
     # parse input
     observe({
         req(local$prior)
-        req(check_header_prior(local$prior))
-        # param name
-        local$name <- get_param_name(local$prior)
-        # distribution
-        local$distrib <- get_prior_distrib(local$prior)
-        # update parameter values
-        tmp_value <- get_prior_num_val(local$prior)
-        if(isTruthy(tmp_value)) {
-            local$min <- tmp_value[1]
-            local$max <- tmp_value[2]
-            local$mean <- tmp_value[3]
-            local$stdev <- tmp_value[4]
+        if(isTruthy(check_header_prior(local$prior))) {
+            # param name
+            local$name <- get_param_name(local$prior)
+            # distribution
+            local$distrib <- get_prior_distrib(local$prior)
+            # update parameter values
+            tmp_value <- get_prior_num_val(local$prior)
+            if(isTruthy(tmp_value)) {
+                local$min <- tmp_value[1]
+                local$max <- tmp_value[2]
+                local$mean <- tmp_value[3]
+                local$stdev <- tmp_value[4]
+            } else {
+                local$min <- NULL
+                local$max <- NULL
+                local$mean <- NULL
+                local$stdev <- NULL
+            }
         } else {
             local$min <- NULL
             local$max <- NULL
