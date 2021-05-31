@@ -174,10 +174,16 @@ train_set_setup_server <- function(input, output, session) {
         req(env$ap$header_check$valid)
         
         tagList(
-            actionButton(
-                ns("edit"),
-                label = "Edit configuration",
-                icon = icon("edit")
+            fluidRow(
+                column(
+                    width = 4,
+                    actionButton(
+                        ns("edit"),
+                        label = "Edit configuration",
+                        icon = icon("edit"),
+                        width = '100%'
+                    )
+                )
             ),
             helpText(
                 icon("warning"),
