@@ -614,7 +614,7 @@ default_param_prior <- function(scen_list) {
     
     # no parameter
     if(length(scen_list) == 0) {
-        return(NULL)
+        return(character(0))
     }
     
     # parse each scenario in the list
@@ -690,7 +690,7 @@ default_param_prior <- function(scen_list) {
         # output
         return(out)
     } else {
-        return(NULL)
+        return(character(0))
     }
 }
 
@@ -722,7 +722,7 @@ clean_param_prior <- function(prior_list, scen_list) {
     
     # no parameter ?
     if(length(scen_list) == 0) {
-        return(NULL)
+        return(character(0))
     }
     
     # no prior ?
@@ -754,7 +754,7 @@ clean_param_prior <- function(prior_list, scen_list) {
         # output
         return(prior_list)
     } else {
-        return(NULL)
+        return(character(0))
     }
 }
 

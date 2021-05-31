@@ -4,12 +4,12 @@
 hist_model_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("history"), "Define historical models"),
+        h3(icon("history"), "Historical models"),
         box(
-            title = "",
+            title = "Define your scenarii",
             width = 12,
             collapsible = TRUE,
-            collapsed = FALSE,
+            collapsed = TRUE,
             tagList(
                 fluidRow(
                     column(
@@ -262,12 +262,13 @@ param_prior_panel_ui <- function(id) {
     tagList(
         h3(icon("chart-bar"), "Priors and conditions"),
         box(
-            title = "",
+            title = "Setup the prior on your model parameters",
             width = 12,
             collapsible = TRUE,
-            collapsed = FALSE,
+            collapsed = TRUE,
             tagList(
-                uiOutput(ns("param_prior_def"))
+                uiOutput(ns("param_prior_def")),
+                uiOutput(ns("feedback"))
             )
         )
     )
@@ -314,8 +315,21 @@ param_prior_panel_server <- function(input, output, session) {
     #     pprint(local$prior_list)
     # })
     
+    # feedback
+    output$feedback <- renderUI({
+        if(length(local$prior_list) == 0) {
+            tags$div(
+                icon("warning"), "No parameters.",
+                style = "color: #F89406;"
+            )
+        } else {
+            NULL
+        }
+    })
+    
     # update parameter type-specific prior list
     observeEvent(local$prior_list, {
+        
         if(isTruthy(local$prior_list)) {
             # param type
             local$param_type <- str_extract(
@@ -349,7 +363,6 @@ param_prior_panel_server <- function(input, output, session) {
     
     # get parameter name
     output$param_prior_def <- renderUI({
-        req(req(local$prior_list))
         tag_list1 <- NULL
         tag_list2 <- NULL
         tag_list3 <- NULL
@@ -913,7 +926,7 @@ param_cond_panel_ui <- function(id) {
         h4("Condition setting") %>%
             helper(type = "inline", content = as.character(cond_help)),
         box(
-            title = "",
+            title = "Define conditions on your model parameters",
             width = 12,
             collapsible = TRUE,
             collapsed = FALSE,

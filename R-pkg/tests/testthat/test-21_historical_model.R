@@ -411,17 +411,23 @@ test_that("default_prior_num_val", {
 
 test_that("clean_param_prior", {
     
-    expect_null(clean_param_prior(NULL, NULL))
-    expect_null(clean_param_prior(list(), list()))
+    expect_equal(clean_param_prior(NULL, NULL), character(0))
+    expect_equal(clean_param_prior(list(), list()), character(0))
     
     # scenario with issue
-    expect_null(clean_param_prior(NULL, str_c(
-        "N1 N2", 
-        "0 sample", 
-        "0 sample 2", 
-        "t2 merge 1 2", 
-        sep = "\n"
-    )))
+    expect_equal(
+        clean_param_prior(
+            NULL, 
+            str_c(
+                "N1 N2", 
+                "0 sample", 
+                "0 sample 2", 
+                "t2 merge 1 2", 
+                sep = "\n"
+            )
+        ), 
+        character(0)
+    )
     
     # list of scenario
     scen_list <- c(
