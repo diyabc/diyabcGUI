@@ -46,9 +46,12 @@ hist_model_panel_ui <- function(id) {
                             icon = icon("check"),
                             width = '100%'
                         )
+                    ),
+                    column(
+                        width = 8,
+                        uiOutput(ns("feedback"))
                     )
-                ),
-                uiOutput(ns("feedback"))
+                )
             )
         )
     )
@@ -280,21 +283,25 @@ hist_model_panel_server <- function(input, output, session) {
     ## feedback on list of scenario
     output$feedback <- renderUI({
         if(local$lock) {
-            tags$div(
-                icon("warning"), 
-                "A scenario is being edited, please validate it",
-                "before validating the list of scenarii.",
-                style = "color: #F89406;"
+            tags$p(
+                tags$div(
+                    icon("warning"), 
+                    "A scenario is being edited, please validate it",
+                    "before validating the list of scenarii.",
+                    style = "color: #F89406;"
+                )
             )
         } else if(
             (length(env$ts$scenario_list) != length(local$scenario_list)) || 
             !all(env$ts$scenario_list == local$scenario_list)
         ) {
             local$validated <- FALSE
-            tags$div(
-                icon("warning"), 
-                "Scenario list was modified. Please validate.",
-                style = "color: #F89406;"
+            tags$p(
+                tags$div(
+                    icon("warning"), 
+                    "Scenario list was modified. Please validate.",
+                    style = "color: #F89406;"
+                )
             )
         } else {
             NULL
@@ -325,9 +332,12 @@ param_prior_panel_ui <- function(id) {
                             icon = icon("check"),
                             width = '100%'
                         )
+                    ),
+                    column(
+                        width = 8,
+                        uiOutput(ns("feedback"))
                     )
-                ),
-                uiOutput(ns("feedback"))
+                )
             )
         )
     )
@@ -499,9 +509,11 @@ param_prior_panel_server <- function(input, output, session) {
     ## feedback on list of priors
     output$feedback <- renderUI({
         if(length(local$prior_list) == 0) {
-            tags$div(
-                icon("warning"), "No parameters.",
-                style = "color: #F89406;"
+            tags$p(
+                tags$div(
+                    icon("warning"), "No parameters.",
+                    style = "color: #F89406;"
+                )
             )
         } else if(
             (length(env$ts$prior_list) != length(local$modified_prior_list)) 
@@ -509,10 +521,12 @@ param_prior_panel_server <- function(input, output, session) {
             !all(env$ts$prior_list == local$modified_prior_list)
         ) {
             local$validated <- FALSE
-            tags$div(
-                icon("warning"), 
-                "Prior list was modified. Please validate.",
-                style = "color: #F89406;"
+            tags$p(
+                tags$div(
+                    icon("warning"), 
+                    "Prior list was modified. Please validate.",
+                    style = "color: #F89406;"
+                )
             )
         } else {
             NULL
