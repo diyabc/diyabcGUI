@@ -35,7 +35,20 @@ hist_model_panel_ui <- function(id) {
                 hr(),
                 uiOutput(ns("hist_model_setup")),
                 hr(),
-                uiOutput(ns("hist_model_list"))
+                uiOutput(ns("hist_model_list")),
+                hr(),
+                fluidRow(
+                    column(
+                        width = 4,
+                        actionButton(
+                            ns("validate"),
+                            label = "Validate your models",
+                            icon = icon("check"),
+                            width = '100%'
+                        )
+                    )
+                ),
+                uiOutput(ns("feedback"))
             )
         )
     )
@@ -54,15 +67,17 @@ hist_model_panel_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
+        scenario_list = character(0),
         n_scen = 0, scen_id = 1, 
         new = FALSE, edit = FALSE, lock = FALSE,
-        current_scenario = NULL
+        current_scenario = NULL, validated = FALSE
     )
     
     # # debugging
     # observe({
     #     pprint("Current list of scenarii")
     #     pprint(env$ts$scenario_list)
+    #     pprint(local$scenario_list)
     # })
     
     # # debugging
@@ -82,8 +97,10 @@ hist_model_panel_server <- function(input, output, session) {
     # update number of scenario
     observeEvent(env$ts$scenario_list, {
         if(isTruthy(env$ts$scenario_list)) {
+            local$scenario_list <- env$ts$scenario_list
             local$n_scen <- length(env$ts$scenario_list)
         } else {
+            local$scenario_list <- character(0)
             local$n_scen <- 0
         }
     })
@@ -144,7 +161,7 @@ hist_model_panel_server <- function(input, output, session) {
         local$edit <- TRUE
         local$lock <- TRUE
         # update current scenario
-        local$current_scenario <- env$ts$scenario_list[local$scen_id]
+        local$current_scenario <- local$scenario_list[local$scen_id]
     })
     
     # editor
@@ -163,7 +180,7 @@ hist_model_panel_server <- function(input, output, session) {
         req(local$scen_id > 0)
         req(local$scen_id < local$n_scen + 1)
         # remove scenario
-        env$ts$scenario_list <- env$ts$scenario_list[-local$scen_id]
+        local$scenario_list <- local$scenario_list[-local$scen_id]
         # update number of scenarii
         local$n_scen <- local$n_scen - 1
         # update selected scenario
@@ -202,7 +219,7 @@ hist_model_panel_server <- function(input, output, session) {
         req(local$new || local$edit)
         if(isTruthy(hist_model$validated) && isTruthy(hist_model$valid)) {
             # update scenario list
-            env$ts$scenario_list[local$scen_id] <- hist_model$raw
+            local$scenario_list[local$scen_id] <- hist_model$raw
             # update current scenario
             local$current_scenario <- NULL
             # update status
@@ -231,8 +248,8 @@ hist_model_panel_server <- function(input, output, session) {
     
     # output existing scenarii in the project
     output$hist_model_list <- renderUI({
-        if(isTruthy(env$ts$scenario_list) && 
-           (length(env$ts$scenario_list) > 0)) {
+        if(isTruthy(local$scenario_list) && 
+           (length(local$scenario_list) > 0)) {
             tagList(
                 helpText(
                     tags$p(
@@ -242,7 +259,7 @@ hist_model_panel_server <- function(input, output, session) {
                 ),
                 do.call(
                     flowLayout, 
-                    lapply(env$ts$scenario_list, tags$pre)
+                    lapply(local$scenario_list, tags$pre)
                 )
             )
         } else {
@@ -250,6 +267,37 @@ hist_model_panel_server <- function(input, output, session) {
                 icon("warning"), "Please add at least one scenario.",
                 style = "color: #F89406;"
             )
+        }
+    })
+    
+    ## validate scenario list
+    observeEvent(input$validate, {
+        req(!local$lock)
+        env$ts$scenario_list <- local$scenario_list
+        local$validated <- TRUE
+    })
+    
+    ## feedback on list of scenario
+    output$feedback <- renderUI({
+        if(local$lock) {
+            tags$div(
+                icon("warning"), 
+                "A scenario is being edited, please validate it",
+                "before validating the list of scenarii.",
+                style = "color: #F89406;"
+            )
+        } else if(
+            (length(env$ts$scenario_list) != length(local$scenario_list)) || 
+            !all(env$ts$scenario_list == local$scenario_list)
+        ) {
+            local$validated <- FALSE
+            tags$div(
+                icon("warning"), 
+                "Scenario list was modified. Please validate.",
+                style = "color: #F89406;"
+            )
+        } else {
+            NULL
         }
     })
 }
