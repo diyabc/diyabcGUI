@@ -316,6 +316,17 @@ param_prior_panel_ui <- function(id) {
             collapsed = TRUE,
             tagList(
                 uiOutput(ns("param_prior_def")),
+                fluidRow(
+                    column(
+                        width = 4,
+                        actionButton(
+                            ns("validate"),
+                            label = "Validate your priors",
+                            icon = icon("check"),
+                            width = '100%'
+                        )
+                    )
+                ),
                 uiOutput(ns("feedback"))
             )
         )
@@ -334,7 +345,7 @@ param_prior_panel_server <- function(input, output, session) {
     local <- reactiveValues(
         prior_list = NULL, param_type = NULL,
         Ne_prior_list = NULL, time_prior_list = NULL, rate_prior_list = NULL,
-        modified_prior_list = NULL
+        modified_prior_list = NULL, validated = NULL
     )
     
     # update parameter priors based on scenario list
@@ -360,24 +371,14 @@ param_prior_panel_server <- function(input, output, session) {
     
     # # debugging
     # observe({
+    #     pprint("env prior list")
+    #     pprint(env$ts$prior_list)
+    #     pprint("local prior list")
     #     pprint(local$prior_list)
     # })
     
-    # feedback
-    output$feedback <- renderUI({
-        if(length(local$prior_list) == 0) {
-            tags$div(
-                icon("warning"), "No parameters.",
-                style = "color: #F89406;"
-            )
-        } else {
-            NULL
-        }
-    })
-    
     # update parameter type-specific prior list
     observeEvent(local$prior_list, {
-        
         if(isTruthy(local$prior_list)) {
             # param type
             local$param_type <- str_extract(
@@ -408,6 +409,16 @@ param_prior_panel_server <- function(input, output, session) {
             local$rate_prior_list <- NULL
         }
     })
+    
+    # # debugging
+    # observe({
+    #     pprint("Ne prior list")
+    #     pprint(local$Ne_prior_list)
+    #     pprint("time prior list")
+    #     pprint(local$time_prior_list)
+    #     pprint("rate prior list")
+    #     pprint(local$rate_prior_list)
+    # })
     
     # get parameter name
     output$param_prior_def <- renderUI({
@@ -473,20 +484,35 @@ param_prior_panel_server <- function(input, output, session) {
             Ne_prior_list$prior_list, time_prior_list$prior_list, 
             rate_prior_list$prior_list
         )
-        
-        # pprint("original prior list")
-        # pprint(env$ts$prior_list)
-        # 
-        # pprint("modified prior list")
-        # pprint(local$modified_prior_list)
-        
-        req(local$modified_prior_list)
-        req(env$ts$prior_list)
-        
-        # update env ?
-        if(!all(local$modified_prior_list %in% env$ts$prior_list) &&
-           !all(env$ts$prior_list %in% local$modified_prior_list)) {
-            env$ts$prior_list <- local$modified_prior_list
+    })
+    
+    ## validate prior list
+    observeEvent(input$validate, {
+        req(length(local$modified_prior_list > 0))
+        env$ts$prior_list <- local$modified_prior_list
+        local$validated <- TRUE
+    })
+    
+    ## feedback on list of priors
+    output$feedback <- renderUI({
+        if(length(local$prior_list) == 0) {
+            tags$div(
+                icon("warning"), "No parameters.",
+                style = "color: #F89406;"
+            )
+        } else if(
+            (length(env$ts$prior_list) != length(local$modified_prior_list)) 
+            || 
+            !all(env$ts$prior_list == local$modified_prior_list)
+        ) {
+            local$validated <- FALSE
+            tags$div(
+                icon("warning"), 
+                "Prior list was modified. Please validate.",
+                style = "color: #F89406;"
+            )
+        } else {
+            NULL
         }
     })
 }
@@ -531,6 +557,7 @@ prior_list_def_server <- function(input, output, session,
     # # debugging
     # observe({
     #     pprint(local$prior_list)
+    #     pprint(local$param_name)
     #     pprint(local$type)
     # })
     
@@ -615,7 +642,9 @@ prior_def_server <- function(input, output, session,
         prior = NULL, type = NULL, 
         name = NULL, distrib = NULL,
         min = NULL, max = NULL, mean = NULL, stdev = NULL,
-        input_min = NA, input_max = NA, input_step = NA
+        bound_min = NULL, bound_max = NULL, bound_step = NULL,
+        mean_min = NULL, mean_max = NULL, mean_step = NULL,
+        sd_min = NULL, sd_max = NULL, sd_step = NULL
     )
     
     # get input
@@ -637,13 +666,25 @@ prior_def_server <- function(input, output, session,
     observeEvent(local$type, {
         req(local$type)
         if(local$type == "A") {
-            local$input_min <- 0
-            local$input_max <- 1
-            local$input_step <- 0.001
+            local$bound_min <- 1E-5
+            local$bound_max <- 1 - 1E-5
+            local$bound_step <- 0.001
+            local$mean_min <- 1E-5
+            local$mean_max <- 1 - 1E-5
+            local$mean_step <- 0.001
+            local$sd_min <- 0
+            local$sd_max <- NA
+            local$sd_step <- 0.001
         } else {
-            local$input_min <- 0
-            local$input_max <- NA
-            local$input_step <- 1
+            local$bound_min <- 0
+            local$bound_max <- NA
+            local$bound_step <- 1
+            local$mean_min <- 0
+            local$mean_max <- NA
+            local$mean_step <- 1
+            local$sd_min <- 0
+            local$sd_max <- NA
+            local$sd_step <- 1
         }
     })
     
@@ -684,41 +725,38 @@ prior_def_server <- function(input, output, session,
         req(local$max)
         req(local$mean)
         req(local$stdev)
-        req(local$input_min)
-        req(local$input_step)
-        req(is.na(local$input_max) || is.numeric(local$input_max))
-        
-        # pprint(local$name)
-        # pprint(local$distrib)
-        # pprint(local$min)
-        # pprint(local$max)
-        # pprint(local$mean)
-        # pprint(local$stdev)
-        # pprint(local$input_min)
-        # pprint(local$input_max)
-        # pprint(local$input_step)
+        req(local$bound_min)
+        # req(local$bound_max) # can be NA
+        req(local$bound_step)
+        req(local$mean_min)
+        # req(local$mean_max) # can be NA
+        req(local$mean_step)
+        req(local$sd_min)
+        # req(local$sd_max) # can be NA
+        req(local$sd_step)
         
         input_min <- numericInput(
             ns("min"), label = NULL, value = local$min,
-            min = local$input_min, max = local$input_max,
-            step = local$input_step
+            min = local$bound_min, max = local$bound_max,
+            step = local$bound_step
         )
         
         input_max <- numericInput(
             ns("max"), label = NULL, value = local$max,
-            min = local$input_min, max = local$input_max,
-            step = local$input_step
+            min = local$bound_min, max = local$bound_max,
+            step = local$bound_step
         )
         
         input_mean <- numericInput(
             ns("mean"), label = NULL, value = local$mean,
-            min = local$input_min, max = local$input_max,
-            step = local$input_step
+            min = local$mean_min, max = local$mean_max,
+            step = local$mean_step
         )
         
         input_stdev <- numericInput(
             ns("stdev"), label = NULL, value = local$stdev,
-            min = local$input_min, max = NA, step = local$input_step
+            min = local$sd_min, max = local$sd_max,
+            step = local$sd_step
         )
         
         title_style <- 
@@ -793,7 +831,6 @@ prior_def_server <- function(input, output, session,
     
     ## disable mean and stdev if uniform or log-uniform
     observe({
-        req(local$name)
         req(local$type)
         if(local$type %in% c("UN", "LU")) {
             updateNumericInput(session, "mean", value = 0)
