@@ -428,18 +428,21 @@ param_prior_panel_server <- function(input, output, session) {
         if(isTruthy(local$Ne_prior_list)) {
             tag_list1 <- tagList(
                 h4(tags$b("Ne parameter(s) (effective size)")),
+                hr(),
                 prior_list_def_ui(ns("prior_def_Ne"))
             )
         }
         if(isTruthy(local$time_prior_list)) {
             tag_list2 <- tagList(
                 h4(tags$b("Time parameter(s)")),
+                hr(),
                 prior_list_def_ui(ns("prior_def_time"))
             )
         }
         if(isTruthy(local$rate_prior_list)) {
             tag_list3 <- tagList(
                 h4(tags$b("Admixture rate parameter(s)")),
+                hr(),
                 prior_list_def_ui(ns("prior_def_rate"))
             )
         }
@@ -763,59 +766,57 @@ prior_def_server <- function(input, output, session,
             "text-align:right;margin-right:1em;vertical-align:middle;"
         
         tagList(
-            tags$h5(local$name),
             fluidRow(
                 column(
-                    width = 6,
-                    radioGroupButtons(
+                    width = 2,
+                    tags$h5(local$name)
+                ),
+                column(
+                    width = 2,
+                    selectInput(
                         ns("prior_type"),
                         label = NULL,
                         choices = list("Uniform" = "UN", "Log-Unif." = "LU",
                                        "Normal" = "NO", "Log-Norm." = "LN"),
-                        selected = local$distrib,
-                        justified = TRUE
+                        selected = local$distrib
                     ),
                 ),
                 column(
-                    width = 6,
-                    fluidRow(
-                        column(
-                            width = 6,
-                            splitLayout(
-                                tags$h5("Min.", style = title_style),
-                                input_min,
-                                cellWidths = c("40%", "60%")
-                            )
-                        ),
-                        column(
-                            width = 6,
-                            splitLayout(
-                                tags$h5("Max.", style = title_style),
-                                input_max,
-                                cellWidths = c("40%", "60%")
-                            )
-                        )
-                    ),
-                    fluidRow(
-                        column(
-                            width = 6,
-                            splitLayout(
-                                tags$h5("Mean", style = title_style),
-                                input_mean,
-                                cellWidths = c("40%", "60%")
-                            )
-                        ),
-                        column(
-                            width = 6,
-                            splitLayout(
-                                tags$h5("Std. dev.", style = title_style),
-                                input_stdev,
-                                cellWidths = c("40%", "60%")
-                            )
-                        )
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Min.", style = title_style),
+                        input_min,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Max.", style = title_style),
+                        input_max,
+                        cellWidths = c("40%", "60%")
                     )
                 )
-            )
+            ),
+            fluidRow(
+                column(
+                    offset = 4, width = 4,
+                    splitLayout(
+                        tags$h5("Mean", style = title_style),
+                        input_mean,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Std. dev.", style = title_style),
+                        input_stdev,
+                        cellWidths = c("40%", "60%")
+                    )
+                )
+            ),
+            hr()
         )
     })
     
@@ -1007,9 +1008,7 @@ param_cond_panel_ui <- function(id) {
     )
     
     tagList(
-        hr(),
-        h4("Condition setting") %>%
-            helper(type = "inline", content = as.character(cond_help)),
+        h4("Condition setting"),
         box(
             title = "Define conditions on your model parameters",
             width = 12,
@@ -1039,7 +1038,11 @@ param_cond_panel_ui <- function(id) {
                     tags$code(">"), ",", tags$code(">="), ",", 
                     tags$code("<"),  ",",
                     tags$code("=<"), "."
-                ),
+                ) %>%
+                    helper(
+                        type = "inline", 
+                        content = as.character(cond_help)
+                    ),
                 uiOutput(ns("feedback"))
             )
         )
