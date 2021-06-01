@@ -190,7 +190,6 @@ test_that("check_locus_desc", {
     locus_desc <- "70 <A> 10 <X> 10 <M> 10 <Y> G1 from 1"
     res <- check_locus_desc(locus_desc, data_check, locus_type)
     expect_false(res$valid)
-
     
     # model choice
     test_proj <- "IndSeq_SNP_model_choice"
@@ -307,5 +306,78 @@ test_that("check_locus_desc", {
     
     res <- check_locus_desc(locus_desc, data_check, locus_type)
     expect_true(res$valid)
+})
+
+test_that("format_snp_locus_desc", {
+    
+    # ok, multiple loci
+    count <- c(10, 10, 10, 10, 10)
+    type <- c("A", "H", "X", "Y", "M")
+    expect_equal(
+        format_snp_locus_desc(count, type, from = 1),
+        "10 <A> 10 <H> 10 <X> 10 <Y> 10 <M> from 1"
+    )
+    
+    # ok, single locus
+    count <- c(10)
+    type <- c("A")
+    expect_equal(
+        format_snp_locus_desc(count, type, from = 1),
+        "10 <A> from 1"
+    )
+    
+    # nok, different length input
+    count <- c(10, 10)
+    type <- c("A")
+    expect_error(format_snp_locus_desc(count, type, from = 1))
+    
+    # nok, bad locus type
+    count <- c(10, 10)
+    type <- c("A", "Z")
+    expect_error(format_snp_locus_desc(count, type, from = 1))
     
 })
+
+test_that("default_snp_locus_desc", {
+    
+    # ok, multiple loci
+    locus_count <- data.frame(
+        type = c("A", "H", "X", "Y", "M"), available = c(10, 10, 10, 10, 10),
+        stringsAsFactors = FALSE
+    )
+    expect_equal(
+        default_snp_locus_desc(locus_count, from = 1),
+        "10 <A> 10 <H> 10 <X> 10 <Y> 10 <M> from 1"
+    )
+    
+    # nok, bad column names
+    locus_count <- data.frame(
+        type = c("A", "H", "X", "Y", "M"), count = c(10, 10, 10, 10, 10),
+        stringsAsFactors = FALSE
+    )
+    expect_error(default_snp_locus_desc(locus_count, from = 1))
+    
+    # nok, bad input formating
+    locus_count <- list(
+        type = c("A", "H", "X", "Y", "M"), count = c(10, 10, 10, 10, 10)
+    )
+    expect_error(default_snp_locus_desc(locus_count, from = 1))
+    
+    ## SNP PoolSeq
+    locus_type <- "snp"
+    seq_mode <- "poolseq"
+    # estim param
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    
+    expect_equal(
+        default_snp_locus_desc(data_check$locus_count, from = 1),
+        "14388 <A> from 1"
+    )
+})
+
+

@@ -543,7 +543,7 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
         pttrn <- str_c("(?<=(^| ))", int_regex(), "(?= <)")
         count_detail <- as.numeric(unlist(str_extract_all(locus_desc, pttrn)))
         # extract locus type
-        pttrn <- str_c("(?<=<)(A|H|X|Y|M)(?=>)")
+        pttrn <- str_c("(?<=<)[AHXYM](?=>)")
         type_detail <- unlist(str_extract_all(locus_desc, pttrn))
         
         # check length (just in case)
@@ -636,5 +636,55 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
     }
     
     ## output
+    return(out)
+}
+
+#' Format locus description for SNP data
+#' @keywords internal
+#' @author Ghislain Durif
+#' @details `count` and `type` input vectors should have the same length.
+#' @param count integer vector of locus count.
+#' @param type integer vector of locus type 
+#' (among `"A"`, `"H"`, `"X"`, `"Y"`, `"M"`).
+#' @param from integer, starting locus.
+format_snp_locus_desc <- function(count, type, from = 1) {
+    # check input
+    if(length(count) != length(type))
+        stop("`count` and `type` input vectors should have the same length.")
+    count <- as.integer(count)
+    from <- as.integer(from)
+    if(!all(type %in% c("A", "H", "X", "Y", "M")))
+        stop("`type` should contain only valid locus types.")
+    # formating each locus type
+    type_format <- unlist(lapply(
+        1:length(count),
+        function(ind) return(str_c(
+            as.integer(count[ind]), " <", type[ind], ">", sep = ""
+        ))
+    ))
+    # global description
+    out <- str_c(
+        str_c(type_format, collapse = " "),
+        "from", from, sep = " "
+    )
+    # output
+    return(out)
+}
+
+#' Default locus description for SNP data
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_count data.frame with columns `type` for the locus type 
+#' and `available` for the number of available loci.
+#' @param from integer, starting locus.
+default_snp_locus_desc <- function(locus_count, from = 1) {
+    if(!is.data.frame(locus_count) || (nrow(locus_count) == 0) ||
+       !all(c("type", "available") %in% colnames(locus_count)))
+        stop("Input not valid")
+    # get only locus types with available loci
+    locus_count <- subset(locus_count, locus_count$available > 0)
+    # format
+    out <- format_snp_locus_desc(locus_count$available, locus_count$type, from)
+    # output
     return(out)
 }
