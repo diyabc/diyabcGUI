@@ -1161,12 +1161,12 @@ param_cond_panel_server <- function(input, output, session) {
 locus_setup_panel_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("dna"), "Number of loci to simulate"),
+        h3(icon("dna"), "Locus setup"),
         box(
-            title = "",
+            title = "Configure the loci to simulate",
             width = 12,
             collapsible = TRUE,
-            collapsed = FALSE,
+            collapsed = TRUE,
             tagList(
                 uiOutput(ns("locus_setup"))
             )
