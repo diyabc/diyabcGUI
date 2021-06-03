@@ -327,8 +327,9 @@ test_that("check_snp_locus_desc", {
     header_check <- read_header(header_file, file_type, locus_type)
     expect_true(header_check$valid)
     locus_desc <- header_check$locus_desc
+    locus_count <- data_check$locus_count
     
-    res <- check_snp_locus_desc(locus_desc, data_check)
+    res <- check_snp_locus_desc(locus_desc, locus_count)
     expect_true(res$valid)
     
     
@@ -346,8 +347,9 @@ test_that("check_snp_locus_desc", {
     header_check <- read_header(header_file, file_type, locus_type)
     expect_true(header_check$valid)
     locus_desc <- header_check$locus_desc
+    locus_count <- data_check$locus_count
     
-    res <- check_snp_locus_desc(locus_desc, data_check)
+    res <- check_snp_locus_desc(locus_desc, locus_count)
     expect_true(res$valid)
 })
 
@@ -444,18 +446,18 @@ test_that("clean_snp_locus_desc", {
     locus_desc <- header_check$locus_desc
     
     expect_equal(
-        clean_snp_locus_desc(locus_desc, data_check),
+        clean_snp_locus_desc(locus_desc, data_check$locus_count),
         "5000 <A> G1 from 1"
     )
     
     ## bad locus desc
     expect_equal(
-        clean_snp_locus_desc(NULL, data_check),
+        clean_snp_locus_desc(NULL, data_check$locus_count),
         "14388 <A> from 1"
     )
     
     expect_equal(
-        clean_snp_locus_desc("5000000 <A> G1 from 1", data_check),
+        clean_snp_locus_desc("5000000 <A> G1 from 1", data_check$locus_count),
         "14388 <A> from 1"
     )
 })

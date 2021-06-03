@@ -516,7 +516,7 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
     )
     # SNP locus
     if(locus_type == "snp") {
-        return(check_snp_locus_desc(locus_desc, data_check))
+        return(check_snp_locus_desc(locus_desc, data_check$locus_count))
         
         ## MSS locus
     } else if(locus_type == "mss") {
@@ -538,7 +538,10 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
 #' Check locus description for SNP data provided by users
 #' @keywords internal
 #' @author Ghislain Durif
-check_snp_locus_desc <- function(locus_desc, data_check) {
+#' @param locus_desc character string, locus description.
+#' @param locus_count data.frame with columns `type` for the locus type 
+#' and `available` for the number of available loci.
+check_snp_locus_desc <- function(locus_desc, locus_count) {
     # init out
     out <- list(
         valid = TRUE, msg = list(), locus_count = NULL, from = NULL
@@ -584,8 +587,7 @@ check_snp_locus_desc <- function(locus_desc, data_check) {
     }
     
     # check each type
-    type_check <- (type_detail %in% 
-        data_check$locus_count$type[data_check$locus_count$count > 0])
+    type_check <- (type_detail %in% locus_count$type[locus_count$count > 0])
     if(!all(type_check)) {
         out$valid <- FALSE
         msg <- tagList(
@@ -602,11 +604,10 @@ check_snp_locus_desc <- function(locus_desc, data_check) {
         1:length(count_detail), 
         function(ind) {
             tmp_count <- subset(
-                data_check$locus_count,
-                data_check$locus_count$type == type_detail[ind]
+                locus_count,
+                locus_count$type == type_detail[ind]
             )
-            valid <- (count_detail[ind] <= 
-                          data_check$locus_count$available)
+            valid <- (count_detail[ind] <= locus_count$available)
             return(valid)
         }
     ))
@@ -625,8 +626,7 @@ check_snp_locus_desc <- function(locus_desc, data_check) {
     # starting locus
     pttrn <- "(?<=from )[0-9]+$"
     start_detail <- as.integer(str_extract(locus_desc, pttrn))
-    n_locus <- sum(data_check$locus_count$count) - 
-        sum(data_check$locus_count$filter)
+    n_locus <- sum(locus_count$available)
     if(start_detail - 1 + sum(count_detail) > n_locus) {
         out$valid <- FALSE
         msg <- tagList(
@@ -646,7 +646,7 @@ check_snp_locus_desc <- function(locus_desc, data_check) {
             count = count_detail, type = type_detail,
             stringsAsFactors = FALSE
         ),
-        data_check$locus_count[,c("available", "type")]
+        locus_count[,c("available", "type")]
     )
     
     ## output
@@ -709,14 +709,14 @@ default_snp_locus_desc <- function(locus_count, from = 1) {
 #' @param locus_count data.frame with columns `type` for the locus type 
 #' and `available` for the number of available loci.
 #' @param from integer, starting locus.
-clean_snp_locus_desc <- function(locus_desc, data_check) {
+clean_snp_locus_desc <- function(locus_desc, locus_count) {
     
     # default
-    out <- default_snp_locus_desc(data_check$locus_count)
+    out <- default_snp_locus_desc(locus_count, from = 1)
     
     # no input
     if(isTruthy(locus_desc)) {
-        check <- check_snp_locus_desc(locus_desc, data_check)
+        check <- check_snp_locus_desc(locus_desc, locus_count)
         if(check$valid) {
             out <- locus_desc
         }
