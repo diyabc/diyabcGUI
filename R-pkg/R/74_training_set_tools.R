@@ -516,111 +516,7 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
     )
     # SNP locus
     if(locus_type == "snp") {
-        
-        # check one group locus desc
-        if(length(locus_desc) > 1) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "The locus description should be", 
-                "a one-line description for SNP data."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        # check locus description content
-        desc_check <- check_header_locus_desc(locus_desc, locus_type)
-        if(!desc_check) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "Bad format."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        # extract locus count
-        pttrn <- str_c("(?<=(^| ))", int_regex(), "(?= <)")
-        count_detail <- as.numeric(unlist(str_extract_all(locus_desc, pttrn)))
-        # extract locus type
-        pttrn <- str_c("(?<=<)[AHXYM](?=>)")
-        type_detail <- unlist(str_extract_all(locus_desc, pttrn))
-        
-        # check length (just in case)
-        if(length(count_detail) != length(type_detail)) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "Bad format."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        # check each type
-        type_check <- (type_detail %in% 
-            data_check$locus_count$type[data_check$locus_count$count > 0])
-        if(!all(type_check)) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "The following locus types", 
-                tags$code(str_c(type_detail[!type_check], collapse = ", ")),
-                "are not present in the data."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        # check count
-        count_check <- unlist(lapply(
-            1:length(count_detail), 
-            function(ind) {
-                tmp_count <- subset(
-                    data_check$locus_count,
-                    data_check$locus_count$type == type_detail[ind]
-                )
-                valid <- (count_detail[ind] <= 
-                              data_check$locus_count$available)
-                return(valid)
-            }
-        ))
-        if(!all(count_check)) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "The required number of locus for the following types", 
-                tags$code(str_c(type_detail[!type_check], collapse = ", ")),
-                "are higher than the number of corresponding locus",
-                "in the data."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        # starting locus
-        pttrn <- "(?<=from )[0-9]+$"
-        start_detail <- as.integer(str_extract(locus_desc, pttrn))
-        n_locus <- sum(data_check$locus_count$count) - 
-            sum(data_check$locus_count$filter)
-        if(start_detail + sum(count_detail) > n_locus) {
-            out$valid <- FALSE
-            msg <- tagList(
-                "The required starting locus and number of locus", 
-                "are not compatible with",
-                "the number of number of locus available",
-                "in the data (after filtering)."
-            )
-            out$msg <- append(out$msg, list(msg))
-            return(out)
-        }
-        
-        ## format output
-        out$from <- start_detail
-        out$locus_count <- merge(
-            data.frame(
-                count = count_detail, type = type_detail,
-                stringsAsFactors = FALSE
-            ),
-            data_check$locus_count[,c("available", "type")]
-        )
+        return(check_snp_locus_desc(locus_desc, data_check))
         
         ## MSS locus
     } else if(locus_type == "mss") {
@@ -634,6 +530,124 @@ check_locus_desc <- function(locus_desc, data_check, locus_type) {
             return(out)
         }
     }
+    
+    ## output
+    return(out)
+}
+
+#' Check locus description for SNP data provided by users
+#' @keywords internal
+#' @author Ghislain Durif
+check_snp_locus_desc <- function(locus_desc, data_check) {
+    # init out
+    out <- list(
+        valid = TRUE, msg = list(), locus_count = NULL, from = NULL
+    )
+    
+    # check one group locus desc
+    if(length(locus_desc) > 1) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "The locus description should be", 
+            "a one-line description for SNP data."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check locus description content
+    desc_check <- check_header_locus_desc(locus_desc, locus_type)
+    if(!desc_check) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Bad format."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # extract locus count
+    pttrn <- str_c("(?<=(^| ))", int_regex(), "(?= <)")
+    count_detail <- as.numeric(unlist(str_extract_all(locus_desc, pttrn)))
+    # extract locus type
+    pttrn <- str_c("(?<=<)[AHXYM](?=>)")
+    type_detail <- unlist(str_extract_all(locus_desc, pttrn))
+    
+    # check length (just in case)
+    if(length(count_detail) != length(type_detail)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "Bad format."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check each type
+    type_check <- (type_detail %in% 
+        data_check$locus_count$type[data_check$locus_count$count > 0])
+    if(!all(type_check)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "The following locus types", 
+            tags$code(str_c(type_detail[!type_check], collapse = ", ")),
+            "are not present in the data."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # check count
+    count_check <- unlist(lapply(
+        1:length(count_detail), 
+        function(ind) {
+            tmp_count <- subset(
+                data_check$locus_count,
+                data_check$locus_count$type == type_detail[ind]
+            )
+            valid <- (count_detail[ind] <= 
+                          data_check$locus_count$available)
+            return(valid)
+        }
+    ))
+    if(!all(count_check)) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "The required number of locus for the following types", 
+            tags$code(str_c(type_detail[!type_check], collapse = ", ")),
+            "are higher than the number of corresponding locus",
+            "in the data."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    # starting locus
+    pttrn <- "(?<=from )[0-9]+$"
+    start_detail <- as.integer(str_extract(locus_desc, pttrn))
+    n_locus <- sum(data_check$locus_count$count) - 
+        sum(data_check$locus_count$filter)
+    if(start_detail - 1 + sum(count_detail) > n_locus) {
+        out$valid <- FALSE
+        msg <- tagList(
+            "The required starting locus and number of locus", 
+            "are not compatible with",
+            "the number of number of locus available",
+            "in the data (after filtering)."
+        )
+        out$msg <- append(out$msg, list(msg))
+        return(out)
+    }
+    
+    ## format output
+    out$from <- start_detail
+    out$locus_count <- merge(
+        data.frame(
+            count = count_detail, type = type_detail,
+            stringsAsFactors = FALSE
+        ),
+        data_check$locus_count[,c("available", "type")]
+    )
     
     ## output
     return(out)
@@ -685,6 +699,28 @@ default_snp_locus_desc <- function(locus_count, from = 1) {
     locus_count <- subset(locus_count, locus_count$available > 0)
     # format
     out <- format_snp_locus_desc(locus_count$available, locus_count$type, from)
+    # output
+    return(out)
+}
+
+#' Clean locus description for SNP data
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_count data.frame with columns `type` for the locus type 
+#' and `available` for the number of available loci.
+#' @param from integer, starting locus.
+clean_snp_locus_desc <- function(locus_desc, data_check) {
+    
+    # default
+    out <- default_snp_locus_desc(data_check$locus_count)
+    
+    # no input
+    if(isTruthy(locus_desc)) {
+        check <- check_snp_locus_desc(locus_desc, data_check)
+        if(check$valid) {
+            out <- locus_desc
+        }
+    }
     # output
     return(out)
 }

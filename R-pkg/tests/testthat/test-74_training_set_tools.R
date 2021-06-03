@@ -308,6 +308,49 @@ test_that("check_locus_desc", {
     expect_true(res$valid)
 })
 
+test_that("check_snp_locus_desc", {
+    
+    ## SNP PoolSeq
+    locus_type <- "snp"
+    seq_mode <- "poolseq"
+    # estim param
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_snp_locus_desc(locus_desc, data_check)
+    expect_true(res$valid)
+    
+    
+    # model choice
+    test_proj <- "PoolSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    res <- check_snp_locus_desc(locus_desc, data_check)
+    expect_true(res$valid)
+})
+
 test_that("format_snp_locus_desc", {
     
     # ok, multiple loci
@@ -379,5 +422,44 @@ test_that("default_snp_locus_desc", {
         "14388 <A> from 1"
     )
 })
+
+test_that("clean_snp_locus_desc", {
+    
+    ## SNP PoolSeq
+    locus_type <- "snp"
+    seq_mode <- "poolseq"
+    # estim param
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    
+    data_file <- "poolseq_SNP_sim_dataset_4POP_cov100_001.snp"
+    data_dir <- test_dir
+    data_check <- check_data_file(data_file, data_dir, locus_type, seq_mode)
+    expect_true(data_check$valid)
+    
+    header_file <- file.path(test_dir, "headerRF.txt")
+    file_type <- "text/plain"
+    header_check <- read_header(header_file, file_type, locus_type)
+    expect_true(header_check$valid)
+    locus_desc <- header_check$locus_desc
+    
+    expect_equal(
+        clean_snp_locus_desc(locus_desc, data_check),
+        "5000 <A> G1 from 1"
+    )
+    
+    ## bad locus desc
+    expect_equal(
+        clean_snp_locus_desc(NULL, data_check),
+        "14388 <A> from 1"
+    )
+    
+    expect_equal(
+        clean_snp_locus_desc("5000000 <A> G1 from 1", data_check),
+        "14388 <A> from 1"
+    )
+})
+
+
 
 
