@@ -1027,7 +1027,7 @@ param_cond_panel_ui <- function(id) {
             title = "Define conditions on your model parameters",
             width = 12,
             collapsible = TRUE,
-            collapsed = FALSE,
+            collapsed = TRUE,
             tagList(
                 uiOutput(ns("cond_input")),
                 fluidRow(
@@ -1192,7 +1192,7 @@ locus_setup_panel_server <- function(input, output, session) {
             tagList(
                 snp_locus_setup_ui(ns("snp_setup"))
             )
-        } else if(local$locus_type == "mss") {
+        } else if(env$ap$locus_type == "mss") {
             tagList(
                 mss_locus_setup_ui(ns("mss_setup"))
             )
@@ -1203,7 +1203,7 @@ locus_setup_panel_server <- function(input, output, session) {
     
     ## server-side
     callModule(snp_locus_setup_server, "snp_setup")
-    # callModule(mss_locus_setup_server, "mss_setup")
+    callModule(mss_locus_setup_server, "mss_setup")
 }
 
 #' Locus SNP setup ui
@@ -1529,9 +1529,12 @@ snp_locus_setup_server <- function(input, output, session) {
 mss_locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        "TODO"
-        # uiOutput(ns("input_setup")),
-        # uiOutput(ns("feedback"))
+        uiOutput(ns("feedback")),
+        helpText(
+            icon("info-circle"),
+            "With Microsat/Sequence data,",
+            "the number of simulated loci is not configurable."
+        )
     )
 }
 
@@ -1539,118 +1542,40 @@ mss_locus_setup_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 mss_locus_setup_server <- function(input, output, session) {
-    # # init out
-    # out <- reactiveValues(
-    #     locus = NULL,
-    #     mss_locus = NULL,
-    #     mss_group_prior = NULL,
-    #     mss_rf_col_name = NULL
-    # )
-    # 
-    # # render ui
-    # output$locus_setup <- renderUI({
-    #     
-    #     req(env$ap$locus_type)
-    #     req(env$ap$data_check)
-    #     req(env$ap$data_check$valid)
-    #     
-    #     if(env$ap$locus_type == "snp") {
-    #         tagList(
-    #             snp_locus_setup_ui(ns("snp_setup"))
-    #         )
-    #     } else if(local$locus_type == "mss") {
-    #         # FIXME
-    #         
-    #         # pprint("data info")
-    #         # pprint(local$data_info)
-    #         # warning("not supported at the moment")
-    #         
-    #         # microsat locus
-    #         microsat_locus <- str_detect(local$data_info$locus_mode, "microsat")
-    #         microsat_locus_type <- table(local$data_info$locus[microsat_locus])
-    #         
-    #         # seq locus
-    #         seq_locus <- str_detect(local$data_info$locus_mode, "seq")
-    #         seq_locus_type <- table(local$data_info$locus[seq_locus])
-    #         
-    #         tagList(
-    #             tags$ul(
-    #                 tags$li(
-    #                     "Number of Microsat loci:", 
-    #                     as.character(sum(microsat_locus))
-    #                 ),
-    #                 tags$li(
-    #                     "Number of Sequence loci:", 
-    #                     as.character(sum(seq_locus))
-    #                 )
-    #             )
-    #         )
-    #     } else {
-    #         NULL
-    #     }
-    # })
-    # 
-    # ## MSS setup
-    # output$mss_setup <- renderUI({
-    #     if(local$locus_type == "mss") {
-    #         tagList(
-    #             mss_group_setup_ui(ns("mss_group")),
-    #             br(),
-    #             mss_group_prior_ui(ns("mss_prior"))
-    #         )
-    #     } else {
-    #         NULL
-    #     }
-    # })
-    # 
-    # mss_group <- callModule(
-    #     mss_group_setup_server,
-    #     "mss_group",
-    #     data_info = reactive(local$data_info)
-    # )
-    # 
-    # mss_prior <- callModule(
-    #     mss_group_prior_server,
-    #     "mss_prior",
-    #     group_info = reactive(mss_group$group_info)
-    # )
-    # 
-    # ## update output
-    # observe({
-    #     if(local$locus_type == "snp") {
-    #         req(length(local$data_info$locus) > 0)
-    #         tmp <- unlist(lapply(
-    #             1:length(local$data_info$locus),
-    #             function(ind) {
-    #                 item <- local$data_info$locus[ind]
-    #                 locus <- str_extract(item, pattern = "(A|H|X|Y|M)")
-    #                 n_loci <- input[[ str_c("num_", locus) ]]
-    #                 return(str_c(
-    #                     n_loci,
-    #                     str_c("<", locus, ">"),
-    #                     sep = " "
-    #                 ))
-    #             }
-    #         ))
-    #         # start loci
-    #         start_locus <- input$locus_id_from
-    #         
-    #         # locus number encoding
-    #         out$locus <- str_c(
-    #             str_c(tmp, collapse = " "),
-    #             "G1 from", start_locus, sep = " "
-    #         )
-    #         
-    #         # # debugging
-    #         # pprint("locus setup")
-    #         # pprint(out$locus)
-    #     } else if(local$locus_type == "mss") {
-    #         req(!is.null(mss_group$raw_locus))
-    #         req(!is.null(mss_prior$raw_group_prior_list))
-    #         out$mss_locus <- mss_group$raw_locus
-    #         out$mss_group_prior <- mss_prior$raw_group_prior_list
-    #         out$mss_rf_col_name <- mss_prior$rf_col_name
-    #     }
-    # })
-
+    output$feedback <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        
+        tagList(
+            tags$ul(
+                tags$li(
+                    "Number of Microsat locus =",
+                    as.character(sum(env$ap$data_check$locus_mode == "M"))
+                ),
+                tags$li(
+                    "Number of Sequence locus =",
+                    as.character(sum(env$ap$data_check$locus_mode == "S"))
+                )
+            )
+        )
+    })
 }
+
+#' MSS specific config setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        NULL
+    )
+}
+
+#' MSS specific config setup server
+#' @keywords internal
+#' @author Ghislain Durif
+mss_setup_server <- function(input, output, session) {}
+
