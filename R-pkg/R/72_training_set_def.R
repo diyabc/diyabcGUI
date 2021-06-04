@@ -1202,7 +1202,7 @@ locus_setup_panel_server <- function(input, output, session) {
     })
     
     ## server-side
-    # callModule(snp_locus_setup_server, "snp_setup")
+    callModule(snp_locus_setup_server, "snp_setup")
     # callModule(mss_locus_setup_server, "mss_setup")
 }
 
@@ -1218,7 +1218,7 @@ snp_locus_setup_ui <- function(id) {
                 width = 4,
                 actionButton(
                     ns("validate"),
-                    label = "Validate",
+                    label = "Validate locus setup",
                     icon = icon("check"),
                     width = '100%'
                 )
@@ -1238,80 +1238,83 @@ snp_locus_setup_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
-        locus_desc = NULL, locus_count = NULL, from = NULL, check = NULL,
-        input_count = NULL, input_from = NULL, input_desc = NULL, 
-        valid = FALSE, validated = FALSE
+        locus_desc = NULL, locus_count = NULL, from = NULL,
+        input_count = NULL, input_from = NULL, 
+        modified_locus_desc = NULL, 
+        valid = TRUE, msg = NULL, validated = TRUE
     )
     
-    # get existing locus description if any (and check it)
-    observe({
+    # ## debugging
+    # observe({
+    #     pprint("locus desc")
+    #     pprint(env$ts$locus_desc)
+    # })
+    
+    # get existing locus description if any (and default otherwise)
+    observeEvent({
+        c(env$ts$locus_desc, env$ap$data_check)
+    }, {
+        local$locus_desc <- character(0)
+        local$validated <- FALSE
+        
         req(env$ap$locus_type)
         req(env$ap$locus_type == "snp")
         req(env$ap$data_check)
-        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_count)
+        req(nrow(env$ap$data_check$locus_count) > 0)
         
-        pprint("run1")
+        local$locus_desc <- clean_snp_locus_desc(
+            env$ts$locus_desc, env$ap$data_check$locus_count
+        )
         
-        if(isTruthy(env$ts$locus_desc)) {
-            local$locus_desc <- env$ts$locus_desc
+        if(identical(local$locus_desc, env$ts$locus_desc)) {
             local$validated <- TRUE
-        } else {
-            local$locus_desc <- NULL
-            local$validated <- FALSE
         }
     })
     
-    # check locus description
-    observe({
-        req(env$ap$locus_type)
-        req(env$ap$locus_type == "snp")
-        req(env$ap$data_check)
-        req(env$ap$data_check$valid)
+    # parse locus description
+    observeEvent(local$locus_desc, {
+        
         req(local$locus_desc)
         
-        pprint("run2")
-        
-        local$check <- check_locus_desc(
-            local$locus_desc, env$ap$data_check,
-            env$ap$locus_type
-        )
-        
-        local$valid <- local$check$valid
-    })
-    
-    ## prepare rendering setup
-    observe({
         req(env$ap$locus_type)
         req(env$ap$locus_type == "snp")
         req(env$ap$data_check)
-        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_count)
+        req(nrow(env$ap$data_check$locus_count) > 0)
         
-        pprint("run3")
+        check <- check_snp_locus_desc(
+            local$locus_desc, env$ap$data_check$locus_count
+        )
         
-        if(isTruthy(local$valid)) {
-            local$locus_count <- local$check$locus_count
-            local$from <- local$check$from
+        local$valid <- check$valid
+        local$msg <- check$msg
+        
+        # prepare rendering setup
+        if(local$valid) {
+            local$locus_count <- check$locus_count
+            local$from <- check$from
         } else {
             local$from <- 1
             local$locus_count <- subset(
                 env$ap$data_check$locus_count,
-                env$ap$data_check$locus_count$count > 0
+                env$ap$data_check$locus_count$available > 0
             )
             local$locus_count$count <- local$locus_count$available
         }
     })
     
+    # # debugging
+    # observe({
+    #     pprint("locus count")
+    #     pprint(local$locus_count)
+    # })
+    
     # render ui
     output$input_setup <- renderUI({
-        req(env$ap$locus_type)
-        req(env$ap$locus_type == "snp")
-        req(env$ap$data_check)
-        req(env$ap$data_check$valid)
         req(local$locus_count)
         req(nrow(local$locus_count) > 0)
         req(local$from)
-        
-        pprint("run4")
         
         tag_list <- unname(lapply(
             split(local$locus_count, seq(nrow(local$locus_count))),
@@ -1322,15 +1325,23 @@ snp_locus_setup_server <- function(input, output, session) {
                             width = 4,
                             shinyjs::disabled(textInput(
                                 ns(str_c("type_", item$type)),
-                                label = "SNP loci available",
+                                label = "SNP locus type",
                                 value = item$type
+                            ))
+                        ),
+                        column(
+                            width = 4,
+                            shinyjs::disabled(textInput(
+                                ns(str_c("type_", item$type)),
+                                label = "Number of available loci",
+                                value = as.character(item$available)
                             ))
                         ),
                         column(
                             width = 4,
                             numericInput(
                                 inputId = ns(str_c("num_", item$type)),
-                                label = "Number of locus",
+                                label = "Number of loci to simulate",
                                 min = 0, step = 1,
                                 max = as.integer(item$available),
                                 value = as.integer(item$count)
@@ -1374,92 +1385,135 @@ snp_locus_setup_server <- function(input, output, session) {
         )
     })
     
-    # get user input
-    observe({
-        req(env$ap$locus_type)
-        req(env$ap$locus_type == "snp")
-        req(env$ap$data_check)
-        req(env$ap$data_check$valid)
+    ## get input locus count
+    observe({ 
         req(local$locus_count)
-        req(nrow(local$locus_count) > 0)
-        req(input$locus_id_from)
+        req(local$locus_count$type)
         
-        pprint("run5")
-        
-        local$validated <- FALSE
-        
-        local$input_count <- unlist(lapply(
+        modified_input_count <- unlist(lapply(
             local$locus_count$type,
             function(item) {
-                req(input[[ str_c("num_", item) ]])
-                n_loci <- input[[ str_c("num_", item) ]]
-                return(str_c(
-                    n_loci,
-                    str_c("<", item, ">"),
-                    sep = " "
-                ))
+                out <- NA
+                feedbackWarning(
+                    str_c("num_", item), 
+                    !isTruthy(input[[ str_c("num_", item) ]]),
+                    "Missing input."
+                )
+                if(isTruthy(input[[ str_c("num_", item) ]])) {
+                    n_loci <- input[[ str_c("num_", item) ]]
+                    out <- str_c(
+                        as.integer(n_loci),
+                        str_c("<", item, ">"),
+                        sep = " "
+                    )
+                }
+                return(out)
             }
         ))
         
-        # start loci
-        local$input_from <- input$locus_id_from
+        if(!identical(local$input_count, modified_input_count)) {
+            local$validated <- FALSE
+            local$input_count <- modified_input_count
+        }
     })
+    
+    ## get input from
+    observeEvent(input$locus_id_from, {
+        feedbackWarning(
+            "locus_id_from", !isTruthy(input$locus_id_from),
+            "Missing input."
+        )
+        local$validated <- FALSE
+        if(isTruthy(input$locus_id_from)) {
+            local$input_from <- input$locus_id_from
+        } else {
+            local$input_from <- NA
+        }
+    })
+    
+    # ## debugging
+    # observe({
+    #     pprint("user input")
+    #     pprint(local$input_count)
+    #     pprint(local$input_from)
+    # })
     
     ## process input
     observeEvent(input$validate, {
+        req(env$ap$data_check)
+        req(env$ap$data_check$locus_count)
+        req(nrow(env$ap$data_check$locus_count) > 0)
+        
         req(local$input_count)
+        req(!any(is.na(local$input_count)))
         req(local$input_from)
         
-        pprint("run6")
+        local$validated <- TRUE
         
         # merge
-        local$input_desc <- str_c(
+        local$modified_locus_desc <- str_c(
             str_c(local$input_count, collapse = " "),
             "G1 from", local$input_from, sep = " "
         )
         
         # check and update
-        local$check <- check_locus_desc(
-            local$input_desc, env$ap$data_check, env$ap$locus_type
+        check <- check_snp_locus_desc(
+            local$modified_locus_desc, env$ap$data_check$locus_count
         )
-        local$valid <- local$check$valid
+        
+        local$valid <- check$valid
+        local$msg <- check$msg
         
         # update if valid and if modification
-        if(local$valid) {
-            if((length(env$ts$locus_desc) == length(local$input_desc)) && 
-               all(env$ts$locus_desc == local$input_desc)) {
-                local$validated <- TRUE
-            } else {
-                env$ts$locus_desc <- local$input_desc
-                local$validated <- TRUE
+        if(!local$valid) {
+            local$modified_locus_desc <- character(0)
+        }
+    })
+    
+    # ## debugging
+    # observe({
+    #     pprint("modified desc")
+    #     pprint(local$modified_locus_desc)
+    # })
+    
+    # observe({
+    #     pprint("validated?")
+    #     pprint(local$validated)
+    #     pprint("valid?")
+    #     pprint(local$valid)
+    # })
+    
+    # update env
+    observeEvent(local$modified_locus_desc, {
+        req(is.logical(local$valid))
+        # update if valid and if modification
+        if(isTruthy(local$modified_locus_desc) && local$valid) {
+            if(!identical(local$modified_locus_desc, env$ts$locus_desc)) {
+                env$ts$locus_desc <- local$modified_locus_desc
             }
-        } else {
-            local$validated <- FALSE
         }
     })
     
     # feedback for locus description check
     output$feedback <- renderUI({
-        req(env$ap$locus_type)
-        req(env$ap$locus_type == "snp")
-        
-        pprint("run7")
-        
-        if(!local$valid) {
+        req(is.logical(local$valid))
+        req(is.logical(local$validated))
+        if(!local$validated) {
+            tagList(
+                tags$div(
+                    icon("warning"), "Locus description(s) not validated.",
+                    style = "color: #F89406;"
+                )
+            )
+        } else if(!local$valid) {
+            req(local$msg)
             tagList(
                 tags$div(
                     icon("warning"), "Issue with SNP locus description:",
                     do.call(
                         tags$ul,
-                        lapply(local$check$msg, tags$li)
+                        lapply(local$msg, tags$li)
                     ),
-                    style = "color: #F89406;"
-                )
-            )
-        } else if(!local$validated) {
-            tagList(
-                tags$div(
-                    icon("warning"), "Locus description(s) not validated.",
                     style = "color: #F89406;"
                 )
             )
