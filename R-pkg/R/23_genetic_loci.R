@@ -1119,7 +1119,7 @@ param_value_server <- function(input, output, session,
 #' MSS group prior ui
 #' @keywords internal
 #' @author Ghislain Durif
-mss_group_prior_ui <- function(id) {
+mss_group_prior_old_ui <- function(id) {
     ns <- NS(id)
     
     tagList(
@@ -1137,7 +1137,7 @@ mss_group_prior_ui <- function(id) {
 #' MSS group prior server
 #' @keywords internal
 #' @author Ghislain Durif
-mss_group_prior_server <- function(input, output, session,
+mss_group_prior_old_server <- function(input, output, session,
                                    group_info = reactive({NULL}),
                                    datagen_mode = FALSE) {
     # namespace

@@ -329,7 +329,7 @@ genetic_loci_server <- function(input, output, session,
             tagList(
                 mss_config_setup_ui(ns("mss_config")),
                 br(),
-                mss_group_prior_ui(ns("mss_prior")),
+                mss_group_prior_old_ui(ns("mss_prior")),
                 hr()
             )
         } else {
@@ -374,7 +374,7 @@ genetic_loci_server <- function(input, output, session,
     ## MSS group prior
     observe({
         # FIXME
-        # refactor mss_group_prior_server
+        # refactor mss_group_prior_old_server
         if(isTruthy(mss_config$mss_data_info) &&
            is.data.frame(mss_config$mss_data_info) %% 
            nrow(mss_config$mss_data_info) > 0) {
@@ -392,7 +392,7 @@ genetic_loci_server <- function(input, output, session,
     })
     
     mss_prior <- callModule(
-        mss_group_prior_server,
+        mss_group_prior_old_server,
         "mss_prior",
         group_info = reactive(local$mss_group_info),
         datagen_mode = TRUE
