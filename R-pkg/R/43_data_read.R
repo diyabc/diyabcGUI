@@ -837,7 +837,8 @@ read_mss_data <- function(data_file, data_dir) {
         msg = list(), valid = TRUE,
         data_file = NULL, n_loci = NULL, locus_count = NULL, 
         n_pop = NULL, n_indiv = NULL, pop_size = NULL,
-        sex_ratio = NULL
+        sex_ratio = NULL, 
+        locus_desc = NULL, locus_name = NULL, locus_mode = NULL
     )
     
     # ## init output
@@ -906,61 +907,84 @@ read_mss_data <- function(data_file, data_dir) {
     ## FILE CONTENT
     file_content <- unlist(str_split(read_file(file_name), "\n"))
     
-    ## locus description
-    pttrn <- "(?<=<)(A|H|X|Y|M)(?=>)"
-    locus_pttrn_match <- str_extract(file_content, pttrn)
-    # check if present
-    if(all(is.na(locus_pttrn_match))) {
+    ## LOCUS DESCRIPTION (between second line and first 'POP/pop' keyword)
+    
+    ## population keyword
+    pttrn <- "^(?i)pop(?-i)$"
+    pop_match_ind <- which(str_detect(file_content, pttrn))
+    # check for missing pop keyword
+    if(length(pop_match_ind) == 0) {
         out$valid <- FALSE
         msg <- tagList(
-            "Missing locus description, see manual"
+            "Keyword", tags$code("POP"), "is missing, see manual."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
     
-    # check if description follows title line
-    locus_match_ind <- which(!is.na(locus_pttrn_match))
-    if(!all(locus_match_ind == 2:tail(locus_match_ind, 1))) {
+    # check for locus description
+    if(pop_match_ind[1] < 3) {
         out$valid <- FALSE
         msg <- tagList(
+            "Missing locus description, see manual.",
             "Locus description should be located",
-            "at beginning of data file, after title line,", 
-            "with a single locus per line, see manual."
+            "at beginning of data file, after header line,", 
+            "with a single locus per line."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
+    
+    ## extract locus description
+    locus_desc_ind <- 2:(pop_match_ind[1] - 1)
+    file_locus_desc <- file_content[locus_desc_ind]
+    locus_desc_ind <- locus_desc_ind - 1 # for comparison below
     
     # check locus description format
-    pttrn <- "^[A-Za-z0-9\\s_\\-]+ <(A|H|X|Y|M)>$"
-    locus_desc_match_ind <- which(str_detect(file_content, pttrn))
-    if(!all(locus_desc_match_ind == locus_match_ind)) {
+    pttrn <- "^[A-Za-z0-9\\s_\\-]+( <[AHXYM]>)?$"
+    locus_desc_match <- str_detect(file_locus_desc, pttrn)
+    locus_desc_match_ind <- which(locus_desc_match)
+    if(any(!locus_desc_match)) {
         out$valid <- FALSE
-        issue_line <- locus_match_ind[!locus_match_ind %in% 
-                                          locus_desc_match_ind]
+        issue_line <- 
+            locus_desc_ind[!locus_desc_ind %in% locus_desc_match_ind] + 1
         msg <- tagList(
             "Issue with Microsat/Sequence locus description format at rows:",
             tags$code(str_c(issue_line, collapse = ",")), ".", br(),
-            "You can use the following character to specify",
+            "You should only use the following characters to specify",
             "locus names:",
-            tags$code("A-Z"), tags$code("a-z"), tags$code("0-9"),
-            tags$code("_"), tags$code("-"), "and", tags$code(" "), "."
+            tags$code("A-Z"), ",", tags$code("a-z"), ",", 
+            tags$code("0-9"), ",", tags$code("_"), ",", tags$code("-"), 
+            "and space.",
+            "And you should specify the locus type at the end",
+            "of each locus description line with",
+            tags$code("<A>"), ",", tags$code("<H>"), ",", 
+            tags$code("<X>"), ",", tags$code("<Y>"), ",", 
+            tags$code("<M>"), ",", 
+            "respectively for autosomal, haploid, X-linked, Y-linked",
+            "or mitochondrial locus.",
+            "If locus type is missing, then", tags$code("<A>"), "type",
+            "is assumed for the corresponding locus."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
+    
+    ## locus description
+    pttrn <- "(?<=<)[AHXYM](?=>$)"
+    locus_pttrn_match <- str_extract(file_locus_desc, pttrn)
+    # missing locus type corresponds to default A
+    locus_pttrn_match[is.na(locus_pttrn_match)] <- "A"
     
     ## number of locus
     out$n_loci <- length(locus_desc_match_ind)
     
-    ## locus description
-    pttrn <- "(?<=<)(A|H|X|Y|M)(?=>$)"
-    locus_desc <- str_extract(file_content[locus_match_ind], pttrn)
+    ## locus description output
+    locus_desc <- locus_pttrn_match
     
     ## locus name
-    pttrn <- "^[A-Za-z0-9\\s_\\-]+(?= <)"
-    locus_name <- str_extract(file_content[locus_match_ind], pttrn)
+    pttrn <- "^[A-Za-z0-9\\s_\\-]+(?=( <[AHXYM]>)?$)"
+    locus_name <- str_extract(file_locus_desc, pttrn)
     locus_name <- str_replace_all(locus_name, " +", "_")
     # check
     if(length(unique(locus_name)) != length(locus_name)) {
@@ -968,19 +992,6 @@ read_mss_data <- function(data_file, data_dir) {
         msg <- tagList(
             "Issue with locus description",
             "each locus should have a unique name, see manual."
-        )
-        out$msg <- append(out$msg, list(msg))
-        return(out)
-    }
-    
-    ## population
-    pttrn <- "^(?i)pop(?-i)$"
-    pop_match_ind <- which(str_detect(file_content, pttrn))
-    # check
-    if(length(pop_match_ind) == 0) {
-        out$valid <- FALSE
-        msg <- tagList(
-            "Keyword", tags$code("POP"), "is missing, see manual."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1025,8 +1036,7 @@ read_mss_data <- function(data_file, data_dir) {
     tmp_file <- file.path(data_dir, "tmp_data_file.csv")
     tmp <- writeLines(data_content, tmp_file)
     on.exit({
-        if(file.exists(tmp_file))
-            fs::file_delete(tmp_file)
+        if(file.exists(tmp_file)) fs::file_delete(tmp_file)
     })
     
     # read data as data.frame
@@ -1303,7 +1313,8 @@ read_mss_data <- function(data_file, data_dir) {
     out$locus_count <- as.data.frame(table(locus_desc, locus_mode))
     colnames(out$locus_count) <- c("type", "mode", "count")
     
-    ## save locus description and mode
+    ## save locus name, description and mode
+    out$locus_name <- locus_name
     out$locus_desc <- locus_desc
     out$locus_mode <- locus_mode
     

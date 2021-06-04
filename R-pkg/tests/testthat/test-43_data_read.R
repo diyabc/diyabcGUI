@@ -321,8 +321,8 @@ test_that("read_mss_data", {
     data_file <- "mss_example_001.mss"
     data_dir <- data4test_dir("mss")
     res <- read_mss_data(data_file, data_dir)
-    expect_true(out$valid)
-    expect_equal(length(out$msg), 0)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, data_file)
     expect_equal(res$n_loci, 28)
     expect_true(is.data.frame(res$locus_count))
@@ -332,13 +332,14 @@ test_that("read_mss_data", {
     expect_equal(res$pop_size, c(20,20,20))
     expect_equal(res$sex_ratio, "NM=2.33333NF")
     expect_equal(length(res$locus_desc), res$n_loci)
+    expect_equal(length(res$locus_name), res$n_loci)
     expect_equal(length(res$locus_mode), res$n_loci)
     
     ## bad file
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
     data_dir <- file.path(example_dir(), 
                           "IndSeq_SNP_estim_param")
-    out <- read_mss_data(data_file, data_dir)
-    expect_false(out$valid)
+    res <- read_mss_data(data_file, data_dir)
+    expect_false(res$valid)
 })
 
