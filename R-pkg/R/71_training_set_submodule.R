@@ -21,7 +21,7 @@ train_set_simu_server <- function(input, output, session) {
         c(env$ap$proj_dir, env$ap$proj_type, 
           env$ap$locus_type, env$ap$seq_mode, 
           env$ap$file_upload, env$ap$data_check, env$ap$header_check)
-    },{
+    }, {
         ### RESET
         # list of historical models
         env$ts$scenario_list <- NULL
@@ -174,6 +174,13 @@ train_set_setup_server <- function(input, output, session) {
         req(env$ap$header_check$valid)
         
         tagList(
+            box(
+                title = "See the current configuration",
+                width = 12,
+                collapsible = TRUE,
+                collapsed = TRUE,
+                show_existing_proj_ui(ns("show_existing"))
+            ),
             fluidRow(
                 column(
                     width = 4,
@@ -195,8 +202,7 @@ train_set_setup_server <- function(input, output, session) {
                 tags$code("statobsRF.txt"), ")", 
                 "if existing."
             ),
-            hr(),
-            show_existing_proj_ui(ns("show_existing"))
+            hr()
         )
     })
     
@@ -403,6 +409,7 @@ train_set_config_ui <- function(id) {
         locus_setup_panel_ui(ns("locus_setup")),
         br(),
         br(),
+        uiOutput(ns("mss_config_setup")),
         actionBttn(
             ns("validate"),
             label = "Validate",
@@ -418,6 +425,9 @@ train_set_config_ui <- function(id) {
 #' @author Ghislain Durif
 train_set_config_server <- function(input, output, session) {
     
+    # namespace
+    ns <- session$ns
+    
     # historical model setup
     callModule(hist_model_panel_server, "hist_model_panel")
     
@@ -429,6 +439,15 @@ train_set_config_server <- function(input, output, session) {
     
     # locus
     callModule(locus_setup_panel_server, "locus_setup")
+    
+    # MSS setup
+    output$mss_config_setup <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        
+        mss_setup_ui(ns("mss_setup"))
+    })
+    callModule(mss_setup_server, "mss_setup")
 }
 
 #' Training set simulation run module ui
