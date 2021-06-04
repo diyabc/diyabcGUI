@@ -11,10 +11,12 @@ local({
 pkg_list <- c(
     "dplyr",
     "devtools",
+    "fs",
     "ggplot2",
     "lubridate",
     "magrittr",
     "pbapply",
+    "processx",
     "readr",
     "roxygen2",
     "shiny",
