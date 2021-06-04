@@ -559,7 +559,7 @@ check_snp_locus_desc <- function(locus_desc, locus_count) {
     }
     
     # check locus description content
-    desc_check <- check_header_locus_desc(locus_desc, locus_type)
+    desc_check <- check_header_locus_desc(locus_desc, type = "snp")
     if(!desc_check) {
         out$valid <- FALSE
         msg <- tagList(
@@ -599,25 +599,25 @@ check_snp_locus_desc <- function(locus_desc, locus_count) {
         return(out)
     }
     
+    # create data frame from extracted types and count
+    extracted_locus_count <- data.frame(
+        type = type_detail,
+        requested = count_detail,
+        stringsAsFactors = FALSE
+    )
+    
     # check count
-    count_check <- unlist(lapply(
-        1:length(count_detail), 
-        function(ind) {
-            tmp_count <- subset(
-                locus_count,
-                locus_count$type == type_detail[ind]
-            )
-            valid <- (count_detail[ind] <= locus_count$available)
-            return(valid)
-        }
-    ))
+    tmp_locus_count <- merge(locus_count, extracted_locus_count)
+    count_check <- (tmp_locus_count$requested <= tmp_locus_count$available)
     if(!all(count_check)) {
         out$valid <- FALSE
         msg <- tagList(
-            "The required number of locus for the following types", 
-            tags$code(str_c(type_detail[!type_check], collapse = ", ")),
-            "are higher than the number of corresponding locus",
-            "in the data."
+            "For the following locus types", 
+            tags$code(
+                str_c(tmp_locus_count$type[!count_check], collapse = ", ")
+            ),
+            ", the required number of loci to simulate is higher than", 
+            "the number of available loci in the data (after filtering)."
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -630,9 +630,9 @@ check_snp_locus_desc <- function(locus_desc, locus_count) {
     if(start_detail - 1 + sum(count_detail) > n_locus) {
         out$valid <- FALSE
         msg <- tagList(
-            "The required starting locus and number of locus", 
+            "The required starting locus and number of loci to simulate", 
             "are not compatible with",
-            "the number of number of locus available",
+            "the number of loci available",
             "in the data (after filtering)."
         )
         out$msg <- append(out$msg, list(msg))

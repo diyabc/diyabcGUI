@@ -310,6 +310,17 @@ test_that("check_locus_desc", {
 
 test_that("check_snp_locus_desc", {
     
+    # test
+    locus_desc <- "1000 <A> 100 <M> G1 from 1"
+    locus_count <- data.frame(
+        type = c("A", "M"),
+        count = c(1000, 100),
+        available = c(1000, 100),
+        stringsAsFactors = FALSE
+    )
+    res <- check_snp_locus_desc(locus_desc, locus_count)
+    expect_true(res$valid)
+    
     ## SNP PoolSeq
     locus_type <- "snp"
     seq_mode <- "poolseq"
