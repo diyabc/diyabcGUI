@@ -408,7 +408,7 @@ train_set_config_ui <- function(id) {
         hr(),
         locus_setup_panel_ui(ns("locus_setup")),
         br(),
-        br(),
+        hr(),
         uiOutput(ns("mss_config_setup")),
         actionBttn(
             ns("validate"),

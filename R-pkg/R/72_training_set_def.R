@@ -1570,12 +1570,241 @@ mss_locus_setup_server <- function(input, output, session) {
 mss_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        NULL
+        h3(icon("object-group"), "Microsat/Sequence locus configuration"),
+        uiOutput(ns("mss_setup")),
+        br(),
+        hr(),
+        h3(icon("signal"), "Microsat/Sequence group priors"),
+        uiOutput(ns("mss_prior")),
+        br(),
+        hr()
     )
 }
 
 #' MSS specific config setup server
 #' @keywords internal
 #' @author Ghislain Durif
-mss_setup_server <- function(input, output, session) {}
+mss_setup_server <- function(input, output, session) {
+    
+    ns <- session$ns
+    
+    output$mss_setup <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        
+        tagList(
+            mss_config_ui(ns("mss_config"))
+        )
+        
+    })
+    
+    callModule(mss_config_server, "mss_config")
+    
+    output$mss_prior <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        
+        tagList(
+            mss_group_prior_ui(ns("mss_group_prior"))
+        )
+    })
+    
+    callModule(mss_group_prior_server, "mss_group_prior")
+    
+}
+
+#' MSS config ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_config_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        helpText(
+            icon("info-circle"),
+            "By default (for new projects),",
+            "all Microsat loci are grouped together,",
+            "same for all Sequence loci."
+        ),
+        uiOutput(ns("microsat")),
+        uiOutput(ns("sequence"))
+    )
+}
+
+#' MSS config server
+#' @keywords internal
+#' @author Ghislain Durif
+mss_config_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
+    # microsat
+    output$microsat <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        req(any(env$ap$data_check$locus_mode == "M"))
+        tagList(
+            microsat_config_ui(ns("microsat_config"))
+        )
+    })
+    callModule(microsat_config_server, "microsat_config")
+    # sequence
+    output$sequence <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        req(any(env$ap$data_check$locus_mode == "S"))
+        tagList(
+            sequence_config_ui(ns("sequence_config"))
+        )
+    })
+    callModule(sequence_config_server, "sequence_config")
+}
+
+#' Microsat config ui
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_config_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        box(
+            title = "Setup Microsat locus configuration",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            tagList(
+                helpText(
+                    icon("info-circle"),
+                    "By default (for new projects),",
+                    "all Microsat loci are assumed to be dinucleid",
+                    "(motif = 2) with a range of 40."
+                )
+            )
+        )
+    )
+}
+
+#' Microsat config server
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_config_server <- function(input, output, session) {}
+
+#' Sequence config ui
+#' @keywords internal
+#' @author Ghislain Durif
+sequence_config_ui <- function(id) {
+    ns <- NS(id)
+    # help page
+    sequence_config_help <- tagList()
+    
+    tagList(
+        # %>%
+        #     helper(
+        #         type = "inline", 
+        #         content = as.character(mss_config_help)
+        #     ),
+        box(
+            title = "Setup Sequence locus configuration",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            "TODO"
+        )
+    )
+}
+
+#' Sequence config server
+#' @keywords internal
+#' @author Ghislain Durif
+sequence_config_server <- function(input, output, session) {}
+
+#' MSS group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_group_prior_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("microsat")),
+        uiOutput(ns("sequence"))
+    )
+}
+
+#' MSS group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+mss_group_prior_server <- function(input, output, session) {
+    # namespace
+    ns <- session$ns
+    # microsat
+    output$microsat <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        req(any(env$ap$data_check$locus_mode == "M"))
+        tagList(
+            microsat_group_prior_ui(ns("microsat_prior"))
+        )
+    })
+    callModule(microsat_group_prior_server, "microsat_prior")
+    # sequence
+    output$sequence <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        req(any(env$ap$data_check$locus_mode == "S"))
+        tagList(
+            sequence_group_prior_ui(ns("sequence_prior"))
+        )
+    })
+    callModule(sequence_group_prior_server, "sequence_prior")
+}
+
+#' Microsat group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_group_prior_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        box(
+            title = "Setup Microsat group priors",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            "TODO"
+        )
+    )
+}
+
+#' Microsat group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_group_prior_server <- function(input, output, session) {}
+
+#' Sequence group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+sequence_group_prior_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        box(
+            title = "Setup Sequence group priors",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            "TODO"
+        )
+    )
+}
+
+#' Sequence group prior setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+sequence_group_prior_server <- function(input, output, session) {}
 
