@@ -724,3 +724,43 @@ clean_snp_locus_desc <- function(locus_desc, locus_count) {
     # output
     return(out)
 }
+
+#' Default locus description for Microsat data
+#' @keywords internal
+#' @author Ghislain Durif
+default_microsat_locus_desc <- function(locus_name, locus_type, group_id = 1) {
+    return(format_microsat_locus_desc(
+        locus_name, locus_type, group_id, motif = 2, range = 40
+    ))
+}
+
+#' Format locus description for Microsat data
+#' @keywords internal
+#' @author Ghislain Durif
+format_microsat_locus_desc <- function(
+    locus_name, locus_type, group_id = 1, motif = 2, range = 40
+) {
+    # check input
+    if(!(length(locus_type) %in% c(1, length(locus_name)))) {
+        stop("Issue with `locus_type` input.")
+    }
+    if(!(length(group_id) %in% c(1, length(locus_name)))) {
+        stop("Issue with `group_id` input.")
+    }
+    if(!(length(motif) %in% c(1, length(locus_name)))) {
+        stop("Issue with `motif` input.")
+    }
+    if(!(length(range) %in% c(1, length(locus_name)))) {
+        stop("Issue with `range` input.")
+    }
+    # format
+    out <- str_c(
+        locus_name, 
+        str_c("<", locus_type, ">"), 
+        "[M]",
+        str_c("G", group_id),
+        motif, range, sep = " "
+    )
+    # output
+    return(out)
+}
