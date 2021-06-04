@@ -838,7 +838,8 @@ read_mss_data <- function(data_file, data_dir) {
         data_file = NULL, n_loci = NULL, locus_count = NULL, 
         n_pop = NULL, n_indiv = NULL, pop_size = NULL,
         sex_ratio = NULL, 
-        locus_desc = NULL, locus_name = NULL, locus_mode = NULL
+        locus_desc = NULL, locus_name = NULL, locus_mode = NULL,
+        seq_length = NULL
     )
     
     # ## init output
@@ -1317,6 +1318,9 @@ read_mss_data <- function(data_file, data_dir) {
     out$locus_name <- locus_name
     out$locus_desc <- locus_desc
     out$locus_mode <- locus_mode
+    
+    out$seq_length <- rep(NA, out$n_loci)
+    out$seq_length[locus_mode == "S"] <- seq_length
     
     ## output
     return(out)

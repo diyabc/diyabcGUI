@@ -334,6 +334,7 @@ test_that("read_mss_data", {
     expect_equal(length(res$locus_desc), res$n_loci)
     expect_equal(length(res$locus_name), res$n_loci)
     expect_equal(length(res$locus_mode), res$n_loci)
+    expect_equal(sum(!is.na(res$seq_length)), sum(res$locus_mode == "S"))
     
     ## bad file
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
