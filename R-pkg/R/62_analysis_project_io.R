@@ -434,6 +434,15 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                 seq(nrow(data_check$locus_count))
                             ),
                             function(item) {
+                                filter_criterion <- str_c(
+                                    "with MAF <", 
+                                    as.character(data_check$maf)
+                                )
+                                if(as.character(data_check$maf) == "hudson") {
+                                    filter_criterion <- str_c(
+                                        "with MAF = 0"
+                                    )
+                                }
                                 return(list(
                                     tags$li(
                                         "Number of ", 
@@ -442,12 +451,11 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                     ), 
                                     tags$ul(
                                         tags$li(
-                                            "Number of excluded loci", 
-                                            "(with MAF <", 
-                                            as.character(data_check$maf), 
-                                            ") =",
+                                            "Number of excluded loci =",
                                             as.character(item$filter), 
-                                            ", including", 
+                                            "(", 
+                                            filter_criterion, 
+                                            "), including", 
                                             as.character(item$mono),
                                             "monomorphic loci."
                                         ),
@@ -488,10 +496,10 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                     "Total number of loci =", as.character(data_check$n_loci),
                 ),
                 tags$li(
-                    "Number of excluded loci (with MRC <", 
-                    as.character(data_check$n_loci), ") =",
+                    "Number of excluded loci =",
                     as.character(data_check$locus_count$filter), 
-                    ", including", as.character(data_check$locus_count$mono),
+                    "(with MRC <", as.character(data_check$mrc), 
+                    "), including", as.character(data_check$locus_count$mono),
                     "monomorphic loci."
                 ),
                 tags$li(
