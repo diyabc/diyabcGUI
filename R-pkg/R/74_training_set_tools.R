@@ -764,3 +764,40 @@ format_microsat_locus_desc <- function(
     # output
     return(out)
 }
+
+#' Default locus description for Sequence data
+#' @keywords internal
+#' @author Ghislain Durif
+default_sequence_locus_desc <- function(locus_name, locus_type, group_id = 1) {
+    return(format_sequence_locus_desc(
+        locus_name, locus_type, group_id, seq_length = 1000
+    ))
+}
+
+#' Format locus description for Sequence data
+#' @keywords internal
+#' @author Ghislain Durif
+format_sequence_locus_desc <- function(
+    locus_name, locus_type, group_id = 1, seq_length = 1000
+) {
+    # check input
+    if(!(length(locus_type) %in% c(1, length(locus_name)))) {
+        stop("Issue with `locus_type` input.")
+    }
+    if(!(length(group_id) %in% c(1, length(locus_name)))) {
+        stop("Issue with `group_id` input.")
+    }
+    if(!(length(seq_length) %in% c(1, length(locus_name)))) {
+        stop("Issue with `seq_length` input.")
+    }
+    # format
+    out <- str_c(
+        locus_name, 
+        str_c("<", locus_type, ">"), 
+        "[S]",
+        str_c("G", group_id),
+        seq_length, sep = " "
+    )
+    # output
+    return(out)
+}

@@ -474,22 +474,15 @@ test_that("clean_snp_locus_desc", {
 })
 
 test_that("default_microsat_locus_desc", {
-    # MWE single locus/single param
+    # MWE single locus
     locus_name <- str_c("locus", 1)
     locus_type <- "A"
     res <- default_microsat_locus_desc(locus_name, locus_type, group_id = 1)
     expect_equal(res, "locus1 <A> [M] G1 2 40")
     
-    # MWE multiple locus/multiple param (case 1)
+    # MWE multiple locus
     locus_name <- str_c("locus", 1:20)
     locus_type <- rep(c("A", "M"), each = 10)
-    res <- default_microsat_locus_desc(locus_name, locus_type, group_id = 1)
-    expect_equal(length(res), length(locus_name))
-    expect_equal(res[1], "locus1 <A> [M] G1 2 40")
-    
-    # MWE multiple locus/multiple param (case 1)
-    locus_name <- str_c("locus", 1:20)
-    locus_type <- rep(c("A", "M"), times = 10)
     res <- default_microsat_locus_desc(locus_name, locus_type, group_id = 1)
     expect_equal(length(res), length(locus_name))
     expect_equal(res[1], "locus1 <A> [M] G1 2 40")
@@ -513,7 +506,7 @@ test_that("format_microsat_locus_desc", {
     expect_equal(length(res), length(locus_name))
     expect_equal(res[1], "locus1 <A> [M] G1 2 40")
     
-    # MWE multiple locus/multiple param (case 1)
+    # MWE multiple locus/multiple param (case 2)
     locus_name <- str_c("locus", 1:20)
     locus_type <- rep(c("A", "M"), times = 10)
     group_id <- sort(rep(1:2, each = 10))
@@ -526,4 +519,47 @@ test_that("format_microsat_locus_desc", {
     expect_equal(res[1], "locus1 <A> [M] G1 2 40")
 })
 
+test_that("default_sequence_locus_desc", {
+    # MWE single locus/single param
+    locus_name <- str_c("locus", 1)
+    locus_type <- "A"
+    res <- default_sequence_locus_desc(locus_name, locus_type, group_id = 1)
+    expect_equal(res, "locus1 <A> [S] G1 1000")
+    
+    # MWE multiple locus
+    locus_name <- str_c("locus", 1:20)
+    locus_type <- rep(c("A", "M"), each = 10)
+    res <- default_sequence_locus_desc(locus_name, locus_type, group_id = 1)
+    expect_equal(length(res), length(locus_name))
+    expect_equal(res[1], "locus1 <A> [S] G1 1000")
+})
 
+test_that("format_sequence_locus_desc", {
+    # MWE single locus/single param
+    locus_name <- str_c("locus", 1)
+    locus_type <- "A"
+    res <- format_sequence_locus_desc(
+        locus_name, locus_type, group_id = 1, seq_length = 1000
+    )
+    expect_equal(res, "locus1 <A> [S] G1 1000")
+    
+    # MWE multiple locus/multiple param (case 1)
+    locus_name <- str_c("locus", 1:20)
+    locus_type <- rep(c("A", "M"), each = 10)
+    res <- format_sequence_locus_desc(
+        locus_name, locus_type, group_id = 1, seq_length = 1000
+    )
+    expect_equal(length(res), length(locus_name))
+    expect_equal(res[1], "locus1 <A> [S] G1 1000")
+    
+    # MWE multiple locus/multiple param (case 1)
+    locus_name <- str_c("locus", 1:20)
+    locus_type <- rep(c("A", "M"), times = 10)
+    group_id <- sort(rep(1:2, each = 10))
+    seq_length <- c(rep(1000, 15), rep(1200, 5))
+    res <- format_sequence_locus_desc(
+        locus_name, locus_type, group_id, seq_length
+    )
+    expect_equal(length(res), length(locus_name))
+    expect_equal(res[1], "locus1 <A> [S] G1 1000")
+})
