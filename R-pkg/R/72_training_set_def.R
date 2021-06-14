@@ -1664,6 +1664,77 @@ mss_config_server <- function(input, output, session) {
     callModule(sequence_config_server, "sequence_config")
 }
 
+#' Number of group setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+n_group_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        fluidRow(
+            column(
+                width = 4,
+                uiOutput(ns("n_group"))
+            ),
+            column(
+                width = 8,
+                actionGroupButtons(
+                    inputIds = c(ns("add_group"), ns("rm_group")),
+                    labels = list(
+                        tags$span(icon("plus"), "Add group"),
+                        tags$span(icon("minus"), "Remove group")
+                    ),
+                    fullwidth = TRUE
+                )
+            )
+        )
+    )
+}
+
+#' Number of group setup server
+#' @keywords internal
+#' @author Ghislain Durif
+n_group_server <- function(
+    input, output, session, n_group = reactive({NULL})
+) {
+    # init local
+    local <- reactiveValues(n_group = NULL)
+    
+    # init output
+    out <- reactiveValues(n_group = NULL)
+    
+    # get input
+    observe({
+        local$n_group <- n_group()
+    })
+    
+    # add a group
+    observeEvent(input$add_group, {
+        local$n_group <- ifelse(is.null(local$n_group), 0, local$n_group) + 1
+    })
+    
+    # remove a group
+    observeEvent(input$rm_group, {
+        req(is.numeric(local$n_group))
+        req(local$n_group > 1)
+        local$n_group <- local$n_group - 1
+    })
+    
+    # rendering
+    output$n_group <- renderUI({
+        tagList(
+            h5(tags$b("Number of groups =", as.character(local$n_group)))
+        )
+    })
+    
+    # output
+    observeEvent(local$n_group, {
+        req(is.numeric(local$n_group))
+        req(local$n_group > 0)
+        out$n_group <- local$n_group
+    })
+    return(out)
+}
+
 #' Microsat config ui
 #' @keywords internal
 #' @author Ghislain Durif
@@ -1676,11 +1747,29 @@ microsat_config_ui <- function(id) {
             collapsible = TRUE,
             collapsed = TRUE,
             tagList(
+                n_group_ui(ns("n_group")),
                 helpText(
                     icon("info-circle"),
                     "By default (for new projects),",
                     "all Microsat loci are assumed to be dinucleid",
                     "(motif = 2) with a range of 40."
+                ),
+                uiOutput(ns("microsat_locus_list")),
+                hr(),
+                fluidRow(
+                    column(
+                        width = 4,
+                        actionButton(
+                            ns("validate"),
+                            label = "Validate your models",
+                            icon = icon("check"),
+                            width = '100%'
+                        )
+                    ),
+                    column(
+                        width = 8,
+                        uiOutput(ns("feedback"))
+                    )
                 )
             )
         )
@@ -1690,27 +1779,137 @@ microsat_config_ui <- function(id) {
 #' Microsat config server
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_config_server <- function(input, output, session) {}
+microsat_config_server <- function(input, output, session) {
+    
+    # init local
+    local <- reactiveValues(
+        n_group = NULL, group_ids = NULL
+    )
+    
+    # current locus description (default or the one)
+    observeEvent({
+        c(env$ap$locus_type, env$ap$data_check, env$ap$header_check)
+    }, {
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_mode)
+        req(any(env$ap$data_check$locus_mode == "M"))
+        
+    })
+    
+    
+    # number of groups
+    callModule(n_group_server, "n_group")
+}
+
+#' Microsat locus setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_locus_setup_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("locus_setup"))
+    )
+}
+
+#' Microsat locus setup ui
+#' @keywords internal
+#' @author Ghislain Durif
+microsat_locus_setup_server <- function(input, output, session,
+                                        locus_setup = reactive({NULL}),
+                                        group_ids = reactive({NULL})) {
+    
+    # init local
+    local <- reactiveValues(
+        name = NULL,
+        group = NULL,
+        motif = NULL,
+        range = NULL,
+        # input
+        locus_setup = NULL,
+        group_ids = NULL
+    )
+    
+    # init output
+    out <- reactiveValues(locus_setup = NULL)
+    
+    # get input
+    observe({
+        local$locus_setup <- locus_setup()
+        local$group_ids <- group_ids()
+    })
+    
+    output$locus_setup <- renderUI({
+        req(local$name)
+        req(local$group)
+        req(local$motif)
+        req(local$range)
+        req(local$group_ids)
+        
+        tagList(
+            fluidRow(
+                column(
+                    width = 3,
+                    shinyjs::disabled(
+                        textInput(
+                            ns("name"),
+                            label = "Locus",
+                            value = local$name
+                        )
+                    )
+                ),
+                column(
+                    width = 3,
+                    selectInput(
+                        ns("group"),
+                        label = "Group",
+                        choices = as.character(local$group_ids),
+                        selected = as.character(local$group)
+                    )
+                ),
+                column(
+                    width = 3,
+                    numericInput(
+                        ns("motif"),
+                        label = "Motif",
+                        value = local$motif,
+                        min = 0,
+                        max = 10
+                    )
+                ),
+                column(
+                    width = 3,
+                    numericInput(
+                        ns("range"),
+                        label = "Range",
+                        value = local$range,
+                        min = 10,
+                        max = 100
+                    )
+                )
+            )
+        )
+    })
+    
+    
+    # output
+    return(out)
+}
 
 #' Sequence config ui
 #' @keywords internal
 #' @author Ghislain Durif
 sequence_config_ui <- function(id) {
     ns <- NS(id)
-    # help page
-    sequence_config_help <- tagList()
-    
     tagList(
-        # %>%
-        #     helper(
-        #         type = "inline", 
-        #         content = as.character(mss_config_help)
-        #     ),
         box(
             title = "Setup Sequence locus configuration",
             width = 12,
             collapsible = TRUE,
             collapsed = TRUE,
+            n_group_ui(ns("n_group")),
             "TODO"
         )
     )
@@ -1719,7 +1918,9 @@ sequence_config_ui <- function(id) {
 #' Sequence config server
 #' @keywords internal
 #' @author Ghislain Durif
-sequence_config_server <- function(input, output, session) {}
+sequence_config_server <- function(input, output, session) {
+    callModule(n_group_server, "n_group")
+}
 
 #' MSS group prior setup ui
 #' @keywords internal
