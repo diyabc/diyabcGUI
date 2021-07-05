@@ -1697,13 +1697,14 @@ n_group_server <- function(
     input, output, session, n_group = reactive({NULL})
 ) {
     # init local
-    local <- reactiveValues(n_group = NULL)
+    local <- reactiveValues(n_group = 1)
     
     # init output
     out <- reactiveValues(n_group = NULL)
     
     # get input
     observe({
+        req(n_group())
         local$n_group <- n_group()
     })
     
