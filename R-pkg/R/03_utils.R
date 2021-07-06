@@ -188,6 +188,7 @@ dl_all_latest_bin <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 pprint <- function(...) {
+    print(str_c("--- content of ",deparse(substitute(...))))
     # message(as.character(...))
     print(...)
 }
@@ -207,7 +208,7 @@ reset_sink <- function() {
 #' @author Ghislain Durif
 logging <- function(...) {
     if(getOption("diyabcGUI")$verbose)
-        pprint(str_c(..., sep = " ", collapse = " "))
+        print(str_c(..., sep = " ", collapse = " "))
 }
 
 #' Enable logging verbosity
