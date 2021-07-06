@@ -765,15 +765,6 @@ format_microsat_locus_desc <- function(
     return(out)
 }
 
-#' Default locus description for Sequence data
-#' @keywords internal
-#' @author Ghislain Durif
-default_sequence_locus_desc <- function(locus_name, locus_type, group_id = 1) {
-    return(format_sequence_locus_desc(
-        locus_name, locus_type, group_id, seq_length = 1000
-    ))
-}
-
 #' Format locus description for Sequence data
 #' @keywords internal
 #' @author Ghislain Durif
@@ -805,10 +796,13 @@ format_sequence_locus_desc <- function(
 #' Default locus description for MSS data
 #' @keywords internal
 #' @author Ghislain Durif
-default_mss_locus_desc <- function(locus_name, locus_type, locus_mode) {
+default_mss_locus_desc <- function(
+    locus_name, locus_type, locus_mode, seq_length
+) {
     # check input
     if((length(locus_name) != length(locus_type)) || 
-       (length(locus_name) != length(locus_mode))) {
+       (length(locus_name) != length(locus_mode)) ||
+       (length(locus_name) != length(seq_length))) {
         stop("All input should have the same length")
     }
     if(!is.character(locus_name) || any(str_length(locus_name) == 0)) {
@@ -819,6 +813,11 @@ default_mss_locus_desc <- function(locus_name, locus_type, locus_mode) {
     }
     if(!all(locus_mode %in% c("M", "S"))) {
         stop("Issue with 'locus_mode' input")
+    }
+    if(any(locus_mode == "S") && 
+       !is.numeric(seq_length) &&
+       (sum(!is.na(seq_length)) != sum(locus_mode == "S"))) {
+        stop("Issue with 'seq_length' input")
     }
     
     # init output
@@ -833,14 +832,20 @@ default_mss_locus_desc <- function(locus_name, locus_type, locus_mode) {
     sequence_group_id <- which(unique(locus_mode) == "S")
     
     # microsat default locus desc
-    locus_desc[microsat_mask] <- default_microsat_locus_desc(
-        locus_name[microsat_mask], locus_type[microsat_mask], microsat_group_id
-    )
+    if(any(microsat_mask)) {
+        locus_desc[microsat_mask] <- default_microsat_locus_desc(
+            locus_name[microsat_mask], locus_type[microsat_mask], 
+            microsat_group_id
+        )
+    }
     
     # sequence default locus desc
-    locus_desc[sequence_mask] <- default_sequence_locus_desc(
-        locus_name[sequence_mask], locus_type[sequence_mask], sequence_group_id
-    )
+    if(any(sequence_mask)) {
+        locus_desc[sequence_mask] <- format_sequence_locus_desc(
+            locus_name[sequence_mask], locus_type[sequence_mask], 
+            sequence_group_id, seq_length[sequence_mask]
+        )
+    }
     
     # output
     return(locus_desc)
