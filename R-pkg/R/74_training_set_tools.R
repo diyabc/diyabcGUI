@@ -858,7 +858,7 @@ default_mss_locus_desc <- function(
 #' Renumber groups starting from a given id (to avoid empty groups)
 correct_mss_locus_desc_group_id <- function(locus_desc, start_id) {
     # get current groups
-    old_group_id <- sort(unique(str_extract(locus_desc, "G[0-9]+")))
+    old_group_id <- unique(str_extract(locus_desc, "G[0-9]+"))
     # number of groups
     n_group <- length(old_group_id)
     # new group id encoding
