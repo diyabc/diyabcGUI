@@ -801,3 +801,44 @@ format_sequence_locus_desc <- function(
     # output
     return(out)
 }
+
+#' Default locus description for MSS data
+#' @keywords internal
+#' @author Ghislain Durif
+default_mss_locus_desc <- function(locus_name, locus_type, locus_mode) {
+    # check input
+    if((length(locus_name) != length(locus_type)) || 
+       (length(locus_name) != length(locus_mode))) {
+        stop("All input should have the same length")
+    }
+    if(!is.character(locus_name) || any(str_length(locus_name) == 0)) {
+        stop("Issue with 'locus_name' input")
+    }
+    if(!all(locus_type %in% c("A", "H", "X", "Y", "M"))) {
+        stop("Issue with 'locus_type' input")
+    }
+    if(!all(locus_mode %in% c("M", "S"))) {
+        stop("Issue with 'locus_mode' input")
+    }
+    # init output
+    locus_desc <- character(length(locus_name))
+    # mask
+    microsat_mask <- (locus_mode == "M")
+    sequence_mask <- (locus_mode == "S")
+    # group id
+    microsat_group_id <- which(unique(locus_mode) == "M")
+    sequence_group_id <- which(unique(locus_mode) == "S")
+    
+    # microsat default locus desc
+    locus_desc[microsat_mask] <- default_microsat_locus_desc(
+        locus_name[microsat_mask], locus_type[microsat_mask], microsat_group_id
+    )
+    
+    # sequence default locus desc
+    locus_desc[sequence_mask] <- default_sequence_locus_desc(
+        locus_name[sequence_mask], locus_type[sequence_mask], sequence_group_id
+    )
+    
+    # output
+    return(locus_desc)
+}

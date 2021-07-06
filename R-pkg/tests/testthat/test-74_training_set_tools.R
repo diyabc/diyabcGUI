@@ -563,3 +563,23 @@ test_that("format_sequence_locus_desc", {
     expect_equal(length(res), length(locus_name))
     expect_equal(res[1], "locus1 <A> [S] G1 1000")
 })
+
+test_that("default_mss_locus_desc", {
+    # MWE 1
+    locus_name <- str_c("locus", 1:20)
+    locus_type <- rep(c("A", "M"), each = 10)
+    locus_mode <- rep(c("M", "S"), times = 10)
+    res <- default_mss_locus_desc(locus_name, locus_type, locus_mode)
+    expect_equal(length(res), length(locus_name))
+    expect_equal(res[1], "locus1 <A> [M] G1 2 40")
+    expect_equal(res[2], "locus2 <A> [S] G2 1000")
+    
+    # MWE 2
+    locus_name <- str_c("locus", 1:20)
+    locus_type <- rep(c("A", "M"), times = 10)
+    locus_mode <- rep(c("M", "S"), each = 10)
+    res <- default_mss_locus_desc(locus_name, locus_type, locus_mode)
+    expect_equal(length(res), length(locus_name))
+    expect_equal(res[1], "locus1 <A> [M] G1 2 40")
+    expect_equal(res[11], "locus11 <A> [S] G2 1000")
+})
