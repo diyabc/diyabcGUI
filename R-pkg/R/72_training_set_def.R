@@ -1636,6 +1636,34 @@ mss_config_ui <- function(id) {
 mss_config_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
+    
+    # locus description (default or given in the header)
+    observeEvent({
+        c(env$ap$locus_type, env$ap$data_check, env$ts$locus_desc)
+    }, {
+        
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ap$data_check$locus_name)
+        req(env$ap$data_check$locus_type)
+        req(env$ap$data_check$locus_mode)
+        if(any(env$ap$data_check$locus_type == "S")) {
+            req(env$ap$data_check$seq_length)
+        }
+        
+        if(!isTruthy(env$ts$locus_desc) || 
+           !check_header_locus_desc(env$ts$locus_desc, type = "mss")) {
+            env$ts$locus_desc <- default_mss_locus_desc(
+                env$ap$data_check$locus_name, 
+                env$ap$data_check$locus_type, 
+                env$ap$data_check$locus_mode, 
+                env$ap$data_check$seq_length
+            )
+        }
+    })
+    
     # microsat
     output$microsat <- renderUI({
         req(env$ap$locus_type)
@@ -1649,6 +1677,7 @@ mss_config_server <- function(input, output, session) {
         )
     })
     callModule(microsat_config_server, "microsat_config")
+    
     # sequence
     output$sequence <- renderUI({
         req(env$ap$locus_type)
@@ -1762,7 +1791,7 @@ microsat_config_ui <- function(id) {
                         width = 4,
                         actionButton(
                             ns("validate"),
-                            label = "Validate your models",
+                            label = "Validate",
                             icon = icon("check"),
                             width = '100%'
                         )
@@ -1782,27 +1811,90 @@ microsat_config_ui <- function(id) {
 #' @author Ghislain Durif
 microsat_config_server <- function(input, output, session) {
     
+    # namespace
+    ns <- session$ns
+    
     # init local
     local <- reactiveValues(
-        n_group = NULL, group_ids = NULL
+        group_id = NULL, locus_desc = NULL, unused_locus_desc = NULL, 
+        locus_mask = NULL
     )
     
-    # current locus description (default or the one)
+    # current locus description (default or given in the header)
     observeEvent({
-        c(env$ap$locus_type, env$ap$data_check, env$ap$header_check)
+        c(env$ap$locus_type, env$ap$data_check, env$ts$locus_desc)
     }, {
+        
         req(env$ap$locus_type)
         req(env$ap$locus_type == "mss")
         req(env$ap$data_check)
         req(env$ap$data_check$valid)
         req(env$ap$data_check$locus_mode)
         req(any(env$ap$data_check$locus_mode == "M"))
+        req(env$ts$locus_desc)
         
+        local$locus_mask <- str_detect(env$ts$locus_desc, "\\[M\\]")
+        local$locus_desc <- env$ts$locus_desc[local$locus_mask]
+        local$unused_locus_desc <- env$ts$locus_desc[!local$locus_mask]
+
+        local$group_id <- unique(as.integer(str_extract(
+            local$locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+        )))
+
+        local$n_group <- length(unique(local$group_id))
     })
     
-    
     # number of groups
-    callModule(n_group_server, "n_group")
+    n_group_server <- callModule(
+        n_group_server, "n_group", n_group = reactive(local$n_group)
+    )
+    observeEvent(n_group_server$n_group, {
+        req(n_group_server$n_group)
+        req(local$n_group)
+        req(local$group_id)
+        if(n_group_server$n_group > local$n_group) {
+            local$group_id <- c(
+                local$group_id,
+                max(local$group_id) + 
+                    1:(n_group_server$n_group - local$n_group)
+            )
+        } else {
+            local$group_id <- local$group_id[1:n_group_server$n_group]
+        }
+        local$n_group <- n_group_server$n_group
+    })
+    
+    # render locus description setup
+    observeEvent(local$locus_desc, {
+        output$microsat_locus_list <- renderUI({
+            tag_list <- unname(lapply(
+                1:length(local$locus_desc),
+                function(ind) {
+                    return(microsat_locus_setup_ui(ns(str_c("locus", ind))))
+                }
+            ))
+            do.call(tagList, tag_list)
+        })
+    })
+    
+    # locus description setup server-side
+    observe({
+        modified_locus_desc <- unname(unlist(lapply(
+            1:length(local$locus_desc),
+            function(ind) {
+                tmp <- callModule(
+                    microsat_locus_setup_server,
+                    str_c("locus", ind),
+                    locus_desc = reactive(local$locus_desc[ind]),
+                    group_id = reactive(local$group_id)
+                )
+            }
+        )))
+    })
+    
+    # TODO
+    # correct the group id in global locus description depending on 
+    # active Microsat groups
 }
 
 #' Microsat locus setup ui
@@ -1818,9 +1910,13 @@ microsat_locus_setup_ui <- function(id) {
 #' Microsat locus setup ui
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_locus_setup_server <- function(input, output, session,
-                                        locus_setup = reactive({NULL}),
-                                        group_ids = reactive({NULL})) {
+microsat_locus_setup_server <- function(
+    input, output, session, locus_desc = reactive({NULL}),
+    group_id = reactive({NULL})
+) {
+    
+    # namespace
+    ns <- session$ns
     
     # init local
     local <- reactiveValues(
@@ -1829,25 +1925,53 @@ microsat_locus_setup_server <- function(input, output, session,
         motif = NULL,
         range = NULL,
         # input
-        locus_setup = NULL,
-        group_ids = NULL
+        locus_desc = NULL,
+        group_id = NULL
     )
     
     # init output
-    out <- reactiveValues(locus_setup = NULL)
+    out <- reactiveValues(locus_desc = NULL)
     
     # get input
     observe({
-        local$locus_setup <- locus_setup()
-        local$group_ids <- group_ids()
+        local$locus_desc <- locus_desc()
+        local$group_id <- group_id()
     })
     
+    # parse locus description
+    observeEvent(local$locus_desc, {
+        req(local$locus_desc)
+        
+        local$name <- str_extract(
+            local$locus_desc, 
+            str_c("^", single_param_regex(), "(?= )")
+        )
+        
+        local$group <- str_extract(local$locus_desc, "(?<=G)[0-9]+")
+        
+        local$motif <- as.integer(str_extract(
+            local$locus_desc, "(?<= )[0-9]+(?= )"
+        ))
+        
+        local$range <- as.integer(str_extract(
+            local$locus_desc, "(?<= )[0-9]+$"
+        ))
+    })
+    
+    # render locus setup
     output$locus_setup <- renderUI({
+        
+        # pprint(local$name)
+        # pprint(local$group)
+        # pprint(local$motif)
+        # pprint(local$range)
+        # pprint(local$group_id)
+        
         req(local$name)
         req(local$group)
         req(local$motif)
         req(local$range)
-        req(local$group_ids)
+        req(local$group_id)
         
         tagList(
             fluidRow(
@@ -1866,7 +1990,7 @@ microsat_locus_setup_server <- function(input, output, session,
                     selectInput(
                         ns("group"),
                         label = "Group",
-                        choices = as.character(local$group_ids),
+                        choices = as.character(local$group_id),
                         selected = as.character(local$group)
                     )
                 ),
@@ -1894,6 +2018,21 @@ microsat_locus_setup_server <- function(input, output, session,
         )
     })
     
+    # parse output
+    observe({
+        req(input$group)
+        req(input$motif)
+        req(input$range)
+        
+        out$locus_desc <- str_c(
+            str_extract(local$locus_desc, "^.+(?= G[0-9]+)"),
+            " G", as.character(input$group),
+            " ", as.character(input$motif),
+            " ", as.character(input$range)
+        )
+        
+        # pprint(out$locus_desc)
+    })
     
     # output
     return(out)
