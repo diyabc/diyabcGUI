@@ -579,3 +579,28 @@ test_that("default_mss_locus_desc", {
     expect_equal(res[1], "locus1 <A> [M] G1 2 40")
     expect_equal(res[11], "locus11 <A> [S] G2 1000")
 })
+
+test_that("correct_mss_locus_desc_group_id", {
+    
+    # MWE
+    locus_name <- str_c("locus", 1:10)
+    locus_type <- rep(c("A", "M"), times = 5)
+    locus_mode <- rep("M", each = 10)
+    seq_length <- numeric(length(locus_type))
+    seq_length[locus_mode == "S"] <- 1000
+    seq_length[locus_mode != "S"] <- NA
+    locus_desc <- default_mss_locus_desc(
+        locus_name, locus_type, locus_mode, seq_length
+    )
+    locus_desc[6:10] <- str_replace(locus_desc[6:10], "G1", "G3")
+    
+    start_id <- 5
+    
+    res <- correct_mss_locus_desc_group_id(locus_desc, start_id)
+    expect_true(is.character(res))
+    expect_equal(length(res), length(locus_desc))
+    expect_identical(
+        str_extract(res, "G[0-9]+"), rep(c("G5", "G6"), each = 5)
+    )
+    
+})

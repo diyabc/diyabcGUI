@@ -850,3 +850,27 @@ default_mss_locus_desc <- function(
     # output
     return(locus_desc)
 }
+
+#' Correct group in in MSS locus desc
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Renumber groups starting from a given id (to avoid empty groups)
+correct_mss_locus_desc_group_id <- function(locus_desc, start_id) {
+    # get current groups
+    old_group_id <- sort(unique(str_extract(locus_desc, "G[0-9]+")))
+    # number of groups
+    n_group <- length(old_group_id)
+    # new group id encoding
+    new_groupd_id <- str_c("G", (1:n_group) + (start_id - 1))
+    # replace group id
+    out <- locus_desc
+    for(ind in 1:n_group) {
+        mask <- str_detect(locus_desc, old_group_id[ind])
+        out[mask] <- str_replace(
+            locus_desc[mask], old_group_id[ind], new_groupd_id[ind]
+        )
+    }
+    # output
+    return(out)
+}
