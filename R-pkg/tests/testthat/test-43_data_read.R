@@ -317,7 +317,27 @@ test_that("check_snp_poolseq", {
 
 test_that("read_mss_data", {
     
-    ## good file
+    ## good file microsat
+    data_file <- "simu_dataset_microsat_one_pop_bottleneck_multisamples_001.mss"
+    data_dir <- file.path(data4test_dir(), "Microsat")
+    res <- read_mss_data(data_file, data_dir)
+    expect_true(res$valid)
+    expect_equal(length(res$msg), 0)
+    expect_equal(res$data_file, data_file)
+    expect_equal(res$n_loci, 50)
+    expect_true(is.data.frame(res$locus_count))
+    expect_equal(sum(res$locus_count$count), res$n_loci)
+    expect_equal(res$n_pop, 4)
+    expect_equal(res$n_indiv, 80)
+    expect_equal(res$pop_size, c(20,20,20,20))
+    expect_equal(res$sex_ratio, "NM=1.0NF")
+    expect_equal(length(res$locus_type), res$n_loci)
+    expect_equal(length(res$locus_name), res$n_loci)
+    expect_equal(length(res$locus_mode), res$n_loci)
+    expect_equal(length(res$seq_length), res$n_loci)
+    expect_equal(sum(!is.na(res$seq_length)), sum(res$locus_mode == "S"))
+    
+    ## good file microsat/sequence
     data_file <- "mss_example_001.mss"
     data_dir <- data4test_dir("mss")
     res <- read_mss_data(data_file, data_dir)
@@ -334,6 +354,7 @@ test_that("read_mss_data", {
     expect_equal(length(res$locus_type), res$n_loci)
     expect_equal(length(res$locus_name), res$n_loci)
     expect_equal(length(res$locus_mode), res$n_loci)
+    expect_equal(length(res$seq_length), res$n_loci)
     expect_equal(sum(!is.na(res$seq_length)), sum(res$locus_mode == "S"))
     
     ## bad file
