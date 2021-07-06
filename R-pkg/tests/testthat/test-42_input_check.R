@@ -8,7 +8,7 @@ test_that("check_file_name", {
     file_name <- file.path(test_dir, "statobsRF.txt")
     expect_true(check_file_name(file_name))
     
-    # unexisting file
+    # not existing file
     file_name <- file.path(test_dir, "toto.txt")
     expect_false(check_file_name(file_name))
     
