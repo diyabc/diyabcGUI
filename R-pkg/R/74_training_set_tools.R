@@ -820,11 +820,14 @@ default_mss_locus_desc <- function(locus_name, locus_type, locus_mode) {
     if(!all(locus_mode %in% c("M", "S"))) {
         stop("Issue with 'locus_mode' input")
     }
+    
     # init output
     locus_desc <- character(length(locus_name))
+    
     # mask
     microsat_mask <- (locus_mode == "M")
     sequence_mask <- (locus_mode == "S")
+    
     # group id
     microsat_group_id <- which(unique(locus_mode) == "M")
     sequence_group_id <- which(unique(locus_mode) == "S")
