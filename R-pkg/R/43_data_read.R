@@ -838,7 +838,7 @@ read_mss_data <- function(data_file, data_dir) {
         data_file = NULL, n_loci = NULL, locus_count = NULL, 
         n_pop = NULL, n_indiv = NULL, pop_size = NULL,
         sex_ratio = NULL, 
-        locus_desc = NULL, locus_name = NULL, locus_mode = NULL,
+        locus_type = NULL, locus_name = NULL, locus_mode = NULL,
         seq_length = NULL
     )
     
@@ -981,7 +981,7 @@ read_mss_data <- function(data_file, data_dir) {
     out$n_loci <- length(locus_desc_match_ind)
     
     ## locus description output
-    locus_desc <- locus_pttrn_match
+    locus_type <- locus_pttrn_match
     
     ## locus name
     pttrn <- "^[A-Za-z0-9\\s_\\-]+(?=( <[AHXYM]>)?$)"
@@ -1112,21 +1112,21 @@ read_mss_data <- function(data_file, data_dir) {
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, microsat_hap_encoding)))
             }
-        ) & (locus_desc %in% c("H", "Y", "M"))
+        ) & (locus_type %in% c("H", "Y", "M"))
     )
     microsat_dip_locus <- which(
         apply(
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, microsat_dip_encoding)))
             }
-        ) & (locus_desc == "A")
+        ) & (locus_type == "A")
     )
     microsat_x_locus <- which(
         apply(
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, microsat_x_encoding)))
             }
-        ) & (locus_desc == "X")
+        ) & (locus_type == "X")
     )
     
     ### seq locus
@@ -1135,25 +1135,25 @@ read_mss_data <- function(data_file, data_dir) {
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, seq_hap_encoding)))
             }
-        ) & (locus_desc %in% c("H", "Y", "M"))
+        ) & (locus_type %in% c("H", "Y", "M"))
     )
     seq_dip_locus <- which(
         apply(
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, seq_dip_encoding)))
             }
-        ) & (locus_desc == "A")
+        ) & (locus_type == "A")
     )
     seq_x_locus <- which(
         apply(
             locus_data, 2, function(loc) {
                 return(all(str_detect(loc, seq_x_encoding)))
             }
-        ) & (locus_desc == "X")
+        ) & (locus_type == "X")
     )
     
     ## check that A are diploid locus
-    if(!all(which(locus_desc == "A") %in% 
+    if(!all(which(locus_type == "A") %in% 
             c(microsat_dip_locus, seq_dip_locus))) {
         out$valid <- FALSE
         msg <- tagList(
@@ -1165,7 +1165,7 @@ read_mss_data <- function(data_file, data_dir) {
     }
     
     ## check that H, M and Y are haploid locus
-    if(!all(which(locus_desc %in% c("H", "M", "Y")) %in% 
+    if(!all(which(locus_type %in% c("H", "M", "Y")) %in% 
             c(microsat_hap_locus, seq_hap_locus))) {
         out$valid <- FALSE
         msg <- tagList(
@@ -1311,12 +1311,12 @@ read_mss_data <- function(data_file, data_dir) {
     }
     
     ## locus count
-    out$locus_count <- as.data.frame(table(locus_desc, locus_mode))
+    out$locus_count <- as.data.frame(table(locus_type, locus_mode))
     colnames(out$locus_count) <- c("type", "mode", "count")
     
     ## save locus name, description and mode
     out$locus_name <- locus_name
-    out$locus_desc <- locus_desc
+    out$locus_type <- locus_type
     out$locus_mode <- locus_mode
     
     out$seq_length <- rep(NA, out$n_loci)
