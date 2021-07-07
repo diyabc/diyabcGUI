@@ -1722,16 +1722,22 @@ n_group_ui <- function(id) {
         ),
         helpText(
             icon("warning"),
+            "Choose the definitive number of groups",
+            tags$b("before"),
+            "assigning locus to new groups."
+        ),
+        helpText(
+            icon("warning"),
             "Be advised that,",
             "after affecting loci to groups,", 
-            tags$bf("when you validate"), ",", 
+            tags$b("when you validate"), ",", 
             "the", tags$b("group ids"), "will be potentially", 
             tags$b("reordered and reindexed"), ",",
             "so that the first locus is in the first group,",
             "and to avoid empty group ids.",
             "However, the grouping strategy you choose will not be affected,",
             "only the group ids (if reordering/reindexing is required)."
-        ),
+        )
     )
 }
 
@@ -1767,6 +1773,7 @@ n_group_server <- function(
     
     # rendering
     output$n_group <- renderUI({
+        req(local$n_group)
         tagList(
             h5(tags$b("Number of groups =", as.character(local$n_group)))
         )
@@ -1889,6 +1896,7 @@ mss_locus_list_config_server <- function(
     
     # extract and parse locus description corresponding to given mode (M or S)
     observeEvent(local$initial_locus_desc, {
+        req(local$initial_locus_desc)
         
         # if(local_mode == "S") {
         #     pprint(local$initial_locus_desc)
@@ -1950,6 +1958,7 @@ mss_locus_list_config_server <- function(
     # locus description setup server-side
     observe({
         req(local$locus_desc)
+        req(local$group_id)
         local$locus_def <- lapply(
             1:length(local$locus_desc),
             function(ind) {
@@ -1966,12 +1975,17 @@ mss_locus_list_config_server <- function(
     observe({
         req(local$locus_def)
         local$modified_locus_desc <- unname(unlist(lapply(
-           local$locus_def, function(item) return(item$locus_desc) 
+           local$locus_def, function(item) {
+               req(item$locus_desc)
+               return(item$locus_desc)
+           }
         )))
     })
     
     # modified input ?
     observeEvent(local$modified_locus_desc, {
+        req(local$locus_desc)
+        req(local$modified_locus_desc)
         if(!identical(local$locus_desc, local$modified_locus_desc)) {
             local$validated <- FALSE
         }
@@ -1996,6 +2010,12 @@ mss_locus_list_config_server <- function(
     
     # validation
     observeEvent(input$validate, {
+        req(local$initial_locus_desc)
+        req(env$ap$data_check$locus_mode)
+        req(local$locus_mask)
+        req(local$modified_locus_desc)
+        req(local$unused_locus_desc)
+        
         local$validated <- TRUE
         
         # final locus description
@@ -2308,4 +2328,3 @@ sequence_group_prior_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 sequence_group_prior_server <- function(input, output, session) {}
-
