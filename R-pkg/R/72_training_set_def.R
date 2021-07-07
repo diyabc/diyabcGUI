@@ -1673,10 +1673,12 @@ mss_config_server <- function(input, output, session) {
         req(env$ap$data_check$locus_mode)
         req(any(env$ap$data_check$locus_mode == "M"))
         tagList(
-            microsat_config_ui(ns("microsat_config"))
+            mss_locus_list_config_ui(ns("microsat_config"))
         )
     })
-    callModule(microsat_config_server, "microsat_config")
+    callModule(
+        mss_locus_list_config_server, "microsat_config", local_mode = "M"
+    )
     
     # sequence
     output$sequence <- renderUI({
@@ -1687,10 +1689,12 @@ mss_config_server <- function(input, output, session) {
         req(env$ap$data_check$locus_mode)
         req(any(env$ap$data_check$locus_mode == "S"))
         tagList(
-            sequence_config_ui(ns("sequence_config"))
+            mss_locus_list_config_ui(ns("sequence_config"))
         )
     })
-    callModule(sequence_config_server, "sequence_config")
+    callModule(
+        mss_locus_list_config_server, "sequence_config", local_mode = "S"
+    )
 }
 
 #' Number of group setup ui
@@ -1715,7 +1719,19 @@ n_group_ui <- function(id) {
                     fullwidth = TRUE
                 )
             )
-        )
+        ),
+        helpText(
+            icon("warning"),
+            "Be advised that,",
+            "after affecting loci to groups,", 
+            tags$bf("when you validate"), ",", 
+            "the", tags$b("group ids"), "will be potentially", 
+            tags$b("reordered and reindexed"), ",",
+            "so that the first locus is in the first group,",
+            "and to avoid empty group ids.",
+            "However, the grouping strategy you choose will not be affected,",
+            "only the group ids (if reordering/reindexing is required)."
+        ),
     )
 }
 
@@ -1765,26 +1781,21 @@ n_group_server <- function(
     return(out)
 }
 
-#' Microsat config ui
+#' MSS locus list config ui
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_config_ui <- function(id) {
+mss_locus_list_config_ui <- function(id) {
     ns <- NS(id)
     tagList(
         box(
-            title = "Setup Microsat locus configuration",
+            title = textOutput(ns("title")),
             width = 12,
             collapsible = TRUE,
             collapsed = TRUE,
             tagList(
                 n_group_ui(ns("n_group")),
-                helpText(
-                    icon("info-circle"),
-                    "By default (for new projects),",
-                    "all Microsat loci are assumed to be dinucleid",
-                    "(motif = 2) with a range of 40."
-                ),
-                uiOutput(ns("microsat_locus_list")),
+                uiOutput(ns("help")),
+                uiOutput(ns("locus_list")),
                 hr(),
                 fluidRow(
                     column(
@@ -1806,10 +1817,12 @@ microsat_config_ui <- function(id) {
     )
 }
 
-#' Microsat config server
+#' MSS locus list config server
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_config_server <- function(input, output, session, local_mode = "M") {
+mss_locus_list_config_server <- function(
+    input, output, session, local_mode = "M"
+) {
     
     # namespace
     ns <- session$ns
@@ -1822,10 +1835,46 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
         modified_locus_desc = NULL, validated = TRUE
     )
     
+    # title
+    output$title <- renderText({
+        if(local_mode == "M") {
+            "Setup Microsat locus configuration"
+        } else if(local_mode == "S") {
+            "Setup Sequence locus configuration"
+        } else {
+            NULL
+        }
+    })
+    
+    # help
+    output$help <- renderUI({
+        if(local_mode == "M") {
+            helpText(
+                icon("info-circle"),
+                "By default (for new projects),",
+                "all Microsat loci are assumed to be dinucleid",
+                "(motif = 2) with a range of 40."
+            )
+        } else if(local_mode == "S") {
+            helpText(
+                icon("info-circle"),
+                "All Sequence lengths are inferred from the data file."
+            )
+        } else {
+            NULL
+        }
+    })
+    
     # current locus description (default or given in the header)
     observeEvent({
         c(env$ap$locus_type, env$ap$data_check, env$ts$locus_desc)
     }, {
+        
+        # pprint(local_mode)
+        # pprint(env$ap$locus_type)
+        # pprint(env$ap$data_check)
+        # pprint(env$ap$data_check$valid)
+        # pprint(env$ts$locus_desc)
         
         req(env$ap$locus_type)
         req(env$ap$locus_type == "mss")
@@ -1841,15 +1890,27 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
     # extract and parse locus description corresponding to given mode (M or S)
     observeEvent(local$initial_locus_desc, {
         
+        # if(local_mode == "S") {
+        #     pprint(local$initial_locus_desc)
+        #     pprint(env$ap$data_check$locus_mode)
+        # }
+        
         local$locus_mask <- (env$ap$data_check$locus_mode == local_mode)
         local$locus_desc <- local$initial_locus_desc[local$locus_mask]
         local$unused_locus_desc <- local$initial_locus_desc[!local$locus_mask]
 
         local$group_id <- unique(as.integer(str_extract(
-            local$locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+            local$locus_desc, "(?<=G)[0-9]+"
         )))
 
         local$n_group <- length(unique(local$group_id))
+        
+        # if(local_mode == "S") {
+        #     pprint(local$locus_mask)
+        #     pprint(local$locus_desc)
+        #     pprint(local$unused_locus_desc)
+        #     pprint(local$group_id)
+        # }
     })
     
     # number of groups
@@ -1873,14 +1934,14 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
     })
     
     # render locus description setup
-    output$microsat_locus_list <- renderUI({
+    output$locus_list <- renderUI({
         req(local$locus_desc)
         do.call(
             tagList,
             unname(lapply(
                 1:length(local$locus_desc),
                 function(ind) {
-                    return(microsat_locus_setup_ui(ns(str_c("locus", ind))))
+                    return(mss_locus_config_ui(ns(str_c("locus", ind))))
                 }
             ))
         )
@@ -1893,8 +1954,8 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
             1:length(local$locus_desc),
             function(ind) {
                 callModule(
-                    microsat_locus_setup_server,
-                    str_c("locus", ind),
+                    mss_locus_config_server,
+                    str_c("locus", ind), local_mode = local_mode,
                     locus_desc = reactive(local$locus_desc[ind]),
                     group_id = reactive(local$group_id)
                 )
@@ -1945,9 +2006,10 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
         # group start to 1 for first locus mode
         if(head(env$ap$data_check$locus_mode, 1) != local_mode) {
             start_id <- max(unique(as.integer(str_extract(
-                local$unused_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+                local$unused_locus_desc, "(?<=G)[0-9]+"
             )))) + 1
         }
+        
         # correct group id for current mode
         final_locus_desc[local$locus_mask] <- correct_mss_locus_desc_group_id(
             local$modified_locus_desc, start_id
@@ -1961,13 +2023,14 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
                 final_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
             )))) + 1
         }
+        
         # correct group id for current mode
         final_locus_desc[!local$locus_mask] <- correct_mss_locus_desc_group_id(
             local$unused_locus_desc, start_id
         )
         
         ### debug
-        pprint(final_locus_desc)
+        # pprint(final_locus_desc)
         
         ### finally store result (if relevant)
         if(!identical(final_locus_desc, env$ts$locus_desc)) {
@@ -1976,21 +2039,21 @@ microsat_config_server <- function(input, output, session, local_mode = "M") {
     })
 }
 
-#' Microsat locus setup ui
+#' MSS locus config ui
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_locus_setup_ui <- function(id) {
+mss_locus_config_ui <- function(id) {
     ns <- NS(id)
     tagList(
         uiOutput(ns("locus_setup"))
     )
 }
 
-#' Microsat locus setup ui
+#' MSS locus config server
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_locus_setup_server <- function(
-    input, output, session, locus_desc = reactive({NULL}),
+mss_locus_config_server <- function(
+    input, output, session, local_mode = "M", locus_desc = reactive({NULL}),
     group_id = reactive({NULL})
 ) {
     
@@ -2003,6 +2066,7 @@ microsat_locus_setup_server <- function(
         group = NULL,
         motif = NULL,
         range = NULL,
+        length = NULL,
         fixed_header = NULL,
         # input
         locus_desc = NULL,
@@ -2031,13 +2095,19 @@ microsat_locus_setup_server <- function(
         
         local$group <- str_extract(local$locus_desc, "(?<=G)[0-9]+")
         
-        local$motif <- as.integer(str_extract(
-            local$locus_desc, "(?<= )[0-9]+(?= )"
-        ))
-        
-        local$range <- as.integer(str_extract(
-            local$locus_desc, "(?<= )[0-9]+$"
-        ))
+        if(local_mode == "M") {
+            local$motif <- as.integer(str_extract(
+                local$locus_desc, "(?<= )[0-9]+(?= )"
+            ))
+            
+            local$range <- as.integer(str_extract(
+                local$locus_desc, "(?<= )[0-9]+$"
+            ))
+        } else if(local_mode == "S") {
+            local$length <- as.integer(str_extract(
+                local$locus_desc, "(?<= )[0-9]+$"
+            ))
+        }
     })
     
     # render locus setup
@@ -2047,31 +2117,28 @@ microsat_locus_setup_server <- function(
         # pprint(local$group)
         # pprint(local$motif)
         # pprint(local$range)
+        # pprint(local$length)
         # pprint(local$group_id)
         
         req(local$name)
         req(local$group)
-        req(local$motif)
-        req(local$range)
         req(local$group_id)
         
-        tagList(
-            fluidRow(
+        if(local_mode == "M") {
+            req(local$motif)
+            req(local$range)
+            tagList(fluidRow(
                 column(
                     width = 3,
-                    shinyjs::disabled(
-                        textInput(
-                            ns("name"),
-                            label = "Locus",
-                            value = local$name
-                        )
-                    )
+                    shinyjs::disabled(textInput(
+                        ns("name"), label = "Locus",
+                        value = local$name
+                    ))
                 ),
                 column(
                     width = 3,
                     selectInput(
-                        ns("group"),
-                        label = "Group",
+                        ns("group"), label = "Group",
                         choices = as.character(local$group_id),
                         selected = as.character(local$group)
                     )
@@ -2079,39 +2146,71 @@ microsat_locus_setup_server <- function(
                 column(
                     width = 3,
                     numericInput(
-                        ns("motif"),
-                        label = "Motif",
-                        value = local$motif,
-                        min = 0,
-                        max = 10
+                        ns("motif"), label = "Motif",
+                        value = local$motif, min = 0, max = 10
                     )
                 ),
                 column(
                     width = 3,
                     numericInput(
-                        ns("range"),
-                        label = "Range",
-                        value = local$range,
-                        min = 10,
-                        max = 100
+                        ns("range"), label = "Range", value = local$range,
+                        min = 10,max = 100
                     )
                 )
-            )
-        )
+            ))
+            
+        } else if(local_mode == "S") {
+            req(local$length)
+            tagList(fluidRow(
+                column(
+                    width = 4,
+                    shinyjs::disabled(textInput(
+                        ns("name"), label = "Locus",
+                        value = local$name
+                    ))
+                ),
+                column(
+                    width = 4,
+                    selectInput(
+                        ns("group"), label = "Group",
+                        choices = as.character(local$group_id),
+                        selected = as.character(local$group)
+                    )
+                ),
+                column(
+                    width = 4,
+                    numericInput(
+                        ns("length"), label = "Length",
+                        value = local$length, min = 0, max = NA
+                    )
+                )
+            ))
+        } else {
+            NULL
+        }
     })
     
     # parse output
     observe({
         req(input$group)
-        req(input$motif)
-        req(input$range)
         
-        out$locus_desc <- str_c(
-            local$fixed_header,
-            " G", as.character(input$group),
-            " ", as.character(input$motif),
-            " ", as.character(input$range)
-        )
+        if(local_mode == "M") {
+            req(input$motif)
+            req(input$range)
+            out$locus_desc <- str_c(
+                local$fixed_header,
+                " G", as.character(input$group),
+                " ", as.character(input$motif),
+                " ", as.character(input$range)
+            )
+        } else if(local_mode == "S") {
+            req(input$length)
+            out$locus_desc <- str_c(
+                local$fixed_header,
+                " G", as.character(input$group),
+                " ", as.character(input$length)
+            )
+        }
     })
     
     # # debug
@@ -2121,30 +2220,6 @@ microsat_locus_setup_server <- function(
     
     # output
     return(out)
-}
-
-#' Sequence config ui
-#' @keywords internal
-#' @author Ghislain Durif
-sequence_config_ui <- function(id) {
-    ns <- NS(id)
-    tagList(
-        box(
-            title = "Setup Sequence locus configuration",
-            width = 12,
-            collapsible = TRUE,
-            collapsed = TRUE,
-            n_group_ui(ns("n_group")),
-            "TODO"
-        )
-    )
-}
-
-#' Sequence config server
-#' @keywords internal
-#' @author Ghislain Durif
-sequence_config_server <- function(input, output, session) {
-    callModule(n_group_server, "n_group")
 }
 
 #' MSS group prior setup ui
