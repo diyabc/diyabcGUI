@@ -1809,15 +1809,17 @@ microsat_config_ui <- function(id) {
 #' Microsat config server
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_config_server <- function(input, output, session) {
+microsat_config_server <- function(input, output, session, local_mode = "M") {
     
     # namespace
     ns <- session$ns
     
     # init local
     local <- reactiveValues(
-        group_id = NULL, locus_desc = NULL, unused_locus_desc = NULL, 
-        locus_mask = NULL
+        group_id = NULL, initial_locus_desc = NULL,
+        locus_desc = NULL, unused_locus_desc = NULL, 
+        locus_mask = NULL, locus_def = NULL, 
+        modified_locus_desc = NULL, validated = TRUE
     )
     
     # current locus description (default or given in the header)
@@ -1830,12 +1832,18 @@ microsat_config_server <- function(input, output, session) {
         req(env$ap$data_check)
         req(env$ap$data_check$valid)
         req(env$ap$data_check$locus_mode)
-        req(any(env$ap$data_check$locus_mode == "M"))
+        req(any(env$ap$data_check$locus_mode == local_mode))
         req(env$ts$locus_desc)
         
-        local$locus_mask <- str_detect(env$ts$locus_desc, "\\[M\\]")
-        local$locus_desc <- env$ts$locus_desc[local$locus_mask]
-        local$unused_locus_desc <- env$ts$locus_desc[!local$locus_mask]
+        local$initial_locus_desc <- env$ts$locus_desc
+    })
+    
+    # extract and parse locus description corresponding to given mode (M or S)
+    observeEvent(local$initial_locus_desc, {
+        
+        local$locus_mask <- (env$ap$data_check$locus_mode == local_mode)
+        local$locus_desc <- local$initial_locus_desc[local$locus_mask]
+        local$unused_locus_desc <- local$initial_locus_desc[!local$locus_mask]
 
         local$group_id <- unique(as.integer(str_extract(
             local$locus_desc[local$locus_mask], "(?<=G)[0-9]+"
@@ -1865,36 +1873,107 @@ microsat_config_server <- function(input, output, session) {
     })
     
     # render locus description setup
-    observeEvent(local$locus_desc, {
-        output$microsat_locus_list <- renderUI({
-            tag_list <- unname(lapply(
+    output$microsat_locus_list <- renderUI({
+        req(local$locus_desc)
+        do.call(
+            tagList,
+            unname(lapply(
                 1:length(local$locus_desc),
                 function(ind) {
                     return(microsat_locus_setup_ui(ns(str_c("locus", ind))))
                 }
             ))
-            do.call(tagList, tag_list)
-        })
+        )
     })
     
     # locus description setup server-side
     observe({
-        modified_locus_desc <- unname(unlist(lapply(
+        req(local$locus_desc)
+        local$locus_def <- lapply(
             1:length(local$locus_desc),
             function(ind) {
-                tmp <- callModule(
+                callModule(
                     microsat_locus_setup_server,
                     str_c("locus", ind),
                     locus_desc = reactive(local$locus_desc[ind]),
                     group_id = reactive(local$group_id)
                 )
             }
+        )
+    })
+    # get input
+    observe({
+        req(local$locus_def)
+        local$modified_locus_desc <- unname(unlist(lapply(
+           local$locus_def, function(item) return(item$locus_desc) 
         )))
     })
     
-    # TODO
-    # correct the group id in global locus description depending on 
-    # active Microsat groups
+    # modified input ?
+    observeEvent(local$modified_locus_desc, {
+        if(!identical(local$locus_desc, local$modified_locus_desc)) {
+            local$validated <- FALSE
+        }
+    })
+    
+    # feedback
+    output$feedback <- renderUI({
+        if(!local$validated) {
+            tagList(
+                tags$p(
+                    tags$div(
+                        icon("warning"), 
+                        "Configuration was modified. Please validate.",
+                        style = "color: #F89406;"
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
+    
+    # validation
+    observeEvent(input$validate, {
+        local$validated <- TRUE
+        
+        # final locus description
+        final_locus_desc <- character(length(local$initial_locus_desc))
+        
+        ### correct group (if necessary) for current mode
+        start_id <- 1
+        # group start to 1 for first locus mode
+        if(head(env$ap$data_check$locus_mode, 1) != local_mode) {
+            start_id <- max(unique(as.integer(str_extract(
+                local$unused_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+            )))) + 1
+        }
+        # correct group id for current mode
+        final_locus_desc[local$locus_mask] <- correct_mss_locus_desc_group_id(
+            local$modified_locus_desc, start_id
+        )
+        
+        ### correct group (if necessary) for other mode
+        start_id <- 1
+        # group start to 1 for first locus mode
+        if(head(env$ap$data_check$locus_mode, 1) == local_mode) {
+            start_id <- max(unique(as.integer(str_extract(
+                final_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+            )))) + 1
+        }
+        # correct group id for current mode
+        final_locus_desc[!local$locus_mask] <- correct_mss_locus_desc_group_id(
+            local$unused_locus_desc, start_id
+        )
+        
+        ### debug
+        pprint(final_locus_desc)
+        
+        ### finally store result (if relevant)
+        if(!identical(final_locus_desc, env$ts$locus_desc)) {
+            env$ts$locus_desc <- final_locus_desc
+        }
+    })
 }
 
 #' Microsat locus setup ui
@@ -1924,6 +2003,7 @@ microsat_locus_setup_server <- function(
         group = NULL,
         motif = NULL,
         range = NULL,
+        fixed_header = NULL,
         # input
         locus_desc = NULL,
         group_id = NULL
@@ -1941,6 +2021,8 @@ microsat_locus_setup_server <- function(
     # parse locus description
     observeEvent(local$locus_desc, {
         req(local$locus_desc)
+        
+        local$fixed_header <- str_extract(local$locus_desc, "^.+(?= G[0-9]+)")
         
         local$name <- str_extract(
             local$locus_desc, 
@@ -2025,14 +2107,17 @@ microsat_locus_setup_server <- function(
         req(input$range)
         
         out$locus_desc <- str_c(
-            str_extract(local$locus_desc, "^.+(?= G[0-9]+)"),
+            local$fixed_header,
             " G", as.character(input$group),
             " ", as.character(input$motif),
             " ", as.character(input$range)
         )
-        
-        # pprint(out$locus_desc)
     })
+    
+    # # debug
+    # observe({
+    #     pprint(out$locus_desc)
+    # })
     
     # output
     return(out)
