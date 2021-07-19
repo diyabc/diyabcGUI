@@ -604,3 +604,105 @@ test_that("correct_mss_locus_desc_group_id", {
     )
     
 })
+
+test_that("check_mean_group_prior", {
+    
+    # Microsat
+    data4test <- data.frame(
+        strng = c(
+            "MEANMU UN[1.00E-004,1.00E-3,0.0005,2]",
+            "MEANP UN[1.00E-001,3.00E-001,0.22,2]",
+            "MEANSNI LU[1.00E-008,1.00E-005,1.00E-007,2]"
+        ),
+        param = c(
+            "MU", "P", "SNI"
+        ),
+        stringsAsFactors = FALSE
+    )
+    
+    locus_mode <- "M"
+    
+    expect_true(all(
+        unlist(lapply(
+            split(data4test, seq(nrow(data4test))), 
+            function(row) {
+                check_mean_group_prior(row$strng, row$param, locus_mode)
+            }
+        ))
+    ))
+    
+    # Sequence
+    data4test <- data.frame(
+        strng = c(
+            "MEANMU UN[1.00E-9,1.00E-7,5E-9,2]",
+            "MEANK1 UN[0.050,20,10,2]",
+            "MEANK2 UN[0.050,20,10,2]"
+        ),
+        param = c(
+            "MU", "K1", "K2"
+        ),
+        stringsAsFactors = FALSE
+    )
+    
+    locus_mode <- "S"
+    
+    expect_true(all(
+        unlist(lapply(
+            split(data4test, seq(nrow(data4test))), 
+            function(row) {
+                check_mean_group_prior(row$strng, row$param, locus_mode)
+            }
+        ))
+    ))
+})
+
+test_that("check_indiv_group_prior", {
+    
+    # Microsat
+    data4test <- data.frame(
+        strng = c(
+            "GAMMU GA[1.00E-005,1.00E-002,Mean_u,2]",
+            "GAMP GA[1.00e-002,9.00E-001,Mean_P,2]",
+            "GAMSNI GA[1.00E-009,1.00E-004,Mean_u_SNI,2]"
+        ),
+        param = c(
+            "MU", "P", "SNI"
+        ),
+        stringsAsFactors = FALSE
+    )
+    
+    locus_mode <- "M"
+    
+    expect_true(all(
+        unlist(lapply(
+            split(data4test, seq(nrow(data4test))), 
+            function(row) {
+                check_indiv_group_prior(row$strng, row$param, locus_mode)
+            }
+        ))
+    ))
+    
+    # Sequence
+    data4test <- data.frame(
+        strng = c(
+            "GAMMU GA[1.00E-9,1.00E-6,Mean_u,2]",
+            "GAMK1 GA[0.050,20,Mean_k1,2]",
+            "GAMK2 GA[0.050,20,Mean_k2,2]"
+        ),
+        param = c(
+            "MU", "K1", "K2"
+        ),
+        stringsAsFactors = FALSE
+    )
+    
+    locus_mode <- "S"
+    
+    expect_true(all(
+        unlist(lapply(
+            split(data4test, seq(nrow(data4test))), 
+            function(row) {
+                check_indiv_group_prior(row$strng, row$param, locus_mode)
+            }
+        ))
+    ))
+})

@@ -874,3 +874,61 @@ correct_mss_locus_desc_group_id <- function(locus_desc, start_id) {
     # output
     return(out)
 }
+
+#' Check MSS mean group prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param prior_desc character string, mean group prior description.
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+#' @param param character string, mutation model parameter, among `"MU"`, `"P"`
+#' or `"SNI"` for microsat mode, and among `"MU"`, `"K1"` or `"K2"` for 
+#' sequence mode.
+check_mean_group_prior <- function(strng, param = "MU", locus_mode = "M") {
+    # check param
+    if((locus_mode == "M" && !param %in% c("MU", "P", "SNI")) ||
+       (locus_mode == "S" && !param %in% c("MU", "K1", "K2"))) {
+        return(FALSE)
+    }
+    # check prior
+    pttrn <- str_c("MEAN", param, " ",
+                   "(UN|LU|GA)", "\\[",
+                   str_c(rep(numexp_regex(), 4), collapse = ","),
+                   "\\]")
+    valid <- str_detect(strng, pttrn)
+    ## output
+    return(valid)
+}
+
+#' Check MSS indiv group prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param prior_desc character string, mean group prior description.
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+#' @param param character string, mutation model parameter, among `"MU"`, `"P"`
+#' or `"SNI"` for microsat mode, and among `"MU"`, `"K1"` or `"K2"` for 
+#' sequence mode.
+check_indiv_group_prior <- function(strng, param = "MU", locus_mode = "M") {
+    # check param
+    if((locus_mode == "M" && !param %in% c("MU", "P", "SNI")) ||
+       (locus_mode == "S" && !param %in% c("MU", "K1", "K2"))) {
+        return(FALSE)
+    }
+    # mean pattern
+    mean_pttrn <- switch(
+        param,
+        "MU" = "u",
+        "P" = "P",
+        "SNI" = "u_SNI",
+        "K1" = "k1",
+        "K2" = "k2"
+    )
+    # check prior
+    pttrn <- str_c("GAM", param, " ",
+                   "GA", "\\[",
+                   str_c(rep(numexp_regex(), 2), collapse = ","), ",",
+                   "Mean_", mean_pttrn, ",", numexp_regex(),
+                   "\\]")
+    valid <- str_detect(strng, pttrn)
+    ## output
+    return(valid)
+}
