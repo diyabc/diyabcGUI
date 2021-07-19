@@ -1021,6 +1021,7 @@ default_mss_group_prior <- function(group_id, locus_mode = "M") {
 #' Extract parameter name from group prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
 get_group_prior_param_name <- function(prior, locus_mode = "M") {
     # parameter
     param_val <- NULL
@@ -1067,4 +1068,63 @@ get_group_prior_val <- function(prior) {
     )))
     if(length(value) != 4 || any(is.na(value))) value <- NULL
     return(value)
+}
+
+#' MSS group prior parameter description
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+group_prior_param_desc <- function(locus_mode = "M") {
+    out <- NULL
+    if(locus_mode == "M") {
+        out <- data.frame(
+            param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
+            desc = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient P",
+                "Individual locus coefficient P",
+                "Mean SNI rate",
+                "Individual locus SNI rate"
+            ),
+            stringsAsFactors = FALSE
+        )
+    } else if(locus_mode == "S") {
+        out <- data.frame(
+            param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
+            meaning = c(
+                "Mean mutation rate (per site, per generation)",
+                "Individual locus mutation rate",
+                "Mean coefficient k_C/T",
+                "Individual locus coefficient k_C/T",
+                "Mean coefficient k_A/G",
+                "Individual locus coefficient k_A/G"
+            ),
+            stringsAsFactors = FALSE
+        )
+    } else {
+        stop("'locus_mode' not valid.")
+    }
+    return(out)
+}
+
+#' Sequence mutation model description
+#' @keywords internal
+#' @author Ghislain Durif
+mutation_model_desc <- function() {
+    # "Jukes Kantor (1969)" = "JK" (MU)
+    # "Kimura-2-parameters (1980)" = "K2P" (MU, K1)
+    # "Hasegawa-Kishino-Yano (1985)" = "HKY" (MU, K1)
+    # "Tamura Nei (1993)" = "TN" (MU, K1, K2)
+    out <- data.frame(
+        model = c("JK", "K2P", "HKY", "TN"),
+        desc = c("Jukes Kantor (1969)", "Kimura-2-parameters (1980)", 
+                 "Hasegawa-Kishino-Yano (1985)", "Tamura Nei (1993)"), 
+        MU = TRUE,
+        K1 = c(FALSE, TRUE, TRUE, TRUE),
+        K2 = c(FALSE, FALSE, FALSE, TRUE),
+        stringsAsFactors = FALSE
+    )
+    return(out)
+    
 }

@@ -774,3 +774,15 @@ test_that("get_group_prior_val", {
     prior <- "GAMK2 GA[0.05,20,Mean_k2,2]"
     expect_identical(get_group_prior_val(prior), c("0.05", "20", "Mean_k2", "2"))
 })
+
+test_that("group_prior_param_desc", {
+    res <- group_prior_param_desc(locus_mode = "M")
+    expect_true(is.data.frame(res))
+    res <- group_prior_param_desc(locus_mode = "S")
+    expect_true(is.data.frame(res))
+})
+
+test_that("mutation_model_desc", {
+    res <- mutation_model_desc()
+    expect_true(is.data.frame(res))
+})
