@@ -26,6 +26,7 @@ test_that("check_header_prior", {
     expect_true(check_header_prior("N N UN[100,10000,0.0,0.0]"))
     expect_true(check_header_prior("ra A UN[0.05,0.95,0.0,0.0]"))
     expect_true(check_header_prior("t T UN[10,1000,0.0,0.0]"))
+    expect_true(check_header_prior("N N UN[1e-6,10000,0.0,0.0]"))
     
     expect_false(check_header_prior("N N UN[100,10000,0.0]"))
     expect_false(check_header_prior("ra A [0.05,0.95,0.0,0.0]"))
@@ -102,7 +103,7 @@ test_that("check_header_locus_desc", {
 
 
 test_that("check_header_group_prior", {
-    ## MSS
+    ## Microsat
     content <- c(
         "MEANMU UN[1.00E-004,1.00E-3,0.0005,2]",
         "GAMMU GA[1.00E-005,1.00E-002,Mean_u,2]",
@@ -143,7 +144,7 @@ test_that("check_header_group_prior", {
     expect_false(check_header_group_prior(content, type = "M"))
     
     
-    ## SNP
+    ## Sequence
     content <- c(
         "MEANMU UN[1.00e-9,1.00E-7,5E-9,2]",
         "GAMMU GA[1.00E-9,1.00E-6,Mean_u,2]",

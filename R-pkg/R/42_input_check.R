@@ -19,7 +19,7 @@ check_header_prior <- function(strng) {
     pttrn <- str_c(single_param_regex(), " ",
                    "(N|T|A)", " ",
                    "(UN|LU|NO|LN)", "\\[",
-                   str_c(rep(num_regex(), 4), collapse = ","),
+                   str_c(rep(numexp_regex(), 4), collapse = ","),
                    "\\]")
     valid <- str_detect(strng, pttrn)
     ## output
