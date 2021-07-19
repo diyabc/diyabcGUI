@@ -932,3 +932,69 @@ check_indiv_group_prior <- function(strng, param = "MU", locus_mode = "M") {
     ## output
     return(valid)
 }
+
+#' Default MSS group prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param group_id character string, id of the group `"Gx"` where `x` is an 
+#' integer.
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+default_mss_group_prior <- function(group_id, locus_mode = "M") {
+    # check
+    if(!locus_mode %in% c("M", "S")) {
+        stop("'locus_mode' not valid.")
+    }
+    # default value
+    microsat_default <- data.frame(
+        param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
+        prior = c("UN", "GA"),
+        min = c("1e-4", "1e-5", "1e-1", "1e-2", "1e-8", "1e-9"),
+        max = c("1e-3", "1e-2", "3e-1", "9e-1", "1e-5", "1e-4"),
+        mean = c("5e-4", "Mean_u", "2.2e-1", "Mean_P", "1e-7", "Mean_u_SNI"),
+        stdev = c("2"),
+        stringsAsFactors = FALSE
+    )
+    sequence_default <- data.frame(
+        param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
+        prior = c("UN", "GA"),
+        min = c("1e-9", "1e-9", "0.05", "0.05", "0.05", "0.05"),
+        max = c("1e-7", "1e-6", "20", "20", "20", "20"),
+        mean = c("5e-9", "Mean_u", "10", "Mean_k1", "10", "Mean_k2"),
+        stdev = c("2"),
+        stringsAsFactors = FALSE
+    )
+    default_val <- NULL
+    if(locus_mode == "M") {
+        default_val <- microsat_default
+    } else if(locus_mode == "S") {
+        default_val <- sequence_default
+    } else {
+        stop("'locus_mode' not valid.")
+    }
+    # format
+    out <- c(
+        str_c("group", group_id, str_c("[", locus_mode, "]"), sep = " "),
+        unname(unlist(lapply(
+            split(default_val, seq(nrow(default_val))), 
+            function(row) {
+                str_c(
+                    row$param, 
+                    str_c(
+                        row$prior, "[", 
+                        str_c(
+                            row$min, row$max, row$mean, row$stdev, sep = ","
+                        ),
+                        "]"
+                    ),
+                    sep = " "
+                )
+            }
+        )))
+    )
+    # sequence mutation model
+    if(locus_mode == "S") {
+        out <- c(out, "MODEL K2P 10 2")
+    }
+    ## output
+    return(out)
+}

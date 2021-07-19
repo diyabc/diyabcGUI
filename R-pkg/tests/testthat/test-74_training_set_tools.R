@@ -706,3 +706,29 @@ test_that("check_indiv_group_prior", {
         ))
     ))
 })
+
+test_that("default_mss_group_prior",{
+    
+    group_id <- "G1"
+    locus_mode <- "M"
+    res <- default_mss_group_prior(group_id, locus_mode)
+    expected_res <- c(
+        "group G1 [M]", 
+        "MEANMU UN[1e-4,1e-3,5e-4,2]", "GAMMU GA[1e-5,1e-2,Mean_u,2]", 
+        "MEANP UN[1e-1,3e-1,2.2e-1,2]", "GAMP GA[1e-2,9e-1,Mean_P,2]", 
+        "MEANSNI UN[1e-8,1e-5,1e-7,2]", "GAMSNI GA[1e-9,1e-4,Mean_u_SNI,2]"
+    )
+    expect_identical(res, expected_res)
+    
+    group_id <- "G1"
+    locus_mode <- "S"
+    res <- default_mss_group_prior(group_id, locus_mode)
+    expected_res <- c(
+        "group G1 [S]", 
+        "MEANMU UN[1e-9,1e-7,5e-9,2]", "GAMMU GA[1e-9,1e-6,Mean_u,2]", 
+        "MEANK1 UN[0.05,20,10,2]", "GAMK1 GA[0.05,20,Mean_k1,2]", 
+        "MEANK2 UN[0.05,20,10,2]", "GAMK2 GA[0.05,20,Mean_k2,2]", 
+        "MODEL K2P 10 2"
+    )
+    expect_identical(res, expected_res)
+})
