@@ -909,9 +909,6 @@ check_mean_group_prior <- function(strng, locus_mode = "M") {
 #' @author Ghislain Durif
 #' @param prior_desc character string, mean group prior description.
 #' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
-#' @param param character string, mutation model parameter, among `"MU"`, `"P"`
-#' or `"SNI"` for microsat mode, and among `"MU"`, `"K1"` or `"K2"` for 
-#' sequence mode.
 check_indiv_group_prior <- function(strng, locus_mode = "M") {
     # parameter
     param_val <- NULL
@@ -1019,4 +1016,55 @@ default_mss_group_prior <- function(group_id, locus_mode = "M") {
     }
     ## output
     return(out)
+}
+
+#' Extract parameter name from group prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_group_prior_param_name <- function(prior, locus_mode = "M") {
+    # parameter
+    param_val <- NULL
+    if(locus_mode == "M") {
+        param_val <- c("MU", "P", "SNI")
+    } else if(locus_mode == "S") {
+        param_val <- c("MU", "K1", "K2")
+    } else {
+        return(FALSE)
+    }
+    pttrn <- str_c("^(MEAN|GAM)(", str_c(param_val, collapse = "|"), ")(?= )")
+    value <- str_extract(prior, pttrn)
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract distribution from group prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_group_prior_distrib <- function(prior) {
+    value <- str_extract(
+        prior, 
+        str_c("(?<= )", "(UN|LU|GA)", "(?=\\[)")
+    )
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract parameter values from group prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_group_prior_val <- function(prior) {
+    value <- unname(unlist(str_extract_all(
+        prior, 
+        str_c(
+            "(?<=[\\[,])", "(",
+            str_c(
+                numexp_regex(),
+                str_c("Mean_(u|P|u_SNI|k1|k2)"),
+                sep = "|"
+            ), 
+            ")", "(?=[\\],])"
+        )
+    )))
+    if(length(value) != 4 || any(is.na(value))) value <- NULL
+    return(value)
 }

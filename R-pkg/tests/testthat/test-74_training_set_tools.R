@@ -720,3 +720,57 @@ test_that("default_mss_group_prior",{
     )
     expect_identical(res, expected_res)
 })
+
+test_that("get_group_prior_param_name", {
+    
+    prior <- "MEANMU UN[1e-4,1e-3,5e-4,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANMU")
+    prior <- "GAMMU GA[1e-5,1e-2,Mean_u,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMMU")
+    prior <- "MEANP UN[1e-1,3e-1,2.2e-1,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANP")
+    prior <- "GAMP GA[1e-2,9e-1,Mean_P,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMP")
+    prior <- "MEANSNI UN[1e-8,1e-5,1e-7,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANSNI")
+    prior <- "GAMSNI GA[1e-9,1e-4,Mean_u_SNI,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMSNI")
+    
+    prior <- "MEANMU UN[1e-9,1e-7,5e-9,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANMU")
+    prior <- "GAMMU GA[1e-9,1e-6,Mean_u,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMMU")
+    prior <- "MEANK1 UN[0.05,20,10,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANK1")
+    prior <- "GAMK1 GA[0.05,20,Mean_k1,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMK1")
+    prior <- "MEANK2 UN[0.05,20,10,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANK2")
+    prior <- "GAMK2 GA[0.05,20,Mean_k2,2]"
+    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMK2")
+})
+
+test_that("get_group_prior_distrib", {
+    prior <- "MEANMU UN[1e-4,1e-3,5e-4,2]"
+    expect_equal(get_group_prior_distrib(prior), "UN")
+    prior <- "GAMMU GA[1e-5,1e-2,Mean_u,2]"
+    expect_equal(get_group_prior_distrib(prior), "GA")
+})
+
+test_that("get_group_prior_val", {
+    prior <- "MEANMU UN[1e-4,1e-3,5e-4,2]"
+    expect_identical(get_group_prior_val(prior), c("1e-4", "1e-3", "5e-4", "2"))
+    prior <- "GAMMU GA[1e-5,1e-2,Mean_u,2]"
+    expect_identical(get_group_prior_val(prior), c("1e-5", "1e-2", "Mean_u", "2"))
+    prior <- "GAMP GA[1e-2,9e-1,Mean_P,2]"
+    expect_identical(get_group_prior_val(prior), c("1e-2", "9e-1", "Mean_P", "2"))
+    prior <- "GAMSNI GA[1e-9,1e-4,Mean_u_SNI,2]"
+    expect_identical(get_group_prior_val(prior), c("1e-9", "1e-4", "Mean_u_SNI", "2"))
+    
+    prior <- "MEANK1 UN[0.05,20,10,2]"
+    expect_identical(get_group_prior_val(prior), c("0.05", "20", "10", "2"))
+    prior <- "GAMK1 GA[0.05,20,Mean_k1,2]"
+    expect_identical(get_group_prior_val(prior), c("0.05", "20", "Mean_k1", "2"))
+    prior <- "GAMK2 GA[0.05,20,Mean_k2,2]"
+    expect_identical(get_group_prior_val(prior), c("0.05", "20", "Mean_k2", "2"))
+})
