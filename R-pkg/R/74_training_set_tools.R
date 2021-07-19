@@ -880,20 +880,25 @@ correct_mss_locus_desc_group_id <- function(locus_desc, start_id) {
 #' @author Ghislain Durif
 #' @param prior_desc character string, mean group prior description.
 #' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
-#' @param param character string, mutation model parameter, among `"MU"`, `"P"`
-#' or `"SNI"` for microsat mode, and among `"MU"`, `"K1"` or `"K2"` for 
-#' sequence mode.
-check_mean_group_prior <- function(strng, param = "MU", locus_mode = "M") {
-    # check param
-    if((locus_mode == "M" && !param %in% c("MU", "P", "SNI")) ||
-       (locus_mode == "S" && !param %in% c("MU", "K1", "K2"))) {
+check_mean_group_prior <- function(strng, locus_mode = "M") {
+    # parameter
+    param <- NULL
+    if(locus_mode == "M") {
+        param <- c("MU", "P", "SNI")
+    } else if(locus_mode == "S") {
+        param <- c("MU", "K1", "K2")
+    } else {
         return(FALSE)
     }
     # check prior
-    pttrn <- str_c("MEAN", param, " ",
-                   "(UN|LU|GA)", "\\[",
-                   str_c(rep(numexp_regex(), 4), collapse = ","),
-                   "\\]")
+    pttrn <- str_c(
+        str_c("MEAN", "(", str_c(param, collapse = "|"), ")"),
+        str_c(
+            "(UN|LU|GA)", "\\[",
+            str_c(rep(numexp_regex(), 4), collapse = ","),
+            "\\]"
+        ), sep = " "
+    )
     valid <- str_detect(strng, pttrn)
     ## output
     return(valid)
@@ -907,12 +912,21 @@ check_mean_group_prior <- function(strng, param = "MU", locus_mode = "M") {
 #' @param param character string, mutation model parameter, among `"MU"`, `"P"`
 #' or `"SNI"` for microsat mode, and among `"MU"`, `"K1"` or `"K2"` for 
 #' sequence mode.
-check_indiv_group_prior <- function(strng, param = "MU", locus_mode = "M") {
-    # check param
-    if((locus_mode == "M" && !param %in% c("MU", "P", "SNI")) ||
-       (locus_mode == "S" && !param %in% c("MU", "K1", "K2"))) {
+check_indiv_group_prior <- function(strng, locus_mode = "M") {
+    # parameter
+    param_val <- NULL
+    if(locus_mode == "M") {
+        param_val <- c("MU", "P", "SNI")
+    } else if(locus_mode == "S") {
+        param_val <- c("MU", "K1", "K2")
+    } else {
         return(FALSE)
     }
+    pttrn <- str_c("(?<=^GAM)(", str_c(param_val, collapse = "|"), ")(?= )")
+    if(!str_detect(strng, pttrn)) {
+        return(FALSE)
+    }
+    param <- str_extract(strng, pttrn)
     # mean pattern
     mean_pttrn <- switch(
         param,
@@ -923,11 +937,19 @@ check_indiv_group_prior <- function(strng, param = "MU", locus_mode = "M") {
         "K2" = "k2"
     )
     # check prior
-    pttrn <- str_c("GAM", param, " ",
-                   "GA", "\\[",
-                   str_c(rep(numexp_regex(), 2), collapse = ","), ",",
-                   "Mean_", mean_pttrn, ",", numexp_regex(),
-                   "\\]")
+    pttrn <- str_c(
+        str_c("GAM", param),
+        str_c(
+            "GA", "\\[",
+            str_c(
+                c(rep(numexp_regex(), 2), 
+                  str_c("Mean_", mean_pttrn), 
+                  numexp_regex()), 
+                collapse = ","
+            ),
+            "\\]"
+        ), sep = " "
+    )
     valid <- str_detect(strng, pttrn)
     ## output
     return(valid)
