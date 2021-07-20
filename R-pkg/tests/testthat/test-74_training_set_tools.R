@@ -721,33 +721,33 @@ test_that("default_mss_group_prior",{
     expect_identical(res, expected_res)
 })
 
-test_that("get_group_prior_param_name", {
+test_that("get_group_prior_param", {
     
     prior <- "MEANMU UN[1e-4,1e-3,5e-4,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANMU")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "MEANMU")
     prior <- "GAMMU GA[1e-5,1e-2,Mean_u,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMMU")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "GAMMU")
     prior <- "MEANP UN[1e-1,3e-1,2.2e-1,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANP")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "MEANP")
     prior <- "GAMP GA[1e-2,9e-1,Mean_P,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMP")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "GAMP")
     prior <- "MEANSNI UN[1e-8,1e-5,1e-7,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "MEANSNI")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "MEANSNI")
     prior <- "GAMSNI GA[1e-9,1e-4,Mean_u_SNI,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "M"), "GAMSNI")
+    expect_equal(get_group_prior_param(prior, locus_mode = "M"), "GAMSNI")
     
     prior <- "MEANMU UN[1e-9,1e-7,5e-9,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANMU")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "MEANMU")
     prior <- "GAMMU GA[1e-9,1e-6,Mean_u,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMMU")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "GAMMU")
     prior <- "MEANK1 UN[0.05,20,10,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANK1")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "MEANK1")
     prior <- "GAMK1 GA[0.05,20,Mean_k1,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMK1")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "GAMK1")
     prior <- "MEANK2 UN[0.05,20,10,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "MEANK2")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "MEANK2")
     prior <- "GAMK2 GA[0.05,20,Mean_k2,2]"
-    expect_equal(get_group_prior_param_name(prior, locus_mode = "S"), "GAMK2")
+    expect_equal(get_group_prior_param(prior, locus_mode = "S"), "GAMK2")
 })
 
 test_that("get_group_prior_distrib", {
@@ -785,4 +785,56 @@ test_that("group_prior_param_desc", {
 test_that("mutation_model_desc", {
     res <- mutation_model_desc()
     expect_true(is.data.frame(res))
+})
+
+test_that("check_group_prior", {
+    
+    # MWE with single group
+    prior_desc <- "group G1 [M]\nMEANMU UN[1e-04,0.01,0.001,2]\nGAMMU GA[1e-04,0.01,Mean_u,2]\nMEANP UN[1e-04,0.01,0.001,2]\nGAMP GA[1e-04,0.01,Mean_P,2]\nMEANSNI UN[1e-04,0.01,0.001,2]\nGAMSNI GA[1e-04,0.01,Mean_u_SNI,2]"
+    
+    locus_mode <- c("M")
+    group_id <- c("G1")
+    
+    expect_true(check_group_prior(
+        prior_desc, locus_mode = locus_mode, group_id = group_id
+    ))
+    
+    # MWE with multiple groups
+    prior_desc <- list(
+        "group G1 [M]\nMEANMU UN[1e-04,0.01,0.001,2]\nGAMMU GA[1e-04,0.01,Mean_u,2]\nMEANP UN[1e-04,0.01,0.001,2]\nGAMP GA[1e-04,0.01,Mean_P,2]\nMEANSNI UN[1e-04,0.01,0.001,2]\nGAMSNI GA[1e-04,0.01,Mean_u_SNI,2]",
+        "group G2 [S]\nMEANMU UN[1e-04,0.01,0.001,2]\nGAMMU GA[1e-04,0.01,Mean_u,2]\nMEANK1 UN[1e-04,0.01,0.001,2]\nGAMK1 GA[1e-04,0.01,Mean_k1,2]\nMEANK2 UN[1e-04,0.01,0.001,2]\nGAMK2 GA[1e-04,0.01,Mean_k2,2]\nMODEL K2P 10 2"
+    )
+    
+    locus_mode <- c("M", "S")
+    group_id <- c("G1", "G2")
+    
+    expect_true(check_group_prior(
+        prior_desc, locus_mode = locus_mode, group_id = group_id
+    ))
+    
+    # microsat
+    test_proj <- "Microsat"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    
+    prior_desc <- header_check$group_prior_list
+    locus_desc <- header_check$locus_desc
+    
+    expect_true(check_group_prior(prior_desc, locus_desc))
+    
+    # microsat sequence 1
+    test_proj <- "Microsat_Sequences"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    
+    prior_desc <- header_check$group_prior_list
+    locus_desc <- header_check$locus_desc
+    
+    expect_true(check_group_prior(prior_desc, locus_desc))
 })

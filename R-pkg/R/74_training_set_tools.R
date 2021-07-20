@@ -1022,7 +1022,7 @@ default_mss_group_prior <- function(group_id, locus_mode = "M") {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
-get_group_prior_param_name <- function(prior, locus_mode = "M") {
+get_group_prior_param <- function(prior, locus_mode = "M") {
     # parameter
     param_val <- NULL
     if(locus_mode == "M") {
@@ -1087,6 +1087,29 @@ group_prior_param_desc <- function(locus_mode = "M") {
                 "Mean SNI rate",
                 "Individual locus SNI rate"
             ),
+            note = c(
+                "", 
+                str_c(
+                    "Set the shape to 0 if you want all individuals loci ",
+                    "to take the same value (=mean)."
+                ),
+                str_c(
+                    "Set the minimum and the maximum to 0 if you want ",
+                    "to use a Stepwise Mutation Model (SMM)."
+                ),
+                str_c(
+                    "Set the shape to 0 if you want all individuals loci ",
+                    "to take the same value (=mean)."
+                ),
+                str_c(
+                    "Set the minimum and the maximum to 0 if you want ",
+                    "to exclude Single Nucleotide insertion/deletion."
+                ),
+                str_c(
+                    "Set the shape to 0 if you want all individuals loci ",
+                    "to take the same value (=mean)."
+                )
+            ),
             stringsAsFactors = FALSE
         )
     } else if(locus_mode == "S") {
@@ -1100,6 +1123,7 @@ group_prior_param_desc <- function(locus_mode = "M") {
                 "Mean coefficient k_A/G",
                 "Individual locus coefficient k_A/G"
             ),
+            note = "",
             stringsAsFactors = FALSE
         )
     } else {
@@ -1126,5 +1150,93 @@ mutation_model_desc <- function() {
         stringsAsFactors = FALSE
     )
     return(out)
+}
+
+#' Check group prior description
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Content: see doc
+#' @param prior_desc vector of character string, group prior descriptions (one 
+#' description by group).
+#' @param locus_mode vector of character, among microsat (`"M"`) or 
+#' sequence (`"S"`) mode, with the same length as `desc`.
+#' @param locus_desc vector of character string, locus description read 
+#' from data file. If provided, `locus_mode` and `group_id` are ignored.
+#' @param group_id vector of character, indicating group ids, 
+#' with the same length as `prior_desc`, sorted by lexicographic order. 
+#' Ignored if `locus_desc` is provided.
+#' @param prior_desc vector of character string, group prior descriptions (one 
+#' description by group). Ignored if `locus_desc` is provided.
+check_group_prior <- function(
+    prior_desc, locus_desc = NULL, locus_mode = NULL, group_id = NULL
+) {
+    ## check input
+    prior_desc <- as.list(prior_desc)
+    if(!all(unlist(lapply(prior_desc, is.character)))) return(FALSE)
     
+    # locus description ?
+    if(!is.null(locus_desc)) {
+        if(!is.vector(locus_desc) && !is.character(locus_desc)) {
+            return(FALSE)
+        }
+        
+        
+        # extract group_id and locus_mode
+        mode_group_match <- as.data.frame(str_match(
+            locus_desc, " \\[([MS])\\] (G[0-9]+)"
+        ))[,2:3] %>% distinct() %>% arrange(V3)
+        
+        locus_mode <- mode_group_match$V2
+        group_id <- mode_group_match$V3
+        
+    } else {
+        # missing input
+        if(is.null(locus_mode) || is.null(group_id)) {
+            return(FALSE)
+        }
+    }
+    
+    # check locus_mode and group_id
+    if(length(prior_desc) != length(locus_mode)) return(FALSE)
+    if(!all(locus_mode %in% c("M", "S"))) return(FALSE)
+    if(length(prior_desc) != length(group_id)) return(FALSE)
+    if(!identical(group_id, sort(group_id))) return(FALSE)
+    
+    # split input
+    content <- str_split(prior_desc, "\n")
+    
+    # check first line of all group priors
+    check_group_desc <- unlist(lapply(
+        1:length(content),
+        function(ind) {
+            item <- content[[ind]]
+            tmp_check <- str_detect(
+                item[1], 
+                str_c(
+                    "group", 
+                    group_id[ind],
+                    str_c("\\[", locus_mode[ind], "\\]"),
+                    sep = " "
+                )
+            )
+            return(tmp_check)
+        }
+    ))
+    if(!all(check_group_desc)) return(FALSE)
+    
+    # check description content
+    check_desc_content <- unlist(lapply(
+        1:length(content),
+        function(ind) {
+            item <- content[[ind]]
+            return(
+                check_header_group_prior(item[-1], type = locus_mode[ind])
+            )
+        }
+    ))
+    if(!all(check_desc_content)) return(FALSE)
+    
+    # ok
+    return(TRUE)
 }
