@@ -952,72 +952,6 @@ check_indiv_group_prior <- function(strng, locus_mode = "M") {
     return(valid)
 }
 
-#' Default MSS group prior
-#' @keywords internal
-#' @author Ghislain Durif
-#' @param group_id character string, id of the group `"Gx"` where `x` is an 
-#' integer.
-#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
-default_mss_group_prior <- function(group_id, locus_mode = "M") {
-    # check
-    if(!locus_mode %in% c("M", "S")) {
-        stop("'locus_mode' not valid.")
-    }
-    # default value
-    microsat_default <- data.frame(
-        param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
-        prior = c("UN", "GA"),
-        min = c("1e-4", "1e-5", "1e-1", "1e-2", "1e-8", "1e-9"),
-        max = c("1e-3", "1e-2", "3e-1", "9e-1", "1e-5", "1e-4"),
-        mean = c("5e-4", "Mean_u", "2.2e-1", "Mean_P", "1e-7", "Mean_u_SNI"),
-        stdev = c("2"),
-        stringsAsFactors = FALSE
-    )
-    sequence_default <- data.frame(
-        param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
-        prior = c("UN", "GA"),
-        min = c("1e-9", "1e-9", "0.05", "0.05", "0.05", "0.05"),
-        max = c("1e-7", "1e-6", "20", "20", "20", "20"),
-        mean = c("5e-9", "Mean_u", "10", "Mean_k1", "10", "Mean_k2"),
-        stdev = c("2"),
-        stringsAsFactors = FALSE
-    )
-    default_val <- NULL
-    if(locus_mode == "M") {
-        default_val <- microsat_default
-    } else if(locus_mode == "S") {
-        default_val <- sequence_default
-    } else {
-        stop("'locus_mode' not valid.")
-    }
-    # format
-    out <- c(
-        str_c("group", group_id, str_c("[", locus_mode, "]"), sep = " "),
-        unname(unlist(lapply(
-            split(default_val, seq(nrow(default_val))), 
-            function(row) {
-                str_c(
-                    row$param, 
-                    str_c(
-                        row$prior, "[", 
-                        str_c(
-                            row$min, row$max, row$mean, row$stdev, sep = ","
-                        ),
-                        "]"
-                    ),
-                    sep = " "
-                )
-            }
-        )))
-    )
-    # sequence mutation model
-    if(locus_mode == "S") {
-        out <- c(out, "MODEL K2P 10 2")
-    }
-    ## output
-    return(out)
-}
-
 #' Extract parameter name from group prior encoding
 #' @keywords internal
 #' @author Ghislain Durif
@@ -1181,7 +1115,6 @@ check_group_prior <- function(
             return(FALSE)
         }
         
-        
         # extract group_id and locus_mode
         mode_group_match <- as.data.frame(str_match(
             locus_desc, " \\[([MS])\\] (G[0-9]+)"
@@ -1239,4 +1172,130 @@ check_group_prior <- function(
     
     # ok
     return(TRUE)
+}
+
+#' Default Microsat or Sequence single group prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param group_id character string, id of the group `"Gx"` where `x` is an 
+#' integer.
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+default_group_prior <- function(group_id, locus_mode = "M") {
+    # check
+    if(!locus_mode %in% c("M", "S")) {
+        stop("'locus_mode' not valid.")
+    }
+    # default value
+    microsat_default <- data.frame(
+        param = c("MEANMU", "GAMMU", "MEANP", "GAMP", "MEANSNI", "GAMSNI"),
+        prior = c("UN", "GA"),
+        min = c("1e-4", "1e-5", "1e-1", "1e-2", "1e-8", "1e-9"),
+        max = c("1e-3", "1e-2", "3e-1", "9e-1", "1e-5", "1e-4"),
+        mean = c("5e-4", "Mean_u", "2.2e-1", "Mean_P", "1e-7", "Mean_u_SNI"),
+        stdev = c("2"),
+        stringsAsFactors = FALSE
+    )
+    sequence_default <- data.frame(
+        param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
+        prior = c("UN", "GA"),
+        min = c("1e-9", "1e-9", "0.05", "0.05", "0.05", "0.05"),
+        max = c("1e-7", "1e-6", "20", "20", "20", "20"),
+        mean = c("5e-9", "Mean_u", "10", "Mean_k1", "10", "Mean_k2"),
+        stdev = c("2"),
+        stringsAsFactors = FALSE
+    )
+    default_val <- NULL
+    if(locus_mode == "M") {
+        default_val <- microsat_default
+    } else if(locus_mode == "S") {
+        default_val <- sequence_default
+    } else {
+        stop("'locus_mode' not valid.")
+    }
+    # format
+    out <- c(
+        str_c("group", group_id, str_c("[", locus_mode, "]"), sep = " "),
+        unname(unlist(lapply(
+            split(default_val, seq(nrow(default_val))), 
+            function(row) {
+                str_c(
+                    row$param, 
+                    str_c(
+                        row$prior, "[", 
+                        str_c(
+                            row$min, row$max, row$mean, row$stdev, sep = ","
+                        ),
+                        "]"
+                    ),
+                    sep = " "
+                )
+            }
+        )))
+    )
+    # sequence mutation model
+    if(locus_mode == "S") {
+        out <- c(out, "MODEL K2P 10 2")
+    }
+    ## output
+    return(out)
+}
+
+#' Default Microsat or Sequence mutliple group prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description
+#' Content: see doc
+#' @param locus_mode vector of character, among microsat (`"M"`) or 
+#' sequence (`"S"`) mode, with the same length as `desc`.
+#' @param locus_desc vector of character string, locus description read 
+#' from data file. If provided, `locus_mode` and `group_id` are ignored.
+#' @param group_id vector of character, indicating group ids, 
+#' with the same length as `prior_desc`, sorted by lexicographic order. 
+#' Ignored if `locus_desc` is provided.
+#' @param prior_desc vector of character string, group prior descriptions (one 
+#' description by group). Ignored if `locus_desc` is provided.
+default_mss_group_prior <- function(
+    locus_desc = NULL, locus_mode = NULL, group_id = NULL
+) {
+    # locus description ?
+    if(!is.null(locus_desc)) {
+        if(!is.vector(locus_desc) && !is.character(locus_desc)) {
+            stop("Issue with input")
+        }
+        
+        # extract group_id and locus_mode
+        mode_group_match <- as.data.frame(str_match(
+            locus_desc, " \\[([MS])\\] (G[0-9]+)"
+        ))[,2:3] %>% distinct() %>% arrange(V3)
+        
+        locus_mode <- mode_group_match$V2
+        group_id <- mode_group_match$V3
+        
+    } else {
+        # missing input
+        if(is.null(locus_mode) || is.null(group_id)) {
+            stop("Issue with input")
+        }
+    }
+    
+    # check locus_mode and group_id
+    if(length(locus_mode) != length(group_id)) stop("Issue with input")
+    if(!all(locus_mode %in% c("M", "S"))) stop("Issue with input")
+    if(!identical(group_id, sort(group_id))) stop("Issue with input")
+    
+    # default group prior
+    out <- lapply(
+        1:length(locus_mode),
+        function(ind) {
+            tmp <- str_c(
+                default_group_prior(
+                    group_id = group_id[ind], locus_mode = locus_mode[ind]
+                ),
+                collapse = "\n"
+            )
+            return(tmp)
+        }
+    )
+    # output
+    return(out)
 }
