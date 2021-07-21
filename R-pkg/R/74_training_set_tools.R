@@ -1093,10 +1093,11 @@ mutation_model_desc <- function() {
 #' Content: see doc
 #' @param prior_desc vector of character string, group prior descriptions (one 
 #' description by group).
-#' @param locus_mode vector of character, among microsat (`"M"`) or 
-#' sequence (`"S"`) mode, with the same length as `desc`.
 #' @param locus_desc vector of character string, locus description read 
 #' from data file. If provided, `locus_mode` and `group_id` are ignored.
+#' @param locus_mode vector of character, among microsat (`"M"`) or 
+#' sequence (`"S"`) mode, with the same length as `prior_desc`. Ignored if 
+#' `locus_desc` is provided.
 #' @param group_id vector of character, indicating group ids, 
 #' with the same length as `prior_desc`, sorted by lexicographic order. 
 #' Ignored if `locus_desc` is provided.
@@ -1240,37 +1241,53 @@ default_group_prior <- function(group_id, locus_mode = "M") {
     return(out)
 }
 
+#' Extract group description (i.e. group id and corresponding locus mode)
+#' from MSS data locus description
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_desc vector of character string, locus description read 
+#' from data file.
+get_group_desc <- function(locus_desc) {
+    # check input
+    if(!is.vector(locus_desc) && !is.character(locus_desc)) {
+        stop("Issue with input: non valid 'locus_desc'")
+    }
+    # pattern to extract
+    pttrn <- " \\[([MS])\\] (G[0-9]+)"
+    # check if pattern is in input
+    if(!all(str_detect(locus_desc, pttrn))) {
+        stop("Issue with input: non valid 'locus_desc'")
+    }
+    # extract group_id and locus_mode
+    out <- as.data.frame(str_match(locus_desc, pttrn))[,2:3] %>% 
+        distinct() %>% arrange(V3)
+    # format output
+    colnames(out) <- c("locus_mode", "group_id")
+    # output
+    return(out)
+}
+
 #' Default Microsat or Sequence mutliple group prior
 #' @keywords internal
 #' @author Ghislain Durif
 #' @description
 #' Content: see doc
-#' @param locus_mode vector of character, among microsat (`"M"`) or 
-#' sequence (`"S"`) mode, with the same length as `desc`.
 #' @param locus_desc vector of character string, locus description read 
 #' from data file. If provided, `locus_mode` and `group_id` are ignored.
+#' @param locus_mode vector of character, among microsat (`"M"`) or 
+#' sequence (`"S"`) mode, with the same length as `group_id`. Ignored if 
+#' `locus_desc` is provided.
 #' @param group_id vector of character, indicating group ids, 
-#' with the same length as `prior_desc`, sorted by lexicographic order. 
+#' with the same length as `locus_mode`, sorted by lexicographic order. 
 #' Ignored if `locus_desc` is provided.
-#' @param prior_desc vector of character string, group prior descriptions (one 
-#' description by group). Ignored if `locus_desc` is provided.
 default_mss_group_prior <- function(
     locus_desc = NULL, locus_mode = NULL, group_id = NULL
 ) {
     # locus description ?
     if(!is.null(locus_desc)) {
-        if(!is.vector(locus_desc) && !is.character(locus_desc)) {
-            stop("Issue with input")
-        }
-        
-        # extract group_id and locus_mode
-        mode_group_match <- as.data.frame(str_match(
-            locus_desc, " \\[([MS])\\] (G[0-9]+)"
-        ))[,2:3] %>% distinct() %>% arrange(V3)
-        
-        locus_mode <- mode_group_match$V2
-        group_id <- mode_group_match$V3
-        
+        group_desc <- get_group_desc(locus_desc)
+        locus_mode <- group_desc$locus_mode
+        group_id <- group_desc$group_id
     } else {
         # missing input
         if(is.null(locus_mode) || is.null(group_id)) {

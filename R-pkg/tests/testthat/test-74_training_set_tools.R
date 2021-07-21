@@ -839,6 +839,40 @@ test_that("default_group_prior",{
     expect_identical(res, expected_res)
 })
 
+test_that("get_group_desc", {
+    
+    # microsat
+    test_proj <- "Microsat"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    locus_desc <- header_check$locus_desc
+    
+    res <- get_group_desc(locus_desc)
+    expected_res <- data.frame(
+        locus_mode = "M", group_id = "G1", stringsAsFactors = FALSE
+    )
+    expect_identical(res, expected_res)
+    
+    # microsat sequence 1
+    test_proj <- "Microsat_Sequences"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    locus_desc <- header_check$locus_desc
+    
+    res <- get_group_desc(locus_desc)
+    expected_res <- data.frame(
+        locus_mode = c("M", "S"), group_id = c("G1", "G2"), 
+        stringsAsFactors = FALSE
+    )
+    expect_identical(res, expected_res)
+})
+
 test_that("default_mss_group_prior", {
     
     # MWE with single group
