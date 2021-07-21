@@ -1250,13 +1250,15 @@ default_group_prior <- function(group_id, locus_mode = "M") {
 get_group_desc <- function(locus_desc) {
     # check input
     if(!is.vector(locus_desc) && !is.character(locus_desc)) {
-        stop("Issue with input: non valid 'locus_desc'")
+        warning("Issue with input: non valid 'locus_desc'")
+        return(NULL)
     }
     # pattern to extract
     pttrn <- " \\[([MS])\\] (G[0-9]+)"
     # check if pattern is in input
     if(!all(str_detect(locus_desc, pttrn))) {
-        stop("Issue with input: non valid 'locus_desc'")
+        warning("Issue with input: non valid 'locus_desc'")
+        return(NULL)
     }
     # extract group_id and locus_mode
     out <- as.data.frame(str_match(locus_desc, pttrn))[,2:3] %>% 
@@ -1291,14 +1293,18 @@ default_mss_group_prior <- function(
     } else {
         # missing input
         if(is.null(locus_mode) || is.null(group_id)) {
-            stop("Issue with input")
+            warning("Issue with input")
+            return(NULL)
         }
     }
     
     # check locus_mode and group_id
-    if(length(locus_mode) != length(group_id)) stop("Issue with input")
-    if(!all(locus_mode %in% c("M", "S"))) stop("Issue with input")
-    if(!identical(group_id, sort(group_id))) stop("Issue with input")
+    if((length(locus_mode) != length(group_id)) ||
+       (!all(locus_mode %in% c("M", "S"))) ||
+       (!identical(group_id, sort(group_id)))) {
+        warning("Issue with input")
+        return(NULL)
+    }
     
     # default group prior
     out <- lapply(
