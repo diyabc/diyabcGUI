@@ -1322,3 +1322,57 @@ default_mss_group_prior <- function(
     # output
     return(out)
 }
+
+#' Parse sequence mutation model
+#' @keywords internal
+#' @author Ghislain Durif
+parse_seq_mut_model <- function(mut_model) {
+    # output
+    out <- list(
+        mut_model = NULL, invariant_perc = NULL, gamma_shape = NULL, 
+        valid = TRUE
+    )
+    # check input
+    if(!is.character(mut_model) || length(mut_model) != 1) {
+        out$valid <- FALSE
+        return(out)
+    }
+    # mutation model description
+    mut_model_desc <- mutation_model_desc()
+    # check input
+    pttrn <- str_c(
+        "^MODEL",
+        str_c("(", str_c(mut_model_desc$model, collapse = "|"), ")"),
+        int_regex(),
+        str_c(numexp_regex(), "$"),
+        sep = " "
+    )
+    if(!str_detect(mut_model, pttrn)) {
+        out$valid <- FALSE
+        return(out)
+    }
+    # extract mutation model name
+    pttrn <- str_c(
+        "(?<=^MODEL )",
+        str_c("(", str_c(mut_model_desc$model, collapse = "|"), ")")
+    )
+    out$mut_model <- str_extract(mut_model, pttrn)
+    # extract percentage of invariant site
+    pttrn <- str_c(
+        str_c(
+            "(?<=^MODEL",
+            str_c("(", str_c(mut_model_desc$model, collapse = "|"), ")"), 
+            ")",
+            sep = " "
+        ),
+        int_regex(), "(?= )"
+    )
+    out$invariant_perc <- as.numeric(str_extract(mut_model, pttrn))
+    # extract gamma shape
+    pttrn <- str_c(
+        "(?<= )", numexp_regex(), "(?=$)"
+    )
+    out$gamma_shape <- as.numeric(str_extract(mut_model, pttrn))
+    # output
+    return(out)
+}

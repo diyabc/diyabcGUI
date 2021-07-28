@@ -928,3 +928,36 @@ test_that("default_mss_group_prior", {
     expect_identical(res, expected_res)
 })
 
+test_that("parse_seq_mut_model", {
+    # ok
+    mut_model <- "MODEL K2P 10 2"
+    res <- parse_seq_mut_model(mut_model)
+    expect_true(res$valid)
+    expect_equal(res$mut_model, "K2P")
+    expect_equal(res$invariant_perc, 10)
+    expect_equal(res$gamma_shape, 2)
+    
+    # ok
+    mut_model <- "MODEL K2P 10 1e-1"
+    res <- parse_seq_mut_model(mut_model)
+    expect_true(res$valid)
+    expect_equal(res$mut_model, "K2P")
+    expect_equal(res$invariant_perc, 10)
+    expect_equal(res$gamma_shape, 1E-1)
+    
+    # nok
+    mut_model <- c("MODEL K2P 10 2", "MODEL K2P 10 2")
+    res <- parse_seq_mut_model(mut_model)
+    expect_false(res$valid)
+    
+    # nok
+    mut_model <- "MODEL 2"
+    res <- parse_seq_mut_model(mut_model)
+    expect_false(res$valid)
+    
+    # nok
+    mut_model <- "MODEL AA 10 2"
+    res <- parse_seq_mut_model(mut_model)
+    expect_false(res$valid)
+})
+
