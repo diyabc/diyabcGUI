@@ -644,7 +644,7 @@ prior_def_ui <- function(id) {
     )
 }
 
-#' Parameter defintion module server
+#' Prior definition module server
 #' @keywords internal
 #' @author Ghislain Durif
 prior_def_server <- function(input, output, session, 
@@ -901,10 +901,10 @@ prior_def_server <- function(input, output, session,
         req(input$min)
         req(input$max)
         feedbackWarning(
-            "min", (input$min >= input$max), "min >= max"
+            "min", (input$min > input$max), "min > max"
         )
         feedbackWarning(
-            "max", (input$min >= input$max), "min >= max"
+            "max", (input$min > input$max), "min > max"
         )
     })
     
@@ -1574,7 +1574,10 @@ mss_setup_ui <- function(id) {
         uiOutput(ns("mss_setup")),
         br(),
         hr(),
-        h3(icon("signal"), "Microsat/Sequence group priors"),
+        h3(
+            icon("signal"), 
+            "Microsat/Sequence group priors and mutation model"
+        ),
         uiOutput(ns("mss_prior")),
         br(),
         hr()
@@ -2259,72 +2262,906 @@ mss_group_prior_ui <- function(id) {
 mss_group_prior_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        group_prior_list = NULL, group_desc = NULL
+    )
+    
+    # group prior description (default or given in the header)
+    # and corresponding locus_mode/group_id
+    observeEvent({
+        c(env$ap$locus_type, env$ap$data_check, 
+          env$ts$locus_desc, env$ts$group_prior_list)
+    }, {
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(env$ap$data_check)
+        req(env$ap$data_check$valid)
+        req(env$ts$locus_desc)
+        
+        local$group_desc <- get_group_desc(env$ts$locus_desc)
+        
+        if(isTruthy(env$ts$group_prior_list) && 
+           check_group_prior(env$ts$group_prior_list)) {
+            local$group_prior_list <- env$ts$group_prior_list
+        } else {
+            local$group_prior_list <- default_mss_group_prior(env$ts$locus_desc)
+        }
+    })
+    
+    # debugging
+    observe({
+        pprint(local$group_desc)
+        pprint(local$group_prior_list)
+    })
+    
     # microsat
     output$microsat <- renderUI({
         req(env$ap$locus_type)
         req(env$ap$locus_type == "mss")
-        req(env$ap$data_check)
-        req(env$ap$data_check$valid)
-        req(env$ap$data_check$locus_mode)
-        req(any(env$ap$data_check$locus_mode == "M"))
+        req(local$group_prior_list)
+        req(local$group_desc)
+        req(local$group_desc$locus_mode)
+        req("M" %in% local$group_desc$locus_mode)
         tagList(
-            microsat_group_prior_ui(ns("microsat_prior"))
+            group_prior_def_ui(ns("microsat_prior"))
         )
     })
-    callModule(microsat_group_prior_server, "microsat_prior")
+    callModule(group_prior_def_server, "microsat_prior")
     # sequence
     output$sequence <- renderUI({
         req(env$ap$locus_type)
         req(env$ap$locus_type == "mss")
-        req(env$ap$data_check)
-        req(env$ap$data_check$valid)
-        req(env$ap$data_check$locus_mode)
-        req(any(env$ap$data_check$locus_mode == "S"))
+        req(local$group_prior_list)
+        req(local$group_desc)
+        req(local$group_desc$locus_mode)
+        req("S" %in% local$group_desc$locus_mode)
         tagList(
-            sequence_group_prior_ui(ns("sequence_prior"))
+            group_prior_def_ui(ns("sequence_prior"))
         )
     })
-    callModule(sequence_group_prior_server, "sequence_prior")
+    callModule(group_prior_def_server, "sequence_prior")
 }
 
-#' Microsat group prior setup ui
+#' MSS group prior parameter setting module ui
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_group_prior_ui <- function(id) {
+group_prior_def_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        box(
-            title = "Setup Microsat group priors",
-            width = 12,
-            collapsible = TRUE,
-            collapsed = TRUE,
-            "TODO"
-        )
+        uiOutput(ns("prior_def"))
     )
 }
 
-#' Microsat group prior setup ui
+#' MSS group prior parameter setting module server
 #' @keywords internal
 #' @author Ghislain Durif
-microsat_group_prior_server <- function(input, output, session) {}
+group_prior_def_server <- function(
+    input, output, session, group_prior = reactive({NULL}), 
+    mut_model = reactive({NULL}), locus_mode = "M"
+) {
+    # namespace
+    ns <- session$ns
 
-#' Sequence group prior setup ui
+    # init local
+    local <- reactiveValues(
+        group_prior = NULL, param_desc = NULL,
+        mut_model = NULL, mut_model_desc = NULL,
+        group_id = NULL, group_prior_def = NULL
+    )
+    
+    # init output
+    out <- reactiveValues(prior_list = NULL)
+    
+    # get input
+    observe({
+        # input prior
+        local$group_prior = group_prior()
+        if(isTruthy(local$group_prior)) {
+            local$group_prior <- split(local$group_prior, "\n")
+            local$param_desc <- group_prior_param_desc(
+                locus_mode = locus_mode
+            )
+        } else {
+            local$group_prior <- NULL
+            local$param_desc <- NULL
+        }
+        # input mutation model
+        if(locus_mode == "S") {
+            local$mut_model <- mut_model()
+            model_desc <- mutation_model_desc()
+            if(isTruthy(local$mut_model) && 
+               local$mut_model %in% model_desc$model) {
+                local$mut_model_desc <- model_desc[
+                    model_desc$model == local$mut_model
+                ]
+            } else {
+                local$mut_model <- NULL
+                local$mut_model_desc <- NULL
+            }
+        } else {
+            local$mut_model <- NULL
+            local$mut_model_desc <- NULL
+        }
+    })
+    
+    # debugging
+    observe({
+        pprint(local$group_prior)
+        pprint(local$mut_model)
+    })
+    
+    # render ui
+    output$prior_def <- renderUI({
+        req(local$group_prior)
+        req(local$param_desc$name)
+        
+        param_name <- local$param_desc$name
+        
+        do.call(
+            TagList,
+            unname(unlist(lapply(
+                1:3, 
+                function(ind) {
+                    c(
+                        mean_group_prior_def_ui(ns(param_name[2*ind - 1])),
+                        indiv_group_prior_def_ui(ns(param_name[2*ind]))
+                    )
+                }
+            )))
+        )
+    })
+    
+    # hide prior depending on mutation model (if sequence data)
+    observeEvent(local$mut_model, {
+        req(locus_mode == "S")
+        req(local$mut_model)
+        req(local$param_desc$name)
+        req(local$mut_model_desc)
+        req(nrow(local$mut_model_desc) == 1)
+        param_name <- local$param_desc$name
+        
+        for(param in c("MU", "K1", "K2")) {
+            related_param_name <- param_name[str_detect(param_name, param)]
+            if(length(related_param_name) > 0 && !local$mut_model_desc[param]) {
+                for(tmp_param in related_param_name) {
+                    shinyjs::hide(tmp_param)
+                }
+            }
+        }
+    })
+    
+    # get user input
+    observeEvent(local$param_desc, {
+        req(local$group_prior)
+        req(local$param_desc$name)
+        
+        param_name <- local$param_desc$name
+        local$group_prior_def <- lapply(
+            1:3,
+            function(ind) {
+                list(
+                    callModule(
+                        mean_group_prior_def_server, param_name[2*ind - 1], 
+                        prior = reactive(local$group_prior[2*ind]), 
+                        locus_mode = locus_mode
+                    ),
+                    callModule(
+                        indiv_group_prior_def_server, param_name[2*ind], 
+                        prior = reactive(local$group_prior[2*ind + 1]), 
+                        locus_mode = locus_mode
+                    )
+                )
+            }
+        )
+    })
+
+    
+    # ## debugging
+    # observe({
+    #     pprint(out$prior_list)
+    # })
+
+    ## output
+    return(out)
+}
+
+#' MSS mean group prior definition ui
 #' @keywords internal
 #' @author Ghislain Durif
-sequence_group_prior_ui <- function(id) {
+mean_group_prior_def_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        box(
-            title = "Setup Sequence group priors",
-            width = 12,
-            collapsible = TRUE,
-            collapsed = TRUE,
-            "TODO"
-        )
+        uiOutput(ns("prior_def"))
     )
 }
 
-#' Sequence group prior setup ui
+#' MSS group prior definition server
 #' @keywords internal
 #' @author Ghislain Durif
-sequence_group_prior_server <- function(input, output, session) {}
+mean_group_prior_def_server <- function(
+    input, output, session, prior = reactive({NULL}), locus_mode = "M"
+) {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        name = NULL, desc = NULL, distrib = NULL,
+        min = NULL, max = NULL, mean = NULL, 
+        stdev = NULL, note = NULL,
+        # numeric input setup
+        input_min = 0, input_max = NA, input_step = 0.00001,
+        # module input
+        prior = NULL
+    )
+    
+    # get input
+    observe({
+        local$prior <- prior()
+    })
+    
+    # init output
+    out <- reactiveValues(encoding = NULL, valid = TRUE)
+    
+    # debugging
+    observe({
+        pprint(local$prior)
+        pprint(locus_mode)
+    })
+    
+    
+    # parse input
+    observe({
+        req(locus_mode)
+        if(isTruthy(local$prior) && 
+           check_mean_group_prior(local$prior, locus_mode)) {
+            
+            prior_param_desc <- group_prior_param_desc(locus_mode)
+            
+            local$name <- get_group_prior_param(local$prior, locus_mode)
+            local$desc <- param_desc$desc[param_desc$name == local$name]
+            local$note <- param_desc$note[param_desc$name == local$name]
+            local$distrib <- get_group_prior_distrib(local$prior)
+            
+            tmp_val <- get_group_prior_val(local$prior)
+            
+            local$min <- as.numeric(tmp_val[1])
+            local$max <- as.numeric(tmp_val[2])
+            local$mean <- as.numeric(tmp_val[3])
+            local$stdev <- as.numeric(tmp_val[4])
+        } else {
+            local$name <- NULL
+            local$desc <- NULL
+            local$note <- NULL
+            local$distrib <- NULL
+            local$min <- NULL
+            local$max <- NULL
+            local$mean <- NULL
+            local$stdev <- NULL
+        }
+    })
+    
+    # render input
+    output$prior_def <- renderUI({
+        
+        req(local$name)
+        req(local$desc)
+        req(local$distrib)
+        req(local$min)
+        req(local$max)
+        req(local$mean)
+        req(local$stdev)
+        
+        input_min <- numericInput(
+            ns("min"), label = NULL, value = local$min,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_max <- numericInput(
+            ns("max"), label = NULL, value = local$max,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_mean <- numericInput(
+            ns("mean"), label = NULL, value = local$mean,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_stdev <- numericInput(
+            ns("stdev"), label = NULL, value = local$stdev,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        title_style <- 
+            "text-align:right;margin-right:1em;vertical-align:middle;"
+        
+        param_title <- tags$h5(local$desc)
+        if(isTruthy(local$note)) {
+            param_title <- tags$h5(local$desc) %>% helper(
+                type = "inline", 
+                content = local$note
+            )
+        }
+        
+        tagList(
+            param_title,
+            fluidRow(
+                column(
+                    width = 4,
+                    selectInput(
+                        ns("distrib"),
+                        label = NULL,
+                        choices = list("Uniform" = "UN", "Log-Unif." = "LU",
+                                       "Gamma" = "GA"),
+                        selected = local$distrib
+                    ),
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Min.", style = title_style),
+                        input_min,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Max.", style = title_style),
+                        input_max,
+                        cellWidths = c("40%", "60%")
+                    )
+                )
+            ),
+            fluidRow(
+                column(
+                    offset = 4, width = 4,
+                    splitLayout(
+                        tags$h5("Mean", style = title_style),
+                        input_mean,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Std. dev.", style = title_style),
+                        input_stdev,
+                        cellWidths = c("40%", "60%")
+                    )
+                )
+            ),
+            hr()
+        )
+    })
+    
+    ## disable mean and stdev if uniform or log-uniform
+    observe({
+        req(input$distrib)
+        if(input$distrib %in% c("UN", "LU")) {
+            updateNumericInput(session, "mean", value = 0)
+            updateNumericInput(session, "stdev", value = 0)
+            shinyjs::disable("mean")
+            shinyjs::disable("stdev")
+        } else {
+            shinyjs::enable("mean")
+            shinyjs::enable("stdev")
+        }
+    })
+    
+    #### check for missing input
+    ## min
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "min", !isTruthy(input$min),
+            "Missing value."
+        )
+    })
+    
+    ## max
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "max", !isTruthy(input$max),
+            "Missing value."
+        )
+    })
+    
+    ## mean
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "mean", !isTruthy(input$mean),
+            "Missing value."
+        )
+    })
+    
+    ## stdev
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "stdev", !isTruthy(input$stdev),
+            "Missing value."
+        )
+    })
+    
+    ## check for min/max
+    observe({
+        req(local$name)
+        req(input$min)
+        req(input$max)
+        feedbackWarning(
+            "min", (input$min > input$max), "min > max"
+        )
+        feedbackWarning(
+            "max", (input$min > input$max), "min > max"
+        )
+    })
+    
+    ## check for normal and log-normal parameter setting
+    observe({
+        req(local$name)
+        req(input$distrib)
+        req(input$min)
+        req(input$mean)
+        feedbackWarning(
+            "mean", 
+            input$distrib %in% c("GA") && 
+                (input$mean < input$min),
+            "mean < min"
+        )
+        feedbackWarning(
+            "min", 
+            input$distrib %in% c("GA") && 
+                (input$mean < input$min),
+            "mean < min"
+        )
+    })
+    
+    observe({
+        req(local$name)
+        req(input$distrib)
+        req(input$max)
+        req(input$mean)
+        feedbackWarning(
+            "mean", 
+            input$distrib %in% c("NO", "LN") && 
+                (input$mean > input$max),
+            "mean > max"
+        )
+        feedbackWarning(
+            "max", 
+            input$distrib %in% c("NO", "LN") && 
+                (input$mean > input$max),
+            "mean > max"
+        )
+    })
+    
+    # observe({
+    #     logging("min = ", input$min)
+    #     logging("max = ", input$max)
+    #     logging("mean = ", input$mean)
+    #     logging("stdev = ", input$stdev)
+    # })
+    
+    ## encode output
+    observe({
+        out$encoding <- NULL
+        out$valid <- FALSE
+        req(local$name)
+        req(input$distrib)
+        req(input$min)
+        req(input$max)
+        req(input$mean)
+        req(input$stdev)
+        out$valid <- !((input$min > input$max) || 
+                        ((input$distrib %in% c("GA")) &&
+                            (input$mean < input$min || input$mean > input$max)))
+        if(out$valid) {
+            out$encoding <- str_c(
+                local$name,
+                input$distrib,
+                str_c(
+                    "[", input$min, ",", input$max, ",",
+                    input$mean, ",", input$stdev, "]"
+                ),
+                sep = " "
+            )
+        }
+    })
+    
+    ## debugging
+    observe({
+        logging("mean group prior def = ", out$encoding)
+    })
+    
+    ## output
+    return(out)
+}
+
+#' MSS indiv group prior definition ui
+#' @keywords internal
+#' @author Ghislain Durif
+indiv_group_prior_def_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("prior_def"))
+    )
+}
+
+#' MSS group prior definition server
+#' @keywords internal
+#' @author Ghislain Durif
+indiv_group_prior_def_server <- function(
+    input, output, session, prior = reactive({NULL}), locus_mode = "M"
+) {
+    
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        name = NULL, desc = NULL, distrib = NULL,
+        min = NULL, max = NULL, mean = NULL, 
+        stdev = NULL, note = NULL,
+        # numeric input setup
+        input_min = 0, input_max = NA, input_step = 0.00001,
+        # module input
+        prior = NULL
+    )
+    
+    # get input
+    observe({
+        local$prior <- prior()
+    })
+    
+    # init output
+    out <- reactiveValues(encoding = NULL, valid = TRUE)
+    
+    # debugging
+    observe({
+        pprint(local$prior)
+        pprint(locus_mode)
+    })
+    
+    
+    # parse input
+    observe({
+        req(locus_mode)
+        if(isTruthy(local$prior) && 
+           check_indiv_group_prior(local$prior, locus_mode)) {
+            
+            prior_param_desc <- group_prior_param_desc(locus_mode)
+            
+            local$name <- get_group_prior_param(local$prior, locus_mode)
+            local$desc <- param_desc$desc[param_desc$name == local$name]
+            local$note <- param_desc$note[param_desc$name == local$name]
+            local$distrib <- get_group_prior_distrib(local$prior)
+            
+            tmp_val <- get_group_prior_val(local$prior)
+            
+            local$min <- as.numeric(tmp_val[1])
+            local$max <- as.numeric(tmp_val[2])
+            local$mean <- tmp_val[3]
+            local$stdev <- as.numeric(tmp_val[4])
+        } else {
+            local$name <- NULL
+            local$desc <- NULL
+            local$note <- NULL
+            local$distrib <- NULL
+            local$min <- NULL
+            local$max <- NULL
+            local$mean <- NULL
+            local$stdev <- NULL
+        }
+    })
+    
+    # render input
+    output$prior_def <- renderUI({
+        
+        req(local$name)
+        req(local$desc)
+        req(local$distrib)
+        req(local$min)
+        req(local$max)
+        req(local$mean)
+        req(local$stdev)
+        
+        input_min <- numericInput(
+            ns("min"), label = NULL, value = local$min,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_max <- numericInput(
+            ns("max"), label = NULL, value = local$max,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        input_mean <- shinyjs::disabled(textInput(
+            ns("mean"), label = NULL, value = local$mean
+        ))
+        
+        input_stdev <- numericInput(
+            ns("stdev"), label = NULL, value = local$stdev,
+            min = local$input_min, max = local$input_max,
+            step = local$input_step
+        )
+        
+        title_style <- 
+            "text-align:right;margin-right:1em;vertical-align:middle;"
+        
+        param_title <- tags$h5(local$desc)
+        if(isTruthy(local$note)) {
+            param_title <- tags$h5(local$desc) %>% helper(
+                type = "inline", 
+                content = local$note
+            )
+        }
+        
+        tagList(
+            param_title,
+            fluidRow(
+                column(
+                    width = 4,
+                    shinyjs::disabled(selectInput(
+                        ns("distrib"),
+                        label = NULL,
+                        choices = list("Gamma" = "GA"),
+                        selected = local$distrib
+                    ),
+                )),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Min.", style = title_style),
+                        input_min,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Max.", style = title_style),
+                        input_max,
+                        cellWidths = c("40%", "60%")
+                    )
+                )
+            ),
+            fluidRow(
+                column(
+                    offset = 4, width = 4,
+                    splitLayout(
+                        tags$h5("Mean", style = title_style),
+                        input_mean,
+                        cellWidths = c("40%", "60%")
+                    )
+                ),
+                column(
+                    width = 4,
+                    splitLayout(
+                        tags$h5("Std. dev.", style = title_style),
+                        input_stdev,
+                        cellWidths = c("40%", "60%")
+                    )
+                )
+            ),
+            hr()
+        )
+    })
+    
+    #### check for missing input
+    ## min
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "min", !isTruthy(input$min),
+            "Missing value."
+        )
+    })
+    
+    ## max
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "max", !isTruthy(input$max),
+            "Missing value."
+        )
+    })
+    
+    ## stdev
+    observe({
+        req(local$name)
+        feedbackWarning(
+            "stdev", !isTruthy(input$stdev),
+            "Missing value."
+        )
+    })
+    
+    ## check for min/max
+    observe({
+        req(local$name)
+        req(input$min)
+        req(input$max)
+        feedbackWarning(
+            "min", (input$min > input$max), "min > max"
+        )
+        feedbackWarning(
+            "max", (input$min > input$max), "min > max"
+        )
+    })
+    
+    # observe({
+    #     logging("min = ", input$min)
+    #     logging("max = ", input$max)
+    #     logging("mean = ", input$mean)
+    #     logging("stdev = ", input$stdev)
+    # })
+    
+    ## encode output
+    observe({
+        out$encoding <- NULL
+        out$valid <- FALSE
+        req(local$name)
+        req(input$distrib)
+        req(input$min)
+        req(input$max)
+        req(input$mean)
+        req(input$stdev)
+        out$valid <- !(input$min > input$max)
+        if(out$valid) {
+            out$encoding <- str_c(
+                local$name,
+                input$distrib,
+                str_c(
+                    "[", input$min, ",", input$max, ",",
+                    input$mean, ",", input$stdev, "]"
+                ),
+                sep = " "
+            )
+        }
+    })
+    
+    ## debugging
+    observe({
+        logging("indiv group prior def = ", out$encoding)
+    })
+    
+    ## output
+    return(out)
+}
+
+#' Sequence data mutation model setting module ui
+#' @keywords internal
+#' @author Ghislain Durif
+seq_mutation_model_def_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        uiOutput(ns("mut_model_def"))
+    )
+}
+
+#' Sequence data mutation model setting module server
+#' @keywords internal
+#' @author Ghislain Durif
+seq_mutation_model_def_server <- function(
+    input, output, session, mut_model = reactive({NULL})
+) {
+    # namespace
+    ns <- session$ns
+    
+    # init local
+    local <- reactiveValues(
+        mut_model_desc = mutation_model_desc(),
+        mut_model = NULL,
+        mut_model_name = NULL,
+        invariant_perc = NULL,
+        gamma_shape = NULL
+    )
+    
+    # init output
+    out <- reactiveValues(mut_model = NULL)
+    
+    # init output
+    out <- reactiveValues(mut_model = NULL)
+    
+    # get input
+    observe({
+        req(local$mut_model_desc)
+        req(local$mut_model_desc$model)
+        tmp_mut_model <- mut_model()
+        if(isTruthy(tmp_mut_model)) {
+            local$mut_model <- tmp_mut_model
+        } else {
+            local$mut_model <- NULL
+        }
+    })
+    
+    # debugging
+    observe({
+        pprint(local$mut_model)
+    })
+    
+    # parse input
+    observeEvent(local$mut_model, {
+        parsed_mut_model <- parse_seq_mut_model(local$mut_model) 
+        
+        if(parsed_mut_model$valid) {
+            local$mut_model_name <- parsed_mut_model$mut_model
+            local$invariant_perc <- parsed_mut_model$invariant_perc
+            local$gamma_shape <- parsed_mut_model$gamma_shape
+        } else {
+            local$mut_model_name <- NULL
+            local$invariant_perc <- NULL
+            local$gamma_shape <- NULL
+        }
+    })
+    
+    # render ui
+    output$mut_model_def <- renderUI({
+        req(local$mut_model_name)
+        req(local$invariant_perc)
+        req(local$gamma_shape)
+        req(local$mut_model_desc)
+        req(local$mut_model_desc$model)
+        req(local$mut_model_desc$desc)
+        
+        possible_choice <- local$mut_model_desc$model
+        names(possible_choice) <- local$mut_model_desc$desc
+        
+        tagList(
+            fluidRow(
+                column(
+                    width = 4,
+                    selectInput(
+                        ns("mut_model"),
+                        label = NULL,
+                        choices = possible_choice,
+                        selected = local$mut_model_name,
+                        multiple = FALSE
+                    )
+                )
+            ),
+            fluidRow(
+                column(
+                    width = 4,
+                    numericInput(
+                        ns("invariant_perc"),
+                        label = "Percentage of invariant sites",
+                        value = local$invariant_perc,
+                        min = 0, max = 100, step = 1
+                    )
+                )
+            ),
+            fluidRow(
+                column(
+                    width = 4,
+                    numericInput(
+                        ns("gamma_shape"),
+                        label = "Shape of the gamma",
+                        value = local$gamma_shape,
+                        min = 0, max = NA, step = 0.001
+                    )
+                )
+            )
+        )
+    })
+    
+    
+    # ## debugging
+    # observe({
+    #     pprint(out$prior_list)
+    # })
+    
+    ## output
+    return(out)
+}

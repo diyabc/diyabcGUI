@@ -21,7 +21,7 @@
 #' @importFrom shinydashboard box updateTabItems
 #' @importFrom shinyFeedback feedbackWarning
 #' @importFrom shinyhelper helper
-#' @importFrom shinyjs disable enable hidden hide reset show
+#' @importFrom shinyjs disable enable disabled hidden hide reset show
 #' @importFrom shinyWidgets actionBttn actionGroupButtons ask_confirmation progressBar 
 #' radioGroupButtons show_alert updateProgressBar 
 #' @importFrom stringr str_c str_detect str_extract str_extract_all str_length 
