@@ -1329,7 +1329,7 @@ default_mss_group_prior <- function(
 parse_seq_mut_model <- function(mut_model) {
     # output
     out <- list(
-        mut_model = NULL, invariant_perc = NULL, gamma_shape = NULL, 
+        mut_model_name = NULL, invariant_perc = NULL, gamma_shape = NULL, 
         valid = TRUE
     )
     # check input
@@ -1356,7 +1356,7 @@ parse_seq_mut_model <- function(mut_model) {
         "(?<=^MODEL )",
         str_c("(", str_c(mut_model_desc$model, collapse = "|"), ")")
     )
-    out$mut_model <- str_extract(mut_model, pttrn)
+    out$mut_model_name <- str_extract(mut_model, pttrn)
     # extract percentage of invariant site
     pttrn <- str_c(
         str_c(
@@ -1368,6 +1368,10 @@ parse_seq_mut_model <- function(mut_model) {
         int_regex(), "(?= )"
     )
     out$invariant_perc <- as.numeric(str_extract(mut_model, pttrn))
+    if(out$invariant_perc < 0 || out$invariant_perc > 100) {
+        out$valid <- FALSE
+        return(out)
+    }
     # extract gamma shape
     pttrn <- str_c(
         "(?<= )", numexp_regex(), "(?=$)"

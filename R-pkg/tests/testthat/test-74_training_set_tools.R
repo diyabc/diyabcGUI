@@ -933,7 +933,7 @@ test_that("parse_seq_mut_model", {
     mut_model <- "MODEL K2P 10 2"
     res <- parse_seq_mut_model(mut_model)
     expect_true(res$valid)
-    expect_equal(res$mut_model, "K2P")
+    expect_equal(res$mut_model_name, "K2P")
     expect_equal(res$invariant_perc, 10)
     expect_equal(res$gamma_shape, 2)
     
@@ -941,9 +941,14 @@ test_that("parse_seq_mut_model", {
     mut_model <- "MODEL K2P 10 1e-1"
     res <- parse_seq_mut_model(mut_model)
     expect_true(res$valid)
-    expect_equal(res$mut_model, "K2P")
+    expect_equal(res$mut_model_name, "K2P")
     expect_equal(res$invariant_perc, 10)
     expect_equal(res$gamma_shape, 1E-1)
+    
+    # nok
+    mut_model <- "MODEL K2P 110 2"
+    res <- parse_seq_mut_model(mut_model)
+    expect_false(res$valid)
     
     # nok
     mut_model <- c("MODEL K2P 10 2", "MODEL K2P 10 2")
