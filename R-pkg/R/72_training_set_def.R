@@ -2251,8 +2251,13 @@ mss_locus_config_server <- function(
 mss_group_prior_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        uiOutput(ns("microsat")),
-        uiOutput(ns("sequence"))
+        box(
+            title = "Setup mutation model on the groups",
+            width = 12,
+            collapsible = TRUE,
+            collapsed = TRUE,
+            tagList(uiOutput(ns("group_prior")))
+        )
     )
 }
 
@@ -2290,38 +2295,73 @@ mss_group_prior_server <- function(input, output, session) {
         }
     })
     
-    # debugging
-    observe({
-        pprint(local$group_desc)
-        pprint(local$group_prior_list)
+    # # debugging
+    # observe({
+    #     pprint(local$group_desc)
+    #     pprint(local$group_prior_list)
+    # })
+    
+    # render group prior
+    output$group_prior <- renderUI({
+        req(env$ap$locus_type)
+        req(env$ap$locus_type == "mss")
+        req(local$group_prior_list)
+        req(local$group_desc)
+        req(is.data.frame(local$group_desc))
+        req(local$group_desc$group_id)
+        req(local$group_desc$locus_mode)
+        req(length(local$group_prior_list) == nrow(local$group_desc))
+        
+        do.call(
+            tagList,
+            unname(lapply(
+                1:length(local$group_prior_list), 
+                function(ind) {
+                    tmp_group_id <- local$group_desc$group_id[ind]
+                    tmp_locus_mode <- switch (
+                        local$group_desc$locus_mode[ind],
+                        "M" = "Microsat",
+                        "S" = "Sequence"
+                    )
+                    tmp_title <- h4(
+                        "Group", tmp_group_id, str_c("(", tmp_locus_mode, ")")
+                    )
+                    return(tagList(
+                        h5(tmp_title),
+                        group_prior_def_ui(
+                            ns(str_c("prior_", tmp_group_id))
+                        )
+                    ))
+                }
+            ))
+        )
     })
     
-    # microsat
-    output$microsat <- renderUI({
+    # get output
+    observe({
+        
         req(env$ap$locus_type)
         req(env$ap$locus_type == "mss")
         req(local$group_prior_list)
         req(local$group_desc)
+        req(is.data.frame(local$group_desc))
+        req(local$group_desc$group_id)
         req(local$group_desc$locus_mode)
-        req("M" %in% local$group_desc$locus_mode)
-        tagList(
-            group_prior_def_ui(ns("microsat_prior"))
+        req(length(local$group_prior_list) == nrow(local$group_desc))
+        
+        local$group_prior_def <- lapply(
+            1:length(local$group_prior_list),
+            function(ind) {
+                return(callModule(
+                    group_prior_def_server, 
+                    str_c("prior_", local$group_desc$group_id[ind]),
+                    group_prior = reactive(local$group_prior_list[[ind]]), 
+                    group_id = reactive(local$group_desc$group_id[ind]),
+                    locus_mode = reactive(local$group_desc$locus_mode[ind])
+                ))
+            }
         )
     })
-    callModule(group_prior_def_server, "microsat_prior")
-    # sequence
-    output$sequence <- renderUI({
-        req(env$ap$locus_type)
-        req(env$ap$locus_type == "mss")
-        req(local$group_prior_list)
-        req(local$group_desc)
-        req(local$group_desc$locus_mode)
-        req("S" %in% local$group_desc$locus_mode)
-        tagList(
-            group_prior_def_ui(ns("sequence_prior"))
-        )
-    })
-    callModule(group_prior_def_server, "sequence_prior")
 }
 
 #' MSS group prior parameter setting module ui
@@ -2330,6 +2370,7 @@ mss_group_prior_server <- function(input, output, session) {
 group_prior_def_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        uiOutput(ns("mut_model_def")),
         uiOutput(ns("prior_def"))
     )
 }
@@ -2339,16 +2380,19 @@ group_prior_def_ui <- function(id) {
 #' @author Ghislain Durif
 group_prior_def_server <- function(
     input, output, session, group_prior = reactive({NULL}), 
-    mut_model = reactive({NULL}), locus_mode = "M"
+    group_id = reactive({NULL}), locus_mode = reactive({NULL})
 ) {
     # namespace
     ns <- session$ns
 
     # init local
     local <- reactiveValues(
-        group_prior = NULL, param_desc = NULL,
-        mut_model = NULL, mut_model_desc = NULL,
-        group_id = NULL, group_prior_def = NULL
+        param_desc = NULL,
+        mut_model = NULL, modified_mut_model = NULL,
+        group_prior_def = NULL, modified_group_prior = NULL,
+        # INPUT
+        original_group_prior = NULL, group_prior = NULL, group_id = NULL, 
+        locus_mode = NULL
     )
     
     # init output
@@ -2356,106 +2400,142 @@ group_prior_def_server <- function(
     
     # get input
     observe({
-        # input prior
-        local$group_prior = group_prior()
-        if(isTruthy(local$group_prior)) {
-            local$group_prior <- split(local$group_prior, "\n")
-            local$param_desc <- group_prior_param_desc(
-                locus_mode = locus_mode
-            )
-        } else {
-            local$group_prior <- NULL
-            local$param_desc <- NULL
-        }
-        # input mutation model
-        if(locus_mode == "S") {
-            local$mut_model <- mut_model()
-            model_desc <- mutation_model_desc()
-            if(isTruthy(local$mut_model) && 
-               local$mut_model %in% model_desc$model) {
-                local$mut_model_desc <- model_desc[
-                    model_desc$model == local$mut_model
-                ]
-            } else {
-                local$mut_model <- NULL
-                local$mut_model_desc <- NULL
-            }
-        } else {
-            local$mut_model <- NULL
-            local$mut_model_desc <- NULL
-        }
+        local$original_group_prior = group_prior()
+        local$group_id = group_id()
+        local$locus_mode = locus_mode()
     })
     
-    # debugging
+    # parse input
+    observeEvent(
+        c(local$group_prior, local$group_id, local$locus_mode),
+    {
+        req(local$original_group_prior)
+        req(local$group_id)
+        req(local$locus_mode)
+
+        # split input prior by line
+        local$group_prior <- unlist(str_split(
+            local$original_group_prior, "\n"
+        ))
+
+        # description of parameter for given locus mode
+        local$param_desc <- group_prior_param_desc(
+            locus_mode = local$locus_mode
+        )
+
+        # # input mutation model
+        # if(locus_mode == "S") {
+        #     local$mut_model <- mut_model()
+        #     model_desc <- mutation_model_desc()
+        #     if(isTruthy(local$mut_model) &&
+        #        local$mut_model %in% model_desc$model) {
+        #         local$mut_model_desc <- model_desc[
+        #             model_desc$model == local$mut_model
+        #         ]
+        #     } else {
+        #         local$mut_model <- NULL
+        #         local$mut_model_desc <- NULL
+        #     }
+        # } else {
+        #     local$mut_model <- NULL
+        #     local$mut_model_desc <- NULL
+        # }
+    })
+    
+    # # debugging
+    # observe({
+    #     pprint(local$group_prior)
+    #     pprint(local$group_id)
+    #     pprint(local$locus_mode)
+    # })
+    
+    # render mutation model choice
+    output$mut_model_def <- renderUI({
+        req(local$locus_mode == "S")
+        tagList(
+            seq_mutation_model_def_ui(ns("mut_model"))
+        )
+    })
+
+    ## get mutation model
     observe({
-        pprint(local$group_prior)
-        pprint(local$mut_model)
-    })
-    
-    # render ui
-    output$prior_def <- renderUI({
+        req(local$locus_mode == "S")
         req(local$group_prior)
-        req(local$param_desc$name)
-        
-        param_name <- local$param_desc$name
-        
-        do.call(
-            TagList,
-            unname(unlist(lapply(
-                1:3, 
-                function(ind) {
-                    c(
-                        mean_group_prior_def_ui(ns(param_name[2*ind - 1])),
-                        indiv_group_prior_def_ui(ns(param_name[2*ind]))
-                    )
-                }
-            )))
+        local$out_mut_model <- callModule(
+            seq_mutation_model_def_server, "mut_model", 
+            mut_model = reactive(unlist(tail(local$group_prior, 1)))
         )
     })
-    
-    # hide prior depending on mutation model (if sequence data)
-    observeEvent(local$mut_model, {
-        req(locus_mode == "S")
-        req(local$mut_model)
-        req(local$param_desc$name)
-        req(local$mut_model_desc)
-        req(nrow(local$mut_model_desc) == 1)
-        param_name <- local$param_desc$name
-        
-        for(param in c("MU", "K1", "K2")) {
-            related_param_name <- param_name[str_detect(param_name, param)]
-            if(length(related_param_name) > 0 && !local$mut_model_desc[param]) {
-                for(tmp_param in related_param_name) {
-                    shinyjs::hide(tmp_param)
-                }
-            }
-        }
-    })
-    
-    # get user input
-    observeEvent(local$param_desc, {
-        req(local$group_prior)
-        req(local$param_desc$name)
-        
-        param_name <- local$param_desc$name
-        local$group_prior_def <- lapply(
-            1:3,
-            function(ind) {
-                list(
-                    callModule(
-                        mean_group_prior_def_server, param_name[2*ind - 1], 
-                        prior = reactive(local$group_prior[2*ind]), 
-                        locus_mode = locus_mode
-                    ),
-                    callModule(
-                        indiv_group_prior_def_server, param_name[2*ind], 
-                        prior = reactive(local$group_prior[2*ind + 1]), 
-                        locus_mode = locus_mode
-                    )
-                )
-            }
-        )
-    })
+
+    # observe({
+    #     req(local$out_mut_model$mut_model_name)
+    #     local$mut_model <- local$out_mut_model$mut_model_name
+    # })
+    # 
+    # # render ui
+    # output$prior_def <- renderUI({
+    #     req(local$group_prior)
+    #     req(local$param_desc$name)
+    #     
+    #     param_name <- local$param_desc$name
+    #     
+    #     do.call(
+    #         TagList,
+    #         unname(unlist(lapply(
+    #             1:3, 
+    #             function(ind) {
+    #                 c(
+    #                     mean_group_prior_def_ui(ns(param_name[2*ind - 1])),
+    #                     indiv_group_prior_def_ui(ns(param_name[2*ind]))
+    #                 )
+    #             }
+    #         )))
+    #     )
+    # })
+    # 
+    # # hide prior depending on mutation model (if sequence data)
+    # observeEvent(local$mut_model, {
+    #     req(locus_mode == "S")
+    #     req(local$mut_model)
+    #     req(local$param_desc$name)
+    #     req(local$mut_model_desc)
+    #     req(nrow(local$mut_model_desc) == 1)
+    #     param_name <- local$param_desc$name
+    #     
+    #     for(param in c("MU", "K1", "K2")) {
+    #         related_param_name <- param_name[str_detect(param_name, param)]
+    #         if(length(related_param_name) > 0 && !local$mut_model_desc[param]) {
+    #             for(tmp_param in related_param_name) {
+    #                 shinyjs::hide(tmp_param)
+    #             }
+    #         }
+    #     }
+    # })
+    # 
+    # # get user input
+    # observeEvent(local$param_desc, {
+    #     req(local$group_prior)
+    #     req(local$param_desc$name)
+    #     
+    #     param_name <- local$param_desc$name
+    #     local$group_prior_def <- lapply(
+    #         1:3,
+    #         function(ind) {
+    #             list(
+    #                 callModule(
+    #                     mean_group_prior_def_server, param_name[2*ind - 1], 
+    #                     prior = reactive(local$group_prior[2*ind]), 
+    #                     locus_mode = locus_mode
+    #                 ),
+    #                 callModule(
+    #                     indiv_group_prior_def_server, param_name[2*ind], 
+    #                     prior = reactive(local$group_prior[2*ind + 1]), 
+    #                     locus_mode = locus_mode
+    #                 )
+    #             )
+    #         }
+    #     )
+    # })
 
     
     # ## debugging
@@ -3069,31 +3149,22 @@ seq_mutation_model_def_server <- function(
     )
     
     # init output
-    out <- reactiveValues(mut_model = NULL)
-    
-    # init output
-    out <- reactiveValues(mut_model = NULL)
+    out <- reactiveValues(mut_model = NULL, mut_model_name = NULL)
     
     # get input
     observe({
-        req(local$mut_model_desc)
-        req(local$mut_model_desc$model)
-        tmp_mut_model <- mut_model()
-        if(isTruthy(tmp_mut_model)) {
-            local$mut_model <- tmp_mut_model
-        } else {
-            local$mut_model <- NULL
-        }
+        local$mut_model <- mut_model()
     })
     
-    # debugging
-    observe({
-        pprint(local$mut_model)
-    })
+    # # debugging
+    # observe({
+    #     pprint(local$mut_model)
+    # })
     
     # parse input
     observeEvent(local$mut_model, {
-        parsed_mut_model <- parse_seq_mut_model(local$mut_model) 
+        req(local$mut_model)
+        parsed_mut_model <- parse_seq_mut_model(local$mut_model)
         
         if(parsed_mut_model$valid) {
             local$mut_model_name <- parsed_mut_model$mut_model
@@ -3108,6 +3179,12 @@ seq_mutation_model_def_server <- function(
     
     # render ui
     output$mut_model_def <- renderUI({
+        # 
+        # pprint(local$mut_model_name)
+        # pprint(local$invariant_perc)
+        # pprint(local$gamma_shape)
+        # pprint(local$mut_model_desc)
+        
         req(local$mut_model_name)
         req(local$invariant_perc)
         req(local$gamma_shape)
@@ -3156,11 +3233,25 @@ seq_mutation_model_def_server <- function(
         )
     })
     
+    ## format output
+    observe({
+        req(input$mut_model)
+        req(input$invariant_perc)
+        req(input$gamma_shape)
+        
+        out$mut_model <- str_c(
+            "MODEL",
+            input$mut_model, input$invariant_perc, input$gamma_shape,
+            sep = " "
+        )
+        out$mut_model_name <- input$mut_model
+    })
     
-    # ## debugging
-    # observe({
-    #     pprint(out$prior_list)
-    # })
+    ## debugging
+    observe({
+        pprint(out$mut_model)
+        pprint(out$mut_model_name)
+    })
     
     ## output
     return(out)
