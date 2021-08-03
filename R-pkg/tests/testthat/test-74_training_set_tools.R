@@ -752,8 +752,15 @@ test_that("get_group_prior_val", {
 test_that("group_prior_param_desc", {
     res <- group_prior_param_desc(locus_mode = "M")
     expect_true(is.data.frame(res))
+    expect_equal(nrow(res), 6)
+    expect_equal(ncol(res), 3)
+    expect_equal(colnames(res), c("param", "desc", "note"))
     res <- group_prior_param_desc(locus_mode = "S")
     expect_true(is.data.frame(res))
+    expect_equal(nrow(res), 6)
+    expect_equal(ncol(res), 3)
+    expect_equal(colnames(res), c("param", "desc", "note"))
+    res <- group_prior_param_desc(locus_mode = "S")
 })
 
 test_that("mutation_model_desc", {

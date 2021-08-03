@@ -1049,7 +1049,7 @@ group_prior_param_desc <- function(locus_mode = "M") {
     } else if(locus_mode == "S") {
         out <- data.frame(
             param = c("MEANMU", "GAMMU", "MEANK1", "GAMK1", "MEANK2", "GAMK2"),
-            meaning = c(
+            desc = c(
                 "Mean mutation rate (per site, per generation)",
                 "Individual locus mutation rate",
                 "Mean coefficient k_C/T",
