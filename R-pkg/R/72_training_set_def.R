@@ -2323,11 +2323,11 @@ mss_group_prior_server <- function(input, output, session) {
                         "M" = "Microsat",
                         "S" = "Sequence"
                     )
-                    tmp_title <- h4(
+                    tmp_title <- h4(tags$ul(tags$li(
                         "Group", tmp_group_id, str_c("(", tmp_locus_mode, ")")
-                    )
+                    )))
                     return(tagList(
-                        h5(tmp_title),
+                        tmp_title,
                         group_prior_def_ui(
                             ns(str_c("prior_", tmp_group_id))
                         )
@@ -2467,32 +2467,32 @@ group_prior_def_server <- function(
         )
     })
 
-    # observe({
-    #     req(local$out_mut_model$mut_model_name)
-    #     local$mut_model <- local$out_mut_model$mut_model_name
-    # })
-    # 
-    # # render ui
-    # output$prior_def <- renderUI({
-    #     req(local$group_prior)
-    #     req(local$param_desc$name)
-    #     
-    #     param_name <- local$param_desc$name
-    #     
-    #     do.call(
-    #         TagList,
-    #         unname(unlist(lapply(
-    #             1:3, 
-    #             function(ind) {
-    #                 c(
-    #                     mean_group_prior_def_ui(ns(param_name[2*ind - 1])),
-    #                     indiv_group_prior_def_ui(ns(param_name[2*ind]))
-    #                 )
-    #             }
-    #         )))
-    #     )
-    # })
-    # 
+    observe({
+        req(local$out_mut_model$mut_model_name)
+        local$mut_model <- local$out_mut_model$mut_model_name
+    })
+
+    # render ui
+    output$prior_def <- renderUI({
+        req(local$group_prior)
+        req(local$param_desc$param)
+
+        param_name <- local$param_desc$param
+
+        do.call(
+            tagList,
+            unname(lapply(
+                1:3,
+                function(ind) {
+                    tagList(
+                        mean_group_prior_def_ui(ns(param_name[2*ind - 1])),
+                        indiv_group_prior_def_ui(ns(param_name[2*ind]))
+                    )
+                }
+            ))
+        )
+    })
+    
     # # hide prior depending on mutation model (if sequence data)
     # observeEvent(local$mut_model, {
     #     req(locus_mode == "S")
@@ -2511,31 +2511,33 @@ group_prior_def_server <- function(
     #         }
     #     }
     # })
-    # 
-    # # get user input
-    # observeEvent(local$param_desc, {
-    #     req(local$group_prior)
-    #     req(local$param_desc$name)
-    #     
-    #     param_name <- local$param_desc$name
-    #     local$group_prior_def <- lapply(
-    #         1:3,
-    #         function(ind) {
-    #             list(
-    #                 callModule(
-    #                     mean_group_prior_def_server, param_name[2*ind - 1], 
-    #                     prior = reactive(local$group_prior[2*ind]), 
-    #                     locus_mode = locus_mode
-    #                 ),
-    #                 callModule(
-    #                     indiv_group_prior_def_server, param_name[2*ind], 
-    #                     prior = reactive(local$group_prior[2*ind + 1]), 
-    #                     locus_mode = locus_mode
-    #                 )
-    #             )
-    #         }
-    #     )
-    # })
+    
+    # get user input
+    observeEvent(local$param_desc, {
+        req(local$group_prior)
+        req(local$param_desc$param)
+        req(local$locus_mode)
+
+        param_name <- local$param_desc$param
+        
+        local$group_prior_def <- lapply(
+            1:3,
+            function(ind) {
+                list(
+                    callModule(
+                        mean_group_prior_def_server, param_name[2*ind - 1],
+                        prior = reactive(local$group_prior[2*ind]),
+                        locus_mode = local$locus_mode
+                    ),
+                    callModule(
+                        indiv_group_prior_def_server, param_name[2*ind],
+                        prior = reactive(local$group_prior[2*ind + 1]),
+                        locus_mode = local$locus_mode
+                    )
+                )
+            }
+        )
+    })
 
     
     # ## debugging
@@ -2586,12 +2588,11 @@ mean_group_prior_def_server <- function(
     # init output
     out <- reactiveValues(encoding = NULL, valid = TRUE)
     
-    # debugging
-    observe({
-        pprint(local$prior)
-        pprint(locus_mode)
-    })
-    
+    # # debugging
+    # observe({
+    #     pprint(local$prior)
+    #     pprint(locus_mode)
+    # })
     
     # parse input
     observe({
@@ -2599,11 +2600,11 @@ mean_group_prior_def_server <- function(
         if(isTruthy(local$prior) && 
            check_mean_group_prior(local$prior, locus_mode)) {
             
-            prior_param_desc <- group_prior_param_desc(locus_mode)
+            param_desc <- group_prior_param_desc(locus_mode)
             
             local$name <- get_group_prior_param(local$prior, locus_mode)
-            local$desc <- param_desc$desc[param_desc$name == local$name]
-            local$note <- param_desc$note[param_desc$name == local$name]
+            local$desc <- param_desc$desc[param_desc$param == local$name]
+            local$note <- param_desc$note[param_desc$param == local$name]
             local$distrib <- get_group_prior_distrib(local$prior)
             
             tmp_val <- get_group_prior_val(local$prior)
@@ -2858,10 +2859,10 @@ mean_group_prior_def_server <- function(
         }
     })
     
-    ## debugging
-    observe({
-        logging("mean group prior def = ", out$encoding)
-    })
+    # ## debugging
+    # observe({
+    #     logging("mean group prior def = ", out$encoding)
+    # })
     
     ## output
     return(out)
@@ -2906,11 +2907,11 @@ indiv_group_prior_def_server <- function(
     # init output
     out <- reactiveValues(encoding = NULL, valid = TRUE)
     
-    # debugging
-    observe({
-        pprint(local$prior)
-        pprint(locus_mode)
-    })
+    # # debugging
+    # observe({
+    #     pprint(local$prior)
+    #     pprint(locus_mode)
+    # })
     
     
     # parse input
@@ -2919,11 +2920,11 @@ indiv_group_prior_def_server <- function(
         if(isTruthy(local$prior) && 
            check_indiv_group_prior(local$prior, locus_mode)) {
             
-            prior_param_desc <- group_prior_param_desc(locus_mode)
+            param_desc <- group_prior_param_desc(locus_mode)
             
             local$name <- get_group_prior_param(local$prior, locus_mode)
-            local$desc <- param_desc$desc[param_desc$name == local$name]
-            local$note <- param_desc$note[param_desc$name == local$name]
+            local$desc <- param_desc$desc[param_desc$param == local$name]
+            local$note <- param_desc$note[param_desc$param == local$name]
             local$distrib <- get_group_prior_distrib(local$prior)
             
             tmp_val <- get_group_prior_val(local$prior)
@@ -2998,8 +2999,8 @@ indiv_group_prior_def_server <- function(
                         label = NULL,
                         choices = list("Gamma" = "GA"),
                         selected = local$distrib
-                    ),
-                )),
+                    ))
+                ),
                 column(
                     width = 4,
                     splitLayout(
@@ -3111,10 +3112,10 @@ indiv_group_prior_def_server <- function(
         }
     })
     
-    ## debugging
-    observe({
-        logging("indiv group prior def = ", out$encoding)
-    })
+    # ## debugging
+    # observe({
+    #     logging("indiv group prior def = ", out$encoding)
+    # })
     
     ## output
     return(out)
@@ -3179,7 +3180,7 @@ seq_mutation_model_def_server <- function(
     
     # render ui
     output$mut_model_def <- renderUI({
-        # 
+        
         # pprint(local$mut_model_name)
         # pprint(local$invariant_perc)
         # pprint(local$gamma_shape)
@@ -3247,11 +3248,11 @@ seq_mutation_model_def_server <- function(
         out$mut_model_name <- input$mut_model
     })
     
-    ## debugging
-    observe({
-        pprint(out$mut_model)
-        pprint(out$mut_model_name)
-    })
+    # ## debugging
+    # observe({
+    #     pprint(out$mut_model)
+    #     pprint(out$mut_model_name)
+    # })
     
     ## output
     return(out)
