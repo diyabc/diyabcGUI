@@ -766,6 +766,9 @@ test_that("group_prior_param_desc", {
 test_that("mutation_model_desc", {
     res <- mutation_model_desc()
     expect_true(is.data.frame(res))
+    expect_equal(nrow(res), 4)
+    expect_equal(ncol(res), 5)
+    expect_equal(colnames(res), c("model", "desc", "MU", "K1", "K2"))
 })
 
 test_that("check_group_prior", {
