@@ -2403,7 +2403,8 @@ group_prior_def_server <- function(
     # init local
     local <- reactiveValues(
         param_desc = NULL,
-        mut_model = NULL, modified_mut_model = NULL,
+        mut_model = NULL, mut_model_desc = mutation_model_desc(),
+        modified_mut_model = NULL,
         group_prior_def = NULL, modified_group_prior = NULL,
         # INPUT
         original_group_prior = NULL, group_prior = NULL, group_id = NULL, 
@@ -2437,24 +2438,6 @@ group_prior_def_server <- function(
         local$param_desc <- group_prior_param_desc(
             locus_mode = local$locus_mode
         )
-
-        # # input mutation model
-        # if(locus_mode == "S") {
-        #     local$mut_model <- mut_model()
-        #     model_desc <- mutation_model_desc()
-        #     if(isTruthy(local$mut_model) &&
-        #        local$mut_model %in% model_desc$model) {
-        #         local$mut_model_desc <- model_desc[
-        #             model_desc$model == local$mut_model
-        #         ]
-        #     } else {
-        #         local$mut_model <- NULL
-        #         local$mut_model_desc <- NULL
-        #     }
-        # } else {
-        #     local$mut_model <- NULL
-        #     local$mut_model_desc <- NULL
-        # }
     })
     
     # # debugging
@@ -2486,6 +2469,11 @@ group_prior_def_server <- function(
         req(local$out_mut_model$mut_model_name)
         local$mut_model <- local$out_mut_model$mut_model_name
     })
+    
+    # # debugging
+    # observe({
+    #     pprint(local$mut_model)
+    # })
 
     # render ui
     output$prior_def <- renderUI({
@@ -2508,46 +2496,56 @@ group_prior_def_server <- function(
         )
     })
     
-    # # hide prior depending on mutation model (if sequence data)
-    # observeEvent(local$mut_model, {
-    #     req(locus_mode == "S")
-    #     req(local$mut_model)
-    #     req(local$param_desc$name)
-    #     req(local$mut_model_desc)
-    #     req(nrow(local$mut_model_desc) == 1)
-    #     param_name <- local$param_desc$name
-    #     
-    #     for(param in c("MU", "K1", "K2")) {
-    #         related_param_name <- param_name[str_detect(param_name, param)]
-    #         if(length(related_param_name) > 0 && !local$mut_model_desc[param]) {
-    #             for(tmp_param in related_param_name) {
-    #                 shinyjs::hide(tmp_param)
-    #             }
-    #         }
-    #     }
-    # })
-    
     # get user input
-    observeEvent(local$param_desc, {
+    observeEvent(
+        c(local$param_desc, local$mut_model), 
+    {
         req(local$group_prior)
         req(local$param_desc$param)
         req(local$locus_mode)
+        
+        seq_param <- NULL
+        tmp_mut_model_desc <- NULL
+        
+        if(local$locus_mode == "S") {
+            req(local$mut_model)
+            
+            seq_param <- c("MU", "K1", "K2")
+            
+            tmp_mut_model_desc <- subset(
+                local$mut_model_desc,
+                local$mut_model_desc$model == local$mut_model,
+            )
+            req(nrow(tmp_mut_model_desc) == 1)
+        }
 
         param_name <- local$param_desc$param
         
         local$group_prior_def <- lapply(
             1:3,
             function(ind) {
+                show_input <- TRUE
+                
+                # hide prior depending on mutation model (if sequence data)
+                if(local$locus_mode == "S") {
+                    tmp_seq_param <- seq_param[ind]
+                    show_input <- as.logical(
+                        tmp_mut_model_desc[tmp_seq_param]
+                    )
+                }
+                
                 list(
                     callModule(
                         mean_group_prior_def_server, param_name[2*ind - 1],
                         prior = reactive(local$group_prior[2*ind]),
-                        locus_mode = local$locus_mode
+                        locus_mode = local$locus_mode,
+                        show_input = show_input
                     ),
                     callModule(
                         indiv_group_prior_def_server, param_name[2*ind],
                         prior = reactive(local$group_prior[2*ind + 1]),
-                        locus_mode = local$locus_mode
+                        locus_mode = local$locus_mode,
+                        show_input = show_input
                     )
                 )
             }
@@ -2578,7 +2576,8 @@ mean_group_prior_def_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 mean_group_prior_def_server <- function(
-    input, output, session, prior = reactive({NULL}), locus_mode = "M"
+    input, output, session, prior = reactive({NULL}), locus_mode = "M", 
+    show_input = TRUE
 ) {
     
     # namespace
@@ -2642,6 +2641,8 @@ mean_group_prior_def_server <- function(
     
     # render input
     output$prior_def <- renderUI({
+        
+        req(show_input)
         
         req(local$name)
         req(local$desc)
@@ -2897,7 +2898,8 @@ indiv_group_prior_def_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 indiv_group_prior_def_server <- function(
-    input, output, session, prior = reactive({NULL}), locus_mode = "M"
+    input, output, session, prior = reactive({NULL}), locus_mode = "M",
+    show_input = TRUE
 ) {
     
     # namespace
@@ -2962,6 +2964,8 @@ indiv_group_prior_def_server <- function(
     
     # render input
     output$prior_def <- renderUI({
+        
+        req(show_input)
         
         req(local$name)
         req(local$desc)
