@@ -2013,11 +2013,21 @@ mss_locus_list_config_server <- function(
     
     # validation
     observeEvent(input$validate, {
+        
+        # print("#################### validate ####################")
+        # pprint(local$initial_locus_desc)
+        # pprint(env$ap$data_check$locus_mode)
+        # pprint(local$locus_mask)
+        # pprint(local$modified_locus_desc)
+        # pprint(local$unused_locus_desc)
+        
         req(local$initial_locus_desc)
         req(env$ap$data_check$locus_mode)
         req(local$locus_mask)
         req(local$modified_locus_desc)
-        req(local$unused_locus_desc)
+        if(sum(local$locus_mask) < length(local$locus_mask)) {
+            req(local$unused_locus_desc)
+        }
         
         local$validated <- TRUE
         
@@ -2026,11 +2036,13 @@ mss_locus_list_config_server <- function(
         
         ### correct group (if necessary) for current mode
         start_id <- 1
-        # group start to 1 for first locus mode
-        if(head(env$ap$data_check$locus_mode, 1) != local_mode) {
-            start_id <- max(unique(as.integer(str_extract(
-                local$unused_locus_desc, "(?<=G)[0-9]+"
-            )))) + 1
+        if(sum(local$locus_mask) < length(local$locus_mask)) {
+            # group start to 1 for first locus mode
+            if(head(env$ap$data_check$locus_mode, 1) != local_mode) {
+                start_id <- max(unique(as.integer(str_extract(
+                    local$unused_locus_desc, "(?<=G)[0-9]+"
+                )))) + 1
+            }
         }
         
         # correct group id for current mode
@@ -2040,19 +2052,22 @@ mss_locus_list_config_server <- function(
         
         ### correct group (if necessary) for other mode
         start_id <- 1
-        # group start to 1 for first locus mode
-        if(head(env$ap$data_check$locus_mode, 1) == local_mode) {
-            start_id <- max(unique(as.integer(str_extract(
-                final_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
-            )))) + 1
+        if(sum(local$locus_mask) < length(local$locus_mask)) {
+            # group start to 1 for first locus mode
+            if(head(env$ap$data_check$locus_mode, 1) == local_mode) {
+                start_id <- max(unique(as.integer(str_extract(
+                    final_locus_desc[local$locus_mask], "(?<=G)[0-9]+"
+                )))) + 1
+            }
+            
+            # correct group id for current mode
+            final_locus_desc[!local$locus_mask] <- 
+                correct_mss_locus_desc_group_id(
+                    local$unused_locus_desc, start_id
+                )
         }
         
-        # correct group id for current mode
-        final_locus_desc[!local$locus_mask] <- correct_mss_locus_desc_group_id(
-            local$unused_locus_desc, start_id
-        )
-        
-        ### debug
+        # ### debug
         # pprint(final_locus_desc)
         
         ### finally store result (if relevant)
@@ -2355,9 +2370,9 @@ mss_group_prior_server <- function(input, output, session) {
                 return(callModule(
                     group_prior_def_server, 
                     str_c("prior_", local$group_desc$group_id[ind]),
-                    group_prior = reactive(local$group_prior_list[[ind]]), 
-                    group_id = reactive(local$group_desc$group_id[ind]),
-                    locus_mode = reactive(local$group_desc$locus_mode[ind])
+                    group_prior = local$group_prior_list[[ind]], 
+                    group_id = local$group_desc$group_id[ind],
+                    locus_mode = local$group_desc$locus_mode[ind]
                 ))
             }
         )
@@ -2379,8 +2394,8 @@ group_prior_def_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 group_prior_def_server <- function(
-    input, output, session, group_prior = reactive({NULL}), 
-    group_id = reactive({NULL}), locus_mode = reactive({NULL})
+    input, output, session, group_prior = NULL, 
+    group_id = NULL, locus_mode = NULL
 ) {
     # namespace
     ns <- session$ns
@@ -2400,9 +2415,9 @@ group_prior_def_server <- function(
     
     # get input
     observe({
-        local$original_group_prior = group_prior()
-        local$group_id = group_id()
-        local$locus_mode = locus_mode()
+        local$original_group_prior = group_prior
+        local$group_id = group_id
+        local$locus_mode = locus_mode
     })
     
     # parse input
