@@ -550,12 +550,16 @@ prior_list_def_ui <- function(id) {
 prior_list_def_server <- function(input, output, session, 
                                   prior_list = reactive({NULL}),
                                   type = reactive({NULL})) {
+    
+    # FIXME
+    
     # namespace
     ns <- session$ns
     
     # init local
     local <- reactiveValues(
-        prior_list = NULL, param_name = NULL, type = NULL, prior_def = NULL
+        prior_list = NULL, param_name = NULL, type = NULL, prior_def = NULL,
+        counter = 0
     )
     
     # get input
@@ -611,6 +615,7 @@ prior_list_def_server <- function(input, output, session,
     })
     
     observe({
+        # local$counter <- isolate(local$counter) + 1
         prior_check <- unlist(lapply(
             local$prior_def, function(item) return(item$valid)
         ))
@@ -624,6 +629,11 @@ prior_list_def_server <- function(input, output, session,
             ))
         }
     })
+    
+    # ## debugging
+    # observe({
+    #     pprint(local$counter)
+    # })
     
     # ## debugging
     # observe({
@@ -2271,7 +2281,25 @@ mss_group_prior_ui <- function(id) {
             width = 12,
             collapsible = TRUE,
             collapsed = TRUE,
-            tagList(uiOutput(ns("group_prior")))
+            tagList(
+                uiOutput(ns("group_prior")),
+                hr(),
+                fluidRow(
+                    column(
+                        width = 4,
+                        actionButton(
+                            ns("validate"),
+                            label = "Validate",
+                            icon = icon("check"),
+                            width = '100%'
+                        )
+                    ),
+                    column(
+                        width = 8,
+                        uiOutput(ns("feedback"))
+                    )
+                )
+            )
         )
     )
 }
@@ -2285,10 +2313,11 @@ mss_group_prior_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
-        group_prior_list = NULL, group_desc = NULL
+        group_prior_list = NULL, group_desc = NULL,
+        modified_group_prior_list = NULL, validated = TRUE
     )
     
-    # group prior description (default or given in the header)
+    # env group prior description (default or given in the header)
     # and corresponding locus_mode/group_id
     observeEvent({
         c(env$ap$locus_type, env$ap$data_check, 
@@ -2300,13 +2329,27 @@ mss_group_prior_server <- function(input, output, session) {
         req(env$ap$data_check$valid)
         req(env$ts$locus_desc)
         
+        # extract group description
         local$group_desc <- get_group_desc(env$ts$locus_desc)
+        req(local$group_desc$locus_mode)
+        req(local$group_desc$group_id)
         
-        if(isTruthy(env$ts$group_prior_list) && 
-           check_group_prior(env$ts$group_prior_list)) {
+        # check group prior list (if existing)
+        tmp_check <- check_group_prior(
+            env$ts$group_prior_list, 
+            locus_mode = local$group_desc$locus_mode, 
+            group_id = local$group_desc$group_id
+        )
+        
+        # update local
+        if(tmp_check) {
             local$group_prior_list <- env$ts$group_prior_list
+            local$validated <- TRUE
         } else {
-            local$group_prior_list <- default_mss_group_prior(env$ts$locus_desc)
+            local$group_prior_list <- default_mss_group_prior(
+                env$ts$locus_desc
+            )
+            local$validated <- FALSE
         }
     })
     
@@ -2377,6 +2420,81 @@ mss_group_prior_server <- function(input, output, session) {
             }
         )
     })
+    
+    # merge output
+    observe({
+        req(local$group_prior_def)
+        local$modified_group_prior_list <- lapply(
+            local$group_prior_def,
+            function(item) {
+                req(item$group_prior)
+                return(item$group_prior)
+            }
+        )
+    })
+    
+    # # debugging
+    # observeEvent(local$modified_group_prior_list, {
+    #     pprint(local$modified_group_prior_list)
+    # })
+    
+    # output was modified by user ?
+    observeEvent(local$modified_group_prior_list, {
+        req(local$group_prior_list)
+        req(local$modified_group_prior_list)
+        if(!identical(
+            local$group_prior_list, local$modified_group_prior_list
+        )) {
+            local$validated <- FALSE
+        }
+    })
+    
+    # validation ?
+    observeEvent(input$validate, {
+        req(local$modified_group_prior_list)
+        
+        # check group prior list (if existing)
+        req(local$group_desc$locus_mode)
+        req(local$group_desc$group_id)
+        
+        tmp_check <- check_group_prior(
+            local$modified_group_prior_list, 
+            locus_mode = local$group_desc$locus_mode, 
+            group_id = local$group_desc$group_id
+        )
+        
+        # update env if group prior list has been modified (and is valid)
+        if(tmp_check) {
+            local$validated <- TRUE
+            if(!identical(
+                env$ts$group_prior_list, local$modified_group_prior_list
+            )) {
+                env$ts$group_prior_list <- local$modified_group_prior_list
+            }
+        }
+    })
+    
+    # # debugging
+    # observeEvent(env$ts$group_prior_list, {
+    #     pprint(env$ts$group_prior_list)
+    # })
+    
+    # feedback
+    output$feedback <- renderUI({
+        if(!local$validated) {
+            tagList(
+                tags$p(
+                    tags$div(
+                        icon("warning"), 
+                        "Configuration was modified. Please validate.",
+                        style = "color: #F89406;"
+                    )
+                )
+            )
+        } else {
+            NULL
+        }
+    })
 }
 
 #' MSS group prior parameter setting module ui
@@ -2402,42 +2520,51 @@ group_prior_def_server <- function(
 
     # init local
     local <- reactiveValues(
+        counter = 0, 
         param_desc = NULL,
         mut_model = NULL, mut_model_desc = mutation_model_desc(),
-        modified_mut_model = NULL,
-        group_prior_def = NULL, modified_group_prior = NULL,
+        modified_mut_model = NULL, modified_mut_model_name = NULL,
+        output_mut_model = NULL, 
+        mean_group_prior_def = NULL, indiv_group_prior_def = NULL, 
+        tmp_mean_group_prior = NULL, tmp_indiv_group_prior = NULL, 
+        tmp_group_prior = NULL, modified_group_prior = NULL,
         # INPUT
-        original_group_prior = NULL, group_prior = NULL, group_id = NULL, 
+        unsplit_group_prior = NULL, group_prior = NULL, group_id = NULL, 
         locus_mode = NULL
     )
     
     # init output
-    out <- reactiveValues(prior_list = NULL)
+    out <- reactiveValues(group_prior = NULL)
     
     # get input
     observe({
-        local$original_group_prior = group_prior
+        local$unsplit_group_prior = group_prior
         local$group_id = group_id
         local$locus_mode = locus_mode
     })
     
     # parse input
     observeEvent(
-        c(local$group_prior, local$group_id, local$locus_mode),
+        c(local$unsplit_group_prior, local$group_id, local$locus_mode),
     {
-        req(local$original_group_prior)
+        req(local$unsplit_group_prior)
         req(local$group_id)
         req(local$locus_mode)
 
         # split input prior by line
         local$group_prior <- unlist(str_split(
-            local$original_group_prior, "\n"
+            local$unsplit_group_prior, "\n"
         ))
 
         # description of parameter for given locus mode
         local$param_desc <- group_prior_param_desc(
             locus_mode = local$locus_mode
         )
+        
+        # mutation model (if relevant)
+        if(local$locus_mode == "S") {
+            local$mut_model <- unlist(tail(local$group_prior, 1))
+        }
     })
     
     # # debugging
@@ -2445,9 +2572,10 @@ group_prior_def_server <- function(
     #     pprint(local$group_prior)
     #     pprint(local$group_id)
     #     pprint(local$locus_mode)
+    #     pprint(local$mut_model)
     # })
     
-    # render mutation model choice
+    # render mutation model choice (if relevant)
     output$mut_model_def <- renderUI({
         req(local$locus_mode == "S")
         tagList(
@@ -2455,27 +2583,31 @@ group_prior_def_server <- function(
         )
     })
 
-    ## get mutation model
+    ## get mutation model (if relevant)
     observe({
         req(local$locus_mode == "S")
-        req(local$group_prior)
-        local$out_mut_model <- callModule(
+        req(local$mut_model)
+        local$output_mut_model <- callModule(
             seq_mutation_model_def_server, "mut_model", 
-            mut_model = reactive(unlist(tail(local$group_prior, 1)))
+            mut_model = reactive(local$mut_model)
         )
     })
 
     observe({
-        req(local$out_mut_model$mut_model_name)
-        local$mut_model <- local$out_mut_model$mut_model_name
+        req(local$locus_mode == "S")
+        req(local$output_mut_model$mut_model_name)
+        req(local$output_mut_model$mut_model)
+        local$modified_mut_model_name <- local$output_mut_model$mut_model_name
+        local$modified_mut_model <- local$output_mut_model$mut_model
     })
     
     # # debugging
     # observe({
-    #     pprint(local$mut_model)
+    #     pprint(local$modified_mut_model_name)
+    #     pprint(local$modified_mut_model)
     # })
 
-    # render ui
+    ## render ui for group prior setup
     output$prior_def <- renderUI({
         req(local$group_prior)
         req(local$param_desc$param)
@@ -2496,10 +2628,11 @@ group_prior_def_server <- function(
         )
     })
     
-    # get user input
-    observeEvent(
-        c(local$param_desc, local$mut_model), 
-    {
+    # get user input for group prior setup regarding mean prior
+    observeEvent(c(
+        local$group_prior, local$param_desc, local$modified_mut_model_name
+    ), {
+        # print("=========== RENDER MEAN ===========")
         req(local$group_prior)
         req(local$param_desc$param)
         req(local$locus_mode)
@@ -2508,20 +2641,68 @@ group_prior_def_server <- function(
         tmp_mut_model_desc <- NULL
         
         if(local$locus_mode == "S") {
-            req(local$mut_model)
+            req(local$modified_mut_model_name)
             
             seq_param <- c("MU", "K1", "K2")
             
             tmp_mut_model_desc <- subset(
                 local$mut_model_desc,
-                local$mut_model_desc$model == local$mut_model,
+                local$mut_model_desc$model == local$modified_mut_model_name,
             )
             req(nrow(tmp_mut_model_desc) == 1)
         }
-
+        
         param_name <- local$param_desc$param
         
-        local$group_prior_def <- lapply(
+        local$mean_group_prior_def <- lapply(
+            1:3,
+            function(ind) {
+                show_input <- TRUE
+                
+                # hide prior depending on mutation model (if sequence data)
+                if(local$locus_mode == "S") {
+                    tmp_seq_param <- seq_param[ind]
+                    show_input <- as.logical(
+                        tmp_mut_model_desc[tmp_seq_param]
+                    )
+                }
+                callModule(
+                    mean_group_prior_def_server, param_name[2*ind - 1],
+                    prior = reactive(local$group_prior[2*ind]),
+                    locus_mode = local$locus_mode,
+                    show_input = show_input
+                )
+            }
+        )
+    })
+    
+    # get user input for group prior setup
+    observeEvent(c(
+        local$group_prior, local$param_desc, local$modified_mut_model_name
+    ), {
+        # print("=========== RENDER INDIV ===========")
+        req(local$group_prior)
+        req(local$param_desc$param)
+        req(local$locus_mode)
+        
+        seq_param <- NULL
+        tmp_mut_model_desc <- NULL
+        
+        if(local$locus_mode == "S") {
+            req(local$modified_mut_model_name)
+            
+            seq_param <- c("MU", "K1", "K2")
+            
+            tmp_mut_model_desc <- subset(
+                local$mut_model_desc,
+                local$mut_model_desc$model == local$modified_mut_model_name,
+            )
+            req(nrow(tmp_mut_model_desc) == 1)
+        }
+        
+        param_name <- local$param_desc$param
+        
+        local$indiv_group_prior_def <- lapply(
             1:3,
             function(ind) {
                 show_input <- TRUE
@@ -2534,28 +2715,143 @@ group_prior_def_server <- function(
                     )
                 }
                 
-                list(
-                    callModule(
-                        mean_group_prior_def_server, param_name[2*ind - 1],
-                        prior = reactive(local$group_prior[2*ind]),
-                        locus_mode = local$locus_mode,
-                        show_input = show_input
-                    ),
-                    callModule(
-                        indiv_group_prior_def_server, param_name[2*ind],
-                        prior = reactive(local$group_prior[2*ind + 1]),
-                        locus_mode = local$locus_mode,
-                        show_input = show_input
-                    )
+                callModule(
+                    indiv_group_prior_def_server, param_name[2*ind],
+                    prior = reactive(local$group_prior[2*ind + 1]),
+                    locus_mode = local$locus_mode,
+                    show_input = show_input
                 )
             }
         )
+    })
+    
+    # # debug
+    # observe({
+    #     print("-------------- DEBUG group_prior_def_server --------------")
+    #     print("MEAN")
+    #     req(local$mean_group_prior_def)
+    #     lapply(
+    #         local$mean_group_prior_def,
+    #         function(item) {
+    #             req(item)
+    #             print(reactiveValuesToList(item))
+    #         }
+    #     )
+    #     print("INDIV")
+    #     req(local$indiv_group_prior_def)
+    #     lapply(
+    #         local$indiv_group_prior_def,
+    #         function(item) {
+    #             req(item)
+    #             print(reactiveValuesToList(item))
+    #         }
+    #     )
+    # })
+    
+    # collect user input for group prior setup
+    observe({
+        # print("=========== COLLECT MEAN ===========")
+        req(local$mean_group_prior_def)
+
+        # mean group prior extraction
+        local$tmp_mean_group_prior <- unlist(lapply(
+            local$mean_group_prior_def,
+            function(item) {
+                if(item$valid && isTruthy(item$encoding)) {
+                    return(item$encoding)
+                } else {
+                    return(NA)
+                }
+            }
+        ))
+    })
+    
+    observe({
+        # print("=========== COLLECT INDIV ===========")
+        req(local$indiv_group_prior_def)
+
+        # indiv group prior extraction
+        local$tmp_indiv_group_prior <- unlist(lapply(
+            local$indiv_group_prior_def,
+            function(item) {
+                if(item$valid && isTruthy(item$encoding)) {
+                    return(item$encoding)
+                } else {
+                    return(NA)
+                }
+            }
+        ))
+    })
+    
+    # parse user input for group prior setup
+    observeEvent(c(
+        local$tmp_mean_group_prior, local$tmp_indiv_group_prior, 
+        local$modified_mut_model
+    ), {
+        req(local$group_prior)
+        req(local$tmp_mean_group_prior)
+        req(local$tmp_indiv_group_prior)
+        req(identical(length(local$tmp_mean_group_prior), 3L))
+        req(identical(length(local$tmp_indiv_group_prior), 3L))
+        
+        local$tmp_group_prior <- unlist(lapply(
+            1:3,
+            function(ind) return(c(
+                local$tmp_mean_group_prior[ind],
+                local$tmp_indiv_group_prior[ind]
+            ))
+        ))
+        
+        # group information
+        local$tmp_group_prior <- c(
+            unlist(head(local$group_prior, 1)), local$tmp_group_prior
+        )
+        
+        # mutation model (if relevant)
+        if(local$locus_mode == "S") {
+            req(local$modified_mut_model)
+            local$tmp_group_prior <- c(
+                local$tmp_group_prior, local$modified_mut_model
+            )
+        }
+    })
+
+    # # debugging
+    # observe({
+    #     pprint(local$tmp_group_prior)
+    # })
+
+    # merge user input with original group prior (in case of NA)
+    observeEvent(local$tmp_group_prior, {
+        req(local$group_prior)
+        req(local$tmp_group_prior)
+        
+        # check if issue with total length
+        req(identical(length(local$group_prior),length(local$tmp_group_prior)))
+
+        # merge
+        local$modified_group_prior <- ifelse(
+            !is.na(local$tmp_group_prior),
+            local$tmp_group_prior,
+            local$group_prior
+        )
+    })
+    
+    # ## debugging
+    # observe({
+    #     pprint(local$modified_group_prior)
+    # })
+    
+    ## prepare output
+    observeEvent(local$modified_group_prior, {
+        req(local$modified_group_prior)
+        out$group_prior <- str_c(local$modified_group_prior, collapse = "\n")
     })
 
     
     # ## debugging
     # observe({
-    #     pprint(out$prior_list)
+    #     pprint(out$group_prior)
     # })
 
     ## output
@@ -2865,10 +3161,12 @@ mean_group_prior_def_server <- function(
         if(out$valid) {
             out$encoding <- str_c(
                 local$name,
-                input$distrib,
                 str_c(
-                    "[", input$min, ",", input$max, ",",
-                    input$mean, ",", input$stdev, "]"
+                    input$distrib,
+                    str_c(
+                        "[", input$min, ",", input$max, ",",
+                        input$mean, ",", input$stdev, "]"
+                    )
                 ),
                 sep = " "
             )
@@ -3121,10 +3419,12 @@ indiv_group_prior_def_server <- function(
         if(out$valid) {
             out$encoding <- str_c(
                 local$name,
-                input$distrib,
                 str_c(
-                    "[", input$min, ",", input$max, ",",
-                    input$mean, ",", input$stdev, "]"
+                    input$distrib,
+                    str_c(
+                        "[", input$min, ",", input$max, ",",
+                        input$mean, ",", input$stdev, "]"
+                    )
                 ),
                 sep = " "
             )
