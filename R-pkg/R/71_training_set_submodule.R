@@ -397,6 +397,18 @@ show_existing_proj_server <- function(input, output, session) {
 train_set_config_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        helpText(
+            tags$p(
+                icon("info-circle"), "Click on the", icon("plus"),
+                "to expand the different configuration boxes."
+            ),
+            tags$p(
+                icon("warning"),
+                "Do not forget to validate your input or modifications",
+                "inside each box."
+            )
+        ),
+        hr(),
         hist_model_panel_ui(ns("hist_model_panel")),
         br(),
         hr(),
