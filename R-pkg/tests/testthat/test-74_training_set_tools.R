@@ -796,6 +796,26 @@ test_that("check_group_prior", {
         prior_desc, locus_mode = locus_mode, group_id = group_id
     ))
     
+    # MWE with single group and empty input
+    prior_desc <- NULL
+    
+    locus_mode <- c("M")
+    group_id <- c("G1")
+    
+    expect_false(check_group_prior(
+        prior_desc, locus_mode = locus_mode, group_id = group_id
+    ))
+    
+    # MWE with multiple groups
+    prior_desc <- list(NULL, NULL)
+    
+    locus_mode <- c("M", "S")
+    group_id <- c("G1", "G2")
+    
+    expect_false(check_group_prior(
+        prior_desc, locus_mode = locus_mode, group_id = group_id
+    ))
+    
     # microsat
     test_proj <- "Microsat"
     test_dir <- file.path(data4test_dir(), test_proj)
