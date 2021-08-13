@@ -16,7 +16,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         n_param = NULL, n_prior = NULL, n_stat = NULL, 
         cond_list = NULL, prior_list = NULL, 
         n_group = NULL, group_prior_list = NULL, 
-        n_scen = NULL, scenario_list = NULL, n_param_scen = NULL,
+        n_scen = NULL, scenario_list = NULL, n_param_list = NULL,
         simu_mode = NULL,
         header_file = NULL
     )
@@ -139,7 +139,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         return(out)
     }
     # number of parameters per scenario
-    out$n_param_scen <- unlist(unname(lapply(
+    out$n_param_list <- unlist(unname(lapply(
         parsed_scenario_list, function(item) item$n_param
     )))
     # extract raw scenario list
@@ -598,7 +598,7 @@ read_reftable <- function(file_name, file_type) {
     # init output
     out <- list(
         msg = list(), valid = TRUE, 
-        n_rec = NULL, n_scen = NULL, n_rec_scen = NULL, n_param_scen = NULL, 
+        n_rec = NULL, n_scen = NULL, n_rec_scen = NULL, n_param_list = NULL, 
         n_stat = NULL
     )
     
@@ -633,7 +633,7 @@ read_reftable <- function(file_name, file_type) {
     out$n_rec_scen <- readBin(to_read, integer(), n = out$n_scen, 
                               endian = "little")
     # number of used parameters (non constant)
-    out$n_param_scen <- readBin(to_read, integer(), n = out$n_scen, 
+    out$n_param_list <- readBin(to_read, integer(), n = out$n_scen, 
                                 endian = "little")
     # number of stats
     out$n_stat <- readBin(to_read, integer(), endian = "little")
