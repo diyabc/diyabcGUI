@@ -1065,6 +1065,8 @@ test_that("get_mss_reftab_colname", {
     expected_res <- c("µmic_1", "pmic_1", "snimic_1")
     expect_identical(res, expected_res)
     
+    expect_null(get_mss_reftab_colname(NULL, locus_desc))
+    
     # microsat sequence 1
     test_proj <- "Microsat_Sequences"
     test_dir <- file.path(data4test_dir(), test_proj)
@@ -1078,4 +1080,6 @@ test_that("get_mss_reftab_colname", {
     res <- get_mss_reftab_colname(group_prior_list, locus_desc)
     expected_res <- c("µmic_1", "pmic_1", "snimic_1", "µseq_2", "k1seq_2")
     expect_identical(res, expected_res)
+    
+    expect_null(get_mss_reftab_colname(NULL, locus_desc))
 })
