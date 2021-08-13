@@ -1,5 +1,5 @@
 simu_dataset_microsat_one_pop_bottleneck_multisamples_001.mss
-6 parameters and 40 summary statistics
+3 parameters and 40 summary statistics
 
 2 scenarios: 6 5 
 scenario 1 [0.5] (3)
