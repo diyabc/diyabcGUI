@@ -350,23 +350,23 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         current_line <- current_line + end_sec - 1
         
         # extract group prior
-        check_group_prior <- parse_header_group_prior(
+        group_prior_check <- parse_header_group_prior(
             content, out$n_group, tmp_current_line
         )
         
-        if(!check_group_prior$valid) {
+        if(!group_prior_check$valid) {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with format of group prior around line ", 
-                tags$b(as.character(check_group_prior$current_line)), 
+                tags$b(as.character(group_prior_check$current_line)), 
                 "."
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
         }
         
-        current_line <- check_group_prior$current_line
-        out$group_prior_list <- check_group_prior$group_prior
+        current_line <- group_prior_check$current_line
+        out$group_prior_list <- group_prior_check$group_prior
         
         ## empty line
         strng <- header[1]
