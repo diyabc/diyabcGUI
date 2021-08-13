@@ -60,8 +60,10 @@ init_diyabcrf_env <- function() {
     tmp_ts <-list(
         # list of historical models
         scenario_list = NULL,
-        # list number of parameters per model
+        # total number of parameters in all model
         n_param = NULL,
+        # list of number of parameters per model
+        n_param_list = NULL,
         # list of model priors (discrete probabilities)
         model_prior = NULL,
         # list of historical model parameters (name, type, priors)
@@ -73,7 +75,7 @@ init_diyabcrf_env <- function() {
         # number of loci group
         n_group = NULL,
         # list of group priors for MSS data
-        group_prior = NULL,
+        group_prior_list = NULL,
         # specific ref table column names for MSS data
         mss_reftab_colname = NULL
     )
