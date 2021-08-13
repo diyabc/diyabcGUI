@@ -146,6 +146,8 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     out$scenario_list <- unlist(unname(lapply(
         parsed_scenario_list, function(item) item$scenario
     )))
+    # check total number of parameters
+    
     
     ## empty line
     strng <- header[1]
@@ -438,19 +440,34 @@ parse_header_scenario <- function(content) {
     pttrn <- str_c("^scenario [0-9]+ \\[", num_regex(), "\\] \\([0-9]+\\)$")
     if(!str_detect(strng, pttrn)) {
         out$valid <- FALSE
-    } else {
-        # scenario id
-        pttrn <- "(?<=^scenario )[0-9]+"
-        out$id <- as.integer(str_extract(strng, pttrn))
-        # scenario prior
-        pttrn <- str_c("(?<= \\[)", num_regex(), "(?=\\] )")
-        out$prior <- as.numeric(str_extract(strng, pttrn))
-        # number of parameters in scenario
-        pttrn <- "(?<= \\()[0-9]+(?=\\)$)"
-        out$n_param <- as.integer(str_extract(strng, pttrn))
-        ## scenario
-        out$scenario <- str_c(content[-1], collapse = "\n")
+        return(out)
     }
+    
+    # scenario id
+    pttrn <- "(?<=^scenario )[0-9]+"
+    out$id <- as.integer(str_extract(strng, pttrn))
+    # scenario prior
+    pttrn <- str_c("(?<= \\[)", num_regex(), "(?=\\] )")
+    out$prior <- as.numeric(str_extract(strng, pttrn))
+    # number of parameters in scenario
+    pttrn <- "(?<= \\()[0-9]+(?=\\)$)"
+    out$n_param <- as.integer(str_extract(strng, pttrn))
+    
+    ## scenario
+    out$scenario <- str_c(content[-1], collapse = "\n")
+    
+    # check scenario
+    scen_check <- parse_scenario(out$scenario)
+    if(!scen_check$valid) {
+        out$valid <- FALSE
+        return(out)
+    }
+    
+    # parameters
+    out$param <- as.character(c(
+        scen_check$Ne_param, scen_check$time_param, scen_check$rate_param
+    ))
+    
     ## output
     return(out)
 }

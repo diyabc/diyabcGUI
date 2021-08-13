@@ -232,6 +232,7 @@ test_that("parse_header_scenario", {
     expect_equal(res$n_param, 8)
     expect_equal(res$prior, 0.16667)
     expect_equal(res$scenario, str_c(header[6:13], collapse = "\n"))
+    expect_equal(length(res$param), 8)
     
     content <- header[6:13]
     res <- parse_header_scenario(content)
