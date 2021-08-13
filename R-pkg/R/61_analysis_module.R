@@ -254,6 +254,13 @@ proj_file_list_server <- function(input, output, session) {
                 icon("warning"), "No file was uploaded.",
                 style = "color: #F89406; margin-top: -15px;"
             )
+            # if example ?
+            if(env$ap$proj_type == "example") {
+                tag_list <- tags$div(
+                    icon("warning"), "No example was selected.",
+                    style = "color: #F89406; margin-top: -15px;"
+                )
+            }
             # else
             if(isTruthy(env$ap$proj_file_list)) {
                 # project files
