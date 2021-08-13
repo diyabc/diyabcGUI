@@ -132,7 +132,7 @@ test_that("read_header", {
         res$data_file, 
         "simu_dataset_microsat_one_pop_bottleneck_multisamples_001.mss"
     )
-    expect_equal(res$n_param, 6)
+    expect_equal(res$n_param, 3)
     expect_equal(res$n_stat, 40)
     expect_equal(res$n_scen, 2)
     expect_equal(res$n_scen, length(res$scenario_list))
@@ -198,7 +198,7 @@ test_that("read_header", {
     expect_true(res$valid)
     expect_equal(length(res$msg), 0)
     expect_equal(res$data_file, "toytest2_micro_seq_complexe_001.mss")
-    expect_equal(res$n_param, 22)
+    expect_equal(res$n_param, 9)
     expect_equal(res$n_stat, 85)
     expect_equal(res$n_scen, 2)
     expect_equal(res$n_scen, length(res$scenario_list))

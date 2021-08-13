@@ -69,9 +69,9 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
-    
-    pttrn <- "[0-9]+(?= parameters)"
-    out$n_param <- as.integer(str_extract(strng, pttrn))
+    # # number of parameter is not trustworthy on this line
+    # pttrn <- "[0-9]+(?= parameters)"
+    # out$n_param <- as.integer(str_extract(strng, pttrn))
     pttrn <- "[0-9]+(?= summary statistics)"
     out$n_stat <- as.integer(str_extract(strng, pttrn))
     
@@ -146,8 +146,10 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     out$scenario_list <- unlist(unname(lapply(
         parsed_scenario_list, function(item) item$scenario
     )))
-    # check total number of parameters
-    
+    # total number of parameters
+    out$n_param <- length(unique(unlist(unname(lapply(
+        parsed_scenario_list, function(item) item$param
+    )))))
     
     ## empty line
     strng <- header[1]
