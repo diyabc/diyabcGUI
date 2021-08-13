@@ -311,6 +311,42 @@ hist_model_panel_server <- function(input, output, session) {
             NULL
         }
     })
+    
+    # update total number of parameters and per scenario number list
+    observeEvent(env$ts$scenario_list, {
+        req(env$ts$scenario_list)
+        # parse scenrio list
+        tmp_parsed_scenario_list <- lapply(
+            env$ts$scenario_list,
+            function(item) {
+                scen_check <- parse_scenario(item)
+                param_list <- as.character(c(
+                    scen_check$Ne_param, 
+                    scen_check$time_param, 
+                    scen_check$rate_param
+                ))
+                return(list(
+                    param = param_list,
+                    n_param = length(param_list)
+                ))
+            }
+        )
+        # extract total number of parameters
+        env$ts$n_param <- length(unique(unlist(unname(lapply(
+            tmp_parsed_scenario_list, function(item) return(item$param)
+        )))))
+        # extract number of parameters per scenario
+        env$ts$n_param_list <- unlist(unname(lapply(
+            tmp_parsed_scenario_list, function(item) item$n_param
+        )))
+    })
+    
+    # # debug
+    # observe({
+    #     pprint(env$ts$scenario_list)
+    #     pprint(env$ts$n_param)
+    #     pprint(env$ts$n_param_list)
+    # })
 }
 
 #' Parameter prior setting module ui

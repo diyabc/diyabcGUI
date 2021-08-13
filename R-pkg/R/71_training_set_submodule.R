@@ -52,8 +52,10 @@ train_set_simu_server <- function(input, output, session) {
         ### UPDATE ENV
         # list of historical models
         env$ts$scenario_list <- env$ap$header_check$scenario_list
-        # list number of parameters per model
+        # total number of parameters in all model
         env$ts$n_param <- env$ap$header_check$n_param
+        # list of number of parameters per model
+        env$ts$n_param_list <- env$ap$header_check$n_param_list
         # list of model priors (discrete probabilities)
         env$ts$model_prior <- NULL
         # table of historical model parameters (name, type, priors)
@@ -77,6 +79,15 @@ train_set_simu_server <- function(input, output, session) {
           env$ap$file_upload, env$ap$data_check)
     },{
         output$train_set_simu <- renderUI({
+            
+            
+            pprint(env$ap$proj_name)
+            pprint(env$ap$data_file)
+            pprint(env$ap$data_check)
+            pprint(env$ap$header_check)
+            pprint(env$ap$reftable_check)
+            pprint(env$ap$statobs_check)
+            
             req(env$ap$proj_dir)
             req(env$ap$proj_type)
             req(env$ap$locus_type)
@@ -426,7 +437,8 @@ train_set_config_ui <- function(id) {
             ns("validate"),
             label = "Validate",
             style = "fill",
-            block = TRUE
+            block = TRUE,
+            color = "primary"
         ),
         uiOutput(ns("feedback"))
     )
@@ -460,6 +472,56 @@ train_set_config_server <- function(input, output, session) {
         mss_setup_ui(ns("mss_setup"))
     })
     callModule(mss_setup_server, "mss_setup")
+    
+    
+    # validate button
+    observeEvent(input$validate, {
+        
+        pprint(env$ap$proj_dir)
+        pprint(env$ap$data_file)
+        
+        pprint(env$ap$locus_type)
+        pprint(env$ap$seq_mode)
+        
+        pprint(env$ts$scenario_list)
+        pprint(env$ts$n_param)
+        pprint(env$ts$model_prior)
+        pprint(env$ts$prior_list)
+        pprint(env$ts$cond_list)
+        pprint(env$ts$locus_desc)
+        pprint(env$ts$group_prior_list)
+        
+        # req(env$ap$proj_dir)
+        # req(env$ap$data_file)
+        # 
+        # req(env$ap$locus_type)
+        # req(env$ap$seq_mode)
+        # 
+        # req(env$ts$scenario_list)
+        # req(env$ts$n_param)
+        # req(env$ts$model_prior)
+        # req(env$ts$prior_list)
+        # req(env$ts$cond_list)
+        # req(env$ts$locus_desc)
+        # 
+        # if(env$ap$seq_mode == "mss") {
+        #     req(env$ts$group_prior_list)
+        # }
+        # 
+        # write_header(test_dir, data_file, 
+        #              scenario_list, param_count_list, 
+        #              param_list, cond_list, 
+        #              locus_type, seq_mode, locus)
+        # 
+        # 
+        # update_proj_file("ap")
+    })
+    
+    # # feedback
+    # output$feedback <- renderUI({
+    #     msg <- list()
+    #     if(!isTruthy())
+    # })
 }
 
 #' Training set simulation run module ui
