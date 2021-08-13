@@ -355,7 +355,7 @@ param_prior_panel_server <- function(input, output, session) {
     local <- reactiveValues(
         prior_list = NULL, param_type = NULL,
         Ne_prior_list = NULL, time_prior_list = NULL, rate_prior_list = NULL,
-        modified_prior_list = NULL, validated = NULL
+        modified_prior_list = NULL, validated = TRUE
     )
     
     # update parameter priors based on scenario list
@@ -371,6 +371,7 @@ param_prior_panel_server <- function(input, output, session) {
             # existing pior list
             local$prior_list <- env$ts$prior_list
         } else {
+            local$validated <- FALSE
             local$prior_list <- NULL
             local$param_type <- NULL
             local$Ne_prior_list <- NULL
@@ -497,13 +498,25 @@ param_prior_panel_server <- function(input, output, session) {
             Ne_prior_list$prior_list, time_prior_list$prior_list, 
             rate_prior_list$prior_list
         )
+        
+        if(!identical(
+            sort(env$ts$prior_list), sort(local$modified_prior_list)
+        )) {
+            local$validated <- FALSE
+        } else {
+            local$validated <- TRUE
+        }
     })
     
     ## validate prior list
     observeEvent(input$validate, {
         req(length(local$modified_prior_list > 0))
-        env$ts$prior_list <- local$modified_prior_list
         local$validated <- TRUE
+        if(!identical(
+            sort(env$ts$prior_list), sort(local$modified_prior_list)
+        )) {
+            env$ts$prior_list <- local$modified_prior_list
+        }
     })
     
     ## feedback on list of priors
@@ -515,12 +528,7 @@ param_prior_panel_server <- function(input, output, session) {
                     style = "color: #F89406;"
                 )
             )
-        } else if(
-            (length(env$ts$prior_list) != length(local$modified_prior_list)) 
-            || 
-            !all(env$ts$prior_list == local$modified_prior_list)
-        ) {
-            local$validated <- FALSE
+        } else if(isTruthy(local$modified_prior_list) && !local$validated) {
             tags$p(
                 tags$div(
                     icon("warning"), 
@@ -547,9 +555,10 @@ prior_list_def_ui <- function(id) {
 #' Parameter prior setting module server
 #' @keywords internal
 #' @author Ghislain Durif
-prior_list_def_server <- function(input, output, session, 
-                                  prior_list = reactive({NULL}),
-                                  type = reactive({NULL})) {
+prior_list_def_server <- function(
+    input, output, session, prior_list = reactive({NULL}), 
+    type = reactive({NULL})
+) {
     
     # FIXME
     
@@ -558,8 +567,7 @@ prior_list_def_server <- function(input, output, session,
     
     # init local
     local <- reactiveValues(
-        prior_list = NULL, param_name = NULL, type = NULL, prior_def = NULL,
-        counter = 0
+        prior_list = NULL, param_name = NULL, type = NULL, prior_def = NULL
     )
     
     # get input
@@ -615,7 +623,6 @@ prior_list_def_server <- function(input, output, session,
     })
     
     observe({
-        # local$counter <- isolate(local$counter) + 1
         prior_check <- unlist(lapply(
             local$prior_def, function(item) return(item$valid)
         ))
@@ -671,13 +678,15 @@ prior_def_server <- function(input, output, session,
         min = NULL, max = NULL, mean = NULL, stdev = NULL,
         bound_min = NULL, bound_max = NULL, bound_step = NULL,
         mean_min = NULL, mean_max = NULL, mean_step = NULL,
-        sd_min = NULL, sd_max = NULL, sd_step = NULL
+        sd_min = NULL, sd_max = NULL, sd_step = NULL,
+        render = 0
     )
     
     # get input
     observe({
         local$prior <- prior()
         local$type <- type()
+        local$render <- isolate(local$render) + 1
     })
     
     # init output
@@ -716,9 +725,9 @@ prior_def_server <- function(input, output, session,
     })
     
     # parse input
-    observe({
+    observeEvent(local$prior, {
         req(local$prior)
-        if(isTruthy(check_header_prior(local$prior))) {
+        if(check_header_prior(local$prior)) {
             # param name
             local$name <- get_param_name(local$prior)
             # distribution
@@ -798,7 +807,7 @@ prior_def_server <- function(input, output, session,
                 column(
                     width = 2,
                     selectInput(
-                        ns("prior_type"),
+                        ns("distrib"),
                         label = NULL,
                         choices = list("Uniform" = "UN", "Log-Unif." = "LU",
                                        "Normal" = "NO", "Log-Norm." = "LN"),
@@ -844,20 +853,12 @@ prior_def_server <- function(input, output, session,
         )
     })
     
-    ## distribution
-    observe({
-        req(local$name)
-        req(input$prior_type)
-        if(isTruthy(local$type) && (input$prior_type == local$type)) {
-            req(NULL)
-        }
-        local$type <- input$prior_type
-    })
-    
     ## disable mean and stdev if uniform or log-uniform
-    observe({
-        req(local$type)
-        if(local$type %in% c("UN", "LU")) {
+    observeEvent(c(
+        input$distrib, local$render
+    ), {
+        req(input$distrib)
+        if(input$distrib %in% c("UN", "LU")) {
             updateNumericInput(session, "mean", value = 0)
             updateNumericInput(session, "stdev", value = 0)
             shinyjs::disable("mean")
@@ -868,9 +869,14 @@ prior_def_server <- function(input, output, session,
         }
     })
     
+    # # debug
+    # observe({
+    #     pprint(local$render)
+    # })
+    
     #### check for missing input
     ## min
-    observe({
+    observeEvent(input$min, {
         req(local$name)
         feedbackWarning(
             "min", !isTruthy(input$min),
@@ -879,7 +885,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## max
-    observe({
+    observeEvent(input$max, {
         req(local$name)
         feedbackWarning(
             "max", !isTruthy(input$max),
@@ -888,7 +894,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## mean
-    observe({
+    observeEvent(input$mean, {
         req(local$name)
         feedbackWarning(
             "mean", !isTruthy(input$mean),
@@ -897,7 +903,7 @@ prior_def_server <- function(input, output, session,
     })
     
     ## stdev
-    observe({
+    observeEvent(input$stdev, {
         req(local$name)
         feedbackWarning(
             "stdev", !isTruthy(input$stdev),
@@ -921,18 +927,18 @@ prior_def_server <- function(input, output, session,
     ## check for normal and log-normal parameter setting
     observe({
         req(local$name)
-        req(input$prior_type)
+        req(input$distrib)
         req(input$min)
         req(input$mean)
         feedbackWarning(
             "mean", 
-            input$prior_type %in% c("NO", "LN") && 
+            input$distrib %in% c("NO", "LN") && 
                 (input$mean < input$min),
             "mean < min"
         )
         feedbackWarning(
             "min", 
-            input$prior_type %in% c("NO", "LN") && 
+            input$distrib %in% c("NO", "LN") && 
                 (input$mean < input$min),
             "mean < min"
         )
@@ -940,24 +946,26 @@ prior_def_server <- function(input, output, session,
     
     observe({
         req(local$name)
-        req(input$prior_type)
+        req(input$distrib)
         req(input$max)
         req(input$mean)
         feedbackWarning(
             "mean", 
-            input$prior_type %in% c("NO", "LN") && 
+            input$distrib %in% c("NO", "LN") && 
                 (input$mean > input$max),
             "mean > max"
         )
         feedbackWarning(
             "max", 
-            input$prior_type %in% c("NO", "LN") && 
+            input$distrib %in% c("NO", "LN") && 
                 (input$mean > input$max),
             "mean > max"
         )
     })
-
+    
+    # # debug
     # observe({
+    #     logging("distrib = ", input$distrib)
     #     logging("min = ", input$min)
     #     logging("max = ", input$max)
     #     logging("mean = ", input$mean)
@@ -966,25 +974,37 @@ prior_def_server <- function(input, output, session,
     
     ## encode output
     observe({
+        
+        # pprint(local$name)
+        # pprint(local$type)
+        # pprint(input$distrib)
+        # pprint(input$min)
+        # pprint(input$max)
+        # pprint(input$mean)
+        # pprint(input$stdev)
+        
         out$encoding <- NULL
         out$valid <- FALSE
         req(local$name)
         req(local$type)
-        req(local$selected_type)
+        req(input$distrib)
         req(input$min)
         req(input$max)
         req(input$mean)
         req(input$stdev)
         out$valid <- !((input$min >= input$max) || 
-            ((local$selected_type %in% c("NO", "LN")) &&
+            ((input$distrib %in% c("NO", "LN")) &&
                  (input$mean < input$min || input$mean > input$max)))
         if(out$valid) {
             out$encoding <- str_c(
-                local$name, " ",
-                local$type, " ",
-                local$selected_type, "[",
-                input$min, ",", input$max, ",",
-                input$mean, ",", input$stdev, "]"
+                local$name, 
+                local$type, 
+                str_c(
+                    input$distrib, "[",
+                    input$min, ",", input$max, ",",
+                    input$mean, ",", input$stdev, "]"
+                ),
+                sep = " "
             )
         }
     })
