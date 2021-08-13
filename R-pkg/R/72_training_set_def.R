@@ -60,9 +60,6 @@ hist_model_panel_ui <- function(id) {
 #' Historical model input panel module server
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinyjs onclick
-#' @importFrom shinyWidgets actionBttn
-#' @importFrom stringr str_c
 hist_model_panel_server <- function(input, output, session) {
     
     # namespace
@@ -234,6 +231,15 @@ hist_model_panel_server <- function(input, output, session) {
         }
     })
     
+    # modified scenario list
+    observeEvent(local$scenario_list, {
+        if(!identical(env$ts$scenario_list, local$scenario_list)) {
+            local$validated <- FALSE
+        } else {
+            local$validated <- TRUE
+        }
+    })
+    
     # what happen when editing a scenario
     observeEvent({
         c(local$lock, input$scen_id, input$edit, input$add)
@@ -276,7 +282,9 @@ hist_model_panel_server <- function(input, output, session) {
     ## validate scenario list
     observeEvent(input$validate, {
         req(!local$lock)
-        env$ts$scenario_list <- local$scenario_list
+        if(!identical(env$ts$scenario_list, local$scenario_list)) {
+            env$ts$scenario_list <- local$scenario_list
+        }
         local$validated <- TRUE
     })
     
@@ -291,11 +299,7 @@ hist_model_panel_server <- function(input, output, session) {
                     style = "color: #F89406;"
                 )
             )
-        } else if(
-            (length(env$ts$scenario_list) != length(local$scenario_list)) || 
-            !all(env$ts$scenario_list == local$scenario_list)
-        ) {
-            local$validated <- FALSE
+        } else if(!identical(env$ts$scenario_list, local$scenario_list)) {
             tags$p(
                 tags$div(
                     icon("warning"), 
