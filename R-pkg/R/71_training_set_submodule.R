@@ -69,7 +69,9 @@ train_set_simu_server <- function(input, output, session) {
         # list of group priors for MSS data
         env$ts$group_prior_list <- env$ap$header_check$group_prior_list
         # specific ref table column names for MSS data
-        env$ts$mss_reftab_colname <- NULL
+        env$ts$mss_reftab_colname <- get_mss_reftab_colname(
+            env$ts$group_prior_list, env$ts$locus_desc
+        )
     })
     
     # panel output
@@ -80,13 +82,12 @@ train_set_simu_server <- function(input, output, session) {
     },{
         output$train_set_simu <- renderUI({
             
-            
-            pprint(env$ap$proj_name)
-            pprint(env$ap$data_file)
-            pprint(env$ap$data_check)
-            pprint(env$ap$header_check)
-            pprint(env$ap$reftable_check)
-            pprint(env$ap$statobs_check)
+            # pprint(env$ap$proj_name)
+            # pprint(env$ap$data_file)
+            # pprint(env$ap$data_check)
+            # pprint(env$ap$header_check)
+            # pprint(env$ap$reftable_check)
+            # pprint(env$ap$statobs_check)
             
             req(env$ap$proj_dir)
             req(env$ap$proj_type)
@@ -485,28 +486,31 @@ train_set_config_server <- function(input, output, session) {
         
         pprint(env$ts$scenario_list)
         pprint(env$ts$n_param)
+        pprint(env$ts$n_param_list)
         pprint(env$ts$model_prior)
         pprint(env$ts$prior_list)
         pprint(env$ts$cond_list)
         pprint(env$ts$locus_desc)
         pprint(env$ts$group_prior_list)
+        pprint(env$ts$mss_reftab_colname)
         
-        # req(env$ap$proj_dir)
-        # req(env$ap$data_file)
-        # 
-        # req(env$ap$locus_type)
-        # req(env$ap$seq_mode)
-        # 
-        # req(env$ts$scenario_list)
-        # req(env$ts$n_param)
-        # req(env$ts$model_prior)
-        # req(env$ts$prior_list)
-        # req(env$ts$cond_list)
-        # req(env$ts$locus_desc)
-        # 
-        # if(env$ap$seq_mode == "mss") {
-        #     req(env$ts$group_prior_list)
-        # }
+        req(env$ap$proj_dir)
+        req(env$ap$data_file)
+
+        req(env$ap$locus_type)
+        req(env$ap$seq_mode)
+
+        req(env$ts$scenario_list)
+        req(env$ts$n_param)
+        req(env$ts$model_prior)
+        req(env$ts$prior_list)
+        req(env$ts$cond_list)
+        req(env$ts$locus_desc)
+
+        if(env$ap$locus_type == "mss") {
+            req(env$ts$group_prior_list)
+            req(env$ts$mss_reftab_colname)
+        }
         # 
         # write_header(test_dir, data_file, 
         #              scenario_list, param_count_list, 

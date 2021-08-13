@@ -2555,6 +2555,15 @@ mss_group_prior_server <- function(input, output, session) {
             NULL
         }
     })
+    
+    # update reftable colname
+    observeEvent(c(
+        env$ts$group_prior_list, env$ts$locus_desc
+    ), {
+        env$ts$mss_reftab_colname <- get_mss_reftab_colname(
+            env$ts$group_prior_list, env$ts$locus_desc
+        )
+    })
 }
 
 #' MSS group prior parameter setting module ui
