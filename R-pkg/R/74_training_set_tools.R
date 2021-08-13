@@ -2,9 +2,9 @@
 #' @keywords internal
 #' @author Ghislain Durif
 write_header <- function(proj_dir, data_file, 
-                         scenario_list, param_count_list, 
+                         scenario_list, n_param_list, 
                          param_list, cond_list, 
-                         locus_type, seq_mode, locus, 
+                         locus_type, seq_mode, locus_desc, 
                          mss_locus, mss_group_prior,
                          mss_rf_col_name) {
     
@@ -16,8 +16,8 @@ write_header <- function(proj_dir, data_file,
     # pprint(proj_dir)
     # pprint("param_list =")
     # pprint(param_list)
-    # pprint("param_count_list =")
-    # pprint(param_count_list)
+    # pprint("n_param_list =")
+    # pprint(n_param_list)
     # pprint("scenario_list =")
     # pprint(scenario_list)
     # pprint("cond_list =")
@@ -72,7 +72,7 @@ write_header <- function(proj_dir, data_file,
         function(ind) {
             tmp_scenario <- scenario_list[[ind]]
             tmp_prior <- round(1/length(scenario_list), digits = 5)
-            tmp_param_count <- param_count_list[[ind]]
+            tmp_param_count <- n_param_list[[ind]]
             return(
                 str_c(
                     str_c(
@@ -1380,3 +1380,108 @@ parse_seq_mut_model <- function(mut_model) {
     # output
     return(out)
 }
+
+#' Get refTable col names corresponding to MSS prior parameters for a group
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param locus_mode character, microsat (`"M"`) or sequence (`"S"`) mode.
+#' @param group_id character, id of the group `"Gx"` with `x` an integer.
+#' @param mut_model character, mutation model among `"JK"`, `"K2P"`, 
+#' `"HKY"`, `"TN"` (not used if microsat group, can be `NULL` or `NA` 
+#' in this case).
+get_group_reftab_colname <- function(locus_mode, group_id, mut_model = NULL) {
+    
+    if(!locus_mode %in% c("M", "S")) return(NULL)
+    if(
+        locus_mode == "S" && 
+        (is.null(mut_model) || is.na(mut_model) || 
+         !mut_model %in% c("JK", "K2P", "HKY", "TN"))
+    ) return(NULL)
+    if(
+        !is.character(group_id) ||
+        !str_detect(group_id, "^G[0-9]+$")
+    ) return(NULL)
+    
+    reftab_col <- NULL
+    
+    # microsat
+    if(locus_mode == "M") {
+        reftab_col <- c("µmic", "pmic", "snimic")
+    }
+    
+    # sequence
+    if(locus_mode == "S") {
+        # "Jukes Kantor (1969)" = "JK" (MU)
+        # "Kimura-2-parameters (1980)" = "K2P" (MU, K1)
+        # "Hasegawa-Kishino-Yano (1985)" = "HKY" (MU, K1)
+        # "Tamura Nei (1993)" = "TN" (MU, K1, K2)
+        tmp_reftab_col <- c("µseq", "k1seq", "k2seq")
+        
+        reftab_col <- switch(
+            mut_model,
+            "JK" = tmp_reftab_col[1],
+            "K2P" = tmp_reftab_col[1:2],
+            "HKY" = tmp_reftab_col[1:2],
+            "TN" = tmp_reftab_col
+        )
+    }
+    
+    # extract group id
+    tmp_group_id <- str_extract(group_id, "(?<=G)[0-9]+")
+    
+    # append group id suffix
+    output <- str_c(reftab_col, "_", tmp_group_id)
+    
+    # output
+    return(output)
+}
+
+#' Get refTable col names corresponding to MSS prior parameters for all groups
+#' @keywords internal
+#' @author Ghislain Durif
+#' @param group_prior_list
+get_mss_reftab_colname <- function(group_prior_list, locus_desc) {
+    
+    # check input
+    group_prior_list <- as.list(group_prior_list)
+    if(!check_group_prior(group_prior_list, locus_desc)) return(NULL)
+    
+    # group description
+    group_desc <- get_group_desc(locus_desc)
+    
+    # mutation model
+    mut_model <- unlist(lapply(
+        1:length(group_prior_list), 
+        function(ind) {
+            if(group_desc$locus_mode[ind] == "S") {
+                tmp <- tail(
+                    unlist(str_split(group_prior_list[[ind]], "\n")), 1
+                )
+                out <- parse_seq_mut_model(tmp)
+                if(out$valid) {
+                    return(out$mut_model_name)
+                } else {
+                    return(NA)
+                }
+            } else {
+                return(NA)
+            }
+        }
+    ))
+    
+    # get column name for each group
+    output <- unlist(lapply(
+        1:length(group_prior_list), 
+        function(ind) {
+            return(get_group_reftab_colname(
+                locus_mode = group_desc$locus_mode[ind], 
+                group_id = group_desc$group_id[ind], 
+                mut_model = mut_model[ind]
+            ))
+        }
+    ))
+    
+    # output
+    return(output)
+}
+

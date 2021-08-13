@@ -13,7 +13,7 @@ test_that("write_header", {
         "t21 T UN[10,1000,0.0,0.0]",
         "t431 T UN[10,1000,0.0,0.0]"
     )
-    param_count_list <- list(8)
+    n_param_list <- list(8)
     scenario_list <- as.list(str_c(
         "N1 N2 N3 N4",
         "0 sample 1",
@@ -29,12 +29,12 @@ test_that("write_header", {
     data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
     locus_type <- "snp"
     seq_mode <- "indseq"
-    locus <- "5000 <A> G1 from 1"
+    locus_desc <- "5000 <A> G1 from 1"
     
     write_header(test_dir, data_file, 
-                 scenario_list, param_count_list, 
+                 scenario_list, n_param_list, 
                  param_list, cond_list, 
-                 locus_type, seq_mode, locus)
+                 locus_type, seq_mode, locus_desc)
     
     file_name <- file.path(test_dir, "header.txt")
     file_type = "text/plain"
@@ -996,3 +996,86 @@ test_that("parse_seq_mut_model", {
     expect_false(res$valid)
 })
 
+
+test_that("get_group_reftab_colname", {
+    
+    # null
+    expect_null(
+        get_group_reftab_colname(locus_mode = "s", group_id = "G1", mut_model = NULL)
+    )
+    expect_null(
+        get_group_reftab_colname(locus_mode = "S", group_id = "G1", mut_model = NULL)
+    )
+    expect_null(
+        get_group_reftab_colname(locus_mode = "S", group_id = "G1", mut_model = NA)
+    )
+    expect_null(
+        get_group_reftab_colname(locus_mode = "M", group_id = "1", mut_model = NULL)
+    )
+    
+    # MWE microsat
+    locus_mode <- "M"
+    group_id <- "G1"
+    mut_model <- NULL
+    res <- get_group_reftab_colname(locus_mode, group_id, mut_model)
+    expect_identical(res, c("µmic_1", "pmic_1", "snimic_1"))
+    
+    # MWE1 sequence
+    locus_mode <- "S"
+    group_id <- "G1"
+    mut_model <- "JK"
+    res <- get_group_reftab_colname(locus_mode, group_id, mut_model)
+    expect_identical(res, c("µseq_1"))
+    
+    # MWE2 sequence
+    locus_mode <- "S"
+    group_id <- "G1"
+    mut_model <- "K2P"
+    res <- get_group_reftab_colname(locus_mode, group_id, mut_model)
+    expect_identical(res, c("µseq_1", "k1seq_1"))
+    
+    # MWE3 sequence
+    locus_mode <- "S"
+    group_id <- "G1"
+    mut_model <- "HKY"
+    res <- get_group_reftab_colname(locus_mode, group_id, mut_model)
+    expect_identical(res, c("µseq_1", "k1seq_1"))
+    
+    # MWE4 sequence
+    locus_mode <- "S"
+    group_id <- "G1"
+    mut_model <- "TN"
+    res <- get_group_reftab_colname(locus_mode, group_id, mut_model)
+    expect_identical(res, c("µseq_1", "k1seq_1", "k2seq_1"))
+})
+
+test_that("get_mss_reftab_colname", {
+    
+    # microsat
+    test_proj <- "Microsat"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    locus_desc <- header_check$locus_desc
+    group_prior_list <- header_check$group_prior_list
+    
+    res <- get_mss_reftab_colname(group_prior_list, locus_desc)
+    expected_res <- c("µmic_1", "pmic_1", "snimic_1")
+    expect_identical(res, expected_res)
+    
+    # microsat sequence 1
+    test_proj <- "Microsat_Sequences"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    file_name <- file.path(test_dir, "header.txt")
+    file_type <- "text/plain"
+    locus_type = "mss"
+    header_check <- read_header(file_name, file_type, locus_type)
+    locus_desc <- header_check$locus_desc
+    group_prior_list <- header_check$group_prior_list
+    
+    res <- get_mss_reftab_colname(group_prior_list, locus_desc)
+    expected_res <- c("µmic_1", "pmic_1", "snimic_1", "µseq_2", "k1seq_2")
+    expect_identical(res, expected_res)
+})
