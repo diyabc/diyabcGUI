@@ -453,6 +453,11 @@ train_set_config_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
     
+    # init local
+    local <- reactiveValues(
+        validated = FALSE
+    )
+    
     # historical model setup
     callModule(hist_model_panel_server, "hist_model_panel")
     
@@ -478,21 +483,24 @@ train_set_config_server <- function(input, output, session) {
     # validate button
     observeEvent(input$validate, {
         
-        pprint(env$ap$proj_dir)
-        pprint(env$ap$data_file)
+        # # debugging
+        # pprint(env$ap$proj_dir)
+        # pprint(env$ap$data_file)
+        # 
+        # pprint(env$ap$locus_type)
+        # pprint(env$ap$seq_mode)
+        # 
+        # pprint(env$ts$scenario_list)
+        # pprint(env$ts$n_param)
+        # pprint(env$ts$n_param_list)
+        # pprint(env$ts$model_prior)
+        # pprint(env$ts$prior_list)
+        # pprint(env$ts$cond_list)
+        # pprint(env$ts$locus_desc)
+        # pprint(env$ts$group_prior_list)
+        # pprint(env$ts$mss_reftab_colname)
         
-        pprint(env$ap$locus_type)
-        pprint(env$ap$seq_mode)
-        
-        pprint(env$ts$scenario_list)
-        pprint(env$ts$n_param)
-        pprint(env$ts$n_param_list)
-        pprint(env$ts$model_prior)
-        pprint(env$ts$prior_list)
-        pprint(env$ts$cond_list)
-        pprint(env$ts$locus_desc)
-        pprint(env$ts$group_prior_list)
-        pprint(env$ts$mss_reftab_colname)
+        local$validated <- FALSE
         
         req(env$ap$proj_dir)
         req(env$ap$data_file)
@@ -501,31 +509,136 @@ train_set_config_server <- function(input, output, session) {
         req(env$ap$seq_mode)
 
         req(env$ts$scenario_list)
-        req(env$ts$n_param)
-        req(env$ts$model_prior)
+        # req(env$ts$model_prior) # always NULL
         req(env$ts$prior_list)
-        req(env$ts$cond_list)
+        # req(env$ts$cond_list) # can be empty
         req(env$ts$locus_desc)
 
         if(env$ap$locus_type == "mss") {
             req(env$ts$group_prior_list)
             req(env$ts$mss_reftab_colname)
         }
-        # 
-        # write_header(test_dir, data_file, 
-        #              scenario_list, param_count_list, 
-        #              param_list, cond_list, 
-        #              locus_type, seq_mode, locus)
-        # 
-        # 
-        # update_proj_file("ap")
+        
+        write_check <- tryCatch(
+            write_header(
+                env$ap$proj_dir, env$ap$data_file, 
+                env$ts$scenario_list, env$ts$n_param_list, 
+                env$ts$prior_list, env$ts$cond_list, env$ap$locus_type, 
+                env$ap$seq_mode, env$ts$locus_desc,
+                env$ts$group_prior_list, env$ts$mss_reftab_colname
+            ),
+            error = function(e) {print(e); return(e)}
+        )
+        
+        if("error" %in% class(write_check)) {
+            local$validated <- FALSE
+        } else {
+            local$validated <- TRUE
+            
+            # delete reftable and statobs files
+            if(file.exists(file.path(env$ap$proj_dir, "reftableRF.bin"))) {
+                fs::file_delete(file.path(env$ap$proj_dir, "reftableRF.bin"))
+            }
+            if(file.exists(file.path(env$ap$proj_dir, "statobsRF.txt"))) {
+                fs::file_delete(file.path(env$ap$proj_dir, "statobsRF.txt"))
+            }
+            # project files update
+            update_proj_file("ap")
+        }
     })
     
-    # # feedback
-    # output$feedback <- renderUI({
-    #     msg <- list()
-    #     if(!isTruthy())
-    # })
+    # debugging
+    observe({
+        pprint(local$validated)
+    })
+    
+    # feedback
+    output$feedback <- renderUI({
+        # init
+        msg <- list()
+        
+        # check validation
+        if(!local$validated) {
+            msg <- append(msg, list(tagList(tags$p(tags$div(
+                    icon("warning"),
+                    "Your training set configuration is", 
+                    "not complete (potential issue, see panels above)", 
+                    "or not validated.",
+                    style = "color: #F89406;"
+            )))))
+        } else {
+            msg <- append(msg, list(tagList(h4(helpText(
+                icon("check"),
+                "Project is ready for training set simulation."
+            )))))
+        }
+        
+        # additional msg
+        
+        # check data file
+        if(!isTruthy(env$ap$data_file)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing data file.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        # check locus type
+        if(!isTruthy(env$ap$locus_type)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing locus type.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        # check sequencing mode
+        if(!isTruthy(env$ap$seq_mode)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing sequencing mode.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        # check scenario list
+        if(!isTruthy(env$ts$scenario_list)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing scenario (historical model) definition.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        # check prior list
+        if(!isTruthy(env$ts$prior_list)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing model parameter prior definition.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        # check locus description
+        if(!isTruthy(env$ts$locus_desc)) {
+            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                "Missing locus setup configuration.",
+                style = "color: #F89406;"
+            ))))))
+        }
+        
+        if(env$ap$locus_type == "mss") {
+            # check group prior list
+            if(!isTruthy(env$ts$group_prior_list)) {
+                msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+                    "Missing mutation model defintion.",
+                    style = "color: #F89406;"
+                ))))))
+            }
+        }
+        
+        if(length(msg) > 0) {
+            tags$p(do.call(tagList, unname(msg)))
+        } else {
+            NULL
+        }
+    })
 }
 
 #' Training set simulation run module ui
@@ -550,8 +663,8 @@ train_set_simu_run_ui <- function(id) {
         ),
         uiOutput(ns("feedback_nrun")),
         helpText(
-            tags$div(
-                tags$b("Note:"), br(),
+            tags$p(
+                icon("info-circle"),
                 "The number of simulations depends on your analysis:"
             ),
             tags$ul(
