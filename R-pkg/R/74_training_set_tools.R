@@ -1,72 +1,74 @@
 #' Write training set simulation diyabc header file
 #' @keywords internal
 #' @author Ghislain Durif
-write_header <- function(proj_dir, data_file, 
-                         scenario_list, n_param_list, 
-                         param_list, cond_list, 
-                         locus_type, seq_mode, locus_desc, 
-                         mss_locus, mss_group_prior,
-                         mss_rf_col_name) {
+write_header <- function(
+    proj_dir, data_file, scenario_list, n_param_list, 
+    prior_list, cond_list, locus_type, seq_mode, locus_desc, 
+    group_prior_list = NULL, mss_reftab_colname = NULL
+) {
     
     # FIXME check input
     
     # # debugging
-    # pprint("------ write_header input")
-    # pprint("proj_dir =")
+    # print("------ write_header input")
     # pprint(proj_dir)
-    # pprint("param_list =")
-    # pprint(param_list)
-    # pprint("n_param_list =")
+    # pprint(prior_list)
     # pprint(n_param_list)
-    # pprint("scenario_list =")
     # pprint(scenario_list)
-    # pprint("cond_list =")
     # pprint(cond_list)
-    # pprint("data_file =")
     # pprint(data_file)
-    # pprint("locus_type =")
     # pprint(locus_type)
-    # pprint("seq_mode =")
     # pprint(seq_mode)
-    # pprint("locus =")
-    # pprint(locus)
-    # pprint("mss_locus =")
-    # pprint(mss_locus)
-    # pprint("mss_group_prior =")
-    # pprint(mss_group_prior)
-    # pprint("mss_rf_col_name")
-    # pprint(mss_rf_col_name)
+    # pprint(locus_desc)
+    # pprint(group_prior_list)
+    # pprint(mss_reftab_colname)
     
+    # check input
+    if(locus_type == "mss") {
+        if(is.null(group_prior_list) || is.null(mss_reftab_colname)) {
+            stop("Missing MSS related input.")
+        }
+    }
+    
+    # init output
     out <- NULL
     
+    # parameters
     filename <- "header.txt"
     
-    # pprint("log1")
+    # print("log1")
     ## data filename and summary
     n_stat <- NULL
     if(locus_type == "snp") {
         n_stat <- 1
     } else if(locus_type == "mss") {
         n_stat <- sum(str_detect(
-            mss_group_prior,
+            group_prior_list,
             "^group G[0-9]+ \\[[MS]\\]"
         ))
     } else {
         stop("Issue with 'locus_type' input argument")
     }
-    sec1 <- str_c(basename(data_file),
-                  str_c(length(param_list), "parameters and", 
-                        n_stat, "summary statistics", 
-                        sep = " "),
-                  sep = "\n")
+    sec1 <- str_c(
+        basename(data_file),
+        str_c(
+            length(prior_list), "parameters and", 
+            n_stat, "summary statistics", 
+            sep = " "
+        ),
+        sep = "\n"
+    )
     
-    # pprint("log2")
+    # print("log2")
     ## scenario
-    sec2 <- str_c(length(scenario_list), "scenarios:",
-                  str_c(str_count(string = scenario_list, 
-                                  pattern = "\n") + 1, 
-                        collapse = " "),
-                  sep = " ")
+    sec2 <- str_c(
+        length(scenario_list), "scenarios:", 
+        str_c(
+            str_count(string = scenario_list, pattern = "\n") + 1, 
+            collapse = " "
+        ),
+        sep = " "
+    )
     format_scenario <- lapply(
         1:length(scenario_list),
         function(ind) {
@@ -91,12 +93,12 @@ write_header <- function(proj_dir, data_file,
                   str_c(format_scenario, collapse = "\n"),
                   sep = "\n")
     
-    # pprint("log3")
+    # print("log3")
     ## historical parameters priors
     sec3 <- str_c(
         str_c("historical parameters priors ",
-              "(", length(param_list), ",", length(cond_list), ")"),
-        str_c(param_list, collapse = "\n"),
+              "(", length(prior_list), ",", length(cond_list), ")"),
+        str_c(prior_list, collapse = "\n"),
         sep = "\n"
     )
     if(!is.null(cond_list)) {
@@ -110,54 +112,39 @@ write_header <- function(proj_dir, data_file,
         }
     }
     
-    # pprint("log4")
+    # print("log4")
     ## loci description
     sec4 <- NULL
-    if(locus_type == "snp") {
-        sec4 <- str_c(
-            str_c(
-                "loci description",
-                str_c("(", length(locus), ")"),
-                sep = " "
-            ),
-            str_c(locus, collapse = "\n"),
-            sep = "\n"
-        )
-    } else if(locus_type == "mss") {
-        if(is.null(mss_locus)) {
-            stop("missing 'mss_locus' input argument")
-        }
-        sec4 <- str_c(
-            str_c(
-                "loci description",
-                str_c("(", length(mss_locus), ")"),
-                sep = " "
-            ),
-            str_c(mss_locus, collapse = "\n"),
-            sep = "\n"
-        )
-    }
+    sec4 <- str_c(
+        str_c(
+            "loci description",
+            str_c("(", length(locus_desc), ")"),
+            sep = " "
+        ),
+        str_c(locus_desc, collapse = "\n"),
+        sep = "\n"
+    )
     
     ## group prior
     sec4b <- NULL
     if(locus_type == "mss") {
-        if(is.null(mss_group_prior)) {
-            stop("missing 'mss_group_prior' input argument")
+        if(is.null(group_prior_list)) {
+            stop("missing 'group_prior_list' input argument")
         }
         sec4b <- str_c(
             str_c(
                 "group priors",
                 str_c("(", 
-                      sum(str_detect(mss_group_prior, "group G")), 
+                      sum(str_detect(group_prior_list, "group G")), 
                       ")"),
                 sep = " "
             ),
-            str_c(mss_group_prior, collapse = "\n"),
+            str_c(group_prior_list, collapse = "\n"),
             sep = "\n"
         )
     }
     
-    # pprint("log5")
+    # print("log5")
     ## group summary statistics
     sec5 <- NULL
     microsat_group <- NULL
@@ -179,14 +166,16 @@ write_header <- function(proj_dir, data_file,
     } else if(locus_type == "mss") {
         sec5 <- str_c(
             "group summary statistics",
-            str_c("(", 
-                  sum(str_detect(mss_group_prior, "group G")), 
-                  ")"),
+            str_c(
+                "(", 
+                sum(str_detect(group_prior_list, "group G")), 
+                ")"
+            ),
             sep = " "
         )
         
         microsat_group <- str_extract(
-            mss_group_prior,
+            group_prior_list,
             "^group G[0-9]+ \\[M\\]"
         )
         if(sum(!is.na(microsat_group)) > 0) {
@@ -209,7 +198,7 @@ write_header <- function(proj_dir, data_file,
         }
         
         seq_group <- str_extract(
-            mss_group_prior,
+            group_prior_list,
             "^group G[0-9]+ \\[S\\]"
         )
         if(sum(!is.na(seq_group)) > 0) {
@@ -232,7 +221,7 @@ write_header <- function(proj_dir, data_file,
         }
     }
     
-    # pprint("log6")
+    # print("log6")
     ## final summary
     summary_stat <- NULL
     
@@ -259,7 +248,7 @@ write_header <- function(proj_dir, data_file,
             seq_summary <- str_c("NHA_", tmp_seq_group, "_1")
         }
         
-        summary_stat <- c(mss_rf_col_name, microsat_summary, seq_summary)
+        summary_stat <- c(mss_reftab_colname, microsat_summary, seq_summary)
     }
     
     sec6 <- str_c(
@@ -268,7 +257,7 @@ write_header <- function(proj_dir, data_file,
                 c(
                     "scenario",
                     str_extract(
-                        string = param_list, 
+                        string = prior_list, 
                         pattern = str_c("^", single_param_regex(), "(?= )")
                     ),
                     summary_stat

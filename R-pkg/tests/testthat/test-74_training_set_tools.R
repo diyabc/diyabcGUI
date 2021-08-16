@@ -2,19 +2,12 @@ context("training_set_tools")
 
 test_that("write_header", {
     
+    # MWE 1 (SNP indseq)
     test_dir <- mk_proj_dir("test_training_set_tools")
-    param_list <- list(
-        "N1 N UN[100,10000,0.0,0.0]",
-        "N2 N UN[100,10000,0.0,0.0]",
-        "N3 N UN[100,10000,0.0,0.0]",
-        "N4 N UN[100,10000,0.0,0.0]",
-        "ra A UN[0.05,0.95,0.0,0.0]",
-        "t32 T UN[10,1000,0.0,0.0]",
-        "t21 T UN[10,1000,0.0,0.0]",
-        "t431 T UN[10,1000,0.0,0.0]"
-    )
-    n_param_list <- list(8)
-    scenario_list <- as.list(str_c(
+    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
+    locus_type <- "snp"
+    seq_mode <- "indseq"
+    scenario_list <- str_c(
         "N1 N2 N3 N4",
         "0 sample 1",
         "0 sample 2",
@@ -24,18 +17,28 @@ test_that("write_header", {
         "t32 merge 2 3",
         "t21 merge 1 2",
         sep = "\n"
-    ))
-    cond_list <- list("t21>t32", "t431<t32")
-    data_file <- "indseq_SNP_sim_dataset_4POP_001.snp"
-    locus_type <- "snp"
-    seq_mode <- "indseq"
+    )
+    n_param_list <- 8
+    prior_list <- c(
+        "N1 N UN[100,10000,0.0,0.0]",
+        "N2 N UN[100,10000,0.0,0.0]",
+        "N3 N UN[100,10000,0.0,0.0]",
+        "N4 N UN[100,10000,0.0,0.0]",
+        "ra A UN[0.05,0.95,0.0,0.0]",
+        "t32 T UN[10,1000,0.0,0.0]",
+        "t21 T UN[10,1000,0.0,0.0]",
+        "t431 T UN[10,1000,0.0,0.0]"
+    )
+    cond_list <- c("t21>t32", "t431<t32")
     locus_desc <- "5000 <A> G1 from 1"
     
-    write_header(test_dir, data_file, 
-                 scenario_list, n_param_list, 
-                 param_list, cond_list, 
-                 locus_type, seq_mode, locus_desc)
+    # ok
+    write_header(
+        test_dir, data_file, scenario_list, n_param_list, 
+        prior_list, cond_list, locus_type, seq_mode, locus_desc
+    )
     
+    # check result
     file_name <- file.path(test_dir, "header.txt")
     file_type = "text/plain"
     data_type = "snp"
@@ -43,32 +46,140 @@ test_that("write_header", {
     header_check <- read_header(file_name, file_type, data_type)
     expect_true(header_check$valid)
     expect_equal(length(header_check$msg), 0)
-    expect_equal(header_check$data_file, "indseq_SNP_sim_dataset_4POP_001.snp")
-    expect_equal(header_check$locus_desc, "5000 <A> G1 from 1")
-    expect_equal(header_check$n_param, 8)
-    expect_equal(header_check$n_prior, 8)
+    expect_equal(header_check$data_file, data_file)
+    expect_equal(header_check$locus_desc, locus_desc)
+    expect_equal(header_check$n_param, n_param_list)
+    expect_equal(header_check$n_prior, length(prior_list))
     expect_equal(header_check$n_stat, 1)
-    expect_equal(header_check$cond_list, c("t21>t32", "t431<t32"))
-    expect_equal(
-        header_check$prior_list,
-        c("N1 N UN[100,10000,0.0,0.0]", 
-          "N2 N UN[100,10000,0.0,0.0]",
-          "N3 N UN[100,10000,0.0,0.0]",
-          "N4 N UN[100,10000,0.0,0.0]",
-          "ra A UN[0.05,0.95,0.0,0.0]",
-          "t32 T UN[10,1000,0.0,0.0]",
-          "t21 T UN[10,1000,0.0,0.0]",
-          "t431 T UN[10,1000,0.0,0.0]")
-    )
+    expect_equal(header_check$cond_list, cond_list)
+    expect_equal(header_check$prior_list, prior_list)
     expect_null(header_check$n_group)
     expect_null(header_check$group_prior_list)
-    expect_equal(
-        header_check$scenario_list,
+    expect_equal(header_check$scenario_list, scenario_list)
+    expect_equal(header_check$simu_mode, "DRAW UNTIL")
+    
+    # MWE 2 (MSS)
+    test_dir <- mk_proj_dir("test_training_set_tools")
+    data_file <- "mss_example_001.mss"
+    locus_type <- "mss"
+    seq_mode <- "indseq"
+    scenario_list <- str_c(
+        "N1 N2 N3 NS1 NS2",
+        "0 sample 1",
+        "0 sample 2",
+        "0 sample 3",
+        "t1 merge 1 3",
+        "ta split 1 4 5 ra",
+        "ta split 2 4 5 ra",
+        "t2 merge 4 5",
+        sep = "\n"
+    )
+    n_param_list <- c(9)
+    prior_list <- c(
+        "N1 N UN[10,10000,0,0]",
+        "N2 N UN[10,10000,0,0]",
+        "N3 N UN[10,10000,0,0]",
+        "NS1 N UN[10,10000,0,0]",
+        "NS2 N UN[10,10000,0,0]",
+        "t1 T UN[10,10000,0,0]",
+        "ta T UN[10,10000,0,0]",
+        "t2 T UN[10,10000,0,0]",
+        "ra A UN[0.05,0.95,0,0]"
+    )
+    cond_list <- c("ta>t1", "t2>ta")
+    
+    locus_desc <- c(
+        "Locus_M_A_1_ <A> [M] G1 2 40",
+        "Locus_M_A_2_ <A> [M] G1 2 40",
+        "Locus_M_A_3_ <A> [M] G1 2 40",
+        "Locus_M_A_4_ <A> [M] G1 2 40",
+        "Locus_M_A_5_ <A> [M] G1 2 40",
+        "Locus_M_X_6_ <X> [M] G1 2 40",
+        "Locus_M_X_7_ <X> [M] G1 2 40",
+        "Locus_M_X_8_ <X> [M] G1 2 40",
+        "Locus_M_X_9_ <X> [M] G1 2 40",
+        "Locus_M_X_10_ <X> [M] G1 2 40",
+        "Locus_M_Y_11_ <Y> [M] G1 2 40",
+        "Locus_M_Y_12_ <Y> [M] G1 2 40",
+        "Locus_M_Y_13_ <Y> [M] G1 2 40",
+        "Locus_M_Y_14_ <Y> [M] G1 2 50",
+        "Locus_M_Y_15_ <Y> [M] G1 2 40",
+        "Locus_M_M_16_ <M> [M] G1 2 40",
+        "Locus_M_M_17_ <M> [M] G1 2 40",
+        "Locus_M_M_18_ <M> [M] G1 2 40",
+        "Locus_M_M_19_ <M> [M] G1 2 40",
+        "Locus_M_M_20_ <M> [M] G1 2 40",
+        "Locus_S_A_21_ <A> [S] G2 1000",
+        "Locus_S_A_22_ <A> [S] G2 1000",
+        "Locus_S_X_23_ <X> [S] G2 1000",
+        "Locus_S_X_24_ <X> [S] G2 1000",
+        "Locus_S_Y_25_ <Y> [S] G2 1000",
+        "Locus_S_Y_26_ <Y> [S] G2 1000",
+        "Locus_S_M_27_ <M> [S] G2 1000",
+        "Locus_S_M_28_ <M> [S] G2 1000"
+    )
+    
+    group_prior_list <- c(
         str_c(
-            "N1 N2 N3 N4\n0 sample 1\n0 sample 2\n0 sample 3\n0 sample 4",
-            "\nt431 split 4 1 3 ra\nt32 merge 2 3\nt21 merge 1 2"
+            "group G1 [M]",
+            "MEANMU UN[1e-04,0.01,0.001,2]",
+            "GAMMU GA[1e-04,0.01,Mean_u,2]",
+            "MEANP UN[1e-04,0.01,0.001,2]",
+            "GAMP GA[1e-04,0.01,Mean_P,2]",
+            "MEANSNI UN[1e-04,0.01,0.001,2]",
+            "GAMSNI GA[1e-04,0.01,Mean_u_SNI,2]",
+            sep = "\n"
+        ),
+        str_c(
+            "group G2 [S]",
+            "MEANMU UN[1e-04,0.01,0.001,2]",
+            "GAMMU GA[1e-04,0.01,Mean_u,2]",
+            "MEANK1 UN[1e-04,0.01,0.001,2]",
+            "GAMK1 GA[1e-04,0.01,Mean_k1,2]",
+            "MEANK2 UN[1e-04,0.01,0.001,2]",
+            "GAMK2 GA[1e-04,0.01,Mean_k2,2]",
+            "MODEL K2P 10 2",
+            sep = "\n"
         )
     )
+    
+    mss_reftab_colname <- c(
+        "µmic_1", "pmic_1", "snimic_1", "µseq_2", "k1seq_2"
+    )
+    
+    # missing input
+    expect_error(
+        write_header(
+            test_dir, data_file, scenario_list, n_param_list, 
+            prior_list, cond_list, locus_type, seq_mode, locus_desc
+        )
+    )
+    
+    # ok
+    write_header(
+        test_dir, data_file, scenario_list, n_param_list, 
+        prior_list, cond_list, locus_type, seq_mode, locus_desc,
+        group_prior_list, mss_reftab_colname
+    )
+    
+    # check result
+    file_name <- file.path(test_dir, "header.txt")
+    file_type = "text/plain"
+    data_type = "mss"
+    
+    header_check <- read_header(file_name, file_type, data_type)
+    expect_true(header_check$valid)
+    expect_equal(length(header_check$msg), 0)
+    expect_equal(header_check$data_file, data_file)
+    expect_equal(header_check$locus_desc, locus_desc)
+    expect_equal(header_check$n_param, n_param_list)
+    expect_equal(header_check$n_prior, length(prior_list))
+    expect_equal(header_check$n_stat, 2)
+    expect_equal(header_check$cond_list, cond_list)
+    expect_equal(header_check$prior_list, prior_list)
+    expect_equal(header_check$n_group, 2)
+    expect_equal(header_check$group_prior_list, group_prior_list)
+    expect_equal(header_check$scenario_list, scenario_list)
     expect_equal(header_check$simu_mode, "DRAW UNTIL")
 })
 
