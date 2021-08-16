@@ -282,6 +282,9 @@ write_header <- function(
 
     ## write to file
     writeLines(out, file.path(proj_dir, filename))
+    
+    ## output for check
+    return(1)
 }
 
 #' Run training set simulation
