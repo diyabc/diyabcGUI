@@ -1082,10 +1082,10 @@ param_cond_panel_ui <- function(id) {
             ),
             tags$li(
                 "To do so, you just need to set",
-                tags$code("t1 > t2"), 
-                "in the 'Condition setting' panel.", 
+                tags$code("t1>t2"), 
+                "in the", tags$b("Condition setting"), "panel.", 
                 "Such a condition should concern",
-                "two parameters of the same type",
+                tags$b("two parameters of the same type"),
                 "(i.e. two effective sizes, two times or two admixture rates)."
             )
         )
