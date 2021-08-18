@@ -317,6 +317,17 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     #     )
     # }
     
+    ## FIXME temporary fix because of bug in diyabc (see issue github #59)
+    if(run_prior_check) {
+        if(! "header.txt" %in% list.files(proj_dir)) {
+            fs::file_copy(
+                path = file.path(proj_dir, "headerRF.txt"),
+                new_path = file.path(proj_dir, "header.txt"),
+                overwrite = TRUE
+            )
+        }
+    }
+    
     # remove seed file if existing
     if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
         fs::file_delete(file.path(proj_dir, "RNG_state_0000.bin"))
@@ -354,11 +365,15 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     ### run
     logging("diyabc run")
     arguments <- c(
-        "-p", safe_proj_dir, 
-        "-R", "ALL", "-m",
+        "-p", safe_proj_dir
+    )
+    # FIXME temporary fix (c.f. below)
+    arguments <- c(
+        arguments, 
+        "-m", "-t", as.character(getOption("diyabcGUI")$ncore),
+        "-R", "ALL",
         "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
-        "-r", as.character(n_run),
-        "-t", as.character(getOption("diyabcGUI")$ncore)
+        "-r", as.character(n_run)
     )
     if(run_prior_check) {
         arguments <- c(
@@ -366,6 +381,17 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
             "-d", "a:pl"
         )
     }
+    ## FIXME temporarily disabled because of bug in diyabc
+    ## (see github issue #59)
+    # } else {
+    #     arguments <- c(
+    #         arguments, 
+    #         "-m", "-t", as.character(getOption("diyabcGUI")$ncore),
+    #         "-R", "ALL",
+    #         "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
+    #         "-r", as.character(n_run)
+    #     )
+    # }
     
     run_proc <- processx::process$new(
         command = diyabc_bin, 
