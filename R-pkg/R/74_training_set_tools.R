@@ -305,14 +305,17 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         safe_proj_dir <- str_c(proj_dir, .Platform$file.sep)
     }
     
-    # check for header file (headerRF.txt copied to header.txt)
+    # check for header file
     if(!any(c("header.txt", "headerRF.txt") %in% list.files(proj_dir))) {
         stop("missing header input file")
-    } else if(! "header.txt" %in% list.files(proj_dir)) {
-        fs::file_copy(path = file.path(proj_dir, "headerRF.txt"),
-                      new_path = file.path(proj_dir, "header.txt"),
-                      overwrite = TRUE)
     }
+    # } else if(! "header.txt" %in% list.files(proj_dir)) {
+    #     fs::file_copy(
+    #         path = file.path(proj_dir, "headerRF.txt"),
+    #         new_path = file.path(proj_dir, "header.txt"),
+    #         overwrite = TRUE
+    #     )
+    # }
     
     # remove seed file if existing
     if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
@@ -323,7 +326,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     logging("diyabc init")
     arguments <- c(
         "-p", safe_proj_dir,
-        "-n", str_c("'t:", getOption("diyabcGUI")$ncore, "'")
+        "-n", str_c("t:", getOption("diyabcGUI")$ncore)
     )
     init_proc <- processx::process$new(
         command = diyabc_bin, 
@@ -342,11 +345,17 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         warning("Issue with seed initialization")
     }
     
+    ### log file
+    logfile <- "diyabc_run_call.log"
+    if(run_prior_check) {
+        logfile <- "diyabc_model_check_call.log"
+    }
+    
     ### run
     logging("diyabc run")
     arguments <- c(
         "-p", safe_proj_dir, 
-        "-R", "", "-m",
+        "-R", "ALL", "-m",
         "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
         "-r", as.character(n_run),
         "-t", as.character(getOption("diyabcGUI")$ncore)
@@ -362,8 +371,8 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         command = diyabc_bin, 
         args = arguments,
         stdin = NULL,
-        stdout = file.path(proj_dir, "diyabc_run_call.log"), 
-        stderr = file.path(proj_dir, "diyabc_run_call.log"),
+        stdout = file.path(proj_dir, logfile), 
+        stderr = file.path(proj_dir, logfile),
         echo_cmd = TRUE
     )
     
