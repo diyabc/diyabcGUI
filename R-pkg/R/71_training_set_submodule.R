@@ -110,15 +110,13 @@ train_set_simu_server <- function(input, output, session) {
                     train_set_setup_ui(ns("train_set_setup"))
                 )
             } else {
-                tagList(
-                    tags$div(
-                        h4(
-                            icon("warning"), "Project setup is not valid,",
-                            "check the", tags$b("Project settings"), "above."
-                        ),
-                        style = "color: #F89406;"
-                    )
-                )
+                tagList(tags$div(
+                    h4(
+                        icon("warning"), "Project setup is not valid,",
+                        "check the", tags$b("Project settings"), "above."
+                    ),
+                    style = "color: #F89406;"
+                ))
             }
         })
     })
@@ -824,11 +822,11 @@ train_set_simu_run_server <- function(input, output, session) {
     ## run simulation
     observeEvent(input$simulate, {
         
-        local$feedback <- tags$div(
+        local$feedback <- tags$p(tags$div(
             icon("warning"), "Project is not ready.",
             "Check settings above.",
             style = "color: #F89406;"
-        )
+        ))
         
         req(env$ap$proj_dir)
         req(env$ap$data_file)
@@ -969,11 +967,11 @@ train_set_simu_run_server <- function(input, output, session) {
             )
         } else if(local$diyabc_run_result == -2000) {
             ## stopped run
-            local$feedback <- tags$div(
+            local$feedback <- tags$p(tags$div(
                 icon("warning"), "Error in simulation process:", 
                 "check your scenarios, priors and conditions.",
                 style = "color: #F89406;"
-            )
+            ))
             showNotification(
                 id = ns("stop_run"), duration = 10,
                 closeButton = TRUE, type = "error",
@@ -984,10 +982,10 @@ train_set_simu_run_server <- function(input, output, session) {
             )
         } else {
             ## error during run
-            local$feedback <- tags$div(
+            local$feedback <- tags$p(tags$div(
                 icon("warning"), "Issues with run (see log panel below).",
                 style = "color: #F89406;"
-            )
+            ))
             showNotification(
                 id = ns("run_not_ok"), duration = 10,
                 closeButton = TRUE, type = "error",
@@ -1105,6 +1103,7 @@ train_set_simu_run_server <- function(input, output, session) {
     
     ## feedback
     output$feedback <- renderUI({
+        req(local$feedback)
         local$feedback
     })
 }
@@ -1123,15 +1122,14 @@ prior_check_ui <- function(id) {
             "above or uploaded with an existing project."
         ),
         actionGroupButtons(
-            inputIds = c(ns("run_prior_mod_check"), 
-                         ns("stop_prior_mod_check")),
+            inputIds = c(ns("run"), ns("stop")),
             labels = list(
                 tags$span(icon("play"), "Run"),
                 tags$span(icon("stop"), "Stop")
             ),
             fullwidth = TRUE
         ),
-        uiOutput(ns("feedback_prior_mod_check"))
+        uiOutput(ns("feedback"))
     )
 }
 
@@ -1142,6 +1140,210 @@ prior_check_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
     
-    # max number of rows in log
-    nlog <- 5
+    # init local
+    local <- reactiveValues(
+        diyabc_run_process = NULL,
+        diyabc_run_result = NULL,
+        feedback = NULL,
+        run_diyabc = 0
+    )
+    
+    ## run simulation
+    observeEvent(input$run, {
+        
+        local$feedback <- tags$p(tags$div(
+            icon("warning"), "Missing simulation files.",
+            style = "color: #F89406;"
+        ))
+        
+        req(env$ap$proj_dir)
+        req(env$ap$data_file)
+        req(env$ap$header_check)
+        req(env$ap$header_check$valid)
+        req(env$ap$reftable_check)
+        req(env$ap$reftable_check$valid)
+        
+        ## run in progress
+        if(!is.null(local$diyabc_run_process)) {
+            
+            local$feedback <- helpText(
+                icon("info-circle"), "Model checking in progress."
+            )
+            
+            showNotification(
+                id = ns("run_in_progress"), duration = 10,
+                closeButton = TRUE, type = "warning",
+                tagList(tags$p(
+                    icon("warning"), "Model checking in progress."
+                ))
+            )
+        } else {
+            ## prepare run
+            req(is.null(local$diyabc_run_process))
+            
+            ## ready to run
+            
+            # debugging
+            # pprint("check options")
+            # pprint(getOption("diyabcGUI"))
+            # pprint(getOption("shiny.maxRequestSize"))
+            
+            local$feedback <- tags$div(
+                h4(helpText(
+                    icon("spinner", class = "fa-spin"),
+                    "Model checking is running."
+                )),
+                style = "text-align:center;"
+            )
+            
+            logging("Running model checking")
+            local$diyabc_run_process <- diyabc_run_trainset_simu(
+                env$ap$proj_dir, run_prior_check = TRUE
+            )
+        }
+    })
+    
+    ## monitor simulation run
+    observeEvent(local$diyabc_run_process, {
+        req(!is.null(local$diyabc_run_process))
+        
+        print("diyabc model checking run process")
+        print(local$diyabc_run_process)
+        
+        observe({
+            req(!is.null(local$diyabc_run_process))
+            proc <- local$diyabc_run_process
+            req(!is.null(proc$is_alive()))
+            if(proc$is_alive()) {
+                invalidateLater(1000, session)
+            } else {
+                local$diyabc_run_result <- proc$get_exit_status()
+            }
+        })
+    })
+    
+    ## clean up after run
+    observeEvent(local$diyabc_run_result, {
+        
+        req(!is.null(local$diyabc_run_result))
+        
+        logging(
+            "diyabc model checking run exit status:", local$diyabc_run_result
+        )
+        
+        ## check run
+        # run ok
+        if(local$diyabc_run_result == 0) {
+            local$run_diyabc <- local$run_diyabc + 1
+            local$feedback <- tags$div(
+                h4(helpText(
+                    icon("check"), "Model check succeeded."
+                )),
+                style = "text-align:center;"
+            )
+            
+            showNotification(
+                id = ns("run_ok"), duration = 10,
+                closeButton = TRUE, type = "message",
+                tagList(tags$p(
+                    icon("check"), "Model check is done."
+                ))
+            )
+            
+            # graph output
+            tmp_check <- tryCatch(
+                scenario_check_graph_ouptut(
+                    env$ap$proj_dir, env$ap$proj_dir
+                ),
+                error = function(e) {print(e); return(e);}
+            )
+            
+            if("error" %in% class(tmp_check)) {
+                local$feedback <- tags$div(
+                    icon("warning"),
+                    "Graphical output generation for",
+                    "scenario checking failed.",
+                    style = "text-align:center; color: #F89406;"
+                )
+                
+                showNotification(
+                    id = ns("prior_mod_check_graph_output_fail"),
+                    duration = 5,
+                    closeButton = TRUE,
+                    type = "error",
+                    tagList(tags$p(
+                        icon("warning"),
+                        "Graphical output generation for",
+                        "scenario checking failed."
+                    ))
+                )
+            }
+            
+        } else if(local$diyabc_run_result == -1000) {
+            ## stopped run
+            local$feedback <- tags$div(
+                h4(icon("warning"), "Model check run was stopped."),
+                style = "text-align:center; color: #F89406;"
+            )
+            
+            showNotification(
+                id = ns("stop_run"), duration = 10,
+                closeButton = TRUE, type = "error",
+                tagList(tags$p(
+                    icon("warning"), "Model check run was stopped."
+                ))
+            )
+        } else {
+            ## error during run
+            local$feedback <- tags$p(tags$div(
+                icon("warning"), 
+                "Issues with model check run",
+                "(save the project, c.f. below, and check the log files).",
+                style = "color: #F89406;"
+            ))
+            showNotification(
+                id = ns("run_not_ok"), duration = 10,
+                closeButton = TRUE, type = "error",
+                tagList(tags$p(
+                    icon("warning"),
+                    "A problem happened during model checking."
+                ))
+            )
+        }
+        
+        # reset
+        local$diyabc_run_result <- NULL
+        local$diyabc_run_process <- NULL
+    })
+    
+    ## stop run
+    observeEvent(input$stop, {
+        ## if no current run
+        if(is.null(local$diyabc_run_process)) {
+            local$feedback <- helpText(
+                icon("warning"), "No current run to stop."
+            )
+            showNotification(
+                id = ns("no_run"), duration = 10,
+                closeButton = TRUE, type = "error",
+                tagList(tags$p(
+                    icon("warning"), "No current run to stop."
+                ))
+            )
+        } else {
+            ## stop current run
+            proc <- local$diyabc_run_process
+            req(!is.null(proc$is_alive()))
+            if(proc$is_alive()) {
+                proc$kill()
+            }
+            local$diyabc_run_result <- -1000
+        }
+    })
+    
+    ## feedback
+    output$feedback <- renderUI({
+        req(local$feedback)
+        local$feedback
+    })
 }
