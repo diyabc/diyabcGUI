@@ -2,7 +2,7 @@ env <- new.env(parent = emptyenv())
 
 .onLoad <- function(libname, pkgname) {
     # set up options
-    set_diyabcGUI_options(ncore = parallel::detectCores())
+    set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
     # check if binary files are available
     diyabc_bin <- tryCatch(
         find_bin("diyabc"),
