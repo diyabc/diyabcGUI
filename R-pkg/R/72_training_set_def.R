@@ -1437,7 +1437,7 @@ snp_locus_setup_server <- function(input, output, session) {
                     ) %>% 
                         helper(
                             type = "inline", 
-                            content = paste(
+                            content = tagList(
                                 "Index of the first locus in the data file",
                                 "to be included in the analysis.",
                                 "For instance,", 
@@ -1446,8 +1446,7 @@ snp_locus_setup_server <- function(input, output, session) {
                                 "and you choose to use 5 loci,",
                                 "if you set up", tags$code("from = 4"),
                                 "the loci from 4 to 9 (out of 10)",
-                                "will be used in the analysis.",
-                                sep = " "
+                                "will be used in the analysis."
                             )
                         )
                 )
