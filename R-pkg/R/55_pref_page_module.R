@@ -18,8 +18,9 @@ pref_page_ui <- function(id) {
                 max = 10000
             ),
             helpText(
-                "By default, data files larger than 100 Mb",
-                "will not be accepted."
+                icon("warning"), "By default, data files larger than 10 Gb",
+                "will not be accepted.", 
+                "Please increase this limit if needed."
             ),
             hr(),
             numericInput(
@@ -30,21 +31,26 @@ pref_page_ui <- function(id) {
                 max = parallel::detectCores()
             ),
             helpText(
-                "By default, all available cores are used."
+                icon("warning"), 
+                "By default, 3/4th of all available cores are used."
             ),
             hr(),
             numericInput(
                 ns("simu_loop_size"), 
                 label = "Number of particles simulated in a single batch (loop-size).",
-                value = 50,
+                value = as.integer(10 * getOption("diyabcGUI")$ncore),
                 min = 10,
                 max = 10000
             ),
             helpText(
                 "DIYABC simulation engine generates data by batch.",
-                "Here you can set up the batch size, by default it is 50,",
-                "meaning that simulating 1000 individuals will be done in",
-                "20 batches of 50 individuals."
+                "If the batch size is 50, it means that", 
+                "simulating 1000 individuals will be done in",
+                "20 batches of 50 individuals.",
+                "Here you can set up the batch size,", 
+                "by default it is", tags$code("10 * n_core"), 
+                "(so that each core will generate 10 individuals", 
+                "of each batch)."
             )
         )
     )
