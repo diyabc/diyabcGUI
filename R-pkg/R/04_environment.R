@@ -82,19 +82,21 @@ init_diyabcrf_env <- function() {
         
     # random forest analysis
     tmp_rf <- list(
+        # analysis (sub-project) name
+        subproj_name = NULL,
         # analysis mode: "param_estim" or "model_choice"
         mode = NULL,
-        # number of samples
-        n_ref = NULL,
+        # number of samples to use
+        n_rec = NULL,
         # minimal node size
         min_node_size = NULL, 
         # number of tree
         n_tree = NULL, 
         # number of noise columns
-        noise_columns = NULL, 
-        # boolean: if TRUE, disable LDA for model choice or PLS for 
+        n_noise_columns = NULL, 
+        # boolean: if TRUE, enable LDA for model choice or PLS for 
         #   parameter estimation
-        no_linear = NULL, 
+        linear = NULL, 
         # percentage of maximum explained Y-variance for retaining pls axis
         pls_max_var = NULL, 
         # Chosen scenario (mandatory for parameter estimation)
@@ -105,7 +107,7 @@ init_diyabcrf_env <- function() {
         #   estimation)
         parameter = NULL, 
         # subset and/or groups of models
-        groups = NULL
+        grouping = NULL
     )
     
     
