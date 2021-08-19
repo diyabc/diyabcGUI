@@ -216,6 +216,7 @@ test_that("diyabc_run_trainset_simu and cleanup_diyabc_run", {
         "diyabc_run_call.log", "diyabc_seed_init_call.log", "reftableRF.bin",
         "RNG_state_0000.bin", "statobsRF.txt"
     )
+    expect_true(all(expected_files %in% list.files(tmp_dir)))
     
     ## clean up
     cleanup_diyabc_run(tmp_dir)
