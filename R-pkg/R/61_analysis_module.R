@@ -50,7 +50,7 @@ analysis_module_server <- function(input, output, session) {
     callModule(train_set_simu_server, "train_set")
     
     ## random forest sub-module
-    # rf <- callModule(rf_module_server, "rf")
+    callModule(rf_module_server, "rf")
     
     ## action
     proj_admin <- callModule(proj_admin_server, "proj_admin", tag = "ap")
