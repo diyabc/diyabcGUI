@@ -451,7 +451,9 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                     ), 
                                     tags$ul(
                                         tags$li(
-                                            "Number of excluded loci =",
+                                            "Number of excluded",
+                                            tags$code(as.character(item$type)),
+                                            "loci =",
                                             as.character(item$filter), 
                                             "(", 
                                             filter_criterion, 
@@ -460,9 +462,9 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                             "monomorphic loci."
                                         ),
                                         tags$li(tags$b(
-                                            "Number of",
+                                            "Number of available",
                                             tags$code(as.character(item$type)),
-                                            "available of loci =", 
+                                            "loci =", 
                                             as.character(item$available)
                                         ))
                                     )
@@ -504,7 +506,7 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                 ),
                 tags$li(
                     tags$b(
-                        "Total number available of loci =", 
+                        "Number of available loci =", 
                         as.character(data_check$locus_count$available)
                     )
                 ),
