@@ -183,38 +183,46 @@ test_that("write_header", {
     expect_equal(header_check$simu_mode, "DRAW UNTIL")
 })
 
-test_that("diyabc_run_trainset_simu", {
+test_that("diyabc_run_trainset_simu and cleanup_diyabc_run", {
     
-    # proj dir
-    proj_dir = mk_proj_dir()
-    on.exit(tryCatch(fs::dir_delete(proj_dir)))
-    logging("tmp dir:", proj_dir)
+    test_proj <- "IndSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    tmp_dir = mk_proj_dir("test_diyabc_run")
     
     # copy header and data file from example
     lapply(
         c("headerRF.txt", "indseq_SNP_sim_dataset_4POP_001.snp"),
         function(filename) {
             fs::file_copy(
-                path = file.path(example_dir(), 
-                                 "IndSeq_SNP_estim_param", filename),
-                new_path = file.path(proj_dir, filename)
+                path = file.path(test_dir, filename),
+                new_path = file.path(tmp_dir, filename)
             )
         }
     )
     
     # try run
-    run_proc <- diyabc_run_trainset_simu(proj_dir, n_run = 100, 
-                                         run_prior_check = FALSE)
+    run_proc <- diyabc_run_trainset_simu(
+        tmp_dir, n_run = 50, run_prior_check = FALSE
+    )
     
-    run_proc$is_alive()
+    expect_true(run_proc$is_alive())
     # run_proc$kill()
+    run_proc$wait()
+    
+    expect_equal(run_proc$get_exit_status(), 0)
     
     ## check project directory
-    list.files(proj_dir)
+    expected_files <- c(
+        "diyabc_run_call.log", "diyabc_seed_init_call.log", "reftableRF.bin",
+        "RNG_state_0000.bin", "statobsRF.txt"
+    )
     
     ## clean up
-    cleanup_diyabc_run(proj_dir)
-
+    cleanup_diyabc_run(tmp_dir)
+    
+    deleted_files <- c("header.txt", "RNG_state_0000.bin")
+    expect_true(!any(deleted_files %in% list.files(tmp_dir)))
+    
 })
 
 test_that("check_cond", {
