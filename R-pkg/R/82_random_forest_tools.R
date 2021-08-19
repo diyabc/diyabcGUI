@@ -30,8 +30,8 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
                           pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
     # # debugging
-    # pprint("abcranger args")
-    # pprint(match.call())
+    # print("abcranger args")
+    # print(match.call())
     
     # executable
     abcranger_bin <- find_bin("abcranger")
@@ -68,18 +68,17 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
             "--noob", as.character(noob),
             "--parameter", as.character(parameter)
         )
-    } else if(run_mode == "model_choice") {
-        if(!is.null(groups)) {
-            if(is.character(groups) & str_length(groups) > 0) {
-                arguments <- c(arguments, "-g", groups)
-            }
-        }
+    } else if(
+        (run_mode == "model_choice") &&
+        !is.null(groups) && is.character(groups) && (str_length(groups) > 0)
+    ) {
+        arguments <- c(arguments, "-g", groups)
     }
     
     run_proc <- processx::process$new(
         command = abcranger_bin, 
         args = arguments,
-        stdin = "|",
+        stdin = NULL,
         stdout = file.path(proj_dir, "abcranger_call.log"), 
         stderr = file.path(proj_dir, "abcranger_call.log"),
         echo_cmd = TRUE,
@@ -116,81 +115,106 @@ cleanup_abcranger_run <- function(project_dir) {
 #' For example, with six models, labeled from 1 to 6,",
 #' `'1,2,3;4,5,6'` to make 2 groups of 3.
 parse_abcranger_group <- function(txt, n_scenario) {
-    valid <- TRUE
-    msg <- list()
+    # init output
+    out <- list(valid = TRUE, msg = list())
+    
     # check input
-    if(!is.null(txt) | !is.character(txt)) {
-        # strip "|'
-        tmp <- str_replace_all(txt, pattern = "\"|'", replacement = "")
-        # check format
-        pttrn <- "^([0-9]+(,[0-9]+)*)(;([0-9]+(,[0-9]+)*))*$"
-        if(!str_detect(tmp, pttrn)) {
-            valid <- FALSE
-            msg <- append(
-                msg,
-                str_c(
-                    "Issue with group formating. Use only",
-                    "numbers, commas (,) and semi-colons (;).", 
-                    "Example: '1,2;3' (if you have 3 or more scenarii).", 
-                    sep = " "
-                )
-            )
-        } else {
-            # at least 2 groups
-            if(!str_detect(tmp, ";")) {
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "You should specify at least two groups,",
-                        "separated by semi-colons (;).",
-                        "If you do not want to group scenarii",
-                        "(or equivalently assign each scenario",
-                        "to its own group), leave blank.",
-                        sep = " "
-                    )
-                )
-            }
-            # extract information
-            pttrn <- "[0-9]+"
-            scenario_list <- as.numeric(
-                str_extract_all(tmp, pttrn, simplify = TRUE)
-            )
-            if(length(scenario_list) != length(unique(scenario_list))) {
-                count_scenarii <- table(scenario_list)
-                duplicated_scenarii <- names(count_scenarii[count_scenarii>1])
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "Some scenarii listed in scenario grouping",
-                        "are duplicated:",
-                        str_c(
-                            duplicated_scenarii,
-                            collapse = ", "
-                        ),
-                        sep = " "
-                    )
-                )
-            }
-            if(!all(scenario_list %in% (1:n_scenario))) {
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "Some scenarii listed in scenario grouping",
-                        "does not exist:",
-                        str_c(
-                            scenario_list[!scenario_list %in% (1:n_scenario)],
-                            collapse = ", "
-                        ),
-                        sep = " "
-                    )
-                )
-            }
-        }
+    if(is.null(txt) || (is.character(txt) && str_length(txt) == 0))
+        return(out) # empty grouping/selection is ok
+    
+    if(!is.character(txt) || length(txt) > 1) {
+        out$valid <- FALSE
+        out$msg <- append(out$msg, list(tagList("Bad input")))
+        return(out)
     }
-    return(lst(msg, valid))
+    
+    # # strip "|' (WHY??? -> to investigate)
+    # tmp <- str_replace_all(txt, pattern = "\"|'", replacement = "")
+    
+    # check format
+    pttrn <- "^([0-9]+(,[0-9]+)*)(;([0-9]+(,[0-9]+)*))*$"
+    if(!str_detect(txt, pttrn)) {
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "Issue with group formating. Use only",
+                "numbers, commas (,) and semi-colons (;).", 
+                "Example: '1,2;3' (if you have 3 or more scenarii)."
+            ))
+        )
+        return(out)
+    }
+    
+    # at least 2 groups
+    if(!str_detect(txt, ";")) {
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "You should specify at least two groups,",
+                "separated by semi-colons", tags$code(";"), ".",
+                "If you do not want to group scenarii",
+                "(or equivalently assign each scenario",
+                "to its own group), leave blank."
+            ))
+        )
+    }
+    
+    # extract information
+    pttrn <- "[0-9]+"
+    scenario_list <- as.numeric(
+        str_extract_all(txt, pttrn, simplify = TRUE)
+    )
+    
+    # duplicated id ?
+    if(length(scenario_list) != length(unique(scenario_list))) {
+        count_scenarii <- table(scenario_list)
+        duplicated_scenarii <- names(count_scenarii[count_scenarii>1])
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "The following scenario", 
+                ifelse(
+                    length(duplicated_scenarii) > 1, 
+                    "ids are", "id is"
+                ),
+                "duplicated:",
+                str_c(
+                    duplicated_scenarii,
+                    collapse = ", "
+                )
+            ))
+        )
+        return(out)
+    }
+    
+    # bad scenario id ?
+    if(!all(scenario_list %in% (1:n_scenario))) {
+        nonexisting_scenarii <- 
+            scenario_list[!scenario_list %in% (1:n_scenario)]
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "The following scenario", 
+                ifelse(
+                    length(nonexisting_scenarii) > 1, 
+                    "ids do not", "id does not"
+                ),
+                "exist:",
+                str_c(
+                    nonexisting_scenarii,
+                    collapse = ", "
+                )
+            ))
+        )
+        return(out)
+    }
+    
+    # output
+    return(out)
 }
 
 

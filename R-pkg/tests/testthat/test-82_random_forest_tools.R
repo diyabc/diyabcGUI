@@ -1,11 +1,10 @@
 context("random_forest_tools")
 
-test_that("abcranger_run", {
+test_that("abcranger_run and cleanup_abcranger_run", {
     
-    # proj dir
-    proj_dir = mk_proj_dir()
-    on.exit(tryCatch(fs::dir_delete(proj_dir)))
-    logging("tmp dir:", proj_dir)
+    test_proj <- "IndSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    tmp_dir = mk_proj_dir("test_abcranger_run")
     
     # copy header and data file from example
     lapply(
@@ -13,17 +12,17 @@ test_that("abcranger_run", {
           "indseq_SNP_sim_dataset_4POP_001.snp"),
         function(filename) {
             fs::file_copy(
-                path = file.path(example_dir(), 
-                                 "IndSeq_SNP_estim_param", filename),
-                new_path = file.path(proj_dir, filename)
+                path = file.path(test_dir, filename),
+                new_path = file.path(tmp_dir, filename)
             )
         }
     )
     
+    ## parameter estimation
     mode <- "param_estim"
-    n_ref <- 0
+    n_rec <- 500
     min_node_size <- 0
-    n_tree <- 500
+    n_tree <- 50
     noise_columns <- 5
     no_linear <- FALSE
     pls_max_var <- 0.9
@@ -33,39 +32,89 @@ test_that("abcranger_run", {
     groups <- NULL
     
     # try run
-    run_proc <- abcranger_run(proj_dir, mode, n_ref, 
-                              min_node_size, n_tree, noise_columns, no_linear, 
-                              pls_max_var, chosen_scenario, noob, parameter, 
-                              groups)
+    run_proc <- abcranger_run(
+        tmp_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
+        pls_max_var, chosen_scenario, noob, parameter, groups
+    )
     
-    run_proc$is_alive()
+    # expect_true(run_proc$is_alive())
     # run_proc$kill()
+    run_proc$wait()
     
-    ## check project directory
-    list.files(proj_dir)
+    expect_equal(run_proc$get_exit_status(), 0)
+    
+    # check project directory
+    expected_files <- c(
+        "estimparam_out.importance", "estimparam_out.oobstats", 
+        "estimparam_out.plsweights", "estimparam_out.predweights", 
+        "estimparam_out.ooberror", "estimparam_out.plsvar", 
+        "estimparam_out.predictions", "estimparam_out.settings"
+    )
+    expect_true(all(expected_files %in% list.files(tmp_dir)))
+    
+    ## model choice
+    mode <- "model_choice"
+    n_rec <- 500
+    min_node_size <- 0
+    n_tree <- 50
+    noise_columns <- 5
+    no_linear <- FALSE
+    pls_max_var <- 0.9
+    chosen_scenario <- NULL
+    noob <- NULL
+    parameter <- NULL
+    groups <- "1,2,3;4,5"
+    
+    # try run
+    run_proc <- abcranger_run(
+        tmp_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
+        pls_max_var, chosen_scenario, noob, parameter, groups
+    )
+    
+    # expect_true(run_proc$is_alive())
+    # run_proc$kill()
+    run_proc$wait()
+    
+    expect_equal(run_proc$get_exit_status(), 0)
+    
+    # check project directory
+    expected_files <- c(
+        "modelchoice_out.confusion", "modelchoice_out.importance", 
+        "modelchoice_out.lda", "modelchoice_out.ooberror", 
+        "modelchoice_out.predictions", "modelchoice_out.settings"
+    )
+    expect_true(all(expected_files %in% list.files(tmp_dir)))
     
     ## clean up
-    cleanup_abcranger_run(proj_dir)
-    
+    cleanup_abcranger_run(tmp_dir) # does nothing at the moment
 })
 
 test_that("parse_abcranger_group", {
     
     txt <- '1,2,3;4,5,6'
     n_scenario <- 6
-    expect_true(parse_abcranger_group(txt, n_scenario)$valid)
+    res <- parse_abcranger_group(txt, n_scenario)
+    expect_true(res$valid)
     
     txt <- '1,2,3;4,5'
     n_scenario <- 6
-    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
+    res <- parse_abcranger_group(txt, n_scenario)
+    expect_true(res$valid)
+    
+    txt <- '1,2,3'
+    n_scenario <- 6
+    res <- parse_abcranger_group(txt, n_scenario)
+    expect_false(res$valid)
     
     txt <- '1,2,3;4,5,6,7'
     n_scenario <- 6
-    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
+    res <- parse_abcranger_group(txt, n_scenario)
+    expect_false(res$valid)
     
     txt <- 'test'
     n_scenario <- 6
-    expect_false(parse_abcranger_group(txt, n_scenario)$valid)
+    res <- parse_abcranger_group(txt, n_scenario)
+    expect_false(res$valid)
 })
 
 
