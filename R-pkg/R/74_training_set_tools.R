@@ -299,16 +299,12 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     if(!dir.exists(proj_dir)) {
         stop("Input directory does not exist")
     }
-    safe_proj_dir <- proj_dir
-    if(!str_detect(string = proj_dir, 
-                   pattern = str_c(.Platform$file.sep, "$"))) {
-        safe_proj_dir <- str_c(proj_dir, .Platform$file.sep)
-    }
     
     # check for header file
     if(!any(c("header.txt", "headerRF.txt") %in% list.files(proj_dir))) {
         stop("missing header input file")
     }
+    # ## useless when command run from project directory (see github issue #60)
     # } else if(! "header.txt" %in% list.files(proj_dir)) {
     #     fs::file_copy(
     #         path = file.path(proj_dir, "headerRF.txt"),
@@ -317,16 +313,17 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     #     )
     # }
     
-    ## FIXME temporary fix because of bug in diyabc (see issue github #59)
-    if(run_prior_check) {
-        if(! "header.txt" %in% list.files(proj_dir)) {
-            fs::file_copy(
-                path = file.path(proj_dir, "headerRF.txt"),
-                new_path = file.path(proj_dir, "header.txt"),
-                overwrite = TRUE
-            )
-        }
-    }
+    # ## FIXME temporary fix because of bug in diyabc (see github issue #59)
+    # ## useless when command run from project directory (see github issue #60)
+    # if(run_prior_check) {
+    #     if(! "header.txt" %in% list.files(proj_dir)) {
+    #         fs::file_copy(
+    #             path = file.path(proj_dir, "headerRF.txt"),
+    #             new_path = file.path(proj_dir, "header.txt"),
+    #             overwrite = TRUE
+    #         )
+    #     }
+    # }
     
     # remove seed file if existing
     if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
@@ -336,7 +333,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     ### init seeds
     logging("diyabc init")
     arguments <- c(
-        "-p", safe_proj_dir,
+        "-p", "./",
         "-n", str_c("t:", getOption("diyabcGUI")$ncore)
     )
     init_proc <- processx::process$new(
@@ -345,6 +342,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         stdin = NULL,
         stdout = file.path(proj_dir, "diyabc_seed_init_call.log"), 
         stderr = file.path(proj_dir, "diyabc_seed_init_call.log"),
+        wd = proj_dir,
         echo_cmd = TRUE
     )
     init_proc$wait()
@@ -364,9 +362,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     
     ### run
     logging("diyabc run")
-    arguments <- c(
-        "-p", safe_proj_dir
-    )
+    arguments <- c("-p", "./")
     # FIXME temporary fix (c.f. below)
     arguments <- c(
         arguments, 
@@ -399,6 +395,7 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         stdin = NULL,
         stdout = file.path(proj_dir, logfile), 
         stderr = file.path(proj_dir, logfile),
+        wd = proj_dir,
         echo_cmd = TRUE
     )
     
@@ -1466,7 +1463,10 @@ get_group_reftab_colname <- function(locus_mode, group_id, mut_model = NULL) {
 #' Get refTable col names corresponding to MSS prior parameters for all groups
 #' @keywords internal
 #' @author Ghislain Durif
-#' @param group_prior_list
+#' @param group_prior_list vector of character string, list of current 
+#' group prior definitions.
+#' @param locus_desc vector of character string, locus description read 
+#' from data file.
 get_mss_reftab_colname <- function(group_prior_list, locus_desc) {
     
     # check input
