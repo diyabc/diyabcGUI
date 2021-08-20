@@ -83,7 +83,7 @@ init_diyabcrf_env <- function() {
     # random forest analysis
     tmp_rf <- list(
         # analysis (sub-project) name
-        subproj_name = NULL,
+        proj_name = NULL,
         # analysis mode: "param_estim" or "model_choice"
         mode = NULL,
         # number of samples to use
@@ -107,7 +107,9 @@ init_diyabcrf_env <- function() {
         #   estimation)
         parameter = NULL, 
         # subset and/or groups of models
-        grouping = NULL
+        grouping = NULL,
+        # abcranger run counter
+        run_counter = NULL
     )
     
     
