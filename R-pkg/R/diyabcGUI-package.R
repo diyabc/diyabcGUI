@@ -25,7 +25,7 @@
 #' @importFrom shinyWidgets actionBttn actionGroupButtons ask_confirmation progressBar 
 #' radioGroupButtons show_alert updateProgressBar 
 #' @importFrom stringr str_c str_detect str_extract str_extract_all str_length 
-#' str_match str_pad str_replace str_replace_all str_split str_to_upper str_trim
+#' str_match str_pad str_replace str_replace_all str_split str_to_upper str_to_lower str_trim
 #' @importFrom tibble lst
 #' @importFrom tidyr drop_na
 #' @importFrom tools file_ext

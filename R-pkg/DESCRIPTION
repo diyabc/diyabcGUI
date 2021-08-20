@@ -59,6 +59,7 @@ Imports:
     lubridate, 
     jsonlite, 
     magrittr, 
+    markdown, 
     mime,
     parallel, pbapply, processx,
     readr,
