@@ -552,14 +552,20 @@ rf_parameter_server <- function(input, output, session) {
             tags$p(
                 tags$div(
                     style = "column-count:2;",
-                    do.call(tags$ul, lapply(local$possible_param, tags$li))
+                    do.call(
+                        tags$ul, 
+                        lapply(
+                            local$possible_param, 
+                            function(item) tags$li(tags$code(item))
+                        )
+                    )
                 )
             ),
             tags$p(
                 tags$i("Example of arithmetic possible combinations:"),
                 tags$code("t/N"), "or", tags$code("t1+t2"),
                 "or", tags$code("N*µmic_1"),
-                "(to be adapted with the name of the parameters",
+                "(to be adapted with the names of the parameters",
                 "in your model)."
             )
         )
