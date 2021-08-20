@@ -63,11 +63,12 @@ proj_name_server <- function(input, output, session, tag = "ap") {
     # })
     
     # feedback on project name
-    observe({
-        feedbackWarning(
-            "proj_name", 
-            local$modified || !isTruthy(input$proj_name), 
-            "Project name is missing or not validated."
-        )
+    output$feedback <- renderUI({
+        req(local$modified || !isTruthy(input$proj_name))
+        
+        tags$p(tags$div(
+            icon("warning"), "Project name is missing or not validated.",
+            style = "color: #F89406;"
+        ))
     })
 }
