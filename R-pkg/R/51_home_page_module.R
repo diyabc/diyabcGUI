@@ -1,6 +1,7 @@
 #' Simplified home page ui
 #' @keywords internal
 #' @author Ghislain Durif
+#' @import markdown
 home_page_ui <- function(id) {
     ns <- NS(id)
     tagList(
@@ -75,20 +76,22 @@ home_page_ui <- function(id) {
                                 "Specific help pop-ups relative to some panels",
                                 "are directly available inside",
                                 "the application by clicking on",
-                                "the close-by", icon("question-circle"), "."
+                                "the close-by ", icon("question-circle"), "."
                             ),
                             br(),
                             tags$li(
                                 "Reactive feedback is also",
                                 "provided by the different panels",
-                                "of the application.",
+                                "of the application. ",
                                 tags$i("Warning"), "messages are idenfied by a", 
                                 icon("warning"), "and",
-                                tags$i("informative"), "messages by a", 
-                                icon("comment"), "."
+                                tags$i("informative"), "messages by a ", 
+                                icon("comment"), "or a ", icon("info-circle"), "."
                             )
                         )
-                    )
+                    ),
+                    hr(),
+                    includeMarkdown(file.path(help_dir(), "reference.md"))
                 )
             )
         )
