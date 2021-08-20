@@ -744,7 +744,6 @@ train_set_simu_run_server <- function(input, output, session) {
         diyabc_run_process = NULL,
         diyabc_run_result = NULL,
         feedback = NULL,
-        run_diyabc = 0,
         default_n_run = 100
     )
     
@@ -927,7 +926,7 @@ train_set_simu_run_server <- function(input, output, session) {
         ## check run
         # run ok
         if(local$diyabc_run_result == 0) {
-            local$run_diyabc <- local$run_diyabc + 1
+            
             local$feedback <- tags$div(
                 h3(helpText(
                     icon("check"), "Run succeeded."
@@ -1143,8 +1142,7 @@ prior_check_server <- function(input, output, session) {
     local <- reactiveValues(
         diyabc_run_process = NULL,
         diyabc_run_result = NULL,
-        feedback = NULL,
-        run_diyabc = 0
+        feedback = NULL
     )
     
     ## run simulation
@@ -1233,7 +1231,7 @@ prior_check_server <- function(input, output, session) {
         ## check run
         # run ok
         if(local$diyabc_run_result == 0) {
-            local$run_diyabc <- local$run_diyabc + 1
+            
             local$feedback <- tags$div(
                 h4(helpText(
                     icon("check"), "Model check succeeded."
