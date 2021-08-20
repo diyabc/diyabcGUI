@@ -722,7 +722,6 @@ train_set_simu_run_ui <- function(id) {
             ),
         tags$pre(
             uiOutput(ns("run_log")),
-            # style = "width:60vw; overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
             style = "overflow:scroll; overflow-y:scroll; height:100px; resize: both;"
         ),
         actionButton(
@@ -1252,7 +1251,7 @@ prior_check_server <- function(input, output, session) {
             
             # graph output
             tmp_check <- tryCatch(
-                scenario_check_graph_ouptut(
+                scenario_check_graph_output(
                     env$ap$proj_dir, env$ap$proj_dir
                 ),
                 error = function(e) {print(e); return(e);}
