@@ -225,7 +225,11 @@ train_set_setup_server <- function(input, output, session) {
         req(input$edit)
         ask_confirmation(
             inputId = "edit_confirmation",
-            title = "Want to confirm ?"
+            title = "Want to confirm ?",
+            text = str_c(
+                "You are going to edit an existing project configuration.",
+                "Any previous training set will be erased."
+            )
         )
     })
     
@@ -1039,7 +1043,8 @@ train_set_simu_run_server <- function(input, output, session) {
     })
     
     ## read log file during run and update progress bar
-    observeEvent(input$simulate, {
+    observe({
+        req(input$simulate)
         
         ## continue updating progress bar while diyabc is running
         if(!is.null(local$diyabc_run_process)) {
@@ -1053,7 +1058,6 @@ train_set_simu_run_server <- function(input, output, session) {
         if(file.exists(logfile)) {
             log_file_content <- readLines(logfile, warn=FALSE)
         }
-        req(log_file_content)
         
         ## update progress bar
         req(input$nrun)
@@ -1061,7 +1065,7 @@ train_set_simu_run_server <- function(input, output, session) {
         
         # parse log
         last_log <- tail(log_file_content, 100)
-        pttrn <- "^(?<=n simu data = )[0-9]+$"
+        pttrn <- "(?<=n simu data = )[0-9]+"
         pttrn_match <- str_extract(last_log, pttrn)
         if(any(!is.na(pttrn_match))) {
             n_rec <- as.integer(tail(pttrn_match[!is.na(pttrn_match)], 1))
