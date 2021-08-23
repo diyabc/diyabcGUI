@@ -58,8 +58,6 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
     )
     if(no_linear) {
         arguments <- c(arguments, "--no_linear")
-    } else {
-        arguments <- c(arguments, "--plsmaxvar", as.character(pls_max_var))
     }
     if(run_mode == "param_estim") {
         arguments <- c(
@@ -68,6 +66,9 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
             "--noob", as.character(noob),
             "--parameter", as.character(parameter)
         )
+        if(!no_linear) {
+            arguments <- c(arguments, "--plsmaxvar", as.character(pls_max_var))
+        }
     } else if(
         (run_mode == "model_choice") &&
         !is.null(groups) && is.character(groups) && (str_length(groups) > 0)
