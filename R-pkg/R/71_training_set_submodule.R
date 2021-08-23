@@ -849,11 +849,6 @@ train_set_simu_run_server <- function(input, output, session) {
         
         ## run in progress
         if(!is.null(local$diyabc_run_process)) {
-            
-            local$feedback <- helpText(
-                icon("info-circle"), "Run in progress."
-            )
-            
             showNotification(
                 id = ns("run_in_progress"), duration = 10,
                 closeButton = TRUE, type = "warning",
@@ -1007,7 +1002,7 @@ train_set_simu_run_server <- function(input, output, session) {
             req(file.exists(logfile))
 
             tmp_log <- readLines(logfile, warn=FALSE)
-            req(length(tmp_log > 0))
+            req(length(tmp_log) > 0)
             
             do.call(
                 tagList,
@@ -1058,6 +1053,7 @@ train_set_simu_run_server <- function(input, output, session) {
         if(file.exists(logfile)) {
             log_file_content <- readLines(logfile, warn=FALSE)
         }
+        req(log_file_content)
         
         ## update progress bar
         req(input$nrun)
@@ -1162,11 +1158,6 @@ prior_check_server <- function(input, output, session) {
         
         ## run in progress
         if(!is.null(local$diyabc_run_process)) {
-            
-            local$feedback <- helpText(
-                icon("info-circle"), "Model checking in progress."
-            )
-            
             showNotification(
                 id = ns("run_in_progress"), duration = 10,
                 closeButton = TRUE, type = "warning",
