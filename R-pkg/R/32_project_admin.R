@@ -71,7 +71,12 @@ proj_admin_server <- function(input, output, session, tag = NULL) {
         observeEvent(input$reset, {
             ask_confirmation(
                 inputId = "reset_confirmation",
-                title = "Want to confirm ?"
+                title = "Want to confirm ?",
+                text = str_c(
+                    "When resetting the current project,",
+                    "you will get a clean session and",
+                    "any ongoing work will be lost.", sep = " "
+                )
             )
         })
         
