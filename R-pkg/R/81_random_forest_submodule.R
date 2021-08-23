@@ -1059,13 +1059,13 @@ rf_control_server <- function(input, output, session) {
     })
     
     ## read log file during run and update progress bar
-    observeEvent(local$start_logging, {
+    observe({
         req(local$start_logging > 0)
         
         ## continue updating progress bar while abcranger is running
         if(!is.null(local$abcranger_run_process)) {
             print("invalidate")
-            invalidateLater(300, session)
+            invalidateLater(3000, session)
         }
         
         ## read log file
@@ -1075,13 +1075,11 @@ rf_control_server <- function(input, output, session) {
         if(file.exists(logfile)) {
             log_file_content <- readLines(logfile, warn=FALSE)
         }
-        req(log_file_content)
-        
-        pprint(tail(log_file_content), 5)
         
         ## update progress bar
         req(env$rf$n_tree)
         req(env$rf$mode)
+        req(log_file_content)
         
         computed_0_message <- switch(
             env$rf$mode,
