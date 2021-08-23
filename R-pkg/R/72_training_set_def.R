@@ -1569,22 +1569,22 @@ snp_locus_setup_server <- function(input, output, session) {
         req(is.logical(local$validated))
         if(!local$validated) {
             tagList(
-                tags$div(
+                tags$p(tags$div(
                     icon("warning"), "Locus description(s) not validated.",
                     style = "color: #F89406;"
-                )
+                ))
             )
         } else if(!local$valid) {
             req(local$msg)
             tagList(
-                tags$div(
+                tags$p(tags$div(
                     icon("warning"), "Issue with SNP locus description:",
                     do.call(
                         tags$ul,
                         lapply(local$msg, tags$li)
                     ),
                     style = "color: #F89406;"
-                )
+                ))
             )
         } else {
             NULL
