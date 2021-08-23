@@ -237,12 +237,12 @@ abcranger_postprocess <- function(
             param_estim_graph_ouptut(proj_dir, graph_dir, param, prefix)
         }
         # move file to subproject directory
-        abcranger_subdir(proj_dir, sub_proj_name, prefix = "estimparam_out")
+        abcranger_subdir(proj_dir, sub_proj_name, prefix)
     } else if(run_mode == "model_choice") {
         # model choice
         model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
         # move file to subproject directory
-        abcranger_subdir(proj_dir, sub_proj_name, prefix = "modelchoice_out")
+        abcranger_subdir(proj_dir, sub_proj_name, prefix)
     }
 }
 
