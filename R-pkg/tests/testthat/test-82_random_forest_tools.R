@@ -4,7 +4,7 @@ test_that("abcranger_run and cleanup_abcranger_run", {
     
     test_proj <- "IndSeq_SNP_model_choice"
     test_dir <- file.path(data4test_dir(), test_proj)
-    tmp_dir = mk_proj_dir("test_abcranger_run")
+    proj_dir <- mk_proj_dir("test_abcranger_run")
     
     # copy header and data file from example
     lapply(
@@ -13,7 +13,7 @@ test_that("abcranger_run and cleanup_abcranger_run", {
         function(filename) {
             fs::file_copy(
                 path = file.path(test_dir, filename),
-                new_path = file.path(tmp_dir, filename)
+                new_path = file.path(proj_dir, filename)
             )
         }
     )
@@ -33,7 +33,7 @@ test_that("abcranger_run and cleanup_abcranger_run", {
     
     # try run
     run_proc <- abcranger_run(
-        tmp_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
+        proj_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
         pls_max_var, chosen_scenario, noob, parameter, groups
     )
     
@@ -50,7 +50,7 @@ test_that("abcranger_run and cleanup_abcranger_run", {
         "estimparam_out.ooberror", "estimparam_out.plsvar", 
         "estimparam_out.predictions", "estimparam_out.settings"
     )
-    expect_true(all(expected_files %in% list.files(tmp_dir)))
+    expect_true(all(expected_files %in% list.files(proj_dir)))
     
     ## model choice
     mode <- "model_choice"
@@ -67,7 +67,7 @@ test_that("abcranger_run and cleanup_abcranger_run", {
     
     # try run
     run_proc <- abcranger_run(
-        tmp_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
+        proj_dir, mode, n_rec, min_node_size, n_tree, noise_columns, no_linear, 
         pls_max_var, chosen_scenario, noob, parameter, groups
     )
     
@@ -83,10 +83,10 @@ test_that("abcranger_run and cleanup_abcranger_run", {
         "modelchoice_out.lda", "modelchoice_out.ooberror", 
         "modelchoice_out.predictions", "modelchoice_out.settings"
     )
-    expect_true(all(expected_files %in% list.files(tmp_dir)))
+    expect_true(all(expected_files %in% list.files(proj_dir)))
     
     ## clean up
-    cleanup_abcranger_run(tmp_dir) # does nothing at the moment
+    cleanup_abcranger_run(proj_dir) # does nothing at the moment
 })
 
 test_that("parse_abcranger_group", {
@@ -119,59 +119,75 @@ test_that("parse_abcranger_group", {
 
 
 test_that("abcranger_postprocess", {
-    # parameter estimation
-    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
-    graph_dir <- mk_proj_dir("testing")
+    ## parameter estimation
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    proj_dir <- mk_proj_dir("test_abcranger_postprocess")
+    # copy header and data file from example
+    fs::dir_copy(test_dir, proj_dir, overwrite = TRUE)
+    
+    graph_dir <- proj_dir
     param <- "N1"
     prefix <- "estimparam_out"
     run_mode <- "param_estim"
+    sub_proj_name <- "estim_N1"
     
-    abcranger_postprocess(proj_dir, graph_dir, run_mode, prefix, param)
-    
-    expect_identical(
-        list.files(graph_dir), 
-        c(
-            str_c(prefix, "_graph_density_plot.", 
-                  get_option("image_ext")),
-            str_c(prefix, "_graph_error_versus_ntrees.", 
-                  get_option("image_ext")),
-            str_c(prefix, "_graph_variable_importance.", 
-                  get_option("image_ext"))
-        )
+    abcranger_postprocess(
+        proj_dir, graph_dir, run_mode, prefix, sub_proj_name, param
     )
     
-    # model choice
-    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
-    graph_dir <- mk_proj_dir("testing")
+    output_file_list <- c(
+        str_c(prefix, "_graph_density_plot.", 
+              get_option("image_ext")),
+        str_c(prefix, "_graph_error_versus_ntrees.", 
+              get_option("image_ext")),
+        str_c(prefix, "_graph_variable_importance.", 
+              get_option("image_ext"))
+    )
+    
+    expect_true(all(
+        output_file_list %in% list.files(file.path(graph_dir, sub_proj_name))
+    ))
+    
+    ## model choice
+    test_proj <- "PoolSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    proj_dir <- mk_proj_dir("test_abcranger_postprocess")
+    # copy header and data file from example
+    fs::dir_copy(test_dir, proj_dir, overwrite = TRUE)
+    
+    graph_dir <- proj_dir
     param <- NULL
     prefix <- "modelchoice_out"
     run_mode <- "model_choice"
+    sub_proj_name <- "model_choice"
     
-    abcranger_postprocess(proj_dir, graph_dir, run_mode, prefix, param)
-    
-    expect_identical(
-        list.files(graph_dir), 
-        c(
-            str_c(prefix, "_graph_error_versus_ntrees.", 
-                  get_option("image_ext")),
-            str_c(prefix, "_graph_lda.", 
-                  get_option("image_ext")),
-            str_c(prefix, "_graph_variable_importance.", 
-                  get_option("image_ext"))
-        )
+    abcranger_postprocess(
+        proj_dir, graph_dir, run_mode, prefix, sub_proj_name, param
     )
+    
+    output_file_list <- c(
+        str_c(prefix, "_graph_error_versus_ntrees.", 
+              get_option("image_ext")),
+        str_c(prefix, "_graph_lda.", 
+              get_option("image_ext")),
+        str_c(prefix, "_graph_variable_importance.", 
+              get_option("image_ext"))
+    )
+    
+    expect_true(all(
+        output_file_list %in% list.files(file.path(graph_dir, sub_proj_name))
+    ))
 })
 
 test_that("abcranger_subdir", {
     
     ## parameter estimation
-    
-    # prepare data for test
-    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
-    tmp_dir <- mk_proj_dir("testing")
-    fs::dir_copy(path = data_dir, new_path = tmp_dir)
-    proj_dir <- file.path(tmp_dir, "PoolSeq_SNP_estim_param")
-    # list.files(proj_dir)
+    test_proj <- "PoolSeq_SNP_estim_param"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    proj_dir <- mk_proj_dir("test_abcranger_postprocess")
+    # copy header and data file from example
+    fs::dir_copy(test_dir, proj_dir, overwrite = TRUE)
     sub_proj_name <- "sub_proj_test"
     prefix <- "estimparam_out"
     
@@ -191,15 +207,11 @@ test_that("abcranger_subdir", {
     expect_true(length(proj_file_list) == n_file - n_file_to_move + 1)
         
     ## model choice
-    
-    # prepare data for test
-    
-    # prepare data for test
-    data_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
-    tmp_dir <- mk_proj_dir("testing")
-    fs::dir_copy(path = data_dir, new_path = tmp_dir)
-    proj_dir <- file.path(tmp_dir, "PoolSeq_SNP_estim_param")
-    # list.files(proj_dir)
+    test_proj <- "PoolSeq_SNP_model_choice"
+    test_dir <- file.path(data4test_dir(), test_proj)
+    proj_dir <- mk_proj_dir("test_abcranger_postprocess")
+    # copy header and data file from example
+    fs::dir_copy(test_dir, proj_dir, overwrite = TRUE)
     sub_proj_name <- "sub_proj_test"
     prefix <- "modelchoice_out"
     
@@ -218,3 +230,4 @@ test_that("abcranger_subdir", {
     proj_file_list <- list.files(proj_dir)
     expect_true(length(proj_file_list) == n_file - n_file_to_move + 1)
 })
+
