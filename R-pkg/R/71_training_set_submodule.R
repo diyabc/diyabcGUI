@@ -220,7 +220,7 @@ train_set_setup_server <- function(input, output, session) {
     # show existing
     callModule(show_existing_proj_server, "show_existing")
     
-    # edit exsting project ?
+    # edit existing project ?
     observeEvent(input$edit, {
         req(input$edit)
         ask_confirmation(
