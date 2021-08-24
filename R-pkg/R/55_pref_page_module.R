@@ -51,6 +51,26 @@ pref_page_ui <- function(id) {
                 "by default it is", tags$code("10 * n_core"), 
                 "(so that each core will generate 10 individuals", 
                 "of each batch)."
+            ),
+            hr(),
+            actionButton(
+                ns("update_bin"), 
+                label = "Update DIYABC-RF internal engine",
+                icon = icon("download"), width = "100%"
+            ),
+            helpText(icon("clock"), "Downloading files may take some time."),
+            uiOutput(ns("feedback_update")),
+            helpText(
+                icon("comment"),
+                "DIYABC-RF internal engine is based on", tags$code("diyabc"),
+                "and", tags$code("abcranger"), "softwares.", 
+                "See", tags$a(
+                    "DIYABC-RF GUI official website", 
+                    href="https://diyabc.github.io/"
+                ),
+                "for more details.",
+                "It is recommended to update the internal engine", 
+                "from time to time (to get the latest bug fixes)."
             )
         )
     )
@@ -77,5 +97,67 @@ pref_page_server <- function(input, output, session) {
         options(
             shiny.maxRequestSize = as.integer(input$upload_file_size) * 1024^2
         )
+    })
+    
+    ## update internal engine
+    observeEvent(input$update_bin, {
+        tmp_check <- execute_safely(dl_all_latest_bin(), session = session)
+        
+        output$feedback_update <- renderUI({
+            req(tmp_check$check_diyabc)
+            req(tmp_check$check_abcranger)
+            
+            tag_list1 <- switch(
+                as.character(tmp_check$check_diyabc),
+                "0" = tags$li(
+                    "Download of", tags$code("diyabc"), "succeeded."
+                ),
+                "1" = tags$li(
+                    icon("warning"),
+                    "Download of", tags$code("diyabc"), "failed.",
+                    "If the issue persists, please contact DIYABC-RF support."
+                ),
+                "-1" = tags$li(
+                    tags$code("diyabc"), "was already the latest version."
+                ),
+                NULL
+            )
+            
+            tag_list2 <- switch(
+                as.character(tmp_check$check_abcranger),
+                "0" = tags$li(
+                    "Download of", tags$code("abcranger"), "succeeded."
+                ),
+                "1" = tags$li(
+                    icon("warning"),
+                    "Download of", tags$code("abcranger"), "failed.",
+                    "If issue persists, please contact abcranger-RF support."
+                ),
+                "-1" = tags$li(
+                    tags$code("abcranger"), "was already the latest version."
+                ),
+                NULL
+            )
+            
+            
+            if(!is.null(tag_list1) || !is.null(tag_list2)) {
+                
+                tmp_icon <- icon("info-circle")
+                
+                if(any(
+                    c(tmp_check$check_diyabc, tmp_check$check_abcranger) != 0
+                )) {
+                    tmp_icon <- icon("warning")
+                }
+                
+                tagList(helpText(tags$p(
+                    tmp_icon, "Download status:",
+                    tags$ul(tag_list1, tag_list2)
+                )))
+                
+            } else {
+                NULL
+            }
+        })
     })
 }
