@@ -30,11 +30,13 @@ test_that("dl_latest_bin", {
     # clean existing binary files
     clean_bin_dir()
     # dl diyabc
-    prog = "diyabc"
-    dl_latest_bin(prog)
+    prog <- "diyabc"
+    tmp_check <- dl_latest_bin(prog)
+    expect_equal(tmp_check, 0)
     # dl abcranger
-    prog = "abcranger"
-    dl_latest_bin(prog)
+    prog <- "abcranger"
+    tmp_check <- dl_latest_bin(prog)
+    expect_equal(tmp_check, 0)
     # check
     expect_error(find_bin("diyabc"), NA)
     expect_error(find_bin("abcranger"), NA)
@@ -44,8 +46,10 @@ test_that("dl_all_latest_bin", {
     # clean existing binary files
     clean_bin_dir()
     # dl all bins
-    dl_all_latest_bin()
+    tmp_check <- dl_all_latest_bin()
     # check
+    expect_equal(tmp_check$check_diyabc, 0)
+    expect_equal(tmp_check$check_abcranger, 0)
     expect_error(find_bin("diyabc"), NA)
     expect_error(find_bin("abcranger"), NA)
 })
