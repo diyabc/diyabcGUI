@@ -79,6 +79,36 @@ index_server <- function(input, output, session) {
     # home page
     home_page <- callModule(home_page_server, "home_page")
     
+    ## check for binary prog diyabc and abcranger
+    observe({
+        # check if binary files are available
+        diyabc_bin <- tryCatch(
+            find_bin("diyabc"),
+            error = function(e) return(e)
+        )
+        abcranger_bin <- tryCatch(
+            find_bin("abcranger"),
+            error = function(e) return(e)
+        )
+        if("error" %in% class(diyabc_bin) | "error" %in% class(abcranger_bin)) {
+            show_alert(
+                title = "Error !",
+                text = tagList(
+                    icon("warning"),
+                    "DIYABC-RF internal engine is missing.", 
+                    br(), br(),
+                    "Please navigate to the", tags$b("Preferences"), 
+                    "tab (see left sidebar) and click on", 
+                    tags$b("Update DIYABC-RF internal engine"), ".", 
+                    br(), br(),
+                    "If the issue persists, please contact DIYABC-RF support."
+                ),
+                type = "error",
+                html = TRUE
+            )
+        }
+    })
+    
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
         req(home_page$new_analysis_project)
