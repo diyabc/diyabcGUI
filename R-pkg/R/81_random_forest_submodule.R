@@ -888,15 +888,27 @@ rf_control_server <- function(input, output, session) {
         )
         
         logging("Running abcranger")
-        local$abcranger_run_process <- abcranger_run(
-            env$ap$proj_dir, env$rf$mode, env$rf$n_rec, env$rf$min_node_size, 
-            env$rf$n_tree, env$rf$n_noise_columns, !env$rf$linear, 
-            env$rf$pls_max_var, env$rf$chosen_scenario, env$rf$noob, 
-            env$rf$parameter, env$rf$grouping
+        local$abcranger_run_process <- execute_safely(
+            abcranger_run(
+                env$ap$proj_dir, env$rf$mode, env$rf$n_rec, 
+                env$rf$min_node_size, env$rf$n_tree, 
+                env$rf$n_noise_columns, !env$rf$linear, 
+                env$rf$pls_max_var, env$rf$chosen_scenario, env$rf$noob, 
+                env$rf$parameter, env$rf$grouping
+            ),
+            session = session
         )
         
-        # start logging
-        local$start_logging <- local$start_logging + 1
+        if(is.null(local$diyabc_run_process)) {
+            local$feedback <- tags$p(tags$div(
+                icon("warning"), 
+                "Random Forest analysis did not start.",
+                style = "color: #F89406;"
+            ))
+        } else {
+            # start logging
+            local$start_logging <- local$start_logging + 1
+        }
     })
     
     ## monitor simulation run

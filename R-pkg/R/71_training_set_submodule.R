@@ -888,11 +888,22 @@ train_set_simu_run_server <- function(input, output, session) {
             )
             
             logging("Running simulation")
-            local$diyabc_run_process <- diyabc_run_trainset_simu(
-                env$ap$proj_dir, 
-                as.integer(input$nrun),
-                run_prior_check = FALSE
+            local$diyabc_run_process <- execute_safely(
+                diyabc_run_trainset_simu(
+                    env$ap$proj_dir, 
+                    as.integer(input$nrun),
+                    run_prior_check = FALSE
+                ),
+                session = session
             )
+            
+            if(is.null(local$diyabc_run_process)) {
+                local$feedback <- tags$p(tags$div(
+                    icon("warning"), 
+                    "Simulations did not start.",
+                    style = "color: #F89406;"
+                ))
+            }
         }
     })
     
@@ -1189,9 +1200,20 @@ prior_check_server <- function(input, output, session) {
             )
             
             logging("Running model checking")
-            local$diyabc_run_process <- diyabc_run_trainset_simu(
-                env$ap$proj_dir, run_prior_check = TRUE
+            local$diyabc_run_process <- execute_safely(
+                diyabc_run_trainset_simu(
+                    env$ap$proj_dir, n_run = 1, run_prior_check = TRUE
+                ),
+                session = session
             )
+            
+            if(is.null(local$diyabc_run_process)) {
+                local$feedback <- tags$p(tags$div(
+                    icon("warning"), 
+                    "Scenario checking did not start.", 
+                    style = "color: #F89406;"
+                ))
+            }
         }
     })
     
