@@ -1076,7 +1076,6 @@ rf_control_server <- function(input, output, session) {
         
         ## continue updating progress bar while abcranger is running
         if(!is.null(local$abcranger_run_process)) {
-            print("invalidate")
             invalidateLater(3000, session)
         }
         
