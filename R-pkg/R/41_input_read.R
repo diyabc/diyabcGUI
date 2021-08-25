@@ -6,7 +6,6 @@
 #' @param file_name string, (server-side) path to a headersim file.
 #' @param file_type string, MIME file type.
 #' @param locus_type string, "snp" or "mss"
-#' @importFrom readr read_file
 read_header <- function(file_name, file_type, locus_type = "snp") {
     
     # init output
@@ -47,8 +46,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     out$header_file <- basename(file_name)
     
     ## HEADER FILE CONTENT
-    # read whole file in one string and split it by new line
-    header <- unlist(str_split(read_file(file_name), "\n"))
+    header <- readLines(file_name, warn = FALSE)
     
     ## data file
     out$data_file <- header[1]

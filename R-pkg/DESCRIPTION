@@ -62,7 +62,6 @@ Imports:
     markdown, 
     mime,
     parallel, pbapply, processx,
-    readr,
     rlang,
     shiny, 
     shinybusy (>= 0.2.2), 

@@ -829,7 +829,6 @@ check_snp_poolseq <- function(content, mrc = 1) {
 #' @param expected_data_file string, expected data file name for 
 #' existing project, default is NULL.
 #' @importFrom tools file_ext
-#' @importFrom readr read_file
 read_mss_data <- function(data_file, data_dir) {
     
     # init output
@@ -906,7 +905,7 @@ read_mss_data <- function(data_file, data_dir) {
     out$sex_ratio <- str_extract(header1, pttrn)
     
     ## FILE CONTENT
-    file_content <- unlist(str_split(read_file(file_name), "\n"))
+    file_content <- readLines(file_name, warn = FALSE)
     
     ## LOCUS DESCRIPTION (between second line and first 'POP/pop' keyword)
     
