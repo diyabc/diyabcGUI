@@ -899,7 +899,7 @@ rf_control_server <- function(input, output, session) {
             session = session
         )
         
-        if(is.null(local$diyabc_run_process)) {
+        if(is.null(local$abcranger_run_process)) {
             local$feedback <- tags$p(tags$div(
                 icon("warning"), 
                 "Random Forest analysis did not start.",
