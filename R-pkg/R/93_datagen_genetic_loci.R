@@ -329,7 +329,7 @@ genetic_loci_server <- function(input, output, session,
             tagList(
                 mss_config_setup_ui(ns("mss_config")),
                 br(),
-                mss_group_prior_ui(ns("mss_prior")),
+                mss_group_prior_old_ui(ns("mss_prior")),
                 hr()
             )
         } else {
@@ -374,7 +374,7 @@ genetic_loci_server <- function(input, output, session,
     ## MSS group prior
     observe({
         # FIXME
-        # refactor mss_group_prior_server
+        # refactor mss_group_prior_old_server
         if(isTruthy(mss_config$mss_data_info) &&
            is.data.frame(mss_config$mss_data_info) %% 
            nrow(mss_config$mss_data_info) > 0) {
@@ -392,7 +392,7 @@ genetic_loci_server <- function(input, output, session,
     })
     
     mss_prior <- callModule(
-        mss_group_prior_server,
+        mss_group_prior_old_server,
         "mss_prior",
         group_info = reactive(local$mss_group_info),
         datagen_mode = TRUE
@@ -690,7 +690,7 @@ mss_config_setup_server <- function(input, output, session,
     # setup microsat
     output$microsat_setup <- renderUI({
         if(isTruthy(local$microsat_data_info)) {
-            mss_locus_setup_ui(ns("microsat_setup"))
+            mss_config_locus_setup_ui(ns("microsat_setup"))
         } else {
             helpText(
                 icon("warning"), "No Microsat locus in data."
@@ -699,7 +699,7 @@ mss_config_setup_server <- function(input, output, session,
     })
     
     microsat_setup <- callModule(
-        mss_locus_setup_server, "microsat_setup",
+        mss_config_locus_setup_server, "microsat_setup",
         locus_mode = reactive({"M"}),
         mss_data_info = reactive(local$microsat_data_info),
         n_existing_group = reactive({0}),
@@ -714,7 +714,7 @@ mss_config_setup_server <- function(input, output, session,
     # setup seq
     output$seq_setup <- renderUI({
         if(isTruthy(local$seq_data_info)) {
-            mss_locus_setup_ui(ns("seq_setup"))
+            mss_config_locus_setup_ui(ns("seq_setup"))
             # helpText(
             #     "The default length for the Sequences is 1000bp",
             #     "with an equiprobability situation (25% each)", 
@@ -728,7 +728,7 @@ mss_config_setup_server <- function(input, output, session,
     })
     
     seq_setup <- callModule(
-        mss_locus_setup_server, "seq_setup",
+        mss_config_locus_setup_server, "seq_setup",
         locus_mode = reactive({"S"}),
         mss_data_info = reactive(local$seq_data_info),
         n_existing_group = reactive(microsat_setup$n_group),
@@ -756,7 +756,7 @@ mss_config_setup_server <- function(input, output, session,
 #' mss locus setup ui
 #' @keywords internal
 #' @author Ghislain Durif
-mss_locus_setup_ui <- function(id) {
+mss_config_locus_setup_ui <- function(id) {
     ns <- NS(id)
     tagList(
         hr(),
@@ -781,7 +781,7 @@ mss_locus_setup_ui <- function(id) {
 #' mss locus setup server
 #' @keywords internal
 #' @author Ghislain Durif
-mss_locus_setup_server <- function(input, output, session, 
+mss_config_locus_setup_server <- function(input, output, session, 
                                    locus_mode = reactive({NULL}),
                                    mss_data_info = reactive({NULL}),
                                    n_existing_group = reactive({0}),

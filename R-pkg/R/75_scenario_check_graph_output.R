@@ -2,7 +2,7 @@
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom ggplot2 ggsave
-scenario_check_graph_ouptut <- function(proj_dir, graph_dir, 
+scenario_check_graph_output <- function(proj_dir, graph_dir, 
                                         prefix = "pcaloc1_") {
     # PCA latent space coordinates
     g1 <- pca_coordinate_graph(proj_dir, prefix, comp = 1:2)

@@ -1,9 +1,11 @@
 context("RF graph output")
 
 test_that("param_estim_graph_ouptut", {
+    
     # input argument
-    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
-    graph_dir <- mk_proj_dir("testing")
+    test_proj <- "PoolSeq_SNP_estim_param"
+    proj_dir <- file.path(data4test_dir(), test_proj)
+    graph_dir <- mk_proj_dir("test_abcranger_postprocess")
     param <- "N1"
     prefix <- "estimparam_out"
     
@@ -62,9 +64,11 @@ test_that("var_imp_graph", {
 test_that("model_choice_graph_ouptut", {
     
     # input argument
-    proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
-    graph_dir <- mk_proj_dir("testing")
+    test_proj <- "PoolSeq_SNP_model_choice"
+    proj_dir <- file.path(data4test_dir(), test_proj)
+    graph_dir <- mk_proj_dir("test_abcranger_postprocess")
     prefix <- "modelchoice_out"
+    
     model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
     
     expect_identical(

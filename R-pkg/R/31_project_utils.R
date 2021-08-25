@@ -1,7 +1,7 @@
 #' Project naming module ui
 #' @keywords internal
 #' @author Ghislain Durif
-proj_name_ui <- function(id, label = "Project name", default = NULL) {
+proj_name_ui <- function(id, label = "Project name") {
     ns <- NS(id)
     tagList(
         h3(label),
@@ -11,113 +11,64 @@ proj_name_ui <- function(id, label = "Project name", default = NULL) {
                 textInput(
                     ns("proj_name"), 
                     label = NULL, 
-                    value = ifelse(
-                        !is.null(default),
-                        default,
-                        ""
-                    ),
                     placeholder = "project name"
                 )
             ),
             column(
                 width = 3,
                 actionButton(
-                    ns("validate_proj_name"),
+                    ns("validate"),
                     label = "Validate",
                     icon = icon("check"),
                     width = '100%'
                 )
             )
         ),
-        uiOutput(ns("feedback_proj_name"))
+        uiOutput(ns("feedback"))
     )
 }
 
 #' Project naming module server
 #' @keywords internal
 #' @author Ghislain Durif
-proj_name_server <- function(input, output, session) {
+#' @param tag character string, type of project identified by `"ap"` 
+#' (for diyabc-rf analysis project) or `"dp"` (data generation project).
+proj_name_server <- function(input, output, session, tag = "ap") {
     
     # init local
-    local <- reactiveValues(
-        modified_proj_name = FALSE,
-        valid_proj_name = FALSE
-    )
-    
-    # init output
-    out <- reactiveValues(proj_name = NULL, valid_proj_name = FALSE)
+    local <- reactiveValues(modified = TRUE)
     
     # new input
     observeEvent(input$proj_name, {
-        shinyjs::enable("validate_proj_name")
-        local$modified_proj_name <- TRUE
-        
-        # check project name
-        local$valid_proj_name <- FALSE
-        if(!is.null(input$proj_name)) {
-            if(str_length(input$proj_name) > 0) {
-                local$valid_proj_name <- TRUE
-            }
-        }
+        # shinyjs::enable("validate")
+        local$modified <- TRUE
     })
     
     # validate input
-    observeEvent(input$validate_proj_name, {
-        req(input$validate_proj_name)
+    observeEvent(input$validate, {
+        req(input$validate)
         
-        local$modified_proj_name <- FALSE
-        
-        out$proj_name <- input$proj_name
-        
-        out$valid_proj_name <- local$valid_proj_name
-        
-        shinyjs::disable("validate_proj_name")
-    })
-    
-    # valid proj name ?
-    observeEvent(local$valid_proj_name, {
-        req(!is.null(local$valid_proj_name))
-        
-        if(!local$valid_proj_name) {
-            shinyjs::enable("validate_proj_name")
+        local$modified <- FALSE
+
+        # check project name
+        if(isTruthy(input$proj_name)) {
+            # shinyjs::disable("validate")
+            env[[tag]]$proj_name <<- input$proj_name
         }
     })
+    
+    # # debugging
+    # observe({
+    #     logging("proj name:", env[[tag]]$proj_name)
+    # })
     
     # feedback on project name
-    output$feedback_proj_name <- renderUI({
-        feedback<- tagList()
+    output$feedback <- renderUI({
+        req(local$modified || !isTruthy(input$proj_name))
         
-        # check if modified proj name
-        if(!is.null(local$modified_proj_name)) {
-            if(local$modified_proj_name) {
-                feedback <- tagAppendChild(
-                    feedback,
-                    helpText(
-                        icon("warning"), 
-                        "Project name is not validated."
-                    )
-                )
-            }
-        }
-        
-        # check proj name
-        if(!is.null(local$valid_proj_name)) {
-            if(!local$valid_proj_name) {
-                feedback <- tagAppendChild(
-                    feedback,
-                    helpText(
-                        icon("warning"), "Project name is missing."
-                    )
-                )
-            }
-        } else {
-            
-        }
-        
-        # feedback
-        feedback
+        tags$p(tags$div(
+            icon("warning"), "Project name is missing or not validated.",
+            style = "color: #F89406;"
+        ))
     })
-    
-    # output
-    return(out)
 }

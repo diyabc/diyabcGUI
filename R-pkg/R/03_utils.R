@@ -42,21 +42,6 @@ find_bin <- function(prog = "diyabc") {
     return(bin_file)
 }
 
-#' Clean binary directory
-#' @keywords internal
-#' @author Ghislain Durif
-clean_bin_dir <- function() {
-    # bin directory
-    path <- bin_dir()
-    # existing binary file
-    existing_bin_files <- list.files(path)
-    existing_bin_files <- existing_bin_files[str_detect(existing_bin_files, 
-                                                        "diyabc|abcranger|dll")]
-    # delete diyabc/abcranger files
-    if(length(existing_bin_files) > 0) {
-        fs::file_delete(file.path(path, existing_bin_files))
-    }
-}
 
 #' Find which OS is running
 #' @keywords internal
@@ -85,6 +70,8 @@ get_os <- function() {
 #' @author Ghislain Durif
 #' @param prog string, name of the program to download, eligible name are
 #' `"diyabc-RF"` and `"abcranger"`.
+#' @return integer value, `0` if download succeeded, `1` if download failed,
+#' `-1` if latest version is already here.
 #' @importFrom fs file_chmod
 #' @importFrom jsonlite fromJSON
 #' @export
@@ -107,6 +94,7 @@ dl_latest_bin <- function(prog = "diyabc") {
         "releases/latest",
         sep = "/"
     )
+    
     # check latest release info
     release_info <- fromJSON(release_url)
     
@@ -115,72 +103,64 @@ dl_latest_bin <- function(prog = "diyabc") {
     
     # check if file in release
     if(nrow(release) < 1) {
-        stop(str_c("Issue with available files at ", release_url, ". ",
-                   "Contact DIYABC-RF support.",
-                   sep = ""))
+        stop(str_c(
+            "Issue with files available at", release_url, ".",
+            "Please contact DIYABC-RF support.",
+            sep = " "
+        ))
+    }
+    
+    # select release for current OS
+    release <- subset(release, str_detect(release$name, os_id))
+    
+    # check if release available for current OS
+    if(nrow(release) != 1) {
+        stop(str_c(
+            prog, "binary file is not available for", os_id, "OS at",
+            release_url, ".",
+            "Please contact DIYABC-RF support.",
+            sep = ""
+        ))
     }
     
     # already existing binary file
     existing_bin_files <- list.files(path)
     
     # download release
-    out <- lapply(
-        split(release, seq(nrow(release))), 
-        function(single_file) {
-            # output
-            #   check:  0 if dl is ok or latest version already here,
-            #           1 if dl failed
-            #           -1 if no binary files was available
-            check <- 1
-            bin_name <- single_file$name
-            bin_url <- single_file$browser_download_url
-            
-            # abcranger/diyabc binary files
-            if(str_detect(bin_name, str_c(prog_name(prog), "-", 
-                                          os_id, sep = ""))) {
-                if(!bin_name %in% existing_bin_files) {
-                    # avoid blacklisting
-                    Sys.sleep(2)
-                    # dl
-                    check <- download.file(
-                        bin_url, 
-                        destfile = file.path(path, bin_name),
-                        mode = "wb"
-                    )
-                } else {
-                    check <- 0
-                    warning(str_c(
-                        "The latest release", bin_name, 
-                        "was already downloaded.", sep = " "
-                    ))
-                }
-            } else {
-                check <- -1
-            }
-            return(check)
-        }
-    )
+    check <- 1
+    bin_name <- release$name
+    bin_url <- release$browser_download_url
     
-    # binary files not available at all among files in latest release
-    if(all(out == -1)) {
-        warning(str_c("No binary file available for ", prog, " on ", 
-                      os_id, ". ",
-                      "Contact DIYABC-RF support.",
-                      sep = ""))
-    }
-    
-    # no download success among files in latest release
-    if(!any(out == 0)) {
-        stop("Issue with download")
+    # check if bin file already available locally
+    if(!bin_name %in% existing_bin_files) {
+        # avoid blacklisting
+        Sys.sleep(2)
+        # dl
+        check <- download.file(
+            bin_url, 
+            destfile = file.path(path, bin_name),
+            mode = "wb"
+        )
+    } else {
+        check <- -1
+        warning(str_c(
+            "The latest release", bin_name, 
+            "was already downloaded.", sep = " "
+        ))
     }
     
     # zip extraction for diyabc on Windows
     zip_files <- list.files(path, pattern = "\\.zip$")
     if(length(zip_files) > 0) {
         latest_zip <- which.max(file.info(file.path(path, zip_files))$mtime)
-        tmp <- utils::unzip(file.path(path, zip_files[latest_zip]), exdir = path)
+        tmp <- utils::unzip(
+            file.path(path, zip_files[latest_zip]), 
+            exdir = path
+        )
         if(length(tmp) == 0) {
-            stop(str_c("Issue when unzipping ", zip_files[latest_zip]))
+            stop(str_c(
+                "Issue when unzipping", zip_files[latest_zip], sep = " "
+            ))
         }
         fs::file_delete(file.path(path, zip_files))
     }
@@ -188,6 +168,9 @@ dl_latest_bin <- function(prog = "diyabc") {
     # set up rights
     bin_files <- list.files(path, pattern = prog)
     fs::file_chmod(file.path(path, bin_files), "a+rx")
+    
+    # output
+    return(check)
 }
 
 #' Download all latest diyabcGUI related binary files if missing
@@ -195,14 +178,16 @@ dl_latest_bin <- function(prog = "diyabc") {
 #' @author Ghislain Durif
 #' @export
 dl_all_latest_bin <- function() {
-    dl_latest_bin("diyabc")
-    dl_latest_bin("abcranger")
+    check_diyabc <- dl_latest_bin("diyabc")
+    check_abcranger <- dl_latest_bin("abcranger")
+    return(lst(check_diyabc, check_abcranger))
 }
 
 #' Custom print
 #' @keywords internal
 #' @author Ghislain Durif
 pprint <- function(...) {
+    print(str_c("--- content of ",deparse(substitute(...))))
     # message(as.character(...))
     print(...)
 }
@@ -222,7 +207,7 @@ reset_sink <- function() {
 #' @author Ghislain Durif
 logging <- function(...) {
     if(getOption("diyabcGUI")$verbose)
-        pprint(str_c(..., sep = " ", collapse = " "))
+        print(str_c(..., sep = " ", collapse = " "))
 }
 
 #' Enable logging verbosity

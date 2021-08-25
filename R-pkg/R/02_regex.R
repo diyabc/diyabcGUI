@@ -12,6 +12,13 @@ num_regex <- function() {
     return("[0-9]+\\.?[0-9]*")
 }
 
+#' return numerical (xxEyy notation) regex
+#' @keywords internal
+#' @author Ghislain Durif
+numexp_regex <- function() {
+    return("[0-9]+\\.?[0-9]*((E|e)\\-?[0-9]+)?")
+}
+
 #' return event numerical rate regex
 #' @keywords internal
 #' @author Ghislain Durif

@@ -1,8 +1,6 @@
 # ![icon](man/figures/coccicon_32x32.png) Graphical User Interface for DIYABC-RF software
 
-### !! **IMPORTANT**: an important release is due before the end of June 2021 (the planning is now fixed, after several delays). Please wait for this new release before opening new issues. It was previously planned for May 12th, and we are really sorry for the delay, the final development stage did not go as smoothly as we expected !!
-
-> **Disclaimer:** `DIYABC-RF GUI` is under final development stage. You may still encounter a few bugs with the current release.
+> **Disclaimer:** `DIYABC-RF GUI` is under final development stage. You may still encounter a few bugs. Please check ongoing issues or fill a new one [here](https://github.com/diyabc/diyabcGUI/issues) if you encounter any problem.
 
 We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], called `DIYABC-RF GUI`.
 
@@ -30,6 +28,10 @@ Mathieu Gautier, Renaud Vitalis, Eric Lombaert, Jean-Michel Marin, Arnaud Estoup
 The Windows DIYABC-RF GUI standalone app is based on DesktopDeployR by Wyming Lee Pang (https://github.com/wleepang/DesktopDeployR).
 
 See the [dedicated file](./COPYRIGHTS) for detailed copyright and licensing information.
+
+## Using and citing DIYABC-RF
+
+If you use the DIYABC-RF software suite (GUI or CLI) in your study, please consider citing [1].
 
 ---
 
@@ -135,4 +137,4 @@ Please see the dedicated [directory](build/README.md) for instructions about the
 
 ## Reference
 
-[1] Collin F-D, Raynal L, Durif G, Gautier M, Vitalis R, Lombaert E., Marin J-M, Estoup A (2020) DIYABC Random Forest v1.0: extending approximate Bayesian computation with supervised machine learning to infer demographic history from genetic polymorphisms. Submitted to Molecular Ecology Resources.
+[1] Collin F-D, Durif G, Raynal L, Gautier M, Vitalis R, Lombaert E., Marin J-M, Estoup A., 2021, _Extending Approximate Bayesian Computation with Supervised Machine Learning to infer demographic history from genetic polymorphisms using DIYABC Random Forest_. Molecular Ecology Resources, Wiley/Blackwell, In press. [\<doi/10.1111/1755-0998.13413\>](https://dx.doi.org/10.1111/1755-0998.13413) [\<hal-03229207\>](https://hal.inrae.fr/hal-03229207)

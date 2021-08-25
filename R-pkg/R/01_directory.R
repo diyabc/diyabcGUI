@@ -75,3 +75,44 @@ mk_proj_dir <- function(tag = "diyabc") {
     # output
     return(tmp_dir)
 }
+
+
+#' Clean project directory
+#' @keywords internal
+#' @description Remove all files and sub-folders in a given project directory.
+#' @author Ghislain Durif
+#' @param proj_dir character string, path to project directory.
+clean_proj_dir <- function(proj_dir) {
+    # check if project directory exists
+    if(length(proj_dir) != 1 && !dir.exists(proj_dir)) {
+        stop("Input argument should be a valid path to a project directory")
+    }
+    # sub-folders
+    subdir_list <- list.dirs(proj_dir, full.names = FALSE, recursive = FALSE)
+    subdir_list <- subdir_list[subdir_list != ""]
+    if(length(subdir_list) > 0) {
+        fs::dir_delete(file.path(proj_dir, subdir_list))
+    }
+    # files
+    file_list <- list.files(proj_dir)
+    if(length(file_list) > 0) {
+        fs::file_delete(file.path(proj_dir, file_list))
+    }
+}
+
+
+#' Clean binary directory
+#' @keywords internal
+#' @author Ghislain Durif
+clean_bin_dir <- function() {
+    # bin directory
+    path <- bin_dir()
+    # existing binary file
+    existing_bin_files <- list.files(path)
+    existing_bin_files <- existing_bin_files[str_detect(existing_bin_files, 
+                                                        "diyabc|abcranger|dll")]
+    # delete diyabc/abcranger files
+    if(length(existing_bin_files) > 0) {
+        fs::file_delete(file.path(path, existing_bin_files))
+    }
+}

@@ -282,6 +282,19 @@ test_that("parse_scenario", {
         )
     )
     
+    text <- str_c(
+        "N1 N2 N3", 
+        "0 sample 1", 
+        "0 sample 2", 
+        "0 sample 3",
+        "t sample 1",
+        "t21 split 3 1 2 ra",
+        "t2 merge 1 2",
+        sep = "\n"
+    )
+    out <- parse_scenario(text)
+    expect_true(out$valid)
+    
     # scenario with ghost pop
     text <- str_c(
         "N1 N2 N3 Nbc3",
@@ -325,4 +338,177 @@ test_that("parse_scenario", {
     )
     out <- parse_scenario(text)
     expect_true(out$valid)
+})
+
+test_that("default_param_prior", {
+    
+    expect_null(default_param_prior(NULL))
+    expect_null(default_param_prior(list()))
+    
+    # scenario with issue
+    expect_null(default_param_prior(str_c(
+        "N1 N2", 
+        "0 sample", 
+        "0 sample 2", 
+        "t2 merge 1 2", 
+        sep = "\n"
+    )))
+    
+    # list of scenario
+    scen_list <- c(
+        str_c(
+            "N1 N2", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "t sample 1", 
+            "t2 merge 1 2", 
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t sample 1",
+            "t21 split 3 1 2 ra",
+            "t2 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3 Nbc3",
+            "0 sample 1",
+            "50 sample 2",
+            "0 sample 3",
+            "t3-DB3 VarNe 3 NF3",
+            "t3 merge 4 3",
+            "t3lb merge 1 4",
+            "t2 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3",
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t3 merge 2 3",
+            "t3 varNe 2 N2+N3",
+            "t2 merge 1 2",
+            "t2 varNe 1 N1+N2",
+            sep = "\n"
+        )
+    )
+    
+    res <- default_param_prior(scen_list)
+    expect_equal(length(res), 12)
+})
+
+test_that("default_prior_num_val", {
+    expect_equal(default_prior_num_val("A", "UN"), c(0.01, 0.99, 0, 0))
+    expect_equal(default_prior_num_val("A", "NO"), c(0.01, 0.99, 0.5, 0.1))
+    expect_equal(default_prior_num_val("N", "UN"), c(10, 10000, 0, 0))
+    expect_equal(default_prior_num_val("N", "NO"), c(10, 10000, 1000, 100))
+})
+
+test_that("clean_param_prior", {
+    
+    expect_equal(clean_param_prior(NULL, NULL), character(0))
+    expect_equal(clean_param_prior(list(), list()), character(0))
+    
+    # scenario with issue
+    expect_equal(
+        clean_param_prior(
+            NULL, 
+            str_c(
+                "N1 N2", 
+                "0 sample", 
+                "0 sample 2", 
+                "t2 merge 1 2", 
+                sep = "\n"
+            )
+        ), 
+        character(0)
+    )
+    
+    # list of scenario
+    scen_list <- c(
+        str_c(
+            "N1 N2", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "t sample 1", 
+            "t2 merge 1 2", 
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t sample 1",
+            "t21 split 3 1 2 ra",
+            "t2 merge 1 2", 
+            "t3 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3 Nbc3",
+            "0 sample 1",
+            "50 sample 2",
+            "0 sample 3",
+            "t3-DB3 VarNe 3 NF3",
+            "t3 merge 4 3",
+            "t3lb merge 1 4",
+            "t2 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3",
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t3 merge 2 3",
+            "t3 varNe 2 N2+N3",
+            "t2 merge 1 2",
+            "t2 varNe 1 N1+N2",
+            sep = "\n"
+        )
+    )
+    
+    prior_list <- default_param_prior(scen_list)
+    
+    # test with prior list corresponding to scenario list
+    res <- clean_param_prior(prior_list, scen_list)
+    expect_equal(res, prior_list)
+    
+    # remove some scenario
+    scen_list <- scen_list[1:2]
+    res <- clean_param_prior(prior_list, scen_list)
+    expect_equal(res, default_param_prior(scen_list))
+})
+
+test_that("get_param_name", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
+    expect_equal(get_param_name(prior), "N1")
+    
+    prior <- " N [10,10000,0.0,0.0]"
+    expect_null(get_param_name(prior))
+})
+
+test_that("get_prior_distrib", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
+    expect_equal(get_prior_distrib(prior), "UN")
+    
+    prior <- "N1 N UNUN[10,10000,0.0,0.0]"
+    expect_null(get_prior_distrib(prior))
+    
+    prior <- "N1 N [10,10000,0.0,0.0]"
+    expect_null(get_prior_distrib(prior))
+})
+
+test_that("get_prior_num_val", {
+    prior <- "N1 N UN[10,10000,0.0,0.0]"
+    expect_equal(get_prior_num_val(prior), c(10, 10000, 0, 0))
+    
+    prior <- "N1 N UN[10,10000,0.0,]"
+    expect_null(get_prior_num_val(prior))
 })

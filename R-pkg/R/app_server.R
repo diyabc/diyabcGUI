@@ -14,6 +14,12 @@
 diyabc_server <- function(input, output, session) {
     ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
+    ## init
+    local <- reactiveValues(init = NULL)
+    observeEvent(local$init, {
+        init_diyabcrf_env()
+        init_datagen_env()
+    }, ignoreNULL = FALSE)
     ## index server function
     index_server(input, output, session)
 }

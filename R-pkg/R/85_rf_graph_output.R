@@ -102,6 +102,7 @@ var_imp_graph <- function(proj_dir, prefix = "estimparam_out") {
 #' @author Ghislain Durif
 model_choice_graph_ouptut <- function(proj_dir, graph_dir, 
                                       prefix = "modelchoice_out") {
+    
     # lda output
     g1 <- lda_coordinate_graph(proj_dir, prefix)
     # graph oob error vs n tree

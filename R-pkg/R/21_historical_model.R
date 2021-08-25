@@ -10,12 +10,7 @@ hist_model_ui <- function(id) {
                 h4("Describe your scenario") %>% 
                     helper(type = "markdown", 
                            content = "hist_model_description"),
-                textAreaInput(
-                    ns("scenario"), 
-                    label = NULL, 
-                    height = "356px", 
-                    resize = "none"
-                ),
+                uiOutput(ns("scenario_input")),
                 actionButton(
                     ns("validate"),
                     label = "Validate",
@@ -41,14 +36,18 @@ hist_model_server <- function(input, output, session,
                               project_dir = reactive({NULL}), 
                               raw_scenario = reactive({NULL}),
                               scenario_id = reactive({NULL})) {
+    
+    # namespace
+    ns <- session$ns
+    
     # init local reactive values
     local <- reactiveValues(
         graph = NULL,
         parser_msg = NULL,
         project_dir = NULL,
         raw_scenario = NULL,
-        scenario_id = NULL,
-        validated = FALSE
+        input_scenario = NULL,
+        scenario_id = NULL
     )
     
     # init output reactive values
@@ -56,53 +55,64 @@ hist_model_server <- function(input, output, session,
         cond = NULL,
         raw = NULL,
         param = NULL,
-        trigger = NULL,
-        valid = FALSE
+        valid = FALSE,
+        validated = FALSE
     )
     
     # get input
     observe({
         local$project_dir = project_dir()
-        local$raw_scenario = raw_scenario()
+        local$input_scenario = raw_scenario()
         local$scenario_id = scenario_id()
-        # logging("input raw scenario = ", local$raw_scenario)
-    })
-    
-    # update if input provided
-    observe({
-        req(local$raw_scenario)
-        updateTextAreaInput(session, "scenario", value = local$raw_scenario)
-    })
-    
-    # unvalidate if scenario is edited
-    observeEvent(input$scenario, {
         local$validated <- FALSE
+        # logging("input raw scenario = ", local$input_scenario)
     })
     
-    # parse and check input scenario
+    # # debugging
+    # observe({
+    #     logging("input raw scenario = ", local$input_scenario)
+    # })
+    
+    output$scenario_input <- renderUI({
+        input_scen <- NULL
+        if(isTruthy(local$input_scenario)) input_scen <- local$input_scenario
+        textAreaInput(
+            ns("scenario"), 
+            label = NULL, 
+            value = input_scen,
+            height = "356px", 
+            resize = "none"
+        )
+    })
+    
+    # invalidate if scenario is edited
+    observeEvent(input$scenario, {
+        out$validated <- FALSE
+    })
+    
+    # get, parse and check input scenario
     observeEvent(input$validate, {
-        local$validated <- TRUE
         # input (remove empty final line)
-        out$raw <- str_replace(string = input$scenario, 
-                               pattern = "\\n$", 
-                               replacement = "")
-        out$trigger <- ifelse(is.null(out$trigger), 0, out$trigger) + 1
+        local$raw_scenario <- str_replace(
+            string = input$scenario, pattern = "\\n$", replacement = ""
+        )
+        # validated ?
+        out$validated <- TRUE
         # parse
-        out$param <- parse_scenario(out$raw)
+        out$param <- parse_scenario(local$raw_scenario)
         # parser message list
         local$parser_msg <- out$param$msg_list
         # if valid
         if(out$param$valid) {
             
             # check conditions
-            out$cond <- check_condition(input$scenario, out$param)$cond
+            out$cond <- check_condition(local$raw_scenario, out$param)$cond
             
             # prepare data for graph
             data2plot <- prepare_hist_model_display(out$param, grid_unit = 2)
             
             # check for validity
             out$valid <- out$param$valid && data2plot$valid
-            out$param$valid <- data2plot$valid
             
             # potential message
             local$parser_msg <- append(
@@ -111,58 +121,62 @@ hist_model_server <- function(input, output, session,
             )
             
             # if valid
-            if(out$param$valid) {
+            if(out$valid) {
+                # output
+                out$raw <- local$raw_scenario
                 # graphical representation
                 local$graph <- display_hist_model(data2plot)
             } else {
+                out$raw <- NULL
                 local$graph <- NULL
             }
             
         } else {
+            out$raw <- NULL
             local$graph <- NULL
             out$cond <- NULL
             out$valid <- FALSE
+            out$validated <- FALSE
         }
-    })
-    
-    # update local
-    observeEvent(out$raw, {
-        local$raw_scenario <- out$raw
     })
     
     # update parser message
     output$parser_msg <- renderUI({
-        req(!is.null(local$validated))
-        if(!local$validated) {
-            helpText(
-                icon("warning"), "Scenario is not validated"
+        req(!is.null(out$validated))
+        if(!out$validated) {
+            tags$div(
+                icon("warning"), "Scenario is not validated",
+                style = "color: #F89406;"
             )
         } else if(isTruthy(local$parser_msg) & length(local$parser_msg) > 0) {
-            helpText(
+            tags$div(
                 h4(icon("warning"), "Issue(s) with scenario"),
                 do.call(
                     tags$ul,
                     lapply(local$parser_msg, function(item) {
                         return(tags$li(item))
                     })
-                )
+                ),
+                style = "color: #F89406;"
             )
         } else {
-                NULL
+            NULL
         }
     })
     
     # # debugging
     # observe({
-    #     logging("project dir :", local$project_dir)
+    #     # logging("project dir :", local$project_dir)
     #     logging("historic model :", out$raw)
     # })
     
     ## graph display
-    callModule(graph_display_server, "model_display", 
-               graph = reactive(local$graph), 
-               project_dir = reactive(local$project_dir),
-               scenario_id = reactive(local$scenario_id))
+    callModule(
+        graph_display_server, "model_display", 
+        graph = reactive(local$graph), 
+        project_dir = reactive(local$project_dir),
+        scenario_id = reactive(local$scenario_id)
+    )
     
     # output
     return(out)
@@ -589,4 +603,192 @@ parse_varNe <- function(event) {
         }
     }
     return(lst(event_type, event_param, event_pop, event_check))
+}
+
+#' Generate default priors for a list of parameters
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom dplyr distinct
+#' @importFrom stringr str_trim
+default_param_prior <- function(scen_list) {
+    
+    # no parameter
+    if(length(scen_list) == 0) {
+        return(character(0))
+    }
+    
+    # parse each scenario in the list
+    parsed_scen_list <- lapply(scen_list, parse_scenario)
+    
+    # table of parameters
+    param_tab <- Reduce("rbind", lapply(
+        1:length(parsed_scen_list), 
+        function(ind) {
+            item <- parsed_scen_list[[ind]]
+            if(!item$valid) return(NULL)
+            Ne_param <- NULL
+            time_param <- NULL
+            rate_param <- NULL
+            # Ne param
+            if(length(item$Ne_param) > 0) {
+                Ne_param <- data.frame(
+                    param = item$Ne_param,
+                    type = "N",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # time param
+            if(length(item$time_param) > 0) {
+                time_param <- data.frame(
+                    param = item$time_param,
+                    type = "T",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # rate param
+            if(length(item$rate_param) > 0) {
+                rate_param <- data.frame(
+                    param = item$rate_param,
+                    type = "A",
+                    stringsAsFactors = FALSE
+                )
+            }
+            # output
+            return(rbind(Ne_param, time_param, rate_param))
+        }
+    ))
+    
+    # any parameter ?
+    if(length(param_tab) > 0) {
+        # distinct
+        param_tab <- param_tab %>% distinct()
+        
+        # order by type
+        o_type <- order(param_tab$type)
+        param_tab <- param_tab[o_type,]
+        
+        # default prior
+        out <- unname(unlist(lapply(
+            split(param_tab, seq(nrow(param_tab))),
+            function(item) {
+                return(str_c(
+                    item$param, item$type, 
+                    str_c(
+                        "UN[",
+                        str_c(
+                            str_trim(unlist(lapply(
+                                default_prior_num_val(item$type, "UN"), 
+                                format, nsmall = 1
+                            ))), collapse = ","
+                        ),
+                        "]", sep = ""
+                    ), sep = " "
+                ))
+            }
+        )))
+        
+        # output
+        return(out)
+    } else {
+        return(character(0))
+    }
+}
+
+#' Default values for numeric hyper-parameter of scenario parameter prior
+#' @keywords internal
+#' @author Ghislain Durif
+#' @description Returns of vector of values for min, max, mean, stdev
+default_prior_num_val <- function(type, distrib) {
+    if(type == "A" && distrib %in% c("UN", "LU")) {
+        return(c(0.01,0.99,0,0))
+    }
+    if(type == "A" && distrib %in% c("NO", "LN")) {
+        return(c(0.01,0.99,0.5,0.1))
+    }
+    if(type != "A" && distrib %in% c("UN", "LU")) {
+        return(c(10,10000,0.0,0.0))
+    }
+    if(type != "A" && distrib %in% c("NO", "LN")) {
+        return(c(10,10000,1000,100.0))
+    } else {
+        return(rep(NA,4))
+    }
+}
+
+#' Clean list of priors for a list of parameters (remove unused parameters)
+#' @keywords internal
+#' @author Ghislain Durif
+clean_param_prior <- function(prior_list, scen_list) {
+    
+    # no parameter ?
+    if(length(scen_list) == 0) {
+        return(character(0))
+    }
+    
+    # no prior ?
+    if(length(prior_list) == 0) {
+        return(default_param_prior(scen_list))
+    }
+    
+    # parse each scenario in the list
+    parsed_scen_list <- lapply(scen_list, parse_scenario)
+    
+    # table of parameters
+    param_list <- unname(unique(unlist(lapply(
+        1:length(parsed_scen_list), 
+        function(ind) {
+            item <- parsed_scen_list[[ind]]
+            if(!item$valid) return(NULL)
+            return(c(item$Ne_param, item$time_param, item$rate_param))
+        }
+    ))))
+    
+    # any parameter ?
+    if(length(param_list) > 0) {
+        # current parameters in prior list
+        param_name <- unname(unlist(lapply(prior_list, get_param_name)))
+        
+        # remove from prior list element that are not in the list of parameters
+        prior_list <- prior_list[which(param_name %in% param_list)]
+        
+        # output
+        return(prior_list)
+    } else {
+        return(character(0))
+    }
+}
+
+#' Extract parameter name from prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_param_name <- function(prior) {
+    value <- str_extract(
+        prior, str_c("^", single_param_regex(), "(?= )")
+    )
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract distribution from prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_prior_distrib <- function(prior) {
+    value <- str_extract(
+        prior, 
+        str_c("(?<= )", "(UN|LU|NO|LN|GA)", "(?=\\[)")
+    )
+    if(length(value) != 1 || is.na(value)) value <- NULL
+    return(value)
+}
+
+#' Extract numeric values from prior encoding
+#' @keywords internal
+#' @author Ghislain Durif
+get_prior_num_val <- function(prior) {
+    value <- as.numeric(unlist(str_extract_all(
+        prior, 
+        str_c("(?<=[\\[,])", numexp_regex(), "(?=[\\],])")
+    )))
+    if(length(value) != 4 || any(is.na(value))) value <- NULL
+    return(value)
 }

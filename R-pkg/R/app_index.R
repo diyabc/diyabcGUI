@@ -1,7 +1,8 @@
 #' App dashboard simplified sidebar
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu
+#' @importFrom shinydashboard dashboardSidebar menuItem sidebarMenu 
+#' sidebarMenuOutput
 app_sidebar <- function() {
     dashboardSidebar(
         sidebarMenu(
@@ -11,16 +12,7 @@ app_sidebar <- function() {
                 tabName = "home_tab", 
                 icon = icon("home")
             ),
-            menuItem(
-                "DIYABC-RF main pipeline", 
-                tabName = "analysis_tab", 
-                icon = icon("flask")
-            ),
-            menuItem(
-                "Synthetic data file generation", 
-                tabName = "datagen_tab", 
-                icon = icon("dna")
-            ),
+            sidebarMenuOutput("menu_tabs"),
             menuItem(
                 "Preferences", 
                 tabName = "pref_tab", 
@@ -39,23 +31,25 @@ app_sidebar <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 #' @importFrom shinydashboard dashboardBody tabItems tabItem
+#' @importFrom shinyFeedback useShinyFeedback
 #' @importFrom shinyjs useShinyjs
 app_body <- function() {
     dashboardBody(
         useShinyjs(),
+        useShinyFeedback(),
         add_busy_spinner(spin = "fading-circle", margins = c(0, 10)),
         tabItems(
             tabItem(
                 tabName = "home_tab",
-                simplified_home_page_ui("home_page")
+                home_page_ui("home_page")
             ),
             tabItem(
                 tabName = "analysis_tab",
-                analysis_page_ui("analysis_page")
+                analysis_module_ui("analysis_module")
             ),
             tabItem(
                 tabName = "datagen_tab",
-                datagen_page_ui("datagen_page")
+                # datagen_module_ui("datagen_module")
             ),
             tabItem(
                 tabName = "pref_tab",
@@ -79,42 +73,103 @@ app_body <- function() {
 #' App simplified dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
+#' @importFrom shinydashboard renderMenu
 index_server <- function(input, output, session) {
     
     # home page
-    home_page <- callModule(simplified_home_page_server, "home_page")
+    home_page <- callModule(home_page_server, "home_page")
+    
+    ## check for binary prog diyabc and abcranger
+    observe({
+        # check if binary files are available
+        diyabc_bin <- tryCatch(
+            find_bin("diyabc"),
+            error = function(e) return(e)
+        )
+        abcranger_bin <- tryCatch(
+            find_bin("abcranger"),
+            error = function(e) return(e)
+        )
+        if("error" %in% class(diyabc_bin) | "error" %in% class(abcranger_bin)) {
+            show_alert(
+                title = "Error !",
+                text = tagList(
+                    icon("warning"),
+                    "DIYABC-RF internal engine is missing.", 
+                    br(), br(),
+                    "Please navigate to the", tags$b("Preferences"), 
+                    "tab (see left sidebar) and click on", 
+                    tags$b("Update DIYABC-RF internal engine"), ".", 
+                    br(), br(),
+                    "If the issue persists, please contact DIYABC-RF support."
+                ),
+                type = "error",
+                html = TRUE
+            )
+        }
+    })
     
     ## new analysis project
     observeEvent(home_page$new_analysis_project, {
         req(home_page$new_analysis_project)
+        
+        # rendering sidebar menu
+        output$menu_tabs <- renderMenu({
+            sidebarMenu(
+                id = "dynamic_tabs",
+                menuItem(
+                    "DIYABC-RF main pipeline", 
+                    tabName = "analysis_tab", 
+                    icon = icon("flask")
+                )
+            )
+        })
+        
+        # update tab item
         updateTabItems(session, "app_menu", selected = "analysis_tab")
-        init_diyabcrf_env()
+        
+        # reset env
+        reset_diyabcrf_env()
+        
+        # verbosity
+        observe({
+            logging("analysis project directory:", env$ap$proj_dir)
+        })
     })
     
     ## new data generation project
     observeEvent(home_page$new_datagen_project, {
         req(home_page$new_datagen_project)
+        
+        # rendering sidebar menu
+        output$menu_tabs <- renderMenu({
+            sidebarMenu(
+                id = "dynamic_tabs",
+                menuItem(
+                    "Synthetic data file generation", 
+                    tabName = "datagen_tab", 
+                    icon = icon("dna")
+                )
+            )
+        })
+        
+        # update tab item
         updateTabItems(session, "app_menu", selected = "datagen_tab")
-        init_datagen_env()
+        
+        # reset env
+        reset_datagen_env()
+        
+        # verbosity
+        observe({
+            logging("data generation project directory:", env$dp$proj_dir)
+        })
     })
     
     ## analysis page
-    analysis_page <- callModule(analysis_page_server, "analysis_page")
-    # # reset
-    # observeEvent(analysis_page$reset, {
-    #     req(analysis_page$reset)
-    #     session$reload()
-    #     updateTabItems(session, "app_menu", selected = "analysis_tab")
-    # })
+    analysis_module <- callModule(analysis_module_server, "analysis_module")
     
     ## datagen page
-    datagen_page <- callModule(datagen_page_server, "datagen_page")
-    # # reset
-    # observeEvent(datagen_page$reset, {
-    #     req(datagen_page$reset)
-    #     session$reload()
-    #     updateTabItems(session, "app_menu", selected = "datagen_tab")
-    # })
+    # datagen_module <- callModule(datagen_module_server, "datagen_module")
     
     ## preferences
     callModule(pref_page_server, "pref_page")

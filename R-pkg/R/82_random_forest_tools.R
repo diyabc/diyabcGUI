@@ -30,8 +30,8 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
                           pls_max_var, chosen_scenario, noob, parameter, 
                           groups = NULL) {
     # # debugging
-    # pprint("abcranger args")
-    # pprint(match.call())
+    # print("abcranger args")
+    # print(match.call())
     
     # executable
     abcranger_bin <- find_bin("abcranger")
@@ -58,8 +58,6 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
     )
     if(no_linear) {
         arguments <- c(arguments, "--no_linear")
-    } else {
-        arguments <- c(arguments, "--plsmaxvar", as.character(pls_max_var))
     }
     if(run_mode == "param_estim") {
         arguments <- c(
@@ -68,18 +66,20 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
             "--noob", as.character(noob),
             "--parameter", as.character(parameter)
         )
-    } else if(run_mode == "model_choice") {
-        if(!is.null(groups)) {
-            if(is.character(groups) & str_length(groups) > 0) {
-                arguments <- c(arguments, "-g", groups)
-            }
+        if(!no_linear) {
+            arguments <- c(arguments, "--plsmaxvar", as.character(pls_max_var))
         }
+    } else if(
+        (run_mode == "model_choice") &&
+        !is.null(groups) && is.character(groups) && (str_length(groups) > 0)
+    ) {
+        arguments <- c(arguments, "-g", groups)
     }
     
     run_proc <- processx::process$new(
         command = abcranger_bin, 
         args = arguments,
-        stdin = "|",
+        stdin = NULL,
         stdout = file.path(proj_dir, "abcranger_call.log"), 
         stderr = file.path(proj_dir, "abcranger_call.log"),
         echo_cmd = TRUE,
@@ -116,81 +116,106 @@ cleanup_abcranger_run <- function(project_dir) {
 #' For example, with six models, labeled from 1 to 6,",
 #' `'1,2,3;4,5,6'` to make 2 groups of 3.
 parse_abcranger_group <- function(txt, n_scenario) {
-    valid <- TRUE
-    msg <- list()
+    # init output
+    out <- list(valid = TRUE, msg = list())
+    
     # check input
-    if(!is.null(txt) | !is.character(txt)) {
-        # strip "|'
-        tmp <- str_replace_all(txt, pattern = "\"|'", replacement = "")
-        # check format
-        pttrn <- "^([0-9]+(,[0-9]+)*)(;([0-9]+(,[0-9]+)*))*$"
-        if(!str_detect(tmp, pttrn)) {
-            valid <- FALSE
-            msg <- append(
-                msg,
-                str_c(
-                    "Issue with group formating. Use only",
-                    "numbers, commas (,) and semi-colons (;).", 
-                    "Example: '1,2;3' (if you have 3 or more scenarii).", 
-                    sep = " "
-                )
-            )
-        } else {
-            # at least 2 groups
-            if(!str_detect(tmp, ";")) {
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "You should specify at least two groups,",
-                        "separated by semi-colons (;).",
-                        "If you do not want to group scenarii",
-                        "(or equivalently assign each scenario",
-                        "to its own group), leave blank.",
-                        sep = " "
-                    )
-                )
-            }
-            # extract information
-            pttrn <- "[0-9]+"
-            scenario_list <- as.numeric(
-                str_extract_all(tmp, pttrn, simplify = TRUE)
-            )
-            if(length(scenario_list) != length(unique(scenario_list))) {
-                count_scenarii <- table(scenario_list)
-                duplicated_scenarii <- names(count_scenarii[count_scenarii>1])
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "Some scenarii listed in scenario grouping",
-                        "are duplicated:",
-                        str_c(
-                            duplicated_scenarii,
-                            collapse = ", "
-                        ),
-                        sep = " "
-                    )
-                )
-            }
-            if(!all(scenario_list %in% (1:n_scenario))) {
-                valid <- FALSE
-                msg <- append(
-                    msg,
-                    str_c(
-                        "Some scenarii listed in scenario grouping",
-                        "does not exist:",
-                        str_c(
-                            scenario_list[!scenario_list %in% (1:n_scenario)],
-                            collapse = ", "
-                        ),
-                        sep = " "
-                    )
-                )
-            }
-        }
+    if(is.null(txt) || (is.character(txt) && str_length(txt) == 0))
+        return(out) # empty grouping/selection is ok
+    
+    if(!is.character(txt) || length(txt) > 1) {
+        out$valid <- FALSE
+        out$msg <- append(out$msg, list(tagList("Bad input")))
+        return(out)
     }
-    return(lst(msg, valid))
+    
+    # # strip "|' (WHY??? -> to investigate)
+    # tmp <- str_replace_all(txt, pattern = "\"|'", replacement = "")
+    
+    # check format
+    pttrn <- "^([0-9]+(,[0-9]+)*)(;([0-9]+(,[0-9]+)*))*$"
+    if(!str_detect(txt, pttrn)) {
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "Issue with group formating. Use only",
+                "numbers, commas (,) and semi-colons (;).", 
+                "Example: '1,2;3' (if you have 3 or more scenarii)."
+            ))
+        )
+        return(out)
+    }
+    
+    # at least 2 groups
+    if(!str_detect(txt, ";")) {
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "You should specify at least two groups,",
+                "separated by semi-colons", tags$code(";"), ".",
+                "If you do not want to group scenarii",
+                "(or equivalently assign each scenario",
+                "to its own group), leave blank."
+            ))
+        )
+    }
+    
+    # extract information
+    pttrn <- "[0-9]+"
+    scenario_list <- as.numeric(
+        str_extract_all(txt, pttrn, simplify = TRUE)
+    )
+    
+    # duplicated id ?
+    if(length(scenario_list) != length(unique(scenario_list))) {
+        count_scenarii <- table(scenario_list)
+        duplicated_scenarii <- names(count_scenarii[count_scenarii>1])
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "The following scenario", 
+                ifelse(
+                    length(duplicated_scenarii) > 1, 
+                    "ids are", "id is"
+                ),
+                "duplicated:",
+                str_c(
+                    duplicated_scenarii,
+                    collapse = ", "
+                )
+            ))
+        )
+        return(out)
+    }
+    
+    # bad scenario id ?
+    if(!all(scenario_list %in% (1:n_scenario))) {
+        nonexisting_scenarii <- 
+            scenario_list[!scenario_list %in% (1:n_scenario)]
+        out$valid <- FALSE
+        out$msg <- append(
+            out$msg,
+            list(tagList(
+                "The following scenario", 
+                ifelse(
+                    length(nonexisting_scenarii) > 1, 
+                    "ids do not", "id does not"
+                ),
+                "exist:",
+                str_c(
+                    nonexisting_scenarii,
+                    collapse = ", "
+                )
+            ))
+        )
+        return(out)
+    }
+    
+    # output
+    return(out)
 }
 
 
@@ -200,11 +225,11 @@ parse_abcranger_group <- function(txt, n_scenario) {
 #' @description
 #' After a successfool abcranger run, result postprocessing includes graphical 
 #' output generation.
-abcranger_postprocess <- function(proj_dir, graph_dir, 
-                                  run_mode = "param_estim", 
-                                  prefix = "estimparam_out", 
-                                  sub_proj_name = NULL,
-                                  param = NULL) {
+abcranger_postprocess <- function(
+    proj_dir, graph_dir, run_mode = "param_estim", 
+    prefix = "estimparam_out", sub_proj_name = NULL, 
+    param = NULL
+) {
     # graphical output
     if(run_mode == "param_estim") {
         # parameter estimation
@@ -212,12 +237,12 @@ abcranger_postprocess <- function(proj_dir, graph_dir,
             param_estim_graph_ouptut(proj_dir, graph_dir, param, prefix)
         }
         # move file to subproject directory
-        abcranger_subdir(proj_dir, sub_proj_name, prefix = "estimparam_out")
+        abcranger_subdir(proj_dir, sub_proj_name, prefix)
     } else if(run_mode == "model_choice") {
         # model choice
         model_choice_graph_ouptut(proj_dir, graph_dir, prefix)
         # move file to subproject directory
-        abcranger_subdir(proj_dir, sub_proj_name, prefix = "modelchoice_out")
+        abcranger_subdir(proj_dir, sub_proj_name, prefix)
     }
 }
 
@@ -228,31 +253,29 @@ abcranger_postprocess <- function(proj_dir, graph_dir,
 #' After a successfool abcranger run, result files are moved to a dedicated 
 #' sub-directory
 abcranger_subdir <- function(proj_dir, sub_proj_name, prefix) {
-    if(!is.null(sub_proj_name)) {
-        if(str_length(sub_proj_name) > 0) {
-            # create sub-directory
-            sub_dir_path <- file.path(proj_dir, sub_proj_name)
-            if(!dir.exists(sub_dir_path)) {
-                fs::dir_create(sub_dir_path)
-            }
-            # move output files
-            tmp_file_list <- list.files(proj_dir, pattern = prefix)
-            if(length(tmp_file_list) > 0) {
-                tmp_file_info <- file.info(file.path(proj_dir, tmp_file_list))
-                if(any(!tmp_file_info$isdir)) {
-                    tmp_file_list <- tmp_file_list[!tmp_file_info$isdir]
-                    tmp_move <- lapply(
-                        tmp_file_list, 
-                        function(tmp_file) {
-                            fs::file_copy(
-                                path = file.path(proj_dir, tmp_file),
-                                new_path = file.path(sub_dir_path, tmp_file),
-                                overwrite = TRUE
-                            )
-                            fs::file_delete(file.path(proj_dir, tmp_file))
-                        }
-                    )
-                }
+    if(!is.null(sub_proj_name) && str_length(sub_proj_name) > 0) {
+        # create sub-directory
+        sub_dir_path <- file.path(proj_dir, sub_proj_name)
+        if(!dir.exists(sub_dir_path)) {
+            fs::dir_create(sub_dir_path)
+        }
+        # move output files
+        tmp_file_list <- list.files(proj_dir, pattern = prefix)
+        if(length(tmp_file_list) > 0) {
+            tmp_file_info <- file.info(file.path(proj_dir, tmp_file_list))
+            if(any(!tmp_file_info$isdir)) {
+                tmp_file_list <- tmp_file_list[!tmp_file_info$isdir]
+                tmp_move <- lapply(
+                    tmp_file_list, 
+                    function(tmp_file) {
+                        fs::file_copy(
+                            path = file.path(proj_dir, tmp_file),
+                            new_path = file.path(sub_dir_path, tmp_file),
+                            overwrite = TRUE
+                        )
+                        fs::file_delete(file.path(proj_dir, tmp_file))
+                    }
+                )
             }
         }
     }

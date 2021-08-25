@@ -1,4 +1,4 @@
-test_that("scenario_check_graph_ouptut", {
+test_that("scenario_check_graph_output", {
     
     ## Model choice
     
@@ -6,7 +6,7 @@ test_that("scenario_check_graph_ouptut", {
     proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_model_choice")
     graph_dir <- mk_proj_dir("testing")
     prefix <- "pcaloc1_"
-    scenario_check_graph_ouptut(proj_dir, graph_dir, prefix)
+    scenario_check_graph_output(proj_dir, graph_dir, prefix)
     
     expect_identical(
         list.files(graph_dir), 
@@ -20,7 +20,7 @@ test_that("scenario_check_graph_ouptut", {
     proj_dir <- file.path(data4test_dir(), "IndSeq_SNP_model_choice")
     graph_dir <- mk_proj_dir("testing")
     prefix <- "pcaloc1_"
-    scenario_check_graph_ouptut(proj_dir, graph_dir, prefix)
+    scenario_check_graph_output(proj_dir, graph_dir, prefix)
     
     expect_identical(
         list.files(graph_dir), 
@@ -36,7 +36,7 @@ test_that("scenario_check_graph_ouptut", {
     proj_dir <- file.path(data4test_dir(), "PoolSeq_SNP_estim_param")
     graph_dir <- mk_proj_dir("testing")
     prefix <- "pcaloc1_"
-    scenario_check_graph_ouptut(proj_dir, graph_dir, prefix)
+    scenario_check_graph_output(proj_dir, graph_dir, prefix)
     
     expect_identical(
         list.files(graph_dir), 
@@ -50,7 +50,7 @@ test_that("scenario_check_graph_ouptut", {
     proj_dir <- file.path(data4test_dir(), "IndSeq_SNP_estim_param")
     graph_dir <- mk_proj_dir("testing")
     prefix <- "pcaloc1_"
-    scenario_check_graph_ouptut(proj_dir, graph_dir, prefix)
+    scenario_check_graph_output(proj_dir, graph_dir, prefix)
     
     expect_identical(
         list.files(graph_dir), 
