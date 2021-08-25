@@ -1,9 +1,8 @@
-env <- new.env(parent = emptyenv())
-
 .onLoad <- function(libname, pkgname) {
     # set up options
     set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
     # setup package global environment
+    assign("env", new.env(parent = emptyenv()), .GlobalEnv)
     init_diyabc_env()
     # check if binary files are available
     diyabc_bin <- tryCatch(
