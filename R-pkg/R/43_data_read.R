@@ -1089,7 +1089,7 @@ read_mss_data <- function(data_file, data_dir) {
     microsat_hap_encoding <- "^[0-9]{3}$"
     microsat_dip_encoding <- "^[0-9]{6}$"
     microsat_x_encoding <- "^([0-9]{3}|[0-9]{6})$"
-    nucleotid_encoding <- "[ATCG]*"
+    nucleotid_encoding <- "[ATCGN\\-]*" # N and - for undetermined nucleotid
     seq_hap_encoding <- str_c("^<\\[", nucleotid_encoding, "\\]>")
     seq_dip_encoding <- str_c(
         "^<\\[", nucleotid_encoding, "\\]\\[", nucleotid_encoding, "\\]>"
@@ -1229,7 +1229,8 @@ read_mss_data <- function(data_file, data_dir) {
                     return(
                         str_length(str_extract_all(
                             locus_data[row_ind,col_ind],
-                            "\\[[ATCG]*\\]", 
+                            "\\[[ATCGN\\-]*\\]", 
+                            # N or - for undetermined nucleotid
                             simplify = TRUE
                         )) - 2
                     )
