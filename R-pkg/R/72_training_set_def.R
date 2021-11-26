@@ -1099,6 +1099,11 @@ param_cond_panel_ui <- function(id) {
             collapsible = TRUE,
             collapsed = TRUE,
             tagList(
+                h5("Conditions on couple of parameters:") %>%
+                    helper(
+                        type = "inline", 
+                        content = as.character(cond_help)
+                    ),
                 uiOutput(ns("cond_input")),
                 fluidRow(
                     column(
@@ -1122,11 +1127,7 @@ param_cond_panel_ui <- function(id) {
                     tags$code(">"), ",", tags$code(">="), ",", 
                     tags$code("<"),  ",",
                     tags$code("=<"), "."
-                ) %>%
-                    helper(
-                        type = "inline", 
-                        content = as.character(cond_help)
-                    ),
+                ),
                 uiOutput(ns("feedback"))
             )
         )
