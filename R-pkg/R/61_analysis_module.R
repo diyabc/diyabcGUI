@@ -390,9 +390,16 @@ proj_file_check_server <- function(input, output, session) {
         c(env$ap$file_modif, env$ap$proj_file_list, 
            env$ap$proj_dir, env$ap$locus_type)
     }, {
-        req(env$ap$proj_type %in% c("existing", "example"))
+        # # debugging
+        # print("## triggering project file check")
+        # pprint(env$ap$proj_type)
+        # pprint(env$ap$proj_dir)
+        # pprint(env$ap$locus_type)
+        
+        req(env$ap$proj_type %in% c("new", "existing", "example"))
         req(env$ap$proj_dir)
         req(env$ap$locus_type)
+        
         # file check
         file_check <- check_proj_file(env$ap$proj_dir, env$ap$locus_type)
         # update env
