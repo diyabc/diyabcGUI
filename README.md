@@ -137,4 +137,4 @@ Please see the dedicated [directory](build/README.md) for instructions about the
 
 ## Reference
 
-[1] Collin F-D, Durif G, Raynal L, Gautier M, Vitalis R, Lombaert E., Marin J-M, Estoup A., 2021, _Extending Approximate Bayesian Computation with Supervised Machine Learning to infer demographic history from genetic polymorphisms using DIYABC Random Forest_. Molecular Ecology Resources, Wiley/Blackwell, In press. [\<doi/10.1111/1755-0998.13413\>](https://dx.doi.org/10.1111/1755-0998.13413) [\<hal-03229207\>](https://hal.inrae.fr/hal-03229207)
+[1] Collin F-D, Durif G, Raynal L, Gautier M, Vitalis R, Lombaert E., Marin J-M, Estoup A., 2021, _Extending Approximate Bayesian Computation with Supervised Machine Learning to infer demographic history from genetic polymorphisms using DIYABC Random Forest_. Molecular Ecology Resources, Wiley/Blackwell, 21(8), pp. 2598–2613. [\<doi/10.1111/1755-0998.13413\>](https://dx.doi.org/10.1111/1755-0998.13413) [\<hal-03229207\>](https://hal.inrae.fr/hal-03229207)
