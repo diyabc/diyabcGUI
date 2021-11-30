@@ -5,6 +5,13 @@
 proj_admin_ui <- function(id) {
     ns <- NS(id)
     tagList(
+        helpText(
+            tags$p(
+                icon("warning"),
+                "To avoid any loss of your current work,",
+                tags$b("please save your project.")
+            )
+        ),
         downloadBttn(
             ns("save"),
             label = "Save",
@@ -30,6 +37,28 @@ proj_admin_ui <- function(id) {
             style = "fill",
             block = TRUE,
             color = "danger"
+        ),
+        hr(),
+        helpText(
+            tags$p(
+                icon("info-circle"),
+                "Information about working directories",
+                "(for debugging purpose only):",
+                tags$ul(
+                    tags$li(
+                        "Project working directory:", 
+                        uiOutput(ns("proj_dir"), inline = TRUE)
+                    ),
+                    tags$li(
+                        "App working directory:", 
+                        uiOutput(ns("app_dir"), inline = TRUE)
+                    ),
+                    tags$li(
+                        "App log file:", 
+                        uiOutput(ns("log_file"), inline = TRUE)
+                    )
+                )
+            )
         )
     )
 }
@@ -46,6 +75,19 @@ proj_admin_server <- function(input, output, session, tag = NULL) {
     
     # check input
     if(isTruthy(tag)) {
+        
+        # project directory
+        output$proj_dir <- renderUI({
+            tags$code(env[[ tag ]]$proj_dir)
+        })
+        # app directory
+        output$app_dir <- renderUI({
+            tags$code(dirname(env$log_file))
+        })
+        # app log file
+        output$log_file <- renderUI({
+            tags$code(env$log_file)
+        })
         
         # save
         output$save <- downloadHandler(
