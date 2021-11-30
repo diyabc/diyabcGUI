@@ -5,12 +5,6 @@
     # log file
     env$log_file <- file.path(tempdir(), "diyabc_rf_gui.log")
     
-    # logging
-    log_errors()
-    log_messages()
-    log_warnings()
-    log_appender(appender_tee(env$log_file))
-    
     # set up options
     set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
     
