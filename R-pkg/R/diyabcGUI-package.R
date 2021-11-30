@@ -13,8 +13,9 @@
 #' margin scale_x_continuous scale_y_continuous 
 #' unit xlim ylim
 #' theme_bw xlab ylab
-#' @importFrom logger log_errors log_eval log_messages log_shiny_input_changes
-#' log_threshold 
+#' @importFrom logger log_eval log_shiny_input_changes log_threshold 
+#' log_appender appender_tee
+#' log_messages log_errors log_warnings 
 #' log_fatal log_error log_warn log_success log_info log_debug log_trace
 #' @importFrom magrittr %>%
 #' @importFrom parallel detectCores
