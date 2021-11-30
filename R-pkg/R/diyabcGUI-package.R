@@ -13,6 +13,9 @@
 #' margin scale_x_continuous scale_y_continuous 
 #' unit xlim ylim
 #' theme_bw xlab ylab
+#' @importFrom logger log_errors log_eval log_messages log_shiny_input_changes
+#' log_threshold 
+#' log_fatal log_error log_warn log_success log_info log_debug log_trace
 #' @importFrom magrittr %>%
 #' @importFrom parallel detectCores
 #' @importFrom processx process

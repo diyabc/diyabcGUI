@@ -1,4 +1,7 @@
 .onLoad <- function(libname, pkgname) {
+    # logging
+    log_errors()
+    log_messages()
     # set up options
     set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
     # setup package global environment

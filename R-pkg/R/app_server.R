@@ -12,6 +12,11 @@
 #' @return None
 #' @export
 diyabc_server <- function(input, output, session) {
+    ## logging
+    log_info("Starting diyabc-RF-GUI app")
+    shiny::onStop(function() {
+        log_info("Exiting diyabc-RF-GUI app")
+    })
     ## help
     observe_helpers(session, help_dir = help_dir(), withMathJax = TRUE)
     ## init
