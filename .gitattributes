@@ -1,1 +1,1 @@
-R-pkg/inst/* linguist-vendored
+R-pkg/inst/** linguist-vendored
