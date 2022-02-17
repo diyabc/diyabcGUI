@@ -544,8 +544,10 @@ rf_parameter_server <- function(input, output, session) {
         helpText(
             tags$p(
                 icon("info-circle"), 
-                "You can use one of the following parameter",
-                "or an arithmetic combination of them, such",
+                "You can use a", tags$b("single"),
+                "one of the following parameter",
+                "or a", tags$b("single"), 
+                "arithmetic combination of them, such",
                 "as division, addition or multiplication of",
                 "two existing parameters:",
             ),

@@ -209,7 +209,7 @@ reverse_tree <- function(tree_df) {
             str_c(
                 "Issue with scenario:",
                 "populations", str_c(tree_df$pop[root_ind], collapse = ", "),
-                "do not coalesce.",
+                "do not coalesce",
                 sep = " "
             )
         )

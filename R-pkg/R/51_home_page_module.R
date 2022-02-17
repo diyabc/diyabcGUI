@@ -35,7 +35,7 @@ home_page_ui <- function(id) {
                 tags$div(
                     tags$p(
                         "Direct use of DIYABC-RF simulation engine",
-                        "to generate pseudo-oberved datasets."
+                        "to generate pseudo-oberved datasets"
                     ) %>% 
                         helper(type = "markdown", 
                                content = "data_simulation")
@@ -57,16 +57,14 @@ home_page_ui <- function(id) {
                         tags$a(
                             "DIYABC-RF GUI official website", 
                             href="https://diyabc.github.io/"
-                        ),
-                        "."
+                        )
                     ),
                     tags$p(
                         "If you encounter any issue, please visit",
                         tags$a(
                             "DIYABC-RF GUI issue tracker", 
                             href="https://github.com/diyabc/diyabcGUI/issues"
-                        ),
-                        "."
+                        )
                     ),
                     hr(),
                     tags$p(
@@ -76,7 +74,7 @@ home_page_ui <- function(id) {
                                 "Specific help pop-ups relative to some panels",
                                 "are directly available inside",
                                 "the application by clicking on",
-                                "the close-by ", icon("question-circle"), "."
+                                "the close-by ", icon("question-circle")
                             ),
                             br(),
                             tags$li(
@@ -86,7 +84,7 @@ home_page_ui <- function(id) {
                                 tags$i("Warning"), "messages are idenfied by a", 
                                 icon("warning"), "and",
                                 tags$i("informative"), "messages by a ", 
-                                icon("comment"), "or a ", icon("info-circle"), "."
+                                icon("comment"), "or a ", icon("info-circle")
                             )
                         )
                     ),

@@ -6,7 +6,7 @@ prog_name <- function(prog = "diyabc") {
         prog,
         "diyabc" = "diyabc-RF",
         "abcranger" = "abcranger",
-        stop("Bad input for 'prog' arg.")
+        stop("Bad input for 'prog' arg")
     )
     return(out)
 }
@@ -52,7 +52,7 @@ get_os <- function() {
                          pattern = "mingw32|windows|darwin|linux")
     # check if error
     if(is.na(os_id)) {
-        stop(str_c("Issue with os:", os_id, "not supported.", sep = " "))
+        stop(str_c("Issue with os:", os_id, "not supported", sep = " "))
     }
     # return OS name
     os_name <- switch(
@@ -104,8 +104,8 @@ dl_latest_bin <- function(prog = "diyabc") {
     # check if file in release
     if(nrow(release) < 1) {
         stop(str_c(
-            "Issue with files available at", release_url, ".",
-            "Please contact DIYABC-RF support.",
+            "Issue with files available at", release_url, ",",
+            "please contact DIYABC-RF support.",
             sep = " "
         ))
     }
@@ -117,8 +117,8 @@ dl_latest_bin <- function(prog = "diyabc") {
     if(nrow(release) != 1) {
         stop(str_c(
             prog, "binary file is not available for", os_id, "OS at",
-            release_url, ".",
-            "Please contact DIYABC-RF support.",
+            release_url, ",",
+            "please contact DIYABC-RF support.",
             sep = ""
         ))
     }

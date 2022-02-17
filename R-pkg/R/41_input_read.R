@@ -26,14 +26,14 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file name.")
+        msg <- tagList("Invalid file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file_type
     if(file_type != "text/plain") {
         out$valid <- FALSE
-        msg <- tagList("Wrong file type.")
+        msg <- tagList("Wrong file type")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -62,7 +62,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should match the pattern", tags$code(pttrn), "."
+            "that should match the pattern", tags$code(pttrn)
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -81,7 +81,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should be empty."
+            "that should be empty"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -97,7 +97,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should match the pattern", tags$code(pttrn), "."
+            "that should match the pattern", tags$code(pttrn)
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -131,7 +131,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with format of following scenarii:", 
-            str_c(scen_id[!scen_check], collapse = ", "), "."
+            str_c(scen_id[!scen_check], collapse = ", ")
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -157,7 +157,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should be empty."
+            "that should be empty"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -173,7 +173,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should match the pattern", tags$code(pttrn), "."
+            "that should match the pattern", tags$code(pttrn)
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -197,8 +197,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with format of parameter priors at lines:", 
-            str_c(which(!prior_check) + current_line, collapse = ", "), 
-            "."
+            str_c(which(!prior_check) + current_line, collapse = ", ")
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -216,8 +215,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with format of parameter conditions at lines:", 
-                str_c(which(!cond_check) + current_line, collapse = ", "), 
-                "."
+                str_c(which(!cond_check) + current_line, collapse = ", ")
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
@@ -232,8 +230,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Missing 'DRAW UNTIL' after conditions at lines:", 
-                as.character(current_line+1), 
-                "."
+                as.character(current_line+1)
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
@@ -250,14 +247,14 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with line", tags$b(as.character(current_line)), 
-                "unnecessary 'DRAW UNTIL'."
+                "unnecessary 'DRAW UNTIL'"
             )
             out$msg <- append(out$msg, list(msg))
         } else {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with line", tags$b(as.character(current_line)), 
-                "that should be empty."
+                "that should be empty"
             )
             out$msg <- append(out$msg, list(msg))
         }
@@ -274,7 +271,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should match the pattern", tags$code(pttrn), "."
+            "that should match the pattern", tags$code(pttrn)
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -297,8 +294,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with format of locus description at lines:", 
-            str_c(which(!locus_desc_check) + current_line, collapse = ", "), 
-            "."
+            str_c(which(!locus_desc_check) + current_line, collapse = ", ")
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -312,7 +308,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should be empty."
+            "that should be empty"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -330,7 +326,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with line", tags$b(as.character(current_line)), 
-                "that should match the pattern", tags$code(pttrn), "."
+                "that should match the pattern", tags$code(pttrn)
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
@@ -356,8 +352,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with format of group prior around line ", 
-                tags$b(as.character(group_prior_check$current_line)), 
-                "."
+                tags$b(as.character(group_prior_check$current_line))
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
@@ -374,7 +369,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with line", tags$b(as.character(current_line)), 
-                "that should be empty."
+                "that should be empty"
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
@@ -391,7 +386,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
-            "that should match the pattern", tags$code(pttrn), "."
+            "that should match the pattern", tags$code(pttrn)
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -406,7 +401,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
         msg <- tagList(
             "Issue with line", tags$b(as.character(current_line)), 
             "the number of summary statistics is different",
-            "from the number given in line 2."
+            "from the number given in line 2"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -547,14 +542,14 @@ read_statobs <- function(file_name, file_type, n_stat) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file name.")
+        msg <- tagList("Invalid file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file_type
     if(file_type != "text/plain") {
         out$valid <- FALSE
-        msg <- tagList("Wrong file type.")
+        msg <- tagList("Wrong file type")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -571,7 +566,7 @@ read_statobs <- function(file_name, file_type, n_stat) {
     
     if(is.null(tmp)) {
         out$valid <- FALSE
-        msg <- tagList("Issue with statobs file format.")
+        msg <- tagList("Issue with statobs file format")
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
@@ -623,14 +618,14 @@ read_reftable <- function(file_name, file_type) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid file name.")
+        msg <- tagList("Invalid file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file_type
     if(file_type != "application/octet-stream") {
         out$valid <- FALSE
-        msg <- tagList("Wrong file type.")
+        msg <- tagList("Wrong file type")
         out$msg <- append(out$msg, list(msg))
     }
     

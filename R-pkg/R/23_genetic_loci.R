@@ -200,7 +200,7 @@ mss_group_setup_server <- function(input, output, session,
             locus_group_setup_ui(ns("microsat_grouping"))
         } else {
             helpText(
-                icon("warning"), "No Microsat locus in data."
+                icon("warning"), "No Microsat locus in data"
             )
         }
     })
@@ -223,7 +223,7 @@ mss_group_setup_server <- function(input, output, session,
             locus_group_setup_ui(ns("seq_grouping"))
         } else {
             helpText(
-                icon("warning"), "No Sequence locus in data."
+                icon("warning"), "No Sequence locus in data"
             )
         }
     })
@@ -478,7 +478,7 @@ locus_group_setup_ui <- function(id) {
         ),
         helpText(
             icon("warning"), 
-            "Configure the number of groups before assigning loci to them."
+            "Configure the number of groups before assigning loci to them"
         ),
         uiOutput(ns("locus_group")),
         hr()
@@ -850,7 +850,7 @@ group_prior_server <- function(input, output, session,
                     icon("warning"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
-                        "min should be a numeric value."
+                        "min should be a numeric value"
                     )
                 )
             )
@@ -875,7 +875,7 @@ group_prior_server <- function(input, output, session,
                     icon("warning"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
-                        "max should be a numeric value."
+                        "max should be a numeric value"
                     )
                 )
             )
@@ -905,7 +905,7 @@ group_prior_server <- function(input, output, session,
                     icon("warning"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
-                        "min should be lower than max."
+                        "min should be lower than max"
                     )
                 )
             )
@@ -968,7 +968,7 @@ group_prior_server <- function(input, output, session,
                         icon("warning"),
                         str_c(
                             "For parameter `", local$param_name, "`: ",
-                            "mean should be between max and min values."
+                            "mean should be between max and min values"
                         )
                     )
                 )
@@ -1265,7 +1265,7 @@ mss_group_prior_old_server <- function(input, output, session,
     output$microsat_group_prior <- renderUI({
         if(length(local$microsat_group) == 0) {
             helpText(
-                "No Microsat locus in data."
+                "No Microsat locus in data"
             )
         } else {
             tag_list <- lapply(
@@ -1364,7 +1364,7 @@ mss_group_prior_old_server <- function(input, output, session,
     output$seq_group_prior <- renderUI({
         if(length(local$seq_group) == 0) {
             helpText(
-                "No seq locus in data."
+                "No seq locus in data"
             )
         } else {
             tag_list <- lapply(

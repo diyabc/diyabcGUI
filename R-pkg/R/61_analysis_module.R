@@ -129,10 +129,10 @@ analysis_proj_set_server <- function(input, output, session) {
     
     # output$proj_is_ready <- renderUI({
     #     if(!(out$valid_proj & out$valid_data_file)) {
-    #         h3(icon("warning"), "Project set up is not ready.",
+    #         h3(icon("warning"), "Project set up is not ready",
     #            style="color:red;text-align:center;")
     #     } else {
-    #         h4(icon("check"), "Project set up is ok.",
+    #         h4(icon("check"), "Project set up is ok",
     #            style="text-align:center;")
     #     }
     # })
@@ -148,9 +148,9 @@ proj_type_ui <- function(id) {
     proj_type_help <- tagList(
         "You can either:",
         tags$ol(
-            tags$li("start with a new project;"),
-            tags$li("open one of your own an existing project;"),
-            tags$li("open one of the included examples.")
+            tags$li("start with a new project"),
+            tags$li("open one of your own an existing project"),
+            tags$li("open one of the included examples")
         )
     )
     # ui
@@ -251,13 +251,13 @@ proj_file_list_server <- function(input, output, session) {
         output$feedback_proj_file <- renderUI({
             # default
             tag_list <- tags$div(
-                icon("warning"), "No file was uploaded.",
+                icon("warning"), "No file was uploaded",
                 style = "color: #F89406; margin-top: -15px;"
             )
             # if example ?
             if(env$ap$proj_type == "example") {
                 tag_list <- tags$div(
-                    icon("warning"), "No example was selected.",
+                    icon("warning"), "No example was selected",
                     style = "color: #F89406; margin-top: -15px;"
                 )
             }
@@ -353,7 +353,7 @@ proj_file_list_server <- function(input, output, session) {
                                     ))
                                 ),
                                 tags$b("Note:"),
-                                "you will be able to generate them below."
+                                "you will be able to generate them below"
                             ),
                             style = "color: #F89406;"
                         )
@@ -414,15 +414,15 @@ proj_file_check_server <- function(input, output, session) {
         if(is.null(env$ap$header_check) && is.null(env$ap$reftable_check) &&
            is.null(env$ap$statobs_check)) {
             helpText(
-                "Project is not configured yet.",
+                icon("warning"), "Project is not configured yet",
                 tags$p(tags$ul(tags$li(
                     "For a new project, you will be able to configure it",
-                    "in the panel below."
+                    "in the panel below"
                 ))),
                 tags$p(tags$ul(tags$li(
                     "For an existing or an example project,",
                     "you will be able to check the configuration",
-                    "or modify it in the panel below."
+                    "or modify it in the panel below"
                 )))
             )
         } else {
@@ -444,7 +444,7 @@ proj_file_check_server <- function(input, output, session) {
                     data_file <- tagList(
                         "Expected data file:", 
                         tags$code(env$ap$header_check$data_file),
-                        "(it can be uploaded below)."
+                        "(it can be uploaded below)"
                     )
                 }
                 # output
@@ -457,9 +457,8 @@ proj_file_check_server <- function(input, output, session) {
                         tags$b(as.character(env$ap$header_check$n_scen)),
                         ifelse(
                             env$ap$header_check$n_scen > 1, 
-                            "scenarii",
-                            "scenario"),
-                        "."
+                            "scenarii", "scenario"
+                        )
                     )))
                 )
             } else {
@@ -491,7 +490,7 @@ proj_file_check_server <- function(input, output, session) {
                     tags$b(as.character(env$ap$reftable_check$n_stat)),
                     "summary statistics computed over",
                     tags$b(as.character(env$ap$reftable_check$n_rec)),
-                    "simulations in the training set."
+                    "simulations in the training set"
                 ))))
             } else {
                 tags$div(
@@ -516,8 +515,7 @@ proj_file_check_server <- function(input, output, session) {
         if(isTruthy(env$ap$statobs_check)) {
             if(isTruthy(env$ap$statobs_check$valid)) {
                 helpText(tags$p(tags$ul(tags$li(
-                    tags$code("statobsRF.txt"),
-                    "file is ok."
+                    tags$code("statobsRF.txt"), "file is ok"
                 ))))
             } else {
                 tags$div(
@@ -547,7 +545,7 @@ new_proj_ui <- function(id) {
     tagList(
         helpText(
             icon("comment"), "You will be able to upload your data file", 
-            "and configure your project below."
+            "and configure your project below"
         )
     )
 }
@@ -588,31 +586,31 @@ existing_proj_ui <- function(id) {
                 "single project-related files, including",
                 tags$code("headerRF.txt"), ", ",
                 tags$code("reftableRF.bin"), ", ",
-                tags$code("statobsRF.txt"), "and your observed data file."
+                tags$code("statobsRF.txt"), "and your observed data file"
             ),
             tags$li(
                 "You", tags$b("cannot"), "upload both a project",
                 tags$code("zip"), "file",
-                "and single project-related files, those will be ignored.",
+                "and single project-related files, those will be ignored",
                 style = "margin-top: 10px;"
             ),
             tags$li(
                 "When uploading", tags$b("single project-related files"),
                 "you", tags$b("should"), "upload all required files",
                 "at the same time (use", tags$code("CTRL+click"),
-                "to select multiple files in the file chooser window).",
+                "to select multiple files in the file chooser window)",
                 style = "margin-top: 10px;"
             ),
             tags$li(
                 "If you", tags$b("re-upload"), "a file or a group of files,",
                 "it will", tags$b("delete"), "and", tags$b("replace"),
-                "any previous upload.",
+                "any previous upload",
                 style = "margin-top: 10px;"
             ),
             tags$li(
                 "If some project files are missing or have formating issues",
                 "you will be able to (re)configure",
-                "the corresponding settings in the next panel.",
+                "the corresponding settings in the next panel",
                 style = "margin-top: 10px;"
             )
         )
@@ -625,7 +623,7 @@ existing_proj_ui <- function(id) {
                 content = as.character(proj_file_help)
             ),
         helpText(
-            "Use", tags$code("CTRL+click"), "to select more than one file."
+            "Use", tags$code("CTRL+click"), "to select more than one file"
         ),
         fileInput(
             ns("file_input"),
@@ -660,7 +658,7 @@ existing_proj_server <- function(input, output, session) {
         
         # feedback on missing file
         feedbackWarning("file_input", !isTruthy(input$file_input),
-                        "Missing file(s).")
+                        "Missing file(s)")
     })
     
     # reset file upload when another mode is chosen
@@ -696,7 +694,7 @@ existing_proj_server <- function(input, output, session) {
         # feedback
         output$feedback_existing <- renderUI({
             if(is.null(input_check) || !input_check$valid) {
-                msg <- "Issue(s) with uploaded file(s)."
+                msg <- "Issue(s) with uploaded file(s)"
                 feedbackWarning(
                     "file_input", is.null(input_check) || !input_check$valid,
                     msg
@@ -897,7 +895,7 @@ data_file_server <- function(input, output, session) {
             # output
             helpText(
                 icon("comment"),
-                "Data file was already provided."
+                "Data file was already provided"
             )
         } else {
             input_data_file_ui(ns("input_data_file"))
@@ -947,7 +945,7 @@ input_data_file_server <- function(input, output, session) {
     observe({
         # feedback on missing file
         feedbackWarning("data_file", !local$upload,
-                        "Missing data file.")
+                        "Missing data file")
     })
     
     # reset file upload when another mode is chosen
@@ -999,7 +997,7 @@ input_data_file_server <- function(input, output, session) {
                         icon("warning"), 
                         "Provided data file name does not match",
                         "expected data file name from", 
-                        tags$code(env$ap$header_check$header_file), "file.",
+                        tags$code(env$ap$header_check$header_file), "file",
                         style = "color: #F89406;"
                     )
                 } else {
@@ -1009,7 +1007,7 @@ input_data_file_server <- function(input, output, session) {
         } else {
             tags$div(
                 icon("warning"), 
-                "Missing data file.",
+                "Missing data file",
                 style = "color: #F89406;"
             )
         }
@@ -1024,7 +1022,7 @@ check_data_ui <- function(id) {
     tagList(
         helpText(
             icon("clock"),
-            "Checking the data file may take some time."
+            "Checking the data file may take some time"
         ),
         fluidRow(
             column(
@@ -1061,7 +1059,7 @@ check_data_server <- function(input, output, session) {
         if(!isTruthy(env$ap$data_check) && !local$run) {
             tags$p(
                 tags$div(
-                    icon("warning"), "Data file was not checked.",
+                    icon("warning"), "Data file was not checked",
                     style = "color: #F89406;"
                 )
             )
@@ -1141,7 +1139,7 @@ check_data_server <- function(input, output, session) {
                 tags$div(
                     tags$p(
                         icon("warning"),
-                        "Issue with your", tags$b(tmp_data_case), "data file."
+                        "Issue with your", tags$b(tmp_data_case), "data file"
                     ),
                     style = "color: #F89406;"
                 )

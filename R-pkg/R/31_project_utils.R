@@ -67,7 +67,7 @@ proj_name_server <- function(input, output, session, tag = "ap") {
         req(local$modified || !isTruthy(input$proj_name))
         
         tags$p(tags$div(
-            icon("warning"), "Project name is missing or not validated.",
+            icon("warning"), "Project name is missing or not validated",
             style = "color: #F89406;"
         ))
     })

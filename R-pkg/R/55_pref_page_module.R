@@ -37,7 +37,7 @@ pref_page_ui <- function(id) {
             hr(),
             numericInput(
                 ns("simu_loop_size"), 
-                label = "Number of particles simulated in a single batch (loop-size).",
+                label = "Number of particles simulated in a single batch (loop-size)",
                 value = as.integer(10 * getOption("diyabcGUI")$ncore),
                 min = 10,
                 max = 10000

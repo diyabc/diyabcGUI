@@ -13,8 +13,8 @@ graph_display_ui <- function(id) {
                     helper(
                         type = "inline", 
                         content = paste0(
-                            "Check 'Image settings' box to change saved ",
-                            "image parameters.")
+                            "Check 'Image settings' box to change ",
+                            "image saving parameters")
                     ),
                 shinyjs::hidden(
                     plotOutput(
@@ -59,7 +59,7 @@ graph_display_ui <- function(id) {
                 helper(
                     type = "inline", 
                     content = paste0(
-                        "Multiplicative scaling factor.")
+                        "Multiplicative scaling factor")
                 ),
             numericInput(
                 ns("graph_width"), 
@@ -68,8 +68,7 @@ graph_display_ui <- function(id) {
             ) %>% 
                 helper(
                     type = "inline", 
-                    content = paste0(
-                        "Output figure width in 'units'.")
+                    content = paste0("Output figure width in 'units'")
                 ),
             numericInput(
                 ns("graph_height"), 
@@ -78,8 +77,7 @@ graph_display_ui <- function(id) {
             ) %>% 
                 helper(
                     type = "inline", 
-                    content = paste0(
-                        "Output figure height in 'units'.")
+                    content = paste0("Output figure height in 'units'")
                 ),
             selectInput(
                 ns("size_unit"), 
@@ -92,7 +90,7 @@ graph_display_ui <- function(id) {
                 helper(
                     type = "inline", 
                     content = paste0(
-                        "Size units.")
+                        "Size units")
                 ), 
             numericInput(
                 ns("graph_dpi"), 
@@ -101,7 +99,7 @@ graph_display_ui <- function(id) {
             ) %>% 
                 helper(
                     type = "inline", 
-                    content = "Image resolution."
+                    content = "Image resolution"
                 )
         )
     )
@@ -205,7 +203,7 @@ graph_display_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"), 
-                        paste0("Cannot save image: graph is empty.")
+                        paste0("Cannot save image: graph is empty")
                     )
                 )
             )
@@ -245,8 +243,7 @@ graph_display_server <- function(input, output, session,
                     type = "message",
                     tagList(
                         tags$p(
-                            icon("check"),
-                            paste0("Image was saved.")
+                            icon("check"), "Image was saved"
                         )
                     )
                 )

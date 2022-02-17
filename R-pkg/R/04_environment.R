@@ -256,7 +256,7 @@ debug_dp <- function() {
 list2reactiveValues <- function(named_list, tag) {
     # check
     if(length(names(named_list)) != length(named_list)) {
-        stop("'named_list' input arg should be a named list.")
+        stop("'named_list' input arg should be a named list")
     }
     # elements names
     name_vec <- names(named_list)

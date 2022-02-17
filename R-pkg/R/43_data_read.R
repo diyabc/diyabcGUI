@@ -23,14 +23,14 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid data file name.")
+        msg <- tagList("Invalid data file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file content
     if(file.info(file_name)$size == 0) {
         out$valid <- FALSE
-        msg <- tagList("Data file is empty.")
+        msg <- tagList("Data file is empty")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -38,8 +38,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     if(tools::file_ext(file_name) != "snp") {
         out$valid <- FALSE
         msg <- tagList(
-            "IndSeq SNP files should have an extension",
-            tags$code(".snp"), "."
+            "IndSeq SNP files should have an extension", tags$code(".snp")
         )
         out$msg <- append(out$msg, list(msg))
     }
@@ -62,7 +61,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     if(!str_detect(header1, pttrn)) {
         out$valid <- FALSE
         msg <- tagList(
-            "Missing", tags$b("sex ratio"), "in first line header."
+            "Missing", tags$b("sex ratio"), "in first line header"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -110,7 +109,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Formatting issue with second line header, ",
-            "impossible to read it, see manual."
+            "impossible to read it, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -165,7 +164,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Formatting issue with data, ",
-            "impossible to read the file, see manual."
+            "impossible to read the file, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -181,7 +180,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Number of loci not consistent between",
-            "file header and file content."
+            "file header and file content"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -195,7 +194,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
             tags$code("SEX"), "column should only contain",
             tags$code("F"), "for female,",
             tags$code("M"), "for male or",
-            tags$code("9"), "for missing values (see manual)."
+            tags$code("9"), "for missing values (see manual)"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -219,7 +218,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         msg <- tagList(
             tags$code("NA"), "values were found",
             "in one (or more) of the columns",
-            tags$code("IND"), tags$code("SEX"), "or", tags$code("POP"), "."
+            tags$code("IND"), tags$code("SEX"), "or", tags$code("POP")
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -233,7 +232,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             tags$code("NA"), "values were found",
-            "in one (or more) of the columns encoding the SNPs."
+            "in one (or more) of the columns encoding the SNPs"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -243,7 +242,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
     if(!is.integer(content)) {
         out$valid <- FALSE
         msg <- tagList(
-            "SNP encoding should be only contain integer values."
+            "SNP encoding should be only contain integer values"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -255,7 +254,7 @@ read_indseq_snp_data <- function(data_file, data_dir) {
         msg <- tagList(
             "SNP encoding should only be",
             tags$code("0"), tags$code("1"), tags$code("2"),
-            "or", tags$code("9"), "for missing data (see manual)."
+            "or", tags$code("9"), "for missing data (see manual)"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -451,7 +450,7 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
             error_msg, sep = " "
         )
         out$valid <- FALSE
-        msg <- tagList("Error when checking data file content.")
+        msg <- tagList("Error when checking data file content")
         out$msg <- append(out$msg, list(msg))
         pprint(err)
         return(out)
@@ -488,7 +487,7 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
                     ),
                     style = "column-count:2;"
                 ),
-                "Remove this locus (these loci) from your dataset."
+                "Remove this locus (these loci) from your dataset"
             )
             out$msg <- append(out$msg, list(msg))
         }
@@ -517,7 +516,7 @@ check_snp_indseq <- function(content, indiv_info, snp_type, locus_count,
                         )
                     )
                 ),
-                "Remove this locus (these loci) from your dataset."
+                "Remove this locus (these loci) from your dataset"
             )
             out$msg <- append(out$msg, list(msg))
         }
@@ -606,14 +605,14 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid data file name.")
+        msg <- tagList("Invalid data file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file content
     if(file.info(file_name)$size == 0) {
         out$valid <- FALSE
-        msg <- tagList("Data file is empty.")
+        msg <- tagList("Data file is empty")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -621,8 +620,7 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
     if(tools::file_ext(file_name) != "snp") {
         out$valid <- FALSE
         msg <- tagList(
-            "IndSeq SNP files should have an extension",
-            tags$code(".snp"), "."
+            "IndSeq SNP files should have an extension", tags$code(".snp")
         )
         out$msg <- append(out$msg, list(msg))
     }
@@ -645,7 +643,7 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
     if(!str_detect(header1, pttrn)) {
         out$valid <- FALSE
         msg <- tagList(
-            "Missing", tags$b("sex ratio"), "in first line header."
+            "Missing", tags$b("sex ratio"), "in first line header"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -677,7 +675,7 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Formatting issue with second line header, ",
-            "impossible to read it, see manual."
+            "impossible to read it, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -714,7 +712,7 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Formatting issue with data, ",
-            "impossible to read the file, see manual."
+            "impossible to read the file, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -766,7 +764,7 @@ read_poolseq_snp_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Missing values (i.e.", tags$code("NA"), ")",
-            "are not allowed (see manual)."
+            "are not allowed (see manual)"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -858,14 +856,14 @@ read_mss_data <- function(data_file, data_dir) {
     tmp <- check_file_name(file_name)
     if(!tmp) {
         out$valid <- FALSE
-        msg <- tagList("Invalid data file name.")
+        msg <- tagList("Invalid data file name")
         out$msg <- append(out$msg, list(msg))
     }
     
     # check file content
     if(file.info(file_name)$size == 0) {
         out$valid <- FALSE
-        msg <- tagList("Data file is empty.")
+        msg <- tagList("Data file is empty")
         out$msg <- append(out$msg, list(msg))
     }
     
@@ -873,8 +871,7 @@ read_mss_data <- function(data_file, data_dir) {
     if(tools::file_ext(file_name) != "mss") {
         out$valid <- FALSE
         msg <- tagList(
-            "IndSeq SNP files should have an extension",
-            tags$code(".mss"), "."
+            "IndSeq SNP files should have an extension", tags$code(".mss")
         )
         out$msg <- append(out$msg, list(msg))
     }
@@ -897,7 +894,7 @@ read_mss_data <- function(data_file, data_dir) {
     if(!str_detect(header1, pttrn)) {
         out$valid <- FALSE
         msg <- tagList(
-            "Missing", tags$b("sex ratio"), "in first line header."
+            "Missing", tags$b("sex ratio"), "in first line header"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -916,7 +913,7 @@ read_mss_data <- function(data_file, data_dir) {
     if(length(pop_match_ind) == 0) {
         out$valid <- FALSE
         msg <- tagList(
-            "Keyword", tags$code("POP"), "is missing, see manual."
+            "Keyword", tags$code("POP"), "is missing, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -991,7 +988,7 @@ read_mss_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Issue with locus description",
-            "each locus should have a unique name, see manual."
+            "each locus should have a unique name, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1048,7 +1045,7 @@ read_mss_data <- function(data_file, data_dir) {
     if("error" %in% class(data_content)) {
         out$valid <- FALSE
         msg <- tagList(
-            "Issue with Microsat/Sequences data file format, see manual."
+            "Issue with Microsat/Sequences data file format, see manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1079,7 +1076,7 @@ read_mss_data <- function(data_file, data_dir) {
             "you can use the following character to specify",
             "such names:",
             tags$code("A-Z"), tags$code("a-z"), tags$code("0-9"),
-            tags$code("_"), tags$code("-"), "and", tags$code(" "), "."
+            tags$code("_"), tags$code("-"), "and", tags$code(" ")
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1157,7 +1154,7 @@ read_mss_data <- function(data_file, data_dir) {
         out$valid <- FALSE
         msg <- tagList(
             "Autosomal diploid (i.e. identified by a", tags$code("A"), ")",
-            "should all be diploid loci."
+            "should all be diploid loci"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1173,7 +1170,7 @@ read_mss_data <- function(data_file, data_dir) {
             "Y-linked loci (i.e. identified by a", tags$code("Y"), ")",
             "and Mitochondrial loci", 
             "(i.e. identified by a", tags$code("M"), ")",
-            "should all be haploid loci."
+            "should all be haploid loci"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1198,7 +1195,7 @@ read_mss_data <- function(data_file, data_dir) {
                                  seq_x_locus)],
                 collapse = ", "
             )), br(),
-            "See manual."
+            "See manual"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1251,8 +1248,7 @@ read_mss_data <- function(data_file, data_dir) {
         msg <- tagList(
             "Non-missing sequence data attached to following loci",
             tags$code(str_c(which(seq_length == -100), collapse = ", ")),
-            "do not have the same length in all",
-            "individuals."
+            "do not have the same length in all individuals"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1278,7 +1274,7 @@ read_mss_data <- function(data_file, data_dir) {
             "Issue with missing data for entire population(s)",
             "regarding microsat locus:",
             tags$code(str_c(which(missing_pop), collapse = ", ")), br(),
-            "Remove this locus (these loci) from your dataset."
+            "Remove this locus (these loci) from your dataset"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)
@@ -1304,7 +1300,7 @@ read_mss_data <- function(data_file, data_dir) {
             "Issue with missing data for entire population(s)",
             "regarding sequence locus:",
             tags$code(str_c(which(missing_pop), collapse = ", ")), br(),
-            "Remove this locus (these loci) from your dataset."
+            "Remove this locus (these loci) from your dataset"
         )
         out$msg <- append(out$msg, list(msg))
         return(out)

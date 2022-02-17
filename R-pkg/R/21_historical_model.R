@@ -191,7 +191,7 @@ hist_model_server <- function(input, output, session,
 check_condition <- function(raw_scenario, parsed_scenario) {
     # FIXME
     condition <- list()
-    # condition <- c("Example of condition...", "Time should be positive.")
+    # condition <- c("Example of condition...", "Time should be positive")
     # time related condition
     time_param <- parsed_scenario$time_param
     if(!is.null(time_param) & (length(time_param) > 1)) {
@@ -264,7 +264,7 @@ parse_scenario <- function(text) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("First row with initial population effective ",
-                                "sizes is not well formatted."))
+                                "sizes is not well formatted"))
         }
         # number of populations
         npop <- length(Ne_list_0)
@@ -277,7 +277,7 @@ parse_scenario <- function(text) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("First row should specify initial population ", 
-                                "effective sizes and not define an event."))
+                                "effective sizes and not define an event"))
         } 
         # one event per remaining line
         if(any(unlist(lapply(events[-1], 
@@ -285,7 +285,7 @@ parse_scenario <- function(text) {
             valid <- FALSE
             msg_list <- append(
                 msg_list, str_c("All rows (except first one) should define a ",
-                                "single event."))
+                                "single event"))
         }
         ## parse events
         event_list <- lapply(scenario[-1], parse_event)
@@ -316,7 +316,7 @@ parse_scenario <- function(text) {
         if(nevent == 0) {
             valid <- FALSE
             msg_list <- append(
-                msg_list, str_c("No event in scenario."))
+                msg_list, str_c("No event in scenario"))
         } else {
             ## check populations
             pop_id <- unlist(lapply(event_list, 
@@ -326,9 +326,9 @@ parse_scenario <- function(text) {
                 msg_list <- append(
                     msg_list, 
                     str_c(
-                        "Number of initial population effective sizes ", "
-                    at row 1 is lower than number of populations used ", 
-                        "in scenario event description."
+                        "Number of initial population effective sizes ", 
+                        "at row 1 is lower than number of populations used ", 
+                        "in scenario event description"
                     )
                 )
             }
@@ -412,7 +412,7 @@ parse_scenario <- function(text) {
                 valid <- FALSE
                 msg_list <- c(
                     msg_list,
-                    "One or more events are duplicated."
+                    "One or more events are duplicated"
                 )
             }
             

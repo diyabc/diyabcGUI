@@ -67,7 +67,7 @@ proj_file_input <- function(file_input, proj_dir) {
     
     } else {
         msg <- tagList(
-            "No file was provided."
+            "No file was provided"
         )
         out$msg <- append(out$msg, list(msg))
         out$valid <- FALSE
@@ -105,7 +105,7 @@ proj_zip_file_input <- function(file_input) {
     if(sum(zip_file_ind) > 1) {
         msg <- tagList(
             "You provided more than", tags$b("one"), "project", 
-            tags$code("zip"), "files."
+            tags$code("zip"), "files"
         )
         out$msg <- append(out$msg, list(msg))
         out$valid <- FALSE
@@ -116,7 +116,7 @@ proj_zip_file_input <- function(file_input) {
     if(nrow(file_input) > 1) {
         msg <- tagList(
             "You provided a project", tags$code("zip"), "file",
-            tags$b("and"), "other file(s)."
+            tags$b("and"), "other file(s)"
         )
         out$msg <- append(out$msg, list(msg))
         out$valid <- FALSE
@@ -196,7 +196,7 @@ proj_zip_file_input <- function(file_input) {
         out$file_input <- head(file_input, 0)
         out$valid <- FALSE
         msg <- tagList(
-            "You provided an empty project", tags$code("zip"), "file.",
+            "You provided an empty project", tags$code("zip"), "file",
         )
         out$msg <- append(out$msg, list(msg))
     }
@@ -223,7 +223,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
     # check project directory
     if(!dir.exists(proj_dir)) {
         out$valid <- FALSE
-        msg <- tagList("Input project directory does not exist.")
+        msg <- tagList("Input project directory does not exist")
         out$msg <- append(out$msg, list(msg))
         return(out)
     }
@@ -250,7 +250,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
         )
         if(is.null(out$header_check)) {
             out$valid <- FALSE
-            msg <- tagList("Issue when checking project header file.")
+            msg <- tagList("Issue when checking project header file")
             out$msg <- append(out$msg, list(msg))
         }
     }
@@ -267,7 +267,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
         )
         if(is.null(out$reftable_check)) {
             out$valid <- FALSE
-            msg <- tagList("Issue when checking project reftable file.")
+            msg <- tagList("Issue when checking project reftable file")
             out$msg <- append(out$msg, list(msg))
         }
         
@@ -279,7 +279,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
                 msg <- tagList(
                     "Different number of scenarii configured in files",
                     tags$code(out$header_check$header_file), "and",
-                    tags$code("reftableRF.bin"), "."
+                    tags$code("reftableRF.bin")
                 )
                 out$reftable_check$msg <- append(out$msg, list(msg))
             }
@@ -290,7 +290,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
                     "Different number of parameters per scenario",
                     "configured in files",
                     tags$code(out$header_check$header_file), "and",
-                    tags$code("reftableRF.bin"), "."
+                    tags$code("reftableRF.bin")
                 )
                 out$reftable_check$msg <- append(out$msg, list(msg))
             }
@@ -300,7 +300,7 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
                     "Different number of summary statistics", 
                     "configured in files",
                     tags$code(out$header_check$header_file), "and",
-                    tags$code("reftableRF.bin"), "."
+                    tags$code("reftableRF.bin")
                 )
                 out$reftable_check$msg <- append(out$msg, list(msg))
             }
@@ -321,14 +321,14 @@ check_proj_file <- function(proj_dir, locus_type = "snp") {
             )
             if(is.null(out$statobs_check)) {
                 out$valid <- FALSE
-                msg <- tagList("Issue when checking project statobs file.")
+                msg <- tagList("Issue when checking project statobs file")
                 out$msg <- append(out$msg, list(msg))
             }
         } else {
             out$valid <- FALSE
             msg <- tagList(
                 "Impossible to check project statobs file", 
-                "because issue with reftable file.")
+                "because issue with reftable file")
             out$msg <- append(out$msg, list(msg))
         }
     }
@@ -400,7 +400,7 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                     "sequence",
                     ifelse(
                         sum(data_check$locus_mode == "S") > 1, "loci", "locus"
-                    ), "."
+                    )
                 ),
                 tags$li(
                     "Sex ratio in the dataset:", 
@@ -459,7 +459,7 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                                             filter_criterion, 
                                             "), including", 
                                             as.character(item$mono),
-                                            "monomorphic loci."
+                                            "monomorphic loci"
                                         ),
                                         tags$li(tags$b(
                                             "Number of available",
@@ -502,7 +502,7 @@ format_data_info <- function(data_check, locus_type, seq_mode) {
                     as.character(data_check$locus_count$filter), 
                     "(with MRC <", as.character(data_check$mrc), 
                     "), including", as.character(data_check$locus_count$mono),
-                    "monomorphic loci."
+                    "monomorphic loci"
                 ),
                 tags$li(
                     tags$b(

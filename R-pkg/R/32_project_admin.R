@@ -9,7 +9,7 @@ proj_admin_ui <- function(id) {
             tags$p(
                 icon("warning"),
                 "To avoid any loss of your current work,",
-                tags$b("please save your project.")
+                tags$b("please save your project")
             )
         ),
         downloadBttn(
@@ -117,7 +117,7 @@ proj_admin_server <- function(input, output, session, tag = NULL) {
                 text = str_c(
                     "When resetting the current project,",
                     "you will get a clean session and",
-                    "any ongoing work will be lost.", sep = " "
+                    "any ongoing work will be lost", sep = " "
                 )
             )
         })
