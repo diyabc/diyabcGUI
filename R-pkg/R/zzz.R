@@ -3,7 +3,7 @@
     assign("env", new.env(parent = emptyenv()), .GlobalEnv)
     
     # log file
-    env$log_file <- file.path(tempdir(), "diyabc_rf_gui.log")
+    env$log_file <- file.path(tempdir(check=TRUE), "diyabc_rf_gui.log")
     
     # set up options
     set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
