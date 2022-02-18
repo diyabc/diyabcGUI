@@ -11,13 +11,17 @@ hist_model_ui <- function(id) {
                     helper(type = "markdown", 
                            content = "hist_model_description"),
                 uiOutput(ns("scenario_input")),
-                actionButton(
-                    ns("validate"),
-                    label = "Validate",
-                    icon = icon("check"),
-                    width = '100%'
+                actionGroupButtons(
+                    inputIds = c(ns("validate"), 
+                                 ns("check")),
+                    labels = list(
+                        tags$span(icon("check"), "Validate"),
+                        tags$span(icon("check-double"), "Check")
+                    ),
+                    fullwidth = TRUE
                 ),
-                uiOutput(ns("parser_msg"))
+                uiOutput(ns("parser_msg")),
+                uiOutput(ns("validate_msg"))
             )
         ),
         column(
@@ -44,10 +48,12 @@ hist_model_server <- function(input, output, session,
     local <- reactiveValues(
         graph = NULL,
         parser_msg = NULL,
+        validate_msg = NULL,
         project_dir = NULL,
         raw_scenario = NULL,
         input_scenario = NULL,
-        scenario_id = NULL
+        scenario_id = NULL,
+        check_valid = FALSE
     )
     
     # init output reactive values
@@ -65,7 +71,9 @@ hist_model_server <- function(input, output, session,
         local$input_scenario = raw_scenario()
         local$scenario_id = scenario_id()
         local$validated <- FALSE
-        # logging("input raw scenario = ", local$input_scenario)
+        local$check_valid <- FALSE
+        
+        local$graph <- empty_graph("Check your scenario before drawing it")
     })
     
     # # debugging
@@ -90,7 +98,53 @@ hist_model_server <- function(input, output, session,
         out$validated <- FALSE
     })
     
-    # get, parse and check input scenario
+    # check scenario
+    observeEvent(input$check, {
+        # input (remove empty final line)
+        raw_scenario <- str_replace(
+            string = input$scenario, pattern = "\\n$", replacement = ""
+        )
+        # parse
+        scenario_check <- parse_scenario(raw_scenario)
+        # parser message list
+        local$parser_msg <- scenario_check$msg_list
+        # if valid
+        if(scenario_check$valid) {
+            
+            # prepare data for graph
+            data2plot <- prepare_hist_model_display(
+                scenario_check, grid_unit = 2
+            )
+            
+            # potential message
+            local$parser_msg <- append(
+                local$parser_msg,
+                data2plot$msg_list
+            )
+            
+            local$check_valid <- data2plot$valid
+            
+            # if valid
+            if(data2plot$valid) {
+                # graphical representation
+                local$graph <- display_hist_model(data2plot)
+            } else {
+                # empty graph
+                local$graph <- empty_graph(
+                    "Check your scenario before drawing it"
+                )
+            }
+            
+        } else {
+            local$check_valid <- FALSE
+            # empty graph
+            local$graph <- empty_graph(
+                "Check your scenario before drawing it"
+            )
+        }
+    })
+    
+    # validate input scenario
     observeEvent(input$validate, {
         # input (remove empty final line)
         local$raw_scenario <- str_replace(
@@ -100,8 +154,8 @@ hist_model_server <- function(input, output, session,
         out$validated <- TRUE
         # parse
         out$param <- parse_scenario(local$raw_scenario)
-        # parser message list
-        local$parser_msg <- out$param$msg_list
+        # # parser message list
+        # local$parser_msg <- out$param$msg_list
         # if valid
         if(out$param$valid) {
             
@@ -114,51 +168,71 @@ hist_model_server <- function(input, output, session,
             # check for validity
             out$valid <- out$param$valid && data2plot$valid
             
-            # potential message
-            local$parser_msg <- append(
-                local$parser_msg,
-                data2plot$msg_list
-            )
+            # # potential message
+            # local$parser_msg <- append(
+            #     local$parser_msg,
+            #     data2plot$msg_list
+            # )
             
             # if valid
             if(out$valid) {
                 # output
                 out$raw <- local$raw_scenario
-                # graphical representation
-                local$graph <- display_hist_model(data2plot)
             } else {
-                out$raw <- NULL
-                local$graph <- NULL
+                local$validate_msg <- tagList(
+                    tags$div(
+                        icon("warning"), 
+                        "Your scenario is not valid. Please check it.",
+                        style = "color: #F89406;"
+                    )
+                )
             }
             
         } else {
             out$raw <- NULL
-            local$graph <- NULL
+            local$graph <- empty_graph(
+                "Check your scenario before drawing it"
+            )
             out$cond <- NULL
             out$valid <- FALSE
             out$validated <- FALSE
+            local$validate_msg <- tagList(
+                tags$div(
+                    icon("warning"), 
+                    "Your scenario is not valid. Please check it.",
+                    style = "color: #F89406;"
+                )
+            )
         }
     })
     
     # update parser message
     output$parser_msg <- renderUI({
+        req(local$parser_msg)
+        req(isFALSE(local$check_valid))
+        tags$div(
+            h4(icon("warning"), "Issue(s) with scenario"),
+            do.call(
+                tags$ul,
+                lapply(local$parser_msg, function(item) {
+                    return(tags$li(item))
+                })
+            ),
+            style = "color: #F89406;"
+        )
+    })
+
+    # update validate message
+    output$validate_msg <- renderUI({
         req(!is.null(out$validated))
         if(!out$validated) {
             tags$div(
                 icon("warning"), "Scenario is not validated",
                 style = "color: #F89406;"
             )
-        } else if(isTruthy(local$parser_msg) & length(local$parser_msg) > 0) {
-            tags$div(
-                h4(icon("warning"), "Issue(s) with scenario"),
-                do.call(
-                    tags$ul,
-                    lapply(local$parser_msg, function(item) {
-                        return(tags$li(item))
-                    })
-                ),
-                style = "color: #F89406;"
-            )
+        } else if(isTruthy(local$validate_msg) & 
+                  length(local$validate_msg) > 0) {
+            local$validate_msg
         } else {
             NULL
         }

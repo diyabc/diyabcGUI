@@ -693,3 +693,15 @@ display_hist_model <- function(data2plot) {
     
     return(g1)
 }
+
+#' Empty graph with a given text in the middle
+#' @keywords internal
+#' @author Ghislain Durif
+#' @importFrom ggplot2 xlim ylim annotate theme_void
+empty_graph <- function(txt) {
+    g1 <- ggplot(data.frame()) + 
+        xlim(c(0,10)) + ylim(c(0,10)) + 
+        annotate("text", label=txt, x=5, y=5, size = 5) +
+        theme_void()
+    return(g1)
+}

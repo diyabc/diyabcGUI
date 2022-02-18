@@ -16,10 +16,8 @@ graph_display_ui <- function(id) {
                             "Check 'Image settings' box to change ",
                             "image saving parameters")
                     ),
-                shinyjs::hidden(
-                    plotOutput(
-                        ns("display"), height = "370px"
-                    )
+                plotOutput(
+                    ns("display"), height = "370px"
                 ),
                 actionGroupButtons(
                     inputIds = c(ns("draw"), 
@@ -35,8 +33,7 @@ graph_display_ui <- function(id) {
         box(
             title = "Image settings",
             width = 6,
-            collapsible = TRUE,
-            collapsed = TRUE,
+            collapsible = TRUE, collapsed = FALSE,
             textInput(
                 ns("filename"),
                 value = "historical_scenario.jpeg",
@@ -120,7 +117,7 @@ graph_display_server <- function(input, output, session,
     ns <- session$ns
     # init local values
     local <- reactiveValues(
-        show_graph = FALSE,
+        show_graph = 0,
         check_filename = TRUE,
         filename = NULL,
         graph = NULL,
@@ -134,7 +131,7 @@ graph_display_server <- function(input, output, session,
         local$scenario_id = as.character(scenario_id())
     })
     # update input file name if scenario id is given
-    observeEvent(local$scenario_id, {
+    observeEvent(c(local$graph, local$scenario_id), {
         req(local$scenario_id)
         req(is.character(local$scenario_id))
         req(str_length(local$scenario_id) > 0)
@@ -150,7 +147,7 @@ graph_display_server <- function(input, output, session,
     # })
     # show/hide plot
     observeEvent(input$draw, {
-        local$show_graph <- (1 - local$show_graph == 1)
+        local$show_graph <- (1 - local$show_graph)
     })
     observeEvent(local$show_graph, {
         if(local$show_graph) {
@@ -182,9 +179,9 @@ graph_display_server <- function(input, output, session,
                 tagList(
                     tags$p(
                         icon("warning"), 
-                        paste0("Image filename is not ok, possible extensions are: ", 
-                               "'eps', 'ps', 'tex', 'pdf', 'jpeg', 'tiff', 'png', ", 
-                               "'bmp', 'svg'")
+                        "Image filename is not ok, possible extensions are: ", 
+                        "'eps', 'ps', 'tex', 'pdf', 'jpeg', 'tiff', 'png', ", 
+                        "'bmp', 'svg'"
                     )
                 )
             )
