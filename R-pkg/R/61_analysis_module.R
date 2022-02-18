@@ -1,7 +1,7 @@
-#' Analysis module ui
+#' Analysis setup module ui
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_module_ui <- function(id) {
+analysis_setup_module_ui <- function(id) {
     ns <- NS(id)
     tagList(
         tags$style(HTML(".box-header{text-align: center;}")),
@@ -9,51 +9,137 @@ analysis_module_ui <- function(id) {
             box(
                 title = tags$b("Project settings"),
                 width = 12,
-                status = "primary", solidHeader = FALSE,
+                status = "primary", solidHeader = TRUE,
                 collapsible = FALSE,
                 analysis_proj_set_ui(ns("proj_set"))
             ),
             box(
-                title = "Training set simulations",
+                title = "Navigation",
                 width = 12,
-                status = "info", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = TRUE,
-                train_set_simu_ui(ns("train_set"))
-            ),
-            box(
-                title = "Random Forest Analyses",
-                width = 12,
-                status = "warning", solidHeader = TRUE,
-                collapsible = TRUE, collapsed = TRUE,
-                rf_module_ui(ns("rf"))
-            ),
-            box(
-                title = tags$b("Project administration"),
-                width = 12,
-                status = "danger", solidHeader = FALSE,
-                collapsible = FALSE, collapsed = FALSE,
-                proj_admin_ui(ns("proj_admin"))
+                analysis_tab_selector_ui(ns("tab_selector"))
             )
         )
     )
 }
 
-#' Analysis module server
+#' Analysis setup module server
 #' @keywords internal
 #' @author Ghislain Durif
-analysis_module_server <- function(input, output, session) {
+analysis_setup_module_server <- function(input, output, session, parent) {
     
     ## project setting
     proj_set <- callModule(analysis_proj_set_server, "proj_set")
     
+    ## tab selector
+    callModule(analysis_tab_selector_server, "tab_selector", parent = parent)
+}
+
+#' Analysis training set simu module ui
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_ts_module_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        tags$style(HTML(".box-header{text-align: center;}")),
+        fluidRow(
+            box(
+                title = "Training set simulations",
+                width = 12,
+                status = "info", solidHeader = TRUE,
+                collapsible = FALSE, collapsed = FALSE,
+                train_set_simu_ui(ns("train_set"))
+            ),
+            box(
+                title = "Navigation",
+                width = 12,
+                analysis_tab_selector_ui(ns("tab_selector"))
+            )
+        )
+    )
+}
+
+#' Analysis training set simu module server
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_ts_module_server <- function(input, output, session, parent) {
+    
     ## Training set sub-module
     callModule(train_set_simu_server, "train_set")
+    
+    ## tab selector
+    callModule(analysis_tab_selector_server, "tab_selector", parent = parent)
+}
+
+#' Analysis random forest analysis module ui
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_rf_module_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        tags$style(HTML(".box-header{text-align: center;}")),
+        fluidRow(
+            box(
+                title = "Random Forest Analyses",
+                width = 12,
+                status = "warning", solidHeader = TRUE,
+                collapsible = FALSE, collapsed = FALSE,
+                rf_module_ui(ns("rf"))
+            ),
+            box(
+                title = "Navigation",
+                width = 12,
+                analysis_tab_selector_ui(ns("tab_selector"))
+            )
+        )
+    )
+}
+
+#' Analysis random forest analysis module server
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_rf_module_server <- function(input, output, session, parent) {
     
     ## random forest sub-module
     callModule(rf_module_server, "rf")
     
-    ## action
+    ## tab selector
+    callModule(analysis_tab_selector_server, "tab_selector", parent = parent)
+}
+
+#' Analysis project administration module ui
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_admin_module_ui <- function(id) {
+    ns <- NS(id)
+    tagList(
+        tags$style(HTML(".box-header{text-align: center;}")),
+        fluidRow(
+            box(
+                title = tags$b("Project administration"),
+                width = 12,
+                status = "danger", solidHeader = TRUE,
+                collapsible = FALSE, collapsed = FALSE,
+                proj_admin_ui(ns("proj_admin"))
+            ),
+            box(
+                title = "Navigation",
+                width = 12,
+                analysis_tab_selector_ui(ns("tab_selector"))
+            )
+        )
+    )
+}
+
+#' Analysis project administration module server
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_admin_module_server <- function(input, output, session, parent) {
+    
+    ## admin
     proj_admin <- callModule(proj_admin_server, "proj_admin", tag = "ap")
+    
+    ## tab selector
+    callModule(analysis_tab_selector_server, "tab_selector", parent = parent)
     
     ## reset
     observeEvent(proj_admin$reset, {
@@ -66,6 +152,53 @@ analysis_module_server <- function(input, output, session) {
         isolate(tryCatch(function() {
             if(isTruthy(env$ap$proj_dir)) fs::dir_delete(env$ap$proj_dir)
         }))
+    })
+}
+
+#' Analysis project tab selector ui
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_tab_selector_ui <- function(id) {
+    ns <- NS(id)
+    fluidPage(
+        actionGroupButtons(
+            inputIds = c(
+                ns("setup_link"),
+                ns("ts_link"),
+                ns("rf_link"),
+                ns("admin_link")
+            ),
+            labels = c(
+                "Project settings", 
+                "Training set simulations",
+                "Randon forest analysis",
+                "Project admininstration"
+            ),
+            fullwidth = TRUE
+        )
+    )
+}
+
+#' Analysis project tab selector server
+#' @keywords internal
+#' @author Ghislain Durif
+analysis_tab_selector_server <- function(input, output, session, parent) {
+    
+    observeEvent(input$setup_link, {
+        log_debug("go to 'project settings' tab")
+        updateTabItems(parent, "app_menu", selected = "analysis_setup_tab")
+    })
+    observeEvent(input$ts_link, {
+        log_debug("go to 'training set simulation' tab")
+        updateTabItems(parent, "app_menu", selected = "analysis_ts_tab")
+    })
+    observeEvent(input$rf_link, {
+        log_debug("go to 'random forest' tab")
+        updateTabItems(parent, "app_menu", selected = "analysis_rf_tab")
+    })
+    observeEvent(input$admin_link, {
+        log_debug("go to 'project admin' tab")
+        updateTabItems(parent, "app_menu", selected = "analysis_admin_tab")
     })
 }
 

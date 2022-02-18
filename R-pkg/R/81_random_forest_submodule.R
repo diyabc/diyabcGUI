@@ -47,17 +47,20 @@ rf_module_server <- function(input, output, session) {
             tagList(tags$div(
                 h4(
                     icon("warning"), 
-                    "Project set up is not ready.",
-                    "You must generate a training data set with the", 
-                    tags$b("Training set simulations"), "sub-module above,",
-                    "or upload training set simulations-related files",
-                    "(including",
-                    do.call(
-                        tagList,
-                        lapply(required_files, tags$code)
-                    ),
-                    ") from an existing project."
+                    icon("warning"), 
+                    "Project set up is not ready."
                 ),
+                "You must generate a training data set with the", 
+                tags$b("Training set simulations"), "sub-module",
+                "(see the dedicated tab),",
+                "or upload training set simulations-related files",
+                "(including",
+                do.call(
+                    tagList,
+                    lapply(required_files, tags$code)
+                ),
+                ") from an existing project",
+                "(see the 'project settings' tab).",
                 style = "color: #F89406;"
             ))
         }
@@ -738,14 +741,16 @@ rf_control_server <- function(input, output, session) {
                 icon("warning"), 
                 "Project set up is not ready.",
                 "You must generate a training data set with the", 
-                tags$b("Training set simulations"), "sub-module above,",
+                tags$b("Training set simulations"), "sub-module",
+                "(see the dedicated tab ),",
                 "or upload training set simulations-related files",
                 "(including",
                 do.call(
                     tagList,
                     lapply(required_files, tags$code)
                 ),
-                ") from an existing project.",
+                ") from an existing project",
+                "(see the 'project settings' tab).",
                 style = "color: #F89406;"
             ))
             

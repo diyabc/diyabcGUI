@@ -113,7 +113,7 @@ train_set_simu_server <- function(input, output, session) {
                 tagList(tags$div(
                     h4(
                         icon("warning"), "Project setup is not valid,",
-                        "check the", tags$b("Project settings"), "above"
+                        "check the 'project settings' tab."
                     ),
                     style = "color: #F89406;"
                 ))

@@ -7,6 +7,7 @@ app_sidebar <- function() {
     dashboardSidebar(
         sidebarMenu(
             id = "app_menu",
+            style = "position:fixed;width:inherit;",
             menuItem(
                 "Home", 
                 tabName = "home_tab", 
@@ -44,8 +45,20 @@ app_body <- function() {
                 home_page_ui("home_page")
             ),
             tabItem(
-                tabName = "analysis_tab",
-                analysis_module_ui("analysis_module")
+                tabName = "analysis_setup_tab",
+                analysis_setup_module_ui("analysis_setup_module")
+            ),
+            tabItem(
+                tabName = "analysis_ts_tab",
+                analysis_ts_module_ui("analysis_ts_module")
+            ),
+            tabItem(
+                tabName = "analysis_rf_tab",
+                analysis_rf_module_ui("analysis_rf_module")
+            ),
+            tabItem(
+                tabName = "analysis_admin_tab",
+                analysis_admin_module_ui("analysis_admin_module")
             ),
             tabItem(
                 tabName = "datagen_tab",
@@ -73,7 +86,7 @@ app_body <- function() {
 #' App simplified dashboard server function
 #' @keywords internal
 #' @author Ghislain Durif
-#' @importFrom shinydashboard renderMenu
+#' @importFrom shinydashboard sidebarMenu renderMenu menuItem menuSubItem
 index_server <- function(input, output, session) {
     
     # home page
@@ -119,14 +132,31 @@ index_server <- function(input, output, session) {
                 id = "dynamic_tabs",
                 menuItem(
                     "DIYABC-RF main pipeline", 
-                    tabName = "analysis_tab", 
-                    icon = icon("flask")
+                    # tabName = "analysis_tab", 
+                    icon = icon("flask"),
+                    startExpanded = TRUE,
+                    menuSubItem(
+                        "Project settings",
+                        tabName = "analysis_setup_tab"
+                    ),
+                    menuSubItem(
+                        "Training set simulation",
+                        tabName = "analysis_ts_tab"
+                    ),
+                    menuSubItem(
+                        "Random Forest Analysis",
+                        tabName = "analysis_rf_tab"
+                    ),
+                    menuSubItem(
+                        "Project administration",
+                        tabName = "analysis_admin_tab"
+                    )
                 )
             )
         })
         
         # update tab item
-        updateTabItems(session, "app_menu", selected = "analysis_tab")
+        updateTabItems(session, "app_menu", selected = "analysis_setup_tab")
         
         # reset env
         reset_diyabcrf_env()
@@ -166,7 +196,18 @@ index_server <- function(input, output, session) {
     })
     
     ## analysis page
-    analysis_module <- callModule(analysis_module_server, "analysis_module")
+    analysis_setup_module <- callModule(
+        analysis_setup_module_server, "analysis_setup_module", parent = session
+    )
+    analysis_ts_module <- callModule(
+        analysis_ts_module_server, "analysis_ts_module", parent = session
+    )
+    analysis_rf_module <- callModule(
+        analysis_rf_module_server, "analysis_rf_module", parent = session
+    )
+    analysis_admin_module <- callModule(
+        analysis_admin_module_server, "analysis_admin_module", parent = session
+    )
     
     ## datagen page
     # datagen_module <- callModule(datagen_module_server, "datagen_module")
