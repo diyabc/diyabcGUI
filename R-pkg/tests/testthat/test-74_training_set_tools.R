@@ -229,6 +229,12 @@ test_that("diyabc_run_trainset_simu and cleanup_diyabc_run", {
 test_that("check_cond", {
     
     # ok
+    cond_list <- c("t2>t1")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
+    expect_true(res$valid)
+    
+    # ok
     cond_list <- c("t1>t2", "t3<t4")
     scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2",
                    "N N N\n0 sample 1\n0 sample 2\nt3 split 3 1 2 ra\nt4 merge 1 2")
@@ -241,6 +247,12 @@ test_that("check_cond", {
                    "N N N\n0 sample 1\n0 sample 2\nt1 split 3 1 2 ra\nt4 merge 1 2")
     res <- check_cond(cond_list, scen_list)
     expect_true(res$valid)
+    
+    # nok: identical parameters
+    cond_list <- c("t1>t1")
+    scen_list <- c("N N N\n0 sample 1\n0 sample 2\nt1 merge 2 3\nt2 merge 1 2")
+    res <- check_cond(cond_list, scen_list)
+    expect_false(res$valid)
     
     # nok: parameter mixing
     cond_list <- c("t1>t2", "t2<t4")

@@ -471,6 +471,29 @@ check_cond <- function(cond_list, scen_list) {
             out$msg <- append(out$msg, list(msg))
             return(out)
         }
+        # check for conditions using the same parameter two times
+        param_duplicate <- unlist(lapply(
+            input_param, 
+            function(item) return(length(unique(item)))
+        ))
+        
+        if(any(param_duplicate != 2)) {
+            out$valid <- FALSE
+            msg <- tagList(
+                "Issue with parameter(s) in the following condition(s)",
+                "(same parameter on left and right side of condition):",
+                do.call(
+                    tags$ul,
+                    lapply(
+                        cond_list[param_duplicate != 2], 
+                        function(item) tags$li(tags$code(item))
+                    )
+                )
+            )
+            out$msg <- append(out$msg, list(msg))
+            return(out)
+        }
+        
         # parse scenario list to get details about parameters
         scen_check <- lapply(
             scen_list, 
@@ -487,25 +510,25 @@ check_cond <- function(cond_list, scen_list) {
             return(out)
         }
         # check for parameter validity
-        param_check <- Reduce("rbind", lapply(
+        param_valid <- Reduce("rbind", lapply(
             input_param, 
             function(item) {
                 tmp_check <- unlist(lapply(
                     scen_check, 
                     function(subitem) {
-                        return(c(
+                        return(sum(c(
                             (length(subitem$Ne_param) > 0) && 
                                 all(item %in% subitem$Ne_param),
                             (length(subitem$time_param) > 0) && 
                                 all(item %in% subitem$time_param),
                             (length(subitem$rate_param) > 0) && 
                                 all(item %in% subitem$rate_param)
-                        ))
+                        ))==1)
                     }
                 ))
+                return(sum(tmp_check)>0)
             }
         ))
-        param_valid <- (apply(param_check, 1, sum) > 0)
         if(!all(param_valid)) {
             out$valid <- FALSE
             msg <- tagList(
