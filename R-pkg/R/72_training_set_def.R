@@ -268,7 +268,16 @@ hist_model_panel_server <- function(input, output, session) {
                 ),
                 do.call(
                     flowLayout, 
-                    lapply(local$scenario_list, tags$pre)
+                    lapply(
+                        1:length(local$scenario_list), 
+                        function(ind) {
+                            item <- local$scenario_list[[ind]]
+                            tagList(
+                                str_c("Scenario ", ind),
+                                tags$pre(item)
+                            )
+                        }
+                    )
                 )
             )
         } else {

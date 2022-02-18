@@ -315,8 +315,14 @@ show_existing_proj_server <- function(input, output, session) {
             do.call(
                 flowLayout,
                 lapply(
-                    env$ap$header_check$scenario_list, 
-                    function(item) tags$pre(item)
+                    1:length(env$ap$header_check$scenario_list),
+                    function(ind) {
+                        item <- env$ap$header_check$scenario_list[[ind]]
+                        tagList(
+                            str_c("Scenario ", ind),
+                            tags$pre(item)
+                        )
+                    }
                 )
             )
         )
