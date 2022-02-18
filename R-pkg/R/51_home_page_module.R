@@ -35,7 +35,7 @@ home_page_ui <- function(id) {
                 tags$div(
                     tags$p(
                         "Direct use of DIYABC-RF simulation engine",
-                        "to generate pseudo-oberved datasets"
+                        "to generate pseudo-observed datasets"
                     ) %>% 
                         helper(type = "markdown", 
                                content = "data_simulation")
