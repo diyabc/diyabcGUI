@@ -206,7 +206,7 @@ reset_sink <- function() {
 #' @keywords internal
 #' @author Ghislain Durif
 logging <- function(...) {
-    if(getOption("diyabcGUI")$verbose)
+    if(get_option("verbose"))
         print(str_c(..., sep = " ", collapse = " "))
 }
 
@@ -262,6 +262,7 @@ set_diyabcGUI_options <- function(
     diyabcGUI_options$log_file <- as.character(log_file)
     diyabcGUI_options$simu_loop_size <- as.integer(simu_loop_size)
     diyabcGUI_options$image_ext <- as.character(image_ext)
+    diyabcGUI_options$verbose <- as.logical(verbose)
     # set up package options
     options("diyabcGUI" = diyabcGUI_options)
 }
