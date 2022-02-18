@@ -82,11 +82,11 @@ proj_admin_server <- function(input, output, session, tag = NULL) {
         })
         # app directory
         output$app_dir <- renderUI({
-            tags$code(dirname(env$log_file))
+            tags$code(dirname(log_file()))
         })
         # app log file
         output$log_file <- renderUI({
-            tags$code(env$log_file)
+            tags$code(log_file())
         })
         
         # save

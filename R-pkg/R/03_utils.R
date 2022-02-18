@@ -241,22 +241,28 @@ disable_logging <- function() {
 #' @author Ghislain Durif
 #' @param ncore integer, number of cores to used for parallel computations, 
 #' default is half available cores.
+#' @param log_file character string, filename where to write log messages.
 #' @param simu_loop_size integer, batch size for simulation loop, default 
 #' is 100.
 #' @param image_ext string, possible ggplot extensions among `"eps"`, `"ps"`, 
 #' `"tex"`, `"pdf"`, `"jpeg"`, `"tiff"`, `"png"`, `"bmp"`, `"svg"`
 #' @param verbose boolean, enable/disable logging verbosity, default is FALSE.
 #' @export
-set_diyabcGUI_options <- function(ncore = parallel::detectCores()/2,
-                                  simu_loop_size = 100, 
-                                  image_ext = "png",
-                                  verbose = TRUE) {
-    # cast
-    ncore <- as.integer(ncore)
-    simu_loop_size <- as.integer(simu_loop_size)
-    image_ext <- as.character(image_ext)
+set_diyabcGUI_options <- function(
+    ncore = parallel::detectCores() - 2,
+    log_file = file.path(tempdir(check=TRUE), "diyabc_rf_gui.log"),
+    simu_loop_size = 5, 
+    image_ext = "png",
+    verbose = TRUE
+) {
+    # existing diyabcGUI options ?
+    diyabcGUI_options <- getOption("diyabcGUI")
+    # setup options
+    diyabcGUI_options$ncore <- as.integer(ncore)
+    diyabcGUI_options$log_file <- as.character(log_file)
+    diyabcGUI_options$simu_loop_size <- as.integer(simu_loop_size)
+    diyabcGUI_options$image_ext <- as.character(image_ext)
     # set up package options
-    diyabcGUI_options <- lst(ncore, simu_loop_size, image_ext, verbose)
     options("diyabcGUI" = diyabcGUI_options)
 }
 

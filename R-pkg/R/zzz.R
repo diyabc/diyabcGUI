@@ -2,13 +2,12 @@
     # setup package global environment
     assign("env", new.env(parent = emptyenv()), .GlobalEnv)
     
-    # log file
-    env$log_file <- file.path(tempdir(check=TRUE), "diyabc_rf_gui.log")
-    enable_logging(env$log_file)
-    logging_level("trace")
+    # setup options
+    set_diyabcGUI_options()
     
-    # set up options
-    set_diyabcGUI_options(ncore = as.integer(0.75 * parallel::detectCores()))
+    # log file
+    enable_logging()
+    logging_level("trace")
     
     # init environment
     init_diyabc_env()

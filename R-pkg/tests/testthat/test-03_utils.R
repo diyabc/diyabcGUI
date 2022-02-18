@@ -79,12 +79,9 @@ test_that("set_diyabcGUI_options", {
     # option state
     diyabcGUI_options <- getOption("diyabcGUI")
     # check
-    expect_false(is.null(diyabcGUI_options))
-    expect_false(is.null(diyabcGUI_options$ncore))
-    expect_false(is.null(diyabcGUI_options$simu_loop_size))
-    expect_false(is.null(diyabcGUI_options$image_ext))
-    expect_false(is.null(diyabcGUI_options$verbose))
     expect_true(is.integer(diyabcGUI_options$ncore))
+    expect_true(is.character(diyabcGUI_options$log_file))
+    expect_true(dir.exists(dirname(diyabcGUI_options$log_file)))
     expect_true(is.integer(diyabcGUI_options$simu_loop_size))
     expect_true(is.character(diyabcGUI_options$image_ext))
     expect_true(
@@ -100,6 +97,7 @@ test_that("get_option", {
     # test
     expect_error(get_option("option"))
     expect_true(is.integer(get_option("ncore")))
+    expect_true(is.character(get_option("log_file")))
     expect_true(is.integer(get_option("simu_loop_size")))
     expect_true(is.character(get_option("image_ext")))
     expect_true(is.logical(get_option("verbose")))
