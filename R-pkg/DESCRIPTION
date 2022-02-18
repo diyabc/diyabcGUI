@@ -1,8 +1,8 @@
 Package: diyabcGUI
 Type: Package
 Title: Graphical User Interface for DYIABC-RF software
-Version: 1.1.1
-Date: 2021-11-26
+Version: 1.1.2
+Date: 2022-02-18
 Authors@R: c(
     person(
         "Ghislain", "Durif", comment="diyabcGUI main developer",
