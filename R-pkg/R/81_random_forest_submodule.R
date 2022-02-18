@@ -629,10 +629,10 @@ rf_parameter_server <- function(input, output, session) {
         req(local$max_n_rec)
         
         helpText(
-            icon("info-circle"), "Here", tags$code("0"),
-            "(default) means using all simulated data available",
-            "for the selected scenario/scenarii,", "i.e.", 
-            tags$b(as.character(local$max_n_rec)), "simulations."
+            icon("info-circle"), tags$code("0"),
+            "means the total number of simulated datasets",
+            "in the training set:", 
+            tags$b(as.character(local$max_n_rec))
         )
     })
     
