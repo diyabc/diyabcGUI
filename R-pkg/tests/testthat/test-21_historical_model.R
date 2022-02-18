@@ -492,6 +492,62 @@ test_that("clean_param_prior", {
     scen_list <- scen_list[1:2]
     res <- clean_param_prior(prior_list, scen_list)
     expect_equal(res, default_param_prior(scen_list))
+    
+    # successive call to add scenario
+    scen_list <- c(
+        str_c(
+            "N1 N2", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "t sample 1", 
+            "t2 merge 1 2", 
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t sample 1",
+            "t21 split 3 1 2 ra",
+            "t2 merge 1 2", 
+            "t3 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3 Nbc3",
+            "0 sample 1",
+            "50 sample 2",
+            "0 sample 3",
+            "t3-DB3 VarNe 3 NF3",
+            "t3 merge 4 3",
+            "t3lb merge 1 4",
+            "t2 merge 1 2",
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3",
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t3 merge 2 3",
+            "t3 varNe 2 N2+N3",
+            "t2 merge 1 2",
+            "t2 varNe 1 N1+N2",
+            sep = "\n"
+        )
+    )
+    
+    # 1st call
+    prior_list <- default_param_prior(scen_list[1:2])
+    res <- clean_param_prior(prior_list, scen_list[1:2])
+    expect_equal(res, prior_list)
+    
+    # 2nd call
+    prior_list <- default_param_prior(scen_list)
+    res <- clean_param_prior(res, scen_list)
+    expect_equal(length(res), length(prior_list))
+    expect_true(all(res %in% prior_list))
 })
 
 test_that("get_param_name", {

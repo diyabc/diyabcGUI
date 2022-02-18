@@ -96,6 +96,10 @@ hist_model_server <- function(input, output, session,
     # invalidate if scenario is edited
     observeEvent(input$scenario, {
         out$validated <- FALSE
+        local$validate_msg <- tags$p(tags$div(
+            icon("warning"), "Scenario is not validated",
+            style = "color: #F89406;"
+        ))
     })
     
     # check scenario
@@ -159,8 +163,8 @@ hist_model_server <- function(input, output, session,
         out$validated <- TRUE
         # expected number of populations
         expected_npop <- NULL
-        if(isTruthy(env$ap$data_check$npop)) {
-            expected_npop <- env$ap$data_check$npop
+        if(isTruthy(env$ap$data_check$n_pop)) {
+            expected_npop <- env$ap$data_check$n_pop
         }
         # parse
         out$param <- parse_scenario(local$raw_scenario, expected_npop)
@@ -188,14 +192,13 @@ hist_model_server <- function(input, output, session,
             if(out$valid) {
                 # output
                 out$raw <- local$raw_scenario
+                local$validate_msg <- NULL
             } else {
-                local$validate_msg <- tagList(
-                    tags$div(
-                        icon("warning"), 
-                        "Your scenario is not valid. Please check it.",
-                        style = "color: #F89406;"
-                    )
-                )
+                local$validate_msg <- tags$p(tags$div(
+                    icon("warning"), 
+                    "Your scenario is not valid. Please check it.",
+                    style = "color: #F89406;"
+                ))
             }
             
         } else {
@@ -206,19 +209,18 @@ hist_model_server <- function(input, output, session,
             out$cond <- NULL
             out$valid <- FALSE
             out$validated <- FALSE
-            local$validate_msg <- tagList(
-                tags$div(
-                    icon("warning"), 
-                    "Your scenario is not valid. Please check it.",
-                    style = "color: #F89406;"
-                )
-            )
+            local$validate_msg <- tags$p(tags$div(
+                icon("warning"), 
+                "Your scenario is not valid. Please check it.",
+                style = "color: #F89406;"
+            ))
         }
     })
     
     # update parser message
     output$parser_msg <- renderUI({
-        req(local$parser_msg)
+        req(length(local$parser_msg)>0)
+        pprint(local$parser_msg)
         req(isFALSE(local$check_valid))
         tags$div(
             h4(icon("warning"), "Issue(s) with scenario"),
@@ -234,18 +236,8 @@ hist_model_server <- function(input, output, session,
 
     # update validate message
     output$validate_msg <- renderUI({
-        req(!is.null(out$validated))
-        if(!out$validated) {
-            tags$div(
-                icon("warning"), "Scenario is not validated",
-                style = "color: #F89406;"
-            )
-        } else if(isTruthy(local$validate_msg) & 
-                  length(local$validate_msg) > 0) {
-            local$validate_msg
-        } else {
-            NULL
-        }
+        req(local$validate_msg)
+        local$validate_msg
     })
     
     # # debugging
@@ -826,6 +818,9 @@ clean_param_prior <- function(prior_list, scen_list) {
         return(character(0))
     }
     
+    # default prior list
+    default_prior_list <- default_param_prior(scen_list)
+    
     # no prior ?
     if(length(prior_list) == 0) {
         return(default_param_prior(scen_list))
@@ -834,7 +829,7 @@ clean_param_prior <- function(prior_list, scen_list) {
     # parse each scenario in the list
     parsed_scen_list <- lapply(scen_list, parse_scenario)
     
-    # table of parameters
+    # list of parameters in scenario
     param_list <- unname(unique(unlist(lapply(
         1:length(parsed_scen_list), 
         function(ind) {
@@ -847,10 +842,20 @@ clean_param_prior <- function(prior_list, scen_list) {
     # any parameter ?
     if(length(param_list) > 0) {
         # current parameters in prior list
-        param_name <- unname(unlist(lapply(prior_list, get_param_name)))
+        current_param_name <- unname(unlist(lapply(prior_list, get_param_name)))
+        
+        # parameters in default prior list
+        default_param_name <- 
+            unname(unlist(lapply(default_prior_list, get_param_name)))
         
         # remove from prior list element that are not in the list of parameters
-        prior_list <- prior_list[which(param_name %in% param_list)]
+        prior_list <- prior_list[which(current_param_name %in% param_list)]
+        
+        # add missing element in prior list
+        missing_param <- which(!default_param_name %in% current_param_name)
+        if(length(missing_param) > 0) {
+            prior_list <- c(prior_list, default_prior_list[missing_param])
+        }
         
         # output
         return(prior_list)
