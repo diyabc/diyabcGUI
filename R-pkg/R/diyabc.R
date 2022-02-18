@@ -11,9 +11,6 @@
 #' }
 #' @export
 diyabc <- function() {
-    
-    enable_logging(env$log_file)
-    
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI")
     )
@@ -32,7 +29,6 @@ diyabc <- function() {
 #' }
 #' @export
 browser_diyabc <- function() {
-    enable_logging(env$log_file)
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI"),
         launch.browser = TRUE
@@ -52,7 +48,6 @@ browser_diyabc <- function() {
 #' }
 #' @export
 debug_diyabc <- function() {
-    enable_logging(env$log_file)
     options(shiny.error = browser)
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI")
@@ -68,7 +63,6 @@ debug_diyabc <- function() {
 #' @author Ghislain Durif
 #' @export
 standalone_run_app <- function(options = list()) {
-    enable_logging(env$log_file)
     shiny::shinyApp(
         ui = diyabcGUI::diyabc_ui(),
         server = diyabcGUI::diyabc_server,

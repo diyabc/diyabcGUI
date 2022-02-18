@@ -4,6 +4,9 @@
 #' @description
 #' Enable specific logging of errors, messages and warnings.
 #' Append log message to console output and to a log file.
+#' 
+#' Issue with log_messages/log_warnings/log_errors being enabled mutliple 
+#' times (see <https://github.com/daroczig/logger/issues/88>)
 #' @param log_file character string, filename where to write log messages.
 #' @export
 enable_logging <- function(log_file) {
