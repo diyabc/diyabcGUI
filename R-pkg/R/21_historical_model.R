@@ -104,8 +104,13 @@ hist_model_server <- function(input, output, session,
         raw_scenario <- str_replace(
             string = input$scenario, pattern = "\\n$", replacement = ""
         )
+        # expected number of populations
+        expected_npop <- NULL
+        if(isTruthy(env$ap$data_check$n_pop)) {
+            expected_npop <- env$ap$data_check$n_pop
+        }
         # parse
-        scenario_check <- parse_scenario(raw_scenario)
+        scenario_check <- parse_scenario(raw_scenario, expected_npop)
         # parser message list
         local$parser_msg <- scenario_check$msg_list
         # if valid
@@ -152,8 +157,13 @@ hist_model_server <- function(input, output, session,
         )
         # validated ?
         out$validated <- TRUE
+        # expected number of populations
+        expected_npop <- NULL
+        if(isTruthy(env$ap$data_check$npop)) {
+            expected_npop <- env$ap$data_check$npop
+        }
         # parse
-        out$param <- parse_scenario(local$raw_scenario)
+        out$param <- parse_scenario(local$raw_scenario, expected_npop)
         # # parser message list
         # local$parser_msg <- out$param$msg_list
         # if valid
@@ -289,7 +299,7 @@ check_condition <- function(raw_scenario, parsed_scenario) {
 #' @author Ghislain Durif
 #' @importFrom stringr str_c str_count str_detect str_extract_all str_length str_split
 #' @importFrom tibble lst
-parse_scenario <- function(text) {
+parse_scenario <- function(text, expected_npop = NULL) {
     # init output
     npop <- NULL
     nevent <- NULL 
@@ -352,7 +362,7 @@ parse_scenario <- function(text) {
             msg_list <- append(
                 msg_list, str_c("First row should specify initial population ", 
                                 "effective sizes and not define an event"))
-        } 
+        }
         # one event per remaining line
         if(any(unlist(lapply(events[-1], 
                              function(event) length(event) != 1)))) {
@@ -364,10 +374,11 @@ parse_scenario <- function(text) {
         ## parse events
         event_list <- lapply(scenario[-1], parse_event)
         # event type
-        event_type <- unlist(lapply(event_list, 
-                                    function(event) event$event_type))
+        event_type <- 
+            unlist(lapply(event_list, function(event) event$event_type))
         # event time
-        event_time <- lapply(event_list, function(event) event$event_time)
+        event_time <- 
+            unlist(lapply(event_list, function(event) event$event_time))
         # population concerned by events
         event_pop <- lapply(event_list, function(event) event$event_pop)
         # event parameters
@@ -513,6 +524,22 @@ parse_scenario <- function(text) {
             time_param <- time_param[!str_detect(
                 string = time_param, pattern = "^([0-9]+|[01]\\.?[0-9]?)$"
             )]
+            
+            ## check number of sampled population at t=0
+            if(isTruthy(expected_npop)) {
+                npop_0 <- sum((event_type == "sample") & (event_time == 0))
+                if(npop_0 != expected_npop) {
+                    valid <- FALSE
+                    msg_list <- append(
+                        msg_list, 
+                        str_c("Number of populations sampled at t=0 ", 
+                              "is different from number of populations ", 
+                              "in the dataset, ",
+                              "(i.e. ", expected_npop, ")"
+                          )
+                    )
+                }
+            }
         }
     }
     ## output

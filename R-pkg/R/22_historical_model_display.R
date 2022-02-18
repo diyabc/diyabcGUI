@@ -69,7 +69,7 @@ scenario2tree <- function(parsed_scenario) {
             1:parsed_scenario$nevent,
             function(event_id) {
                 event_type <- parsed_scenario$event_type[event_id]
-                event_time <- parsed_scenario$event_time[[event_id]]
+                event_time <- parsed_scenario$event_time[event_id]
                 event_pop <- parsed_scenario$event_pop[[event_id]]
                 event_param <- parsed_scenario$event_param[[event_id]]
                 

@@ -6,7 +6,9 @@
 #' @param file_name string, (server-side) path to a headersim file.
 #' @param file_type string, MIME file type.
 #' @param locus_type string, "snp" or "mss"
-read_header <- function(file_name, file_type, locus_type = "snp") {
+#' @param expected_npop integer, number of populations in the dataset.
+read_header <- function(file_name, file_type, locus_type = "snp", 
+                        expected_npop = NULL) {
     
     # init output
     out <- list(
@@ -115,7 +117,7 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
             header[(min(row_seq):(max(row_seq)-1))], 
             rep(seq(row_seq), diff(c(row_seq, max(row_seq))))
         ), 
-        function(content) parse_header_scenario(content)
+        function(content) parse_header_scenario(content, expected_npop)
     )
     # next
     header <- header[-(1:(max(row_seq)-1))]
@@ -421,7 +423,8 @@ read_header <- function(file_name, file_type, locus_type = "snp") {
 #' @description
 #' Content: see doc
 #' @param content string vector, scenario description
-parse_header_scenario <- function(content) {
+#' @param expected_npop integer, number of populations in the dataset.
+parse_header_scenario <- function(content, expected_npop = NULL) {
     
     # init output
     out <- list(
@@ -452,7 +455,7 @@ parse_header_scenario <- function(content) {
     out$scenario <- str_c(content[-1], collapse = "\n")
     
     # check scenario
-    scen_check <- parse_scenario(out$scenario)
+    scen_check <- parse_scenario(out$scenario, expected_npop)
     if(!scen_check$valid) {
         out$valid <- FALSE
         return(out)

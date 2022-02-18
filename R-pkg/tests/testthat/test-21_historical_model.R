@@ -177,14 +177,15 @@ test_that("parse_event", {
 
 test_that("parse_scenario", {
     text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
-    out <- parse_scenario(text)
+    expected_npop <- 2
+    out <- parse_scenario(text, expected_npop)
     expect_true(out$valid)
     expect_identical(
         out,
         list(
             npop = 2L, nevent = 4, 
             event_type = c("sample", "sample", "sample", "merge"), 
-            event_time = list(0, 0, "t", "t2"), 
+            event_time = c(0, 0, "t", "t2"), 
             event_pop = list(1L, 2L, 1L, 1:2), 
             event_param = list(NULL, NULL, NULL, NULL), 
             valid = TRUE, Ne_param = c("N1", "N2"), 
@@ -193,15 +194,21 @@ test_that("parse_scenario", {
         )
     )
     
+    text <- "N1 N2\n0 sample 1\n0 sample 2\nt sample 1\nt2 merge 1 2"
+    expected_npop <- 3
+    out <- parse_scenario(text, expected_npop)
+    expect_false(out$valid)
+    
     text <- "N1 N2 N3\n0 sample 1\n0 sample 2\n0 sample 3\nt merge 2 3"
-    out <- parse_scenario(text)
+    expected_npop <- 3
+    out <- parse_scenario(text, expected_npop)
     expect_true(out$valid)
     expect_identical(
         out,
         list(
             npop = 3L, nevent = 4, 
             event_type = c("sample", "sample", "sample", "merge"), 
-            event_time = list(0, 0, 0, "t"), 
+            event_time = c(0, 0, 0, "t"), 
             event_pop = list(1L, 2L, 3L, 2:3), 
             event_param = list(NULL, NULL, NULL, NULL), 
             valid = TRUE, Ne_param = c("N1", "N2", "N3"), 
@@ -220,15 +227,16 @@ test_that("parse_scenario", {
         "t2 merge 1 2",
         "t2 varNe 1 N1+N2",
         sep = "\n")
-    parsed_scenario <- parse_scenario(text)
-    expect_true(parsed_scenario$valid)
+    expected_npop <- 3
+    out <- parse_scenario(text, expected_npop)
+    expect_true(out$valid)
     expect_identical(
-        parsed_scenario,
+        out,
         list(
             npop = 3L, nevent = 7, 
             event_type = c("sample", "sample", "sample", "merge", 
                            "varNe", "merge", "varNe"), 
-            event_time = list(0, 0, 0, "t3", "t3", "t2", "t2"), 
+            event_time = c(0, 0, 0, "t3", "t3", "t2", "t2"), 
             event_pop = list(1L, 2L, 3L, 2:3, 2L, 1:2, 1L), 
             event_param = list(NULL, NULL, NULL, NULL, "N2+N3", NULL, "N1+N2"), 
             valid = TRUE, Ne_param = c("N2", "N3", "N1"), 
@@ -271,7 +279,7 @@ test_that("parse_scenario", {
             npop = 4L, nevent = 7, 
             event_type = c("sample", "sample", "sample", 
                            "sample", "split", "split", "merge"), 
-            event_time = list(0, 0, 0, 0, "t3", "t4", "t2"), 
+            event_time = c(0, 0, 0, 0, "t3", "t4", "t2"), 
             event_pop = list(1L, 2L, 3L, 4L, c(3L, 1L, 2L), 
                              c(4L, 1L, 2L), 1:2), 
             event_param = list(NULL, NULL, NULL, NULL, "r3", "r4", NULL), 

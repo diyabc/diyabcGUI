@@ -148,7 +148,7 @@ test_that("scenario2tree", {
                 parent1_id = c(6L, 4L, 4L, 5L, 6L, 7L, NA), 
                 parent2_id = c(NA, NA, NA, NA, NA, NA, NA), 
                 time = c("0", "0", "0", "t3", "t3", "t2", "t2"), 
-                Ne = c("N1", "N2", "N3", "N2", "N2", "N1", "N1"), 
+                Ne = c("N1", "N2", "N3", "N2", "N2+N3", "N1", "N1+N2"), 
                 param = c(NA, NA, NA, NA, "N2+N3", NA, "N1+N2"), 
                 leaf = c(TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE)
             ), 
@@ -262,7 +262,7 @@ test_that("reverse_tree", {
     expect_false(rev_tree_out$valid)
     expect_identical(
         rev_tree_out$msg_list, 
-        list("Issue with scenario: populations 1, 2 do not coalesce.")
+        list("Issue with scenario: populations 1, 2 do not coalesce")
     )
     
     text <- str_c(
@@ -288,7 +288,7 @@ test_that("reverse_tree", {
                 event = c("varNe", "merge", "sample", "varNe", "merge", "sample", "sample"), 
                 pop = c(1L, 1L, 1L, 2L, 2L, 2L, 3L), 
                 time = c("t2", "t2", "0", "t3", "t3", "0", "0"), 
-                Ne = c("N1", "N1", "N1", "N2", "N2", "N2", "N3"), 
+                Ne = c("N1+N2", "N1", "N1", "N2+N3", "N2", "N2", "N3"), 
                 param = c("N1+N2", NA, NA, "N2+N3", NA, NA, NA), 
                 leaf = c(FALSE, FALSE, TRUE, FALSE, FALSE, TRUE, TRUE), 
                 root = c(TRUE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE), 
@@ -349,7 +349,7 @@ test_that("tree_context", {
         info,
         list(
             timing_list = c("0", "t", "t2"), 
-            time_coordinate = structure(
+            time_coordinates = structure(
                 list(
                     param = c("0", "t", "t2"), 
                     coord = c(0, 4, 8)
@@ -387,7 +387,7 @@ test_that("tree_context", {
         info,
         list(
             timing_list = c("0", "t3", "t2"), 
-            time_coordinate = structure(
+            time_coordinates = structure(
                 list(
                     param = c("0", "t3", "t2"), 
                     coord = c(0, 6, 12)
@@ -425,7 +425,7 @@ test_that("tree_context", {
         info,
         list(
             timing_list = c("0", "t3", "t2"), 
-            time_coordinate = structure(
+            time_coordinates = structure(
                 list(
                     param = c("0", "t3", "t2"), 
                     coord = c(0, 6, 12)

@@ -315,7 +315,7 @@ hist_model_panel_server <- function(input, output, session) {
     # update total number of parameters and per scenario number list
     observeEvent(env$ts$scenario_list, {
         req(env$ts$scenario_list)
-        # parse scenrio list
+        # parse scenario list
         tmp_parsed_scenario_list <- lapply(
             env$ts$scenario_list,
             function(item) {
