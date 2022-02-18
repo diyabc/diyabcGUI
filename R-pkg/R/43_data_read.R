@@ -1257,7 +1257,7 @@ read_mss_data <- function(data_file, data_dir) {
     ## check for missing data in microsat locus
     microsat_missing_encoding <- "^(0{3}|0{6})$"
     missing_microsat <- apply(
-        locus_data[,which(locus_mode == "M")], c(1,2),
+        as.matrix(locus_data[,which(locus_mode == "M")]), c(1,2),
         function(item) return(str_detect(item, microsat_missing_encoding))
     )
     
@@ -1283,7 +1283,7 @@ read_mss_data <- function(data_file, data_dir) {
     ## check for missing data in seq locus
     seq_missing_encoding <- "^<\\[\\](\\[\\])?>$"
     missing_seq <- apply(
-        locus_data[,which(locus_mode == "S")], c(1,2),
+        as.matrix(locus_data[,which(locus_mode == "S")]), c(1,2),
         function(item) return(str_detect(item, seq_missing_encoding))
     )
     
