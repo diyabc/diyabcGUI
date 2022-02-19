@@ -454,8 +454,7 @@ test_that("clean_param_prior", {
             "0 sample 3",
             "t sample 1",
             "t21 split 3 1 2 ra",
-            "t2 merge 1 2", 
-            "t3 merge 1 2",
+            "t2 merge 1 2",
             sep = "\n"
         ),
         str_c(
@@ -510,8 +509,7 @@ test_that("clean_param_prior", {
             "0 sample 3",
             "t sample 1",
             "t21 split 3 1 2 ra",
-            "t2 merge 1 2", 
-            "t3 merge 1 2",
+            "t2 merge 1 2",
             sep = "\n"
         ),
         str_c(
@@ -576,3 +574,77 @@ test_that("get_prior_num_val", {
     prior <- "N1 N UN[10,10000,0.0,]"
     expect_null(get_prior_num_val(prior))
 })
+
+test_that("clean_cond_list", {
+    
+    expect_equal(clean_cond_list(NULL, NULL), character(0))
+    expect_equal(clean_cond_list(list(), list()), character(0))
+    
+    # scenario with issue
+    expect_equal(
+        clean_cond_list(
+            NULL, 
+            str_c(
+                "N1 N2", 
+                "0 sample", 
+                "0 sample 2", 
+                "t2 merge 1 2", 
+                sep = "\n"
+            )
+        ), 
+        character(0)
+    )
+    
+    # list of scenario
+    scen_list <- c(
+        str_c(
+            "N1 N2", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "t sample 1", 
+            "t2 merge 1 2", 
+            sep = "\n"
+        ),
+        str_c(
+            "N1 N2 N3", 
+            "0 sample 1", 
+            "0 sample 2", 
+            "0 sample 3",
+            "t sample 1",
+            "t21 split 3 1 2 ra",
+            "t2 merge 1 2", 
+            sep = "\n"
+        )
+    )
+    
+    # single condition ok
+    cond_list <- c("t2>t")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, cond_list)
+    
+    # single condition with a non-existing parameter
+    cond_list <- c("t2>t4")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, character(0))
+    
+    # single bad condition
+    cond_list <- c("t2>")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, character(0))
+    
+    # two condition ok
+    cond_list <- c("t2>t", "t2>t21")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, cond_list)
+    
+    # two condition including one with a non-existing parameter
+    cond_list <- c("t2>t", "t2>t6")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, cond_list[1])
+    
+    # two condition including a bad one
+    cond_list <- c("t2>t", "t2>")
+    res <- clean_cond_list(cond_list, scen_list)
+    expect_equal(res, cond_list[1])
+})
+

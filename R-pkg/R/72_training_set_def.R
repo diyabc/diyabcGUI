@@ -282,7 +282,8 @@ hist_model_panel_server <- function(input, output, session) {
             )
         } else {
             tags$div(
-                icon("exclamation-triangle"), "Please add at least one scenario.",
+                icon("exclamation-triangle"), 
+                "Please add at least one scenario.",
                 style = "color: #F89406;"
             )
         }
@@ -1156,6 +1157,13 @@ param_cond_panel_server <- function(input, output, session) {
         cond_list = NULL, input_cond = NULL, validated = TRUE, 
         cond_check = NULL
     )
+    
+    # update condition list (if existing) based on scenario list
+    observeEvent(env$ts$scenario_list, {
+        env$ts$cond_list <- clean_cond_list(
+            env$ts$cond_list, env$ts$scenario_list
+        )
+    })
     
     # get current condition list (if existing)
     observeEvent(env$ts$cond_list, {

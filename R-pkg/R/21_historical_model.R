@@ -808,7 +808,7 @@ default_prior_num_val <- function(type, distrib) {
     }
 }
 
-#' Clean list of priors for a list of parameters (remove unused parameters)
+#' Clean list of priors given a list of scenario
 #' @keywords internal
 #' @author Ghislain Durif
 clean_param_prior <- function(prior_list, scen_list) {
@@ -897,4 +897,58 @@ get_prior_num_val <- function(prior) {
     )))
     if(length(value) != 4 || any(is.na(value))) value <- NULL
     return(value)
+}
+
+#' Clean list of conditions given a list of scenario
+#' @keywords internal
+#' @author Ghislain Durif
+clean_cond_list <- function(cond_list, scen_list) {
+    
+    # no parameter ?
+    if(length(scen_list) == 0) {
+        return(character(0))
+    }
+    
+    # no prior ?
+    if(length(cond_list) == 0) {
+        return(character(0))
+    }
+    
+    # parse each scenario in the list
+    parsed_scen_list <- lapply(scen_list, parse_scenario)
+    
+    # list of parameters in scenario
+    param_list <- unname(unique(unlist(lapply(
+        1:length(parsed_scen_list), 
+        function(ind) {
+            item <- parsed_scen_list[[ind]]
+            if(!item$valid) return(NULL)
+            return(c(item$Ne_param, item$time_param, item$rate_param))
+        }
+    ))))
+    
+    # any parameter ?
+    if(length(param_list) > 0) {
+        
+        # current parameters in prior list
+        pttrn = str_c(
+            "(", single_param_regex(), ")[=<>]+(",
+            single_param_regex(), ")"
+        )
+        current_param_name <- str_match(cond_list, pattern=pttrn)
+        
+        if(length(current_param_name)>0) {
+            check_param <- apply(
+                current_param_name, 1,
+                function(item)
+                    all(!is.na(item[2:3])) & all(item[2:3] %in% param_list)
+            )
+            cond_list <- cond_list[check_param]
+        }
+        
+        # output
+        return(cond_list)
+    } else {
+        return(character(0))
+    }
 }
