@@ -262,7 +262,7 @@ analysis_proj_set_server <- function(input, output, session) {
     
     # output$proj_is_ready <- renderUI({
     #     if(!(out$valid_proj & out$valid_data_file)) {
-    #         h3(icon("warning"), "Project set up is not ready",
+    #         h3(icon("exclamation-triangle"), "Project set up is not ready",
     #            style="color:red;text-align:center;")
     #     } else {
     #         h4(icon("check"), "Project set up is ok",
@@ -384,13 +384,13 @@ proj_file_list_server <- function(input, output, session) {
         output$feedback_proj_file <- renderUI({
             # default
             tag_list <- tags$div(
-                icon("warning"), "No file was uploaded",
+                icon("exclamation-triangle"), "No file was uploaded",
                 style = "color: #F89406; margin-top: -15px;"
             )
             # if example ?
             if(env$ap$proj_type == "example") {
                 tag_list <- tags$div(
-                    icon("warning"), "No example was selected",
+                    icon("exclamation-triangle"), "No example was selected",
                     style = "color: #F89406; margin-top: -15px;"
                 )
             }
@@ -475,7 +475,7 @@ proj_file_list_server <- function(input, output, session) {
                     if(length(missing_files) > 0) {
                         item2 <- tags$div(
                             tags$p(
-                                icon("warning"),
+                                icon("exclamation-triangle"),
                                 "Potentially missing files",
                                 "for an existing project:",
                                 tags$div(
@@ -547,7 +547,7 @@ proj_file_check_server <- function(input, output, session) {
         if(is.null(env$ap$header_check) && is.null(env$ap$reftable_check) &&
            is.null(env$ap$statobs_check)) {
             helpText(
-                icon("warning"), "Project is not configured yet",
+                icon("exclamation-triangle"), "Project is not configured yet",
                 tags$p(tags$ul(tags$li(
                     "For a new project, you will be able to configure it",
                     "in the panel below"
@@ -597,7 +597,7 @@ proj_file_check_server <- function(input, output, session) {
             } else {
                 tags$div(
                     tags$p(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Issue with provided", 
                         tags$code(env$ap$header_check$header_file),
                         "file:",
@@ -628,7 +628,7 @@ proj_file_check_server <- function(input, output, session) {
             } else {
                 tags$div(
                     tags$p(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Issue with provided", tags$code("reftableRF.bin"),
                         "file:",
                         do.call(
@@ -653,7 +653,7 @@ proj_file_check_server <- function(input, output, session) {
             } else {
                 tags$div(
                     tags$p(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Issue with provided", tags$code("statobsRF.txt"),
                         "file:",
                         do.call(
@@ -834,7 +834,7 @@ existing_proj_server <- function(input, output, session) {
                 )
                 if(length(input_check$msg) > 0) {
                     tags$div(
-                        icon("warning"), "Issue(s) with uploaded file(s):",
+                        icon("exclamation-triangle"), "Issue(s) with uploaded file(s):",
                         do.call(tags$ul, lapply(input_check$msg, tags$li)),
                         style = "color: #F89406; margin-top: -15px;"
                     )
@@ -1127,7 +1127,7 @@ input_data_file_server <- function(input, output, session) {
                    isTruthy(env$ap$header_check$data_file) &&
                    (input$data_file$name != env$ap$header_check$data_file)) {
                     tags$div(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Provided data file name does not match",
                         "expected data file name from", 
                         tags$code(env$ap$header_check$header_file), "file",
@@ -1139,7 +1139,7 @@ input_data_file_server <- function(input, output, session) {
             }
         } else {
             tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Missing data file",
                 style = "color: #F89406;"
             )
@@ -1192,7 +1192,7 @@ check_data_server <- function(input, output, session) {
         if(!isTruthy(env$ap$data_check) && !local$run) {
             tags$p(
                 tags$div(
-                    icon("warning"), "Data file was not checked",
+                    icon("exclamation-triangle"), "Data file was not checked",
                     style = "color: #F89406;"
                 )
             )
@@ -1260,7 +1260,7 @@ check_data_server <- function(input, output, session) {
             } else if(isTruthy(env$ap$data_check$msg)) {
                 tags$div(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Issue with your", tags$b(tmp_data_case), "data file:",
                         do.call(
                             tags$ul, lapply(env$ap$data_check$msg, tags$li)
@@ -1271,7 +1271,7 @@ check_data_server <- function(input, output, session) {
             } else {
                 tags$div(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Issue with your", tags$b(tmp_data_case), "data file"
                     ),
                     style = "color: #F89406;"

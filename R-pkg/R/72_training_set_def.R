@@ -282,7 +282,7 @@ hist_model_panel_server <- function(input, output, session) {
             )
         } else {
             tags$div(
-                icon("warning"), "Please add at least one scenario.",
+                icon("exclamation-triangle"), "Please add at least one scenario.",
                 style = "color: #F89406;"
             )
         }
@@ -302,7 +302,7 @@ hist_model_panel_server <- function(input, output, session) {
         if(local$lock) {
             tags$p(
                 tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "A scenario is being edited, please validate it",
                     "before validating the list of scenarii.",
                     style = "color: #F89406;"
@@ -311,7 +311,7 @@ hist_model_panel_server <- function(input, output, session) {
         } else if(!identical(env$ts$scenario_list, local$scenario_list)) {
             tags$p(
                 tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Scenario list was modified. Please validate.",
                     style = "color: #F89406;"
                 )
@@ -573,14 +573,14 @@ param_prior_panel_server <- function(input, output, session) {
         if(length(local$prior_list) == 0) {
             tags$p(
                 tags$div(
-                    icon("warning"), "No parameters.",
+                    icon("exclamation-triangle"), "No parameters.",
                     style = "color: #F89406;"
                 )
             )
         } else if(isTruthy(local$modified_prior_list) && !local$validated) {
             tags$p(
                 tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Prior list was modified. Please validate.",
                     style = "color: #F89406;"
                 )
@@ -1225,7 +1225,7 @@ param_cond_panel_server <- function(input, output, session) {
         req(local$cond_check)
         req(!local$cond_check$valid)
         tags$div(
-            icon("warning"), "Issue with input conditions.",
+            icon("exclamation-triangle"), "Issue with input conditions.",
             do.call(
                 tags$ul,
                 unname(lapply(local$cond_check$msg, tags$li))
@@ -1580,7 +1580,7 @@ snp_locus_setup_server <- function(input, output, session) {
         if(!local$validated) {
             tagList(
                 tags$p(tags$div(
-                    icon("warning"), "Locus description(s) not validated.",
+                    icon("exclamation-triangle"), "Locus description(s) not validated.",
                     style = "color: #F89406;"
                 ))
             )
@@ -1588,7 +1588,7 @@ snp_locus_setup_server <- function(input, output, session) {
             req(local$msg)
             tagList(
                 tags$p(tags$div(
-                    icon("warning"), "Issue with SNP locus description:",
+                    icon("exclamation-triangle"), "Issue with SNP locus description:",
                     do.call(
                         tags$ul,
                         lapply(local$msg, tags$li)
@@ -1803,13 +1803,13 @@ n_group_ui <- function(id) {
             )
         ),
         helpText(
-            icon("warning"),
+            icon("exclamation-triangle"),
             "Choose the definitive number of groups",
             tags$b("before"),
             "assigning locus to new groups."
         ),
         helpText(
-            icon("warning"),
+            icon("exclamation-triangle"),
             "Be advised that,",
             "after affecting loci to groups,", 
             tags$b("when you validate"), ",", 
@@ -2079,7 +2079,7 @@ mss_locus_list_config_server <- function(
             tagList(
                 tags$p(
                     tags$div(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Configuration was modified. Please validate.",
                         style = "color: #F89406;"
                     )
@@ -2554,7 +2554,7 @@ mss_group_prior_server <- function(input, output, session) {
             tagList(
                 tags$p(
                     tags$div(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Configuration was modified. Please validate.",
                         style = "color: #F89406;"
                     )

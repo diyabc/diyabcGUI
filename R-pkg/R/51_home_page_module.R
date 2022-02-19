@@ -82,7 +82,7 @@ home_page_ui <- function(id) {
                                 "provided by the different panels",
                                 "of the application. ",
                                 tags$i("Warning"), "messages are idenfied by a", 
-                                icon("warning"), "and",
+                                icon("exclamation-triangle"), "and",
                                 tags$i("informative"), "messages by a ", 
                                 icon("comment"), "or a ", icon("info-circle")
                             )

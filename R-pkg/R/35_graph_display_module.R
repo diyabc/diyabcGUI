@@ -178,7 +178,7 @@ graph_display_server <- function(input, output, session,
                 type = "warning", 
                 tagList(
                     tags$p(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         "Image filename is not ok, possible extensions are: ", 
                         "'eps', 'ps', 'tex', 'pdf', 'jpeg', 'tiff', 'png', ", 
                         "'bmp', 'svg'"
@@ -199,7 +199,7 @@ graph_display_server <- function(input, output, session,
                 type = "warning", 
                 tagList(
                     tags$p(
-                        icon("warning"), 
+                        icon("exclamation-triangle"), 
                         paste0("Cannot save image: graph is empty")
                     )
                 )
@@ -227,7 +227,7 @@ graph_display_server <- function(input, output, session,
                     type = "error",
                     tagList(
                         tags$p(
-                            icon("warning"),
+                            icon("exclamation-triangle"),
                             paste0("Image was not saved. ", ret)
                         )
                     )
@@ -254,7 +254,7 @@ graph_display_server <- function(input, output, session,
                 type = "warning",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         paste0("Directory does not exists. ", 
                                "Did you 'validate' the project?")
                     )

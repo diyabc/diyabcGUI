@@ -46,8 +46,8 @@ rf_module_server <- function(input, output, session) {
         } else {
             tagList(tags$div(
                 h4(
-                    icon("warning"), 
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
+                    icon("exclamation-triangle"), 
                     "Project set up is not ready."
                 ),
                 "You must generate a training data set with the", 
@@ -295,7 +295,7 @@ rf_parameter_server <- function(input, output, session) {
         if(env$rf$proj_name %in% existing_subproj) {
             tagList(tags$div(
                 h4(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Sub-project already exists,",
                     "be advised that new analysis may erase", 
                     "previous results."
@@ -409,7 +409,7 @@ rf_parameter_server <- function(input, output, session) {
             req(!group_check$valid)
             
             tags$p(tags$div(
-                icon("warning"), "Issue with scenario grouping/selection:",
+                icon("exclamation-triangle"), "Issue with scenario grouping/selection:",
                 do.call(
                     tags$ul,
                     lapply(group_check$msg, tags$li)
@@ -468,7 +468,7 @@ rf_parameter_server <- function(input, output, session) {
         
         if(!isTruthy(input$parameter)) {
             tags$p(tags$div(
-                icon("warning"), "Missing parameter.",
+                icon("exclamation-triangle"), "Missing parameter.",
                 style = "color: #F89406;"
             ))
         } else {
@@ -480,7 +480,7 @@ rf_parameter_server <- function(input, output, session) {
                 )
             } else {
                 tags$p(tags$div(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Issue with provided parameter",
                     "or combination of parameters",
                     "(probably one or more parameters not existing", 
@@ -641,7 +641,7 @@ rf_parameter_server <- function(input, output, session) {
         req(local$max_n_rec < input$n_rec)
         
         tags$p(tags$div(
-            icon("warning"),
+            icon("exclamation-triangle"),
             "The number of samples in the training set to be used is larger",
             "than the number of simulated data available", 
             "for the selected scenario/scenarii",
@@ -656,7 +656,7 @@ rf_parameter_server <- function(input, output, session) {
 rf_control_ui <- function(id) {
     ns <- NS(id)
     tagList(
-        h3(icon("gear"), "Run"),
+        h3(icon("cog"), "Run"),
         actionBttn(
             inputId = ns("run"),
             label = "Run",
@@ -729,7 +729,7 @@ rf_control_server <- function(input, output, session) {
     observeEvent(input$run, {
         
         local$feedback <- tags$p(tags$div(
-            icon("warning"), "Project is not ready.",
+            icon("exclamation-triangle"), "Project is not ready.",
             "Check settings above.",
             style = "color: #F89406;"
         ))
@@ -738,7 +738,7 @@ rf_control_server <- function(input, output, session) {
         
         if(!all(required_files %in% list.files(env$ap$proj_dir))) {
             local$feedback <- tags$p(tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Project set up is not ready.",
                 "You must generate a training data set with the", 
                 tags$b("Training set simulations"), "sub-module",
@@ -812,7 +812,7 @@ rf_control_server <- function(input, output, session) {
                 id = ns("run_in_progress"), duration = 10,
                 closeButton = TRUE, type = "warning",
                 tagList(tags$p(
-                    icon("warning"), "Run in progress."
+                    icon("exclamation-triangle"), "Run in progress."
                 ))
             )
         } else {
@@ -908,7 +908,7 @@ rf_control_server <- function(input, output, session) {
         
         if(is.null(local$abcranger_run_process)) {
             local$feedback <- tags$p(tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Random Forest analysis did not start.",
                 style = "color: #F89406;"
             ))
@@ -1001,7 +1001,7 @@ rf_control_server <- function(input, output, session) {
         } else if(local$abcranger_run_result == -1000) {
             ## stopped run
             local$feedback <- tags$div(
-                h3(icon("warning"), "RF run was stopped."),
+                h3(icon("exclamation-triangle"), "RF run was stopped."),
                 style = "text-align:center; color: #F89406;"
             )
             
@@ -1009,20 +1009,20 @@ rf_control_server <- function(input, output, session) {
                 id = ns("stop_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "RF run was stopped."
+                    icon("exclamation-triangle"), "RF run was stopped."
                 ))
             )
         } else {
             ## error during run
             local$feedback <- tags$p(tags$div(
-                icon("warning"), "Issues with RF run (see log panel).",
+                icon("exclamation-triangle"), "Issues with RF run (see log panel).",
                 style = "color: #F89406;"
             ))
             showNotification(
                 id = ns("run_not_ok"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "A problem happened during RF run."
                 ))
             )
@@ -1055,13 +1055,13 @@ rf_control_server <- function(input, output, session) {
         ## if no current run
         if(is.null(local$abcranger_run_process)) {
             local$feedback <- helpText(
-                icon("warning"), "No current run to stop."
+                icon("exclamation-triangle"), "No current run to stop."
             )
             showNotification(
                 id = ns("no_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "No current run to stop."
+                    icon("exclamation-triangle"), "No current run to stop."
                 ))
             )
         } else {

@@ -7,7 +7,7 @@ proj_admin_ui <- function(id) {
     tagList(
         helpText(
             tags$p(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "To avoid any loss of your current work,",
                 tags$b("please save your project")
             )
@@ -23,7 +23,7 @@ proj_admin_ui <- function(id) {
             icon("clock"), 
             "Preparing the zip file to save your project may take some time.",
             br(),  br(),
-            icon("warning"), 
+            icon("exclamation-triangle"), 
             "Depending on the configuration of your web browser,",
             "you may or may not be able to choose where the project zip file", 
             "will be saved on your computer. If you cannot choose, the file",
@@ -33,7 +33,7 @@ proj_admin_ui <- function(id) {
         hr(),
         actionBttn(
             inputId = ns("reset"),
-            label = tags$span(icon("refresh"), "Reset"),
+            label = tags$span(icon("sync"), "Reset"),
             style = "fill",
             block = TRUE,
             color = "danger"

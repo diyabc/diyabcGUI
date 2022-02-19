@@ -112,7 +112,7 @@ train_set_simu_server <- function(input, output, session) {
             } else {
                 tagList(tags$div(
                     h4(
-                        icon("warning"), "Project setup is not valid,",
+                        icon("exclamation-triangle"), "Project setup is not valid,",
                         "check the 'project settings' tab."
                     ),
                     style = "color: #F89406;"
@@ -204,7 +204,7 @@ train_set_setup_server <- function(input, output, session) {
                 )
             ),
             helpText(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "By editing the training set simulation configuration,", 
                 "it will", tags$b("erase"), 
                 "the corresponding training set configuration files",
@@ -425,7 +425,7 @@ train_set_config_ui <- function(id) {
                 "to expand the different configuration boxes"
             ),
             tags$p(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "Do not forget to validate your input or modifications",
                 "inside each box"
             )
@@ -574,7 +574,7 @@ train_set_config_server <- function(input, output, session) {
         # check validation
         if(!local$validated) {
             msg <- append(msg, list(tagList(tags$p(tags$div(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Your training set configuration is", 
                     "not complete (potential issue, see panels above)", 
                     "or not validated",
@@ -673,7 +673,7 @@ train_set_simu_run_ui <- function(id) {
             helper(type = "markdown", 
                    content = "summary_stats"),
         hr(),
-        h3(icon("gear"), "Run"),
+        h3(icon("cog"), "Run"),
         uiOutput(ns("nrun_input")),
         uiOutput(ns("feedback_nrun")),
         helpText(
@@ -816,7 +816,7 @@ train_set_simu_run_server <- function(input, output, session) {
             tag_list <- tagList(
                 tags$p(tag_list),
                 tags$p(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "To generate additional training data,", 
                     "you must set the number of requested simulations",
                     "to be higher than",
@@ -841,7 +841,7 @@ train_set_simu_run_server <- function(input, output, session) {
         # pprint(input$nrun)
         
         local$feedback <- tags$p(tags$div(
-            icon("warning"), "Project is not ready.",
+            icon("exclamation-triangle"), "Project is not ready.",
             "Check settings above.",
             style = "color: #F89406;"
         ))
@@ -857,7 +857,7 @@ train_set_simu_run_server <- function(input, output, session) {
         n_rec <- 0
         if(isTruthy(env$ap$reftable_check$n_rec)) {
             local$feedback <- tags$p(tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "The number of required simulations is lower than", 
                 "the number of simulations already available",
                 style = "color: #F89406;"
@@ -873,7 +873,7 @@ train_set_simu_run_server <- function(input, output, session) {
                 id = ns("run_in_progress"), duration = 10,
                 closeButton = TRUE, type = "warning",
                 tagList(tags$p(
-                    icon("warning"), "Run in progress"
+                    icon("exclamation-triangle"), "Run in progress"
                 ))
             )
         } else {
@@ -915,7 +915,7 @@ train_set_simu_run_server <- function(input, output, session) {
             
             if(is.null(local$diyabc_run_process)) {
                 local$feedback <- tags$p(tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Simulations did not start",
                     style = "color: #F89406;"
                 ))
@@ -978,7 +978,7 @@ train_set_simu_run_server <- function(input, output, session) {
         } else if(local$diyabc_run_result == -1000) {
             ## stopped run
             local$feedback <- tags$div(
-                h3(icon("warning"), "Simulation run was stopped"),
+                h3(icon("exclamation-triangle"), "Simulation run was stopped"),
                 style = "text-align:center; color: #F89406;"
             )
             
@@ -986,13 +986,13 @@ train_set_simu_run_server <- function(input, output, session) {
                 id = ns("stop_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "Simulation run was stopped"
+                    icon("exclamation-triangle"), "Simulation run was stopped"
                 ))
             )
         } else if(local$diyabc_run_result == -2000) {
             ## stopped run
             local$feedback <- tags$p(tags$div(
-                icon("warning"), "Error in simulation process:", 
+                icon("exclamation-triangle"), "Error in simulation process:", 
                 "check your scenarios, priors and conditions",
                 style = "color: #F89406;"
             ))
@@ -1000,21 +1000,21 @@ train_set_simu_run_server <- function(input, output, session) {
                 id = ns("stop_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "Error in simulation process:", 
+                    icon("exclamation-triangle"), "Error in simulation process:", 
                     "check your scenarios, priors and conditions"
                 ))
             )
         } else {
             ## error during run
             local$feedback <- tags$p(tags$div(
-                icon("warning"), "Issues with run (see log panel below)",
+                icon("exclamation-triangle"), "Issues with run (see log panel below)",
                 style = "color: #F89406;"
             ))
             showNotification(
                 id = ns("run_not_ok"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "A problem happened during simulations"
                 ))
             )
@@ -1047,13 +1047,13 @@ train_set_simu_run_server <- function(input, output, session) {
         ## if no current run
         if(is.null(local$diyabc_run_process)) {
             local$feedback <- helpText(
-                icon("warning"), "No current run to stop"
+                icon("exclamation-triangle"), "No current run to stop"
             )
             showNotification(
                 id = ns("no_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "No current run to stop"
+                    icon("exclamation-triangle"), "No current run to stop"
                 ))
             )
         } else {
@@ -1117,7 +1117,7 @@ train_set_simu_run_server <- function(input, output, session) {
                 local$diyabc_run_result <- -2000
                 ## feedback
                 local$feedback <- tags$p(tags$div(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Run was stopped because of infinite looping.", 
                     "Potential issue in model conditioning.",
                     style = "color: #F89406;"
@@ -1176,7 +1176,7 @@ prior_check_server <- function(input, output, session) {
     observeEvent(input$run, {
         
         local$feedback <- tags$p(tags$div(
-            icon("warning"), "Missing simulation files",
+            icon("exclamation-triangle"), "Missing simulation files",
             style = "color: #F89406;"
         ))
         
@@ -1193,7 +1193,7 @@ prior_check_server <- function(input, output, session) {
                 id = ns("run_in_progress"), duration = 10,
                 closeButton = TRUE, type = "warning",
                 tagList(tags$p(
-                    icon("warning"), "Prior scenario checking in progress"
+                    icon("exclamation-triangle"), "Prior scenario checking in progress"
                 ))
             )
         } else {
@@ -1225,7 +1225,7 @@ prior_check_server <- function(input, output, session) {
             
             if(is.null(local$diyabc_run_process)) {
                 local$feedback <- tags$p(tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Scenario checking did not start", 
                     style = "color: #F89406;"
                 ))
@@ -1290,7 +1290,7 @@ prior_check_server <- function(input, output, session) {
             
             if("error" %in% class(tmp_check)) {
                 local$feedback <- tags$div(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Graphical output generation for",
                     "scenario checking failed",
                     style = "text-align:center; color: #F89406;"
@@ -1302,7 +1302,7 @@ prior_check_server <- function(input, output, session) {
                     closeButton = TRUE,
                     type = "error",
                     tagList(tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Graphical output generation for",
                         "scenario checking failed"
                     ))
@@ -1312,7 +1312,7 @@ prior_check_server <- function(input, output, session) {
         } else if(local$diyabc_run_result == -1000) {
             ## stopped run
             local$feedback <- tags$div(
-                h4(icon("warning"), "Prior scenario check run was stopped"),
+                h4(icon("exclamation-triangle"), "Prior scenario check run was stopped"),
                 style = "text-align:center; color: #F89406;"
             )
             
@@ -1320,13 +1320,13 @@ prior_check_server <- function(input, output, session) {
                 id = ns("stop_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "Prior scenario check run was stopped"
+                    icon("exclamation-triangle"), "Prior scenario check run was stopped"
                 ))
             )
         } else {
             ## error during run
             local$feedback <- tags$p(tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Issues with prior scenario check run",
                 "(save the project, c.f. below, and check the log files)",
                 style = "color: #F89406;"
@@ -1335,7 +1335,7 @@ prior_check_server <- function(input, output, session) {
                 id = ns("run_not_ok"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "A problem happened during prior scenario checking"
                 ))
             )
@@ -1351,13 +1351,13 @@ prior_check_server <- function(input, output, session) {
         ## if no current run
         if(is.null(local$diyabc_run_process)) {
             local$feedback <- helpText(
-                icon("warning"), "No current run to stop"
+                icon("exclamation-triangle"), "No current run to stop"
             )
             showNotification(
                 id = ns("no_run"), duration = 10,
                 closeButton = TRUE, type = "error",
                 tagList(tags$p(
-                    icon("warning"), "No current run to stop"
+                    icon("exclamation-triangle"), "No current run to stop"
                 ))
             )
         } else {

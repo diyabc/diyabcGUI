@@ -200,7 +200,7 @@ mss_group_setup_server <- function(input, output, session,
             locus_group_setup_ui(ns("microsat_grouping"))
         } else {
             helpText(
-                icon("warning"), "No Microsat locus in data"
+                icon("exclamation-triangle"), "No Microsat locus in data"
             )
         }
     })
@@ -223,7 +223,7 @@ mss_group_setup_server <- function(input, output, session,
             locus_group_setup_ui(ns("seq_grouping"))
         } else {
             helpText(
-                icon("warning"), "No Sequence locus in data"
+                icon("exclamation-triangle"), "No Sequence locus in data"
             )
         }
     })
@@ -477,7 +477,7 @@ locus_group_setup_ui <- function(id) {
             fullwidth = TRUE
         ),
         helpText(
-            icon("warning"), 
+            icon("exclamation-triangle"), 
             "Configure the number of groups before assigning loci to them"
         ),
         uiOutput(ns("locus_group")),
@@ -847,7 +847,7 @@ group_prior_server <- function(input, output, session,
                 closeButton = TRUE,
                 duration = 10,
                 tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
                         "min should be a numeric value"
@@ -872,7 +872,7 @@ group_prior_server <- function(input, output, session,
                 closeButton = TRUE,
                 duration = 10,
                 tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
                         "max should be a numeric value"
@@ -902,7 +902,7 @@ group_prior_server <- function(input, output, session,
                 closeButton = TRUE,
                 duration = 10,
                 tags$p(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     str_c(
                         "For parameter `", local$param_name, "`: ",
                         "min should be lower than max"
@@ -965,7 +965,7 @@ group_prior_server <- function(input, output, session,
                     closeButton = TRUE,
                     duration = 10,
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         str_c(
                             "For parameter `", local$param_name, "`: ",
                             "mean should be between max and min values"

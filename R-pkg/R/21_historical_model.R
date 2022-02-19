@@ -97,7 +97,7 @@ hist_model_server <- function(input, output, session,
     observeEvent(input$scenario, {
         out$validated <- FALSE
         local$validate_msg <- tags$p(tags$div(
-            icon("warning"), "Scenario is not validated",
+            icon("exclamation-triangle"), "Scenario is not validated",
             style = "color: #F89406;"
         ))
     })
@@ -195,7 +195,7 @@ hist_model_server <- function(input, output, session,
                 local$validate_msg <- NULL
             } else {
                 local$validate_msg <- tags$p(tags$div(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Your scenario is not valid. Please check it.",
                     style = "color: #F89406;"
                 ))
@@ -210,7 +210,7 @@ hist_model_server <- function(input, output, session,
             out$valid <- FALSE
             out$validated <- FALSE
             local$validate_msg <- tags$p(tags$div(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Your scenario is not valid. Please check it.",
                 style = "color: #F89406;"
             ))
@@ -223,7 +223,7 @@ hist_model_server <- function(input, output, session,
         pprint(local$parser_msg)
         req(isFALSE(local$check_valid))
         tags$div(
-            h4(icon("warning"), "Issue(s) with scenario"),
+            h4(icon("exclamation-triangle"), "Issue(s) with scenario"),
             do.call(
                 tags$ul,
                 lapply(local$parser_msg, function(item) {

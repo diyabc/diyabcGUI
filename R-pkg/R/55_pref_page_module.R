@@ -18,7 +18,7 @@ pref_page_ui <- function(id) {
                 max = 10000
             ),
             helpText(
-                icon("warning"), "By default, data files larger than 10 Gb",
+                icon("exclamation-triangle"), "By default, data files larger than 10 Gb",
                 "will not be accepted.", 
                 "Please increase this limit if needed."
             ),
@@ -31,7 +31,7 @@ pref_page_ui <- function(id) {
                 max = parallel::detectCores()
             ),
             helpText(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "By default, 3/4th of all available cores are used."
             ),
             hr(),
@@ -113,7 +113,7 @@ pref_page_server <- function(input, output, session) {
                     "Download of", tags$code("diyabc"), "succeeded."
                 ),
                 "1" = tags$li(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Download of", tags$code("diyabc"), "failed.",
                     "If the issue persists, please contact DIYABC-RF support."
                 ),
@@ -129,7 +129,7 @@ pref_page_server <- function(input, output, session) {
                     "Download of", tags$code("abcranger"), "succeeded."
                 ),
                 "1" = tags$li(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "Download of", tags$code("abcranger"), "failed.",
                     "If issue persists, please contact abcranger-RF support."
                 ),
@@ -147,7 +147,7 @@ pref_page_server <- function(input, output, session) {
                 if(any(
                     c(tmp_check$check_diyabc, tmp_check$check_abcranger) != 0
                 )) {
-                    tmp_icon <- icon("warning")
+                    tmp_icon <- icon("exclamation-triangle")
                 }
                 
                 tagList(helpText(tags$p(

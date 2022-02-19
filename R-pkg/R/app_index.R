@@ -17,12 +17,12 @@ app_sidebar <- function() {
             menuItem(
                 "Preferences", 
                 tabName = "pref_tab", 
-                icon = icon("gear")
+                icon = icon("cog")
             ),
             menuItem(
                 "Quit", 
                 tabName = "quit",
-                icon = icon("circle-o-notch")
+                icon = icon("power-off")
             )
         )
     )
@@ -107,7 +107,7 @@ index_server <- function(input, output, session) {
             show_alert(
                 title = "Error !",
                 text = tagList(
-                    icon("warning"),
+                    icon("exclamation-triangle"),
                     "DIYABC-RF internal engine is missing.", 
                     br(), br(),
                     "Please navigate to the", tags$b("Preferences"), 

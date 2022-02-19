@@ -750,7 +750,7 @@ datagen_hist_model_param_server <- function(
         # pprint(local$scenario_cond)
         if(isTruthy(local$scenario_cond) && length(local$scenario_cond) > 0) {
             txt <- helpText(
-                h4(icon("warning"), "Conditions"),
+                h4(icon("exclamation-triangle"), "Conditions"),
                 tags$p(
                     "You may want to consider the following conditions ",
                     "when setting the parameter values above:"
@@ -1146,7 +1146,7 @@ datafile_gen_server <- function(
         req(!is.null(local$valid))
         if(!local$valid) {
             helpText(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "Issue with the configuration or paremeters",
                 "of the simulation project.",
                 "Please check the different setup panels above."
@@ -1183,7 +1183,7 @@ datafile_gen_server <- function(
         req(!is.null(local$validated))
         if(!local$validated) {
             helpText(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "You need to validate your project", 
                 "to be able to run the simulation."
             )
@@ -1270,7 +1270,7 @@ datafile_gen_server <- function(
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Issue when writing simulation configuration file.",
                         "Check configuration panels above."
                     )
@@ -1329,7 +1329,7 @@ datafile_gen_server <- function(
                 type = "warning",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Run in progress."
                     )
                 )
@@ -1349,11 +1349,11 @@ datafile_gen_server <- function(
             ## check if possible to run
             if(!local$validated) {
                 local$feedback <- helpText(
-                    icon("warning"), "Project is not validated."
+                    icon("exclamation-triangle"), "Project is not validated."
                 )
             } else if(! "headersim.txt" %in% list.files(local$proj_dir)) {
                 local$feedback <- helpText(
-                    icon("warning"), 
+                    icon("exclamation-triangle"), 
                     "Missing header configuration file."
                 )
                 showNotification(
@@ -1363,7 +1363,7 @@ datafile_gen_server <- function(
                     type = "warning",
                     tagList(
                         tags$p(
-                            icon("warning"), 
+                            icon("exclamation-triangle"), 
                             "Missing header configuration file."
                         )
                     )
@@ -1452,7 +1452,7 @@ datafile_gen_server <- function(
         } else if(local$diyabc_run_result == -1000) {
             ## stopped run
             local$feedback <- helpText(
-                icon("warning"), "Simulation run was stopped."
+                icon("exclamation-triangle"), "Simulation run was stopped."
             )
             showNotification(
                 id = ns("stop_run"),
@@ -1461,7 +1461,7 @@ datafile_gen_server <- function(
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Simulation run was stopped."
                     )
                 )
@@ -1469,7 +1469,7 @@ datafile_gen_server <- function(
         } else if(local$diyabc_run_result == -2000) {
             ## stopped run
             local$feedback <- helpText(
-                icon("warning"), 
+                icon("exclamation-triangle"), 
                 "Error in simulation process:", 
                 "check your scenarios, priors and conditions."
             )
@@ -1480,7 +1480,7 @@ datafile_gen_server <- function(
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "Error in simulation process:", 
                         "check your scenarios, priors and conditions."
                     )
@@ -1489,7 +1489,7 @@ datafile_gen_server <- function(
         } else {
             ## error during run
             local$feedback <- helpText(
-                icon("warning"), "Issues with run (see log panel below)."
+                icon("exclamation-triangle"), "Issues with run (see log panel below)."
             )
             showNotification(
                 id = ns("run_not_ok"),
@@ -1498,7 +1498,7 @@ datafile_gen_server <- function(
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"),
+                        icon("exclamation-triangle"),
                         "A problem happened during simulations."
                     )
                 )
@@ -1515,7 +1515,7 @@ datafile_gen_server <- function(
         ## if no current run
         if(is.null(local$diyabc_run_process)) {
             local$feedback <- helpText(
-                icon("warning"), "No current run to stop."
+                icon("exclamation-triangle"), "No current run to stop."
             )
             showNotification(
                 id = ns("no_run"),
@@ -1524,7 +1524,7 @@ datafile_gen_server <- function(
                 type = "error",
                 tagList(
                     tags$p(
-                        icon("warning"), "No current run to stop."
+                        icon("exclamation-triangle"), "No current run to stop."
                     )
                 )
             )

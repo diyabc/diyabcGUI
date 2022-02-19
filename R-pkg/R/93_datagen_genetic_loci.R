@@ -168,7 +168,7 @@ genetic_loci_ui <- function(id) {
             uiOutput(ns("feedback_locus_nb")),
             uiOutput(ns("locus_nb_ui")),
             helpText(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "Note: H loci are not compatible with A, X and Y loci."
             ),
             hr(),
@@ -317,7 +317,7 @@ genetic_loci_server <- function(input, output, session,
             NULL
         } else {
             helpText(
-                icon("warning"),
+                icon("exclamation-triangle"),
                 "No locus will be simulated. All numbers are null or missing."
             )
         }
@@ -693,7 +693,7 @@ mss_config_setup_server <- function(input, output, session,
             mss_config_locus_setup_ui(ns("microsat_setup"))
         } else {
             helpText(
-                icon("warning"), "No Microsat locus in data."
+                icon("exclamation-triangle"), "No Microsat locus in data."
             )
         }
     })
@@ -722,7 +722,7 @@ mss_config_setup_server <- function(input, output, session,
             # ),
         } else {
             helpText(
-                icon("warning"), "No Sequence locus in data."
+                icon("exclamation-triangle"), "No Sequence locus in data."
             )
         }
     })
@@ -770,7 +770,7 @@ mss_config_locus_setup_ui <- function(id) {
             fullwidth = TRUE
         ),
         helpText(
-            icon("warning"), 
+            icon("exclamation-triangle"), 
             "Configure the number of groups before assigning loci to them."
         ),
         uiOutput(ns("locus_setup")),
