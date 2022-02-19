@@ -10,6 +10,9 @@ pref_page_ui <- function(id) {
             width = 12, 
             status = "primary", solidHeader = TRUE,
             collapsible = FALSE,
+            h5(tags$b("Information")),
+            tags$p("App log file: ", uiOutput(ns("log_file"), inline = TRUE)),
+            hr(),
             numericInput(
                 ns("upload_file_size"), 
                 label = "Maximum upload file size (in Mb)",
@@ -48,8 +51,8 @@ pref_page_ui <- function(id) {
                 "simulating 1000 individuals will be done in",
                 "20 batches of 50 individuals.",
                 "Here you can set up the batch size,", 
-                "by default it is", tags$code("10 * n_core"), 
-                "(so that each core will generate 10 individuals", 
+                "by default it is", tags$code("5 * n_core"), 
+                "(so that each core will generate 5 individuals", 
                 "of each batch)."
             ),
             hr(),
@@ -80,6 +83,9 @@ pref_page_ui <- function(id) {
 #' @keywords internal
 #' @author Ghislain Durif
 pref_page_server <- function(input, output, session) {
+    
+    ## log file
+    output$log_file <- renderUI({tags$code(log_file())})
     
     ## set diyabcGUI options
     observe({

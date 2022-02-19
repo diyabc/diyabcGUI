@@ -53,17 +53,23 @@ home_page_ui <- function(id) {
                 collapsible = FALSE,
                 tagList(
                     tags$p(
-                        "Check the documentation at",
-                        tags$a(
-                            "DIYABC-RF GUI official website", 
-                            href="https://diyabc.github.io/"
-                        )
-                    ),
-                    tags$p(
-                        "If you encounter any issue, please visit",
-                        tags$a(
-                            "DIYABC-RF GUI issue tracker", 
-                            href="https://github.com/diyabc/diyabcGUI/issues"
+                        "Online resources:",
+                        tags$ul(
+                            tags$li(
+                                "Check the documentation at",
+                                tags$a(
+                                    "DIYABC-RF GUI official website", 
+                                    href="https://diyabc.github.io/"
+                                )
+                            ),
+                            br(),
+                            tags$li(
+                                "If you encounter any issue, please visit",
+                                tags$a(
+                                    "DIYABC-RF GUI issue tracker", 
+                                    href="https://github.com/diyabc/diyabcGUI/issues"
+                                )
+                            )
                         )
                     ),
                     hr(),
@@ -85,7 +91,16 @@ home_page_ui <- function(id) {
                                 icon("exclamation-triangle"), "and",
                                 tags$i("informative"), "messages by a ", 
                                 icon("comment"), "or a ", icon("info-circle")
-                            )
+                            ),
+                            br(),
+                            tags$li(
+                                "You can also check the 'Preferences' tab"
+                            ),
+                            br(),
+                            tags$li(
+                                "App log file: ", 
+                                uiOutput(ns("log_file"), inline = TRUE)
+                            ),
                         )
                     ),
                     hr(),
@@ -121,6 +136,8 @@ home_page_server <- function(input, output, session) {
             0
         ) + 1
     })
+    ## log file
+    output$log_file <- renderUI({tags$code(log_file())})
     # output
     return(out)
 }
