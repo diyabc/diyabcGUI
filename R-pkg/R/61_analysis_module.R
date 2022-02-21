@@ -486,7 +486,8 @@ proj_file_list_server <- function(input, output, session) {
                                     ))
                                 ),
                                 tags$b("Note:"),
-                                "you will be able to generate them below"
+                                "you will be able to generate",
+                                "in the 'Training set simulation' tab"
                             ),
                             style = "color: #F89406;"
                         )
@@ -743,7 +744,7 @@ existing_proj_ui <- function(id) {
             tags$li(
                 "If some project files are missing or have formating issues",
                 "you will be able to (re)configure",
-                "the corresponding settings in the next panel",
+                "the corresponding settings in 'Training set simulation' tab",
                 style = "margin-top: 10px;"
             )
         )
