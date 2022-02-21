@@ -5,9 +5,6 @@
     # setup options
     set_diyabcGUI_options()
     
-    # log file
-    enable_logging()
-    
     # init environment
     init_diyabc_env()
     
@@ -27,4 +24,9 @@
             "'diyabcGUI::dl_all_latest_bin()'"
         )
     }
+}
+
+.onAttach <- function(libname, pkgname) {
+    # log file
+    enable_logging()
 }
