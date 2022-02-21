@@ -23,6 +23,12 @@ train_set_simu_server <- function(input, output, session) {
           env$ap$file_upload, env$ap$data_check, env$ap$header_check)
     }, {
         ### RESET
+        # new project
+        env$ts$new <- TRUE
+        # existing project
+        env$ts$existing <- FALSE
+        # edit project
+        env$ts$edit <- TRUE
         # list of historical models
         env$ts$scenario_list <- NULL
         # list number of parameters per model
@@ -50,6 +56,12 @@ train_set_simu_server <- function(input, output, session) {
         req(env$ap$header_check)
         req(env$ap$header_check$valid)
         ### UPDATE ENV
+        # new project
+        env$ts$new <- FALSE
+        # existing project
+        env$ts$existing <- TRUE
+        # edit project
+        env$ts$edit <- FALSE
         # list of historical models
         env$ts$scenario_list <- env$ap$header_check$scenario_list
         # total number of parameters in all model
@@ -112,7 +124,8 @@ train_set_simu_server <- function(input, output, session) {
             } else {
                 tagList(tags$div(
                     h4(
-                        icon("exclamation-triangle"), "Project setup is not valid,",
+                        icon("exclamation-triangle"), 
+                        "Project setup is not valid,",
                         "check the 'project settings' tab."
                     ),
                     style = "color: #F89406;"
@@ -147,9 +160,6 @@ train_set_setup_server <- function(input, output, session) {
     # namespace
     ns <- session$ns
     
-    # init local
-    local <- reactiveValues(edit = FALSE, existing = FALSE, new = FALSE)
-    
     # existing or new setup ?
     observeEvent({
         c(env$ap$proj_dir, env$ap$proj_type, 
@@ -168,20 +178,20 @@ train_set_setup_server <- function(input, output, session) {
            isTruthy(env$ap$data_check$valid) && 
            isTruthy(env$ap$header_check) && 
            isTruthy(env$ap$header_check$valid)) {
-            local$existing <- TRUE
-            local$edit <- FALSE
-            local$new <- FALSE
+            env$ts$existing <- TRUE
+            env$ts$edit <- FALSE
+            env$ts$new <- FALSE
         } else {
-            local$existing <- FALSE
-            local$edit <- TRUE
-            local$new <- TRUE
+            env$ts$existing <- FALSE
+            env$ts$edit <- TRUE
+            env$ts$new <- TRUE
         }
     })
     
-    # button to edit exising setup
+    # button to edit existing setup
     output$existing <- renderUI({
-        req(local$existing)
-        req(!local$edit)
+        req(env$ts$existing)
+        req(!env$ts$edit)
         req(env$ap$header_check$valid)
         
         tagList(
@@ -236,7 +246,7 @@ train_set_setup_server <- function(input, output, session) {
     observeEvent(input$edit_confirmation, {
         req(input$edit_confirmation)
         req(env$ap$proj_dir)
-        local$edit <- TRUE
+        env$ts$edit <- TRUE
         # delete reftable and statobs files
         if(file.exists(file.path(env$ap$proj_dir, "reftableRF.bin"))) {
             fs::file_delete(file.path(env$ap$proj_dir, "reftableRF.bin"))
@@ -250,7 +260,7 @@ train_set_setup_server <- function(input, output, session) {
     
     ## edition mode
     output$edition <- renderUI({
-        req(local$new || local$edit)
+        req(env$ts$new || env$ts$edit)
         train_set_config_ui(ns("train_set_config"))
     })
     callModule(train_set_config_server, "train_set_config")
@@ -605,6 +615,11 @@ train_set_config_server <- function(input, output, session) {
             }
             # project files update
             update_proj_file("ap")
+            
+            # update rendering
+            env$ts$existing <- TRUE
+            env$ts$edit <- FALSE
+            env$ts$new <- FALSE
         }
     })
     

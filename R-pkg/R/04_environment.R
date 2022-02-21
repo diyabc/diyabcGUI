@@ -58,6 +58,12 @@ init_diyabcrf_env <- function() {
     
     # training set simulation
     tmp_ts <-list(
+        # new project
+        new = FALSE,
+        # existing project
+        existing = FALSE,
+        # edit project
+        edit = FALSE,
         # list of historical models
         scenario_list = NULL,
         # total number of parameters in all model
