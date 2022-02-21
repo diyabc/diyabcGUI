@@ -217,7 +217,10 @@ read_header <- function(file_name, file_type, locus_type = "snp",
             out$valid <- FALSE
             msg <- tagList(
                 "Issue with format of parameter conditions at lines:", 
-                str_c(which(!cond_check) + current_line, collapse = ", ")
+                str_c(
+                    which(!cond_check) + current_line - out$n_cond, 
+                    collapse = ", "
+                )
             )
             out$msg <- append(out$msg, list(msg))
             return(out)
