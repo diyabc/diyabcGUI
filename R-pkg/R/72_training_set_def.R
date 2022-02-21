@@ -6,7 +6,7 @@ hist_model_panel_ui <- function(id) {
     tagList(
         h3(icon("history"), "Historical models"),
         box(
-            title = "Define your scenarii",
+            title = "Define your scenario",
             width = 12,
             collapsible = TRUE,
             collapsed = TRUE,
@@ -574,7 +574,9 @@ param_prior_panel_server <- function(input, output, session) {
         if(length(local$prior_list) == 0) {
             tags$p(
                 tags$div(
-                    icon("exclamation-triangle"), "No parameters.",
+                    icon("exclamation-triangle"), 
+                    "No parameters.",
+                    "Please add a scenario with at least one parameter.",
                     style = "color: #F89406;"
                 )
             )
@@ -2394,8 +2396,8 @@ mss_group_prior_server <- function(input, output, session) {
         modified_group_prior_list = NULL, validated = TRUE
     )
     
-    # env group prior description (default or given in the header)
-    # and corresponding locus_mode/group_id
+    # group prior description (default or given in the header)
+    # and extract corresponding locus_mode/group_id
     observeEvent({
         c(env$ap$locus_type, env$ap$data_check, 
           env$ts$locus_desc, env$ts$group_prior_list)
@@ -2418,16 +2420,17 @@ mss_group_prior_server <- function(input, output, session) {
             group_id = local$group_desc$group_id
         )
         
-        # update local
-        if(tmp_check) {
-            local$group_prior_list <- env$ts$group_prior_list
-            local$validated <- TRUE
-        } else {
-            local$group_prior_list <- default_mss_group_prior(
+        if(!tmp_check) {
+            env$ts$group_prior_list <- default_mss_group_prior(
                 env$ts$locus_desc
             )
-            local$validated <- FALSE
         }
+    })
+    
+    # update local
+    observeEvent(env$ts$group_prior_list, {
+        local$group_prior_list <- env$ts$group_prior_list
+        local$validated <- FALSE
     })
     
     # # debugging
