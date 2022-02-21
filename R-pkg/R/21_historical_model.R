@@ -220,7 +220,6 @@ hist_model_server <- function(input, output, session,
     # update parser message
     output$parser_msg <- renderUI({
         req(length(local$parser_msg)>0)
-        pprint(local$parser_msg)
         req(isFALSE(local$check_valid))
         tags$div(
             h4(icon("exclamation-triangle"), "Issue(s) with scenario"),
