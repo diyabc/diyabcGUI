@@ -10,8 +10,12 @@ pref_page_ui <- function(id) {
             width = 12, 
             status = "primary", solidHeader = TRUE,
             collapsible = FALSE,
-            h5(tags$b("Information")),
+            h5(tags$b("Monitoring and log")),
             tags$p("App log file: ", uiOutput(ns("log_file"), inline = TRUE)),
+            selectInput(
+                ns("log_level"), label = "Log level",
+                choices = c("info", "debug", "trace"), selected = "info"
+            ),
             hr(),
             numericInput(
                 ns("upload_file_size"), 
@@ -86,6 +90,12 @@ pref_page_server <- function(input, output, session) {
     
     ## log file
     output$log_file <- renderUI({tags$code(log_file())})
+    
+    ## setup log level
+    observeEvent(input$log_level, {
+        req(input$log_level)
+        logging_level(input$log_level)
+    })
     
     ## set diyabcGUI options
     observe({
