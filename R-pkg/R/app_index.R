@@ -62,7 +62,8 @@ app_body <- function() {
             ),
             tabItem(
                 tabName = "datagen_tab",
-                # datagen_module_ui("datagen_module")
+                # datagen_module_ui("datagen_module"),
+                "Not available at the moment. Will be back soon."
             ),
             tabItem(
                 tabName = "pref_tab",
