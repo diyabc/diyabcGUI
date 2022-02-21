@@ -11,6 +11,9 @@
 #' }
 #' @export
 diyabc <- function() {
+    # log file
+    enable_logging()
+    # run app
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI")
     )
@@ -29,6 +32,9 @@ diyabc <- function() {
 #' }
 #' @export
 browser_diyabc <- function() {
+    # log file
+    enable_logging()
+    # run app
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI"),
         launch.browser = TRUE
@@ -48,6 +54,9 @@ browser_diyabc <- function() {
 #' }
 #' @export
 debug_diyabc <- function() {
+    # log file
+    enable_logging()
+    # run app
     options(shiny.error = browser)
     shiny::runApp(
         appDir = system.file("application", package = "diyabcGUI")
@@ -63,42 +72,13 @@ debug_diyabc <- function() {
 #' @author Ghislain Durif
 #' @export
 standalone_run_app <- function(options = list()) {
+    # log file
+    enable_logging()
+    # run app
     shiny::shinyApp(
         ui = diyabcGUI::diyabc_ui(),
         server = diyabcGUI::diyabc_server,
         onStart = diyabcGUI::redirect_output,
         options = options,
     )
-}
-
-
-#' Launch shiny console output to a file
-#' @description
-#' FIXME
-#' @details
-#' FIXME
-#' @author Ghislain Durif
-#' @importFrom lubridate now
-#' @export
-redirect_output <- function() {
-    logfile <- file.path(
-        dirname(tempdir()), 
-        str_c(
-            "DIYABC-RF_GUI", 
-            str_replace_all(lubridate::now(), pattern = " ", replacement = "_"),
-            ".log"
-        )
-    )
-    pprint(str_c("log file: ", logfile))
-    con <- file(logfile)
-    sink(con, append=TRUE)
-    sink(con, append=TRUE, type="message")
-    
-    shiny::onStop(function() {
-        reset_sink()
-        print(str_c("interactive ? ", interactive()))
-        if(!interactive()) {
-            q("no")
-        }
-    })
 }

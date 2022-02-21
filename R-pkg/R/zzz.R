@@ -25,8 +25,3 @@
         )
     }
 }
-
-.onAttach <- function(libname, pkgname) {
-    # log file
-    enable_logging()
-}
