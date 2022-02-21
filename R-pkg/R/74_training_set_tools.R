@@ -316,7 +316,10 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
         "-p", "./",
         "-n", str_c("t:", getOption("diyabcGUI")$ncore)
     )
-    log_info("cmd: ", str_c(diyabc_bin, str_c(arguments, collapse = " ")))
+    log_info(
+        "cmd: ", 
+        str_c(diyabc_bin, str_c(arguments, collapse = " "), sep = " ")
+    )
     init_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,
@@ -360,7 +363,10 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     }
     
     ## exec
-    log_info("cmd: ", str_c(diyabc_bin, str_c(arguments, collapse = " ")))
+    log_info(
+        "cmd: ", 
+        str_c(diyabc_bin, str_c(arguments, collapse = " "), sep = " ")
+    )
     run_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,
