@@ -12,9 +12,11 @@ prebuild <- function() {
                       filename)
     tmp <- system(command)
     # update Date
-    command <- paste0("sed -i -e ",
-                      "\"s/Date: .*/Date: ", Sys.Date(), "/\" ",
-                      filename)
+    command <- paste0(
+        "sed -i -e ",
+        "\"s/Date: .*/Date: ", Sys.Date(), "/\" ",
+        filename
+    )
     tmp <- system(command)
 }
 
