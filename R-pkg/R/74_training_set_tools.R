@@ -304,26 +304,6 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     if(!any(c("header.txt", "headerRF.txt") %in% list.files(proj_dir))) {
         stop("missing header input file")
     }
-    # ## useless when command run from project directory (see github issue #60)
-    # } else if(! "header.txt" %in% list.files(proj_dir)) {
-    #     fs::file_copy(
-    #         path = file.path(proj_dir, "headerRF.txt"),
-    #         new_path = file.path(proj_dir, "header.txt"),
-    #         overwrite = TRUE
-    #     )
-    # }
-    
-    # ## FIXME temporary fix because of bug in diyabc (see github issue #59)
-    # ## useless when command run from project directory (see github issue #60)
-    # if(run_prior_check) {
-    #     if(! "header.txt" %in% list.files(proj_dir)) {
-    #         fs::file_copy(
-    #             path = file.path(proj_dir, "headerRF.txt"),
-    #             new_path = file.path(proj_dir, "header.txt"),
-    #             overwrite = TRUE
-    #         )
-    #     }
-    # }
     
     # remove seed file if existing
     if(file.exists(file.path(proj_dir, "RNG_state_0000.bin"))) {
@@ -331,11 +311,12 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     }
     
     ### init seeds
-    logging("diyabc init")
+    log_debug("diyabc seed init")
     arguments <- c(
         "-p", "./",
         "-n", str_c("t:", getOption("diyabcGUI")$ncore)
     )
+    log_info("cmd: ", str_c(diyabc_bin, str_c(arguments, collapse = " ")))
     init_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,
@@ -349,7 +330,6 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     
     # exit check
     init_check <- init_proc$get_exit_status()
-    # logging("diyabc init", init_check)
     if(init_check != 0) {
         warning("Issue with seed initialization")
     }
@@ -357,38 +337,30 @@ diyabc_run_trainset_simu <- function(proj_dir, n_run = 100,
     ### log file
     logfile <- "diyabc_run_call.log"
     if(run_prior_check) {
-        logfile <- "diyabc_model_check_call.log"
+        logfile <- "diyabc_prior_check_call.log"
     }
     
     ### run
-    logging("diyabc run")
+    log_debug("diyabc run")
     arguments <- c("-p", "./")
-    # FIXME temporary fix (c.f. below)
-    arguments <- c(
-        arguments, 
-        "-m", "-t", as.character(getOption("diyabcGUI")$ncore),
-        "-R", "ALL",
-        "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
-        "-r", as.character(n_run)
-    )
-    if(run_prior_check) {
+    if(!run_prior_check) {
+        arguments <- c(
+            arguments, 
+            "-m", "-t", as.character(getOption("diyabcGUI")$ncore),
+            "-R", "ALL",
+            "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
+            "-r", as.character(n_run)
+        )
+    } else {
         arguments <- c(
             arguments,
+            "-R", "ALL",
             "-d", "a:pl"
         )
     }
-    ## FIXME temporarily disabled because of bug in diyabc
-    ## (see github issue #59)
-    # } else {
-    #     arguments <- c(
-    #         arguments, 
-    #         "-m", "-t", as.character(getOption("diyabcGUI")$ncore),
-    #         "-R", "ALL",
-    #         "-g", as.character(getOption("diyabcGUI")$simu_loop_size), 
-    #         "-r", as.character(n_run)
-    #     )
-    # }
     
+    ## exec
+    log_info("cmd: ", str_c(diyabc_bin, str_c(arguments, collapse = " ")))
     run_proc <- processx::process$new(
         command = diyabc_bin, 
         args = arguments,

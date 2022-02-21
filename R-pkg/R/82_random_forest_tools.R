@@ -48,7 +48,7 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
     }
     
     ### run
-    logging("abcranger run")
+    log_debug("abcranger run")
     arguments <- c(
         "-n", as.character(n_rec),
         "-m", as.character(min_node_size),
@@ -76,6 +76,7 @@ abcranger_run <- function(proj_dir, run_mode, n_rec,
         arguments <- c(arguments, "-g", groups)
     }
     
+    log_info("cmd: ", str_c(diyabc_bin, str_c(arguments, collapse = " ")))
     run_proc <- processx::process$new(
         command = abcranger_bin, 
         args = arguments,

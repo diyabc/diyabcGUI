@@ -903,7 +903,7 @@ train_set_simu_run_server <- function(input, output, session) {
                 style = "text-align:center;"
             )
             
-            logging("Running simulation")
+            log_info("Running simulation")
             local$diyabc_run_process <- execute_safely(
                 diyabc_run_trainset_simu(
                     env$ap$proj_dir, 
@@ -947,7 +947,7 @@ train_set_simu_run_server <- function(input, output, session) {
         
         req(!is.null(local$diyabc_run_result))
         
-        logging("diyabc simu run exit status:", local$diyabc_run_result)
+        log_debug("diyabc simu run exit status: ", local$diyabc_run_result)
         
         ## check run
         # run ok
@@ -1215,7 +1215,7 @@ prior_check_server <- function(input, output, session) {
                 style = "text-align:center;"
             )
             
-            logging("Running prior scenario checking")
+            log_info("Running prior scenario checking")
             local$diyabc_run_process <- execute_safely(
                 diyabc_run_trainset_simu(
                     env$ap$proj_dir, n_run = 1, run_prior_check = TRUE
@@ -1257,8 +1257,9 @@ prior_check_server <- function(input, output, session) {
         
         req(!is.null(local$diyabc_run_result))
         
-        logging(
-            "diyabc prior scenario checking run exit status:", local$diyabc_run_result
+        log_debug(
+            "diyabc prior scenario checking run exit status: ",
+            local$diyabc_run_result
         )
         
         ## check run
