@@ -7,7 +7,6 @@
     
     # log file
     enable_logging()
-    logging_level("trace")
     
     # init environment
     init_diyabc_env()
