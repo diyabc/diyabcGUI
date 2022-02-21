@@ -163,7 +163,7 @@ index_server <- function(input, output, session) {
         
         # verbosity
         observe({
-            log_info("analysis project directory:", env$ap$proj_dir)
+            log_info("analysis project directory: ", env$ap$proj_dir)
         })
     })
     
@@ -191,7 +191,7 @@ index_server <- function(input, output, session) {
         
         # verbosity
         observe({
-            log_info("data generation project directory:", env$dp$proj_dir)
+            log_info("data generation project directory: ", env$dp$proj_dir)
         })
     })
     
