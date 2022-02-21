@@ -548,15 +548,16 @@ proj_file_check_server <- function(input, output, session) {
         if(is.null(env$ap$header_check) && is.null(env$ap$reftable_check) &&
            is.null(env$ap$statobs_check)) {
             helpText(
-                icon("exclamation-triangle"), "Project is not configured yet",
+                icon("exclamation-triangle"),
+                "Project is not configured yet.", 
+                "Please go to the 'Training set simulation' tab:",
                 tags$p(tags$ul(tags$li(
-                    "For a new project, you will be able to configure it",
-                    "in the panel below"
+                    "For a new project, you will be able to configure it"
                 ))),
                 tags$p(tags$ul(tags$li(
                     "For an existing or an example project,",
                     "you will be able to check the configuration",
-                    "or modify it in the panel below"
+                    "or modify it"
                 )))
             )
         } else {
