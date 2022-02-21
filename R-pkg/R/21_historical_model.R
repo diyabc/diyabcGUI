@@ -518,7 +518,13 @@ parse_scenario <- function(text, expected_npop = NULL) {
             
             ## check number of sampled population at t=0
             if(isTruthy(expected_npop)) {
-                npop_0 <- sum((event_type == "sample") & (event_time == 0))
+                # FIXME
+                # npop_0 <- sum((event_type == "sample") & (event_time == 0))
+                # ongoing question: which scenario are compatible with a
+                # sample?
+                # see github issue #132
+                npop_0 <- sum(event_type == "sample")
+                
                 if(npop_0 != expected_npop) {
                     valid <- FALSE
                     msg_list <- append(
