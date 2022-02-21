@@ -465,7 +465,10 @@ train_set_config_server <- function(input, output, session) {
     
     # init local
     local <- reactiveValues(
-        validated = FALSE
+        count_validate = 0,
+        count_modif = 0,
+        validated = FALSE,
+        feedback = NULL,
     )
     
     # historical model setup
@@ -489,9 +492,41 @@ train_set_config_server <- function(input, output, session) {
     })
     callModule(mss_setup_server, "mss_setup")
     
+    # check modification of configuration
+    observeEvent(c(
+        env$ap$proj_dir,
+        env$ap$data_file,
+        env$ap$locus_type,
+        env$ap$seq_mode,
+        env$ts$scenario_list,
+        env$ts$prior_list,
+        env$ts$cond_list,
+        env$ts$locus_desc,
+        env$ts$group_prior_list,
+        env$ts$mss_reftab_colname
+    ), {
+        local$count_modif <- local$count_modif + 1
+    })
+    # invalidate when configuration is modified (only in case of new input)
+    observeEvent(c(local$count_modif, local$count_validate), {
+        if(local$count_modif > local$count_validate + 1) 
+            local$validated <- FALSE
+    })
+    
+    # # debug
+    # observe({
+    #     logging("count modif: ", local$count_modif)
+    #     logging("count validate: ", local$count_validate)
+    # })
+    # # debug
+    # observe({
+    #     pprint(local$validated)
+    # })
     
     # validate button
     observeEvent(input$validate, {
+        
+        req(!local$validated)
         
         # # debugging
         # print("#### validate")
@@ -511,7 +546,7 @@ train_set_config_server <- function(input, output, session) {
         # pprint(env$ts$group_prior_list)
         # pprint(env$ts$mss_reftab_colname)
         
-        local$validated <- FALSE
+        log_debug("Trying to validate training set configuration")
         
         req(env$ap$proj_dir)
         req(env$ap$data_file)
@@ -530,6 +565,7 @@ train_set_config_server <- function(input, output, session) {
             req(env$ts$mss_reftab_colname)
         }
         
+        log_debug("Write training set configuration file")
         write_check <- tryCatch(
             write_header(
                 env$ap$proj_dir, env$ap$data_file, 
@@ -542,9 +578,20 @@ train_set_config_server <- function(input, output, session) {
         )
         
         if("error" %in% class(write_check)) {
+            log_debug("Error when writing configuration file")
             local$validated <- FALSE
+            local$feedback <- tagList(tags$p(tags$div(
+                icon("exclamation-triangle"),
+                "Error when writing training set configuration file,", 
+                "please check app log file.",
+                style = "color: #F89406;"
+                
+            )))
         } else {
+            log_debug("Training set configuration file was written")
             local$validated <- TRUE
+            local$feedback <- NULL
+            local$count_validate <- local$count_modif
             
             # delete previous headerRF, reftable and statobs files
             if(file.exists(file.path(env$ap$proj_dir, "headerRF.txt"))) {
@@ -561,23 +608,20 @@ train_set_config_server <- function(input, output, session) {
         }
     })
     
-    # # debugging
-    # observe({
-    #     pprint(local$validated)
-    # })
-    
     # feedback
     output$feedback <- renderUI({
         # init
         msg <- list()
+        add_msg <- list()
+        
+        log_debug("Update feedback after training set configuration validation")
         
         # check validation
         if(!local$validated) {
             msg <- append(msg, list(tagList(tags$p(tags$div(
                     icon("exclamation-triangle"),
                     "Your training set configuration is", 
-                    "not complete (potential issue, see panels above)", 
-                    "or not validated",
+                    "not validated",
                     style = "color: #F89406;"
             )))))
         } else {
@@ -596,7 +640,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check data file
         if(!isTruthy(env$ap$data_file)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing data file",
                 style = "color: #F89406;"
             ))))))
@@ -604,7 +648,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check locus type
         if(!isTruthy(env$ap$locus_type)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing locus type",
                 style = "color: #F89406;"
             ))))))
@@ -612,7 +656,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check sequencing mode
         if(!isTruthy(env$ap$seq_mode)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing sequencing mode",
                 style = "color: #F89406;"
             ))))))
@@ -620,7 +664,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check scenario list
         if(!isTruthy(env$ts$scenario_list)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing scenario (historical model) definition",
                 style = "color: #F89406;"
             ))))))
@@ -628,7 +672,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check prior list
         if(!isTruthy(env$ts$prior_list)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing model parameter prior definition",
                 style = "color: #F89406;"
             ))))))
@@ -636,7 +680,7 @@ train_set_config_server <- function(input, output, session) {
         
         # check locus description
         if(!isTruthy(env$ts$locus_desc)) {
-            msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
+            add_msg <- append(add_msg, list(tagList(tags$div(tags$ul(tags$li(
                 "Missing locus setup configuration",
                 style = "color: #F89406;"
             ))))))
@@ -645,14 +689,29 @@ train_set_config_server <- function(input, output, session) {
         if(env$ap$locus_type == "mss") {
             # check group prior list
             if(!isTruthy(env$ts$group_prior_list)) {
-                msg <- append(msg, list(tagList(tags$div(tags$ul(tags$li(
-                    "Missing mutation model defintion",
-                    style = "color: #F89406;"
-                ))))))
+                add_msg <- append(
+                    add_msg, 
+                    list(tagList(tags$div(tags$ul(tags$li(
+                        "Missing mutation model defintion",
+                        style = "color: #F89406;"
+                    )))))
+                )
             }
         }
         
         if(length(msg) > 0) {
+            if(length(add_msg) > 0) {
+                msg <- append(msg, list(tagList(tags$p(tags$div(
+                    icon("exclamation-triangle"),
+                    "Your training set configuration is", 
+                    "not complete (potential issue, see panels above)",
+                    style = "color: #F89406;"
+                )))))
+                msg <- c(msg, add_msg)
+            }
+            if(length(local$feedback) > 0) {
+                msg <- append(msg, list(local$feedback))
+            }
             tags$p(do.call(tagList, unname(msg)))
         } else {
             NULL
@@ -1007,7 +1066,8 @@ train_set_simu_run_server <- function(input, output, session) {
         } else {
             ## error during run
             local$feedback <- tags$p(tags$div(
-                icon("exclamation-triangle"), "Issues with run (see log panel below)",
+                icon("exclamation-triangle"),
+                "Issues with run (see log panel below)",
                 style = "color: #F89406;"
             ))
             showNotification(
