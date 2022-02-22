@@ -14,7 +14,7 @@ If you are a DIYABC-RF GUI user, please refer to README file at project root for
 
 ## Windows standalone
 
-Please read dedicated [README file](DesktopDeployrR/README.md) to setup environment.
+Please read dedicated [README file](DIYABC-RF_GUI_windows/README.md) to setup environment.
 
 ### Build
 
