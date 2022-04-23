@@ -55,6 +55,7 @@ VignetteBuilder: knitr
 Imports:
     dplyr,
     fs,
+    future,
     ggplot2,
     lubridate, 
     jsonlite, 
