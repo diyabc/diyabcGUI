@@ -1,5 +1,7 @@
 # ![icon](man/figures/coccicon_32x32.png) Graphical User Interface for DIYABC-RF software
 
+⚠️ **Due to work overload, the development, support and maintenance for the project `diyabcGUI` is currently paused. Feel free to contact us (by submitting an issue) if you want to take over the development for this project. Pull request are also welcome to fix bug or implement missing functionalities. Thanks** ⚠️
+
 > **Disclaimer:** `DIYABC-RF GUI` is under final development stage. You may still encounter a few bugs. Please check ongoing issues or fill a new one [here](https://github.com/diyabc/diyabcGUI/issues) if you encounter any problem.
 
 We provide a graphical user interface (GUI) for the `DIYABC-RF` software [1], called `DIYABC-RF GUI`.
